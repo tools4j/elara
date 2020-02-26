@@ -1,0 +1,4 @@
+include (
+    'elara-core',
+    'elara-chronicle',
+    'elara-samples')
