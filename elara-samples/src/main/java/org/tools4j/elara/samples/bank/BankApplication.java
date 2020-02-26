@@ -24,9 +24,9 @@
 package org.tools4j.elara.samples.bank;
 
 import org.agrona.DirectBuffer;
-import org.junit.jupiter.api.Test;
 import org.tools4j.elara.application.Application;
-import org.tools4j.elara.application.SimpleApplication;
+import org.tools4j.elara.application.CommandProcessor;
+import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.command.CommandLoopback;
 import org.tools4j.elara.command.FlyweightCommand;
@@ -37,71 +37,65 @@ import org.tools4j.elara.init.Context;
 import org.tools4j.elara.init.Launcher;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.InMemoryLog;
+import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.log.PeekableMessageLog;
 import org.tools4j.elara.samples.bank.actor.Accountant;
 import org.tools4j.elara.samples.bank.actor.Teller;
-import org.tools4j.elara.samples.bank.command.*;
+import org.tools4j.elara.samples.bank.command.BankCommand;
+import org.tools4j.elara.samples.bank.command.CommandType;
 import org.tools4j.elara.samples.bank.event.EventType;
 import org.tools4j.elara.samples.bank.state.Bank;
 
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static java.util.Objects.requireNonNull;
 
-public class BankAccountTest {
+public class BankApplication implements Application {
 
     private final Bank.Mutable bank = new Bank.Default();
     private final Teller teller = new Teller(bank);
     private final Accountant accountant = new Accountant(bank);
-    private Application application = new SimpleApplication(
-            "banking-app", this::process, this::apply
-    );
-    private Queue<BankCommand> commands = new ConcurrentLinkedQueue<>();
-    private Input.Poller commandPoller = new CommandPoller(commands);
 
-    @Test
-    public void launch() throws Exception {
-        commands.add(new CreateAccountCommand("Marco"));
-        commands.add(new CreateAccountCommand("Henry"));
-        commands.add(new CreateAccountCommand("Frank"));
-        try (Launcher launcher = Launcher.launch(
-                Context.create()
-                        .application(application)
-                        .input(666, commandPoller)
-                        .output(this::publish)
-                        .commandLog(new InMemoryLog<>(new FlyweightCommand()))
-                        .eventLog(new InMemoryLog<>(new FlyweightEvent()))
-        )) {
-            //
-            Thread.sleep(500);
-            //WHEN: deposits
-            commands.add(new DepositCommand("Marco", 1000.0));
-            commands.add(new DepositCommand("Frank", 200.0));
-            Thread.sleep(500);
+    private final CommandProcessor commandProcessor = this::process;
+    private final EventApplier eventApplier = this::apply;
 
-            //WHEN: deposits + withdrawals
-            commands.add(new DepositCommand("Marco", 200.0));
-            commands.add(new WithdrawCommand("Frank", 50.0));
-            Thread.sleep(500);
+    @Override
+    public CommandProcessor commandProcessor() {
+        return commandProcessor;
+    }
 
-            //WHEN: illegal stuff
-            commands.add(new WithdrawCommand("Henry", 1.0));
-            commands.add(new DepositCommand("Lawry", 50.0));
-            commands.add(new TransferCommand("Frank", "Marco", 200.0));
+    @Override
+    public EventApplier eventApplier() {
+        return eventApplier;
+    }
 
-            //WHEN: other stuff that works
-            commands.add(new CreateAccountCommand("Lawry"));
-            commands.add(new DepositCommand("Lawry", 50.0));
-            commands.add(new TransferCommand("Marco", "Frank", 100.0));
-            commands.add(new WithdrawCommand("Frank", 200.0));
+    public Launcher launch(final Queue<BankCommand> inputQueue) {
+        return launch(inputQueue,
+                new InMemoryLog<>(new FlyweightCommand()),
+                new InMemoryLog<>(new FlyweightEvent()));
+    }
 
-            //THEN: await termination
-            while (!commands.isEmpty()) {
-                launcher.join(20);
-            }
-            launcher.join(200);
-            System.out.println("===========================================================");
-        }
+    public Launcher launch(final Queue<BankCommand> inputQueue,
+                           final PeekableMessageLog<Command> commandLog,
+                           final MessageLog<Event> eventLog) {
+        return launch(Input.create(666, new CommandPoller(inputQueue)),
+                commandLog, eventLog);
+    }
+
+    public Launcher launch(final Input input,
+                           final PeekableMessageLog<Command> commandLog,
+                           final MessageLog<Event> eventLog) {
+        return Launcher.launch(Context.create()
+                .application(this)
+                .input(input)
+                .output(this::publish)
+                .commandLog(commandLog)
+                .eventLog(eventLog)
+        );
+    }
+
+    public void printEnd() {
+        System.out.println("===========================================================");
     }
 
     private void process(final Command command, final EventRouter router) {

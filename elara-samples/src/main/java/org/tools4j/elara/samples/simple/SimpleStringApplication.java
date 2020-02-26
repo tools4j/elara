@@ -26,7 +26,6 @@ package org.tools4j.elara.samples.simple;
 import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.junit.jupiter.api.Test;
 import org.tools4j.elara.application.Application;
 import org.tools4j.elara.application.SimpleApplication;
 import org.tools4j.elara.command.Command;
@@ -41,42 +40,25 @@ import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.InMemoryLog;
 
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static java.util.Objects.requireNonNull;
 
-public class SimpleStringAppTest {
+public class SimpleStringApplication {
 
     private static int TYPE_STRING = 1;
 
-    private Application application = new SimpleApplication(
+    private final Application application = new SimpleApplication(
             "simple-test-app", this::process, this::apply
     );
-    private Queue<String> strings = new ConcurrentLinkedQueue<>();
-    private Input.Poller stringInputPoller = new StringInputPoller(strings);
 
-    @Test
-    public void launch() throws Exception {
-        strings.add("1");
-        strings.add("12");
-        try (Launcher launcher = Launcher.launch(
-                Context.create()
-                        .application(application)
-                        .input(1, stringInputPoller)
-                        .output(this::publish)
-                        .commandLog(new InMemoryLog<>(new FlyweightCommand()))
-                        .eventLog(new InMemoryLog<>(new FlyweightEvent()))
-        )) {
-            //
-            Thread.sleep(500);
-            strings.add("123");
-            Thread.sleep(1000);
-            strings.add("hello world");
-            while (!strings.isEmpty()) {
-                launcher.join(20);
-            }
-            launcher.join(200);
-        }
+    public Launcher launch(final Queue<String> inputQueue) {
+        return Launcher.launch(Context.create()
+                .application(application)
+                .input(999, new StringInputPoller(inputQueue))
+                .output(this::publish)
+                .commandLog(new InMemoryLog<>(new FlyweightCommand()))
+                .eventLog(new InMemoryLog<>(new FlyweightEvent()))
+        );
     }
 
     private void process(final Command command, final EventRouter router) {

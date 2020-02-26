@@ -72,7 +72,11 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.I
                                final int payloadOffset,
                                final int payloadSize) {
         this.header.wrap(header, headerOffset, HEADER_LENGTH);
-        this.payload.wrap(payload, payloadOffset, payloadSize);
+        if (payloadSize == 0) {
+            this.payload.wrap(0, 0);
+        } else {
+            this.payload.wrap(payload, payloadOffset, payloadSize);
+        }
         return this;
     }
 
