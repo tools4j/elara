@@ -25,24 +25,29 @@ package org.tools4j.elara.handler;
 
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.application.ExceptionHandler;
+import org.tools4j.elara.command.Command;
 import org.tools4j.elara.command.CommandLoopback;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.output.Output;
+import org.tools4j.elara.state.ServerState;
 
 import static java.util.Objects.requireNonNull;
 
 public class EventHandler implements MessageLog.Handler<Event> {
 
+    private final ServerState serverState;
     private final CommandLoopback commandLoopback;
     private final Output output;
     private final EventApplier eventApplier;
     private final ExceptionHandler exceptionHandler;
 
-    public EventHandler(final CommandLoopback commandLoopback,
+    public EventHandler(final ServerState serverState,
+                        final CommandLoopback commandLoopback,
                         final Output output,
                         final EventApplier eventApplier,
                         final ExceptionHandler exceptionHandler) {
+        this.serverState = requireNonNull(serverState);
         this.commandLoopback = requireNonNull(commandLoopback);
         this.output = requireNonNull(output);
         this.eventApplier = requireNonNull(eventApplier);
@@ -51,11 +56,23 @@ public class EventHandler implements MessageLog.Handler<Event> {
 
     @Override
     public void onMessage(final Event event) {
+        final Command.Id commandId = event.id().commandId();
+        final long lastAppliedForInput = serverState.lastCommandAllEventsApplied(commandId.input());
+        if (lastAppliedForInput < commandId.sequence()) {
+            publishEvent(event);
+            applyEvent(event);
+        }
+    }
+
+    private void publishEvent(final Event event) {
         try {
             output.publish(event);
         } catch (final Throwable t) {
             exceptionHandler.handleEventOutputException(event, t);
         }
+    }
+
+    private void applyEvent(final Event event) {
         try {
             eventApplier.onEvent(event, commandLoopback);
         } catch (final Throwable t) {

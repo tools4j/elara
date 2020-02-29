@@ -43,13 +43,13 @@ public enum AdminEvents {
     public static final int TIMER_PAYLOAD_SIZE = TIMER_TYPE_LENGTH + TIMER_ID_LENGTH +
             TIMER_TIMEOUT_LENGTH;
 
-    public static FlyweightEvent noop(final FlyweightEvent flyweightEvent,
-                                      final MutableDirectBuffer headerBuffer,
-                                      final int offset,
-                                      final Command command,
-                                      final int index) {
+    public static FlyweightEvent commit(final FlyweightEvent flyweightEvent,
+                                        final MutableDirectBuffer headerBuffer,
+                                        final int offset,
+                                        final Command command,
+                                        final int index) {
         return flyweightEvent.init(headerBuffer, offset, command.id().input(), command.id().sequence(), index,
-                EventType.NOOP.value(), command.time(), EMPTY_BUFFER, 0, 0);
+                EventType.COMMIT.value(), command.time(), EMPTY_BUFFER, 0, 0);
     }
 
     public static void timerStarted(final MutableDirectBuffer payloadBuffer,

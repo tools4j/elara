@@ -29,8 +29,6 @@ import org.tools4j.elara.application.Application;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.handler.CommandPeekPollHandler;
-import org.tools4j.elara.handler.CommandSkipper;
 import org.tools4j.elara.handler.InputHandlerFactory;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.MessageLog;
@@ -229,12 +227,7 @@ final class DefaultContext implements Context {
 
     static CommandPollerStep commandPollerStep(final Context context,
                                                final Singletons singletons) {
-        final CommandPeekPollHandler handler = new CommandPeekPollHandler(
-                singletons.serverState,
-                singletons.commandHandler,
-                new CommandSkipper(singletons.eventApplicationState)
-        );
-        return new CommandPollerStep(context.commandLog().poller(), handler);
+        return new CommandPollerStep(context.commandLog().poller(), singletons.commandHandler);
     }
 
     static EventApplierStep eventApplierStep(final Context context, final Singletons singletons) {

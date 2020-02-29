@@ -25,12 +25,12 @@ package org.tools4j.elara.state;
 
 public interface AdminStateProvider {
     TimerState timerState();
-    EventApplicationState eventApplicationState();
+    ServerState serverState();
 
     interface Mutable extends AdminStateProvider {
         @Override
         TimerState.Mutable timerState();
         @Override
-        EventApplicationState.Mutable eventApplicationState();
+        ServerState.Mutable serverState();
     }
 }

@@ -28,12 +28,12 @@ import static java.util.Objects.requireNonNull;
 public class DefaultAdminStateProvider implements AdminStateProvider.Mutable {
 
     private final TimerState.Mutable timerState;
-    private final EventApplicationState.Mutable eventApplicationState;
+    private final ServerState.Mutable serverState;
 
     public DefaultAdminStateProvider(final TimerState.Mutable timerState,
-                                     final EventApplicationState.Mutable eventApplicationState) {
+                                     final ServerState.Mutable serverState) {
         this.timerState = requireNonNull(timerState);
-        this.eventApplicationState = requireNonNull(eventApplicationState);
+        this.serverState = requireNonNull(serverState);
     }
 
     @Override
@@ -42,7 +42,7 @@ public class DefaultAdminStateProvider implements AdminStateProvider.Mutable {
     }
 
     @Override
-    public EventApplicationState.Mutable eventApplicationState() {
-        return eventApplicationState;
+    public ServerState.Mutable serverState() {
+        return serverState;
     }
 }

@@ -28,19 +28,24 @@ import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.FlyweightEventRouter;
 import org.tools4j.elara.log.PeekableMessageLog;
+import org.tools4j.elara.state.ServerState;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.log.PeekableMessageLog.PeekPollHandler.Result.PEEK;
 import static org.tools4j.elara.log.PeekableMessageLog.PeekPollHandler.Result.POLL;
 
 public class CommandHandler implements PeekableMessageLog.PeekPollHandler<Command> {
 
+    private final ServerState serverState;
     private final FlyweightEventRouter eventRouter;
     private final CommandProcessor commandProcessor;
     private final ExceptionHandler exceptionHandler;
 
-    public CommandHandler(final FlyweightEventRouter eventRouter,
+    public CommandHandler(final ServerState serverState,
+                          final FlyweightEventRouter eventRouter,
                           final CommandProcessor commandProcessor,
                           final ExceptionHandler exceptionHandler) {
+        this.serverState = requireNonNull(serverState);
         this.eventRouter = requireNonNull(eventRouter);
         this.commandProcessor = requireNonNull(commandProcessor);
         this.exceptionHandler = requireNonNull(exceptionHandler);
@@ -48,13 +53,33 @@ public class CommandHandler implements PeekableMessageLog.PeekPollHandler<Comman
 
     @Override
     public Result onMessage(final Command command) {
+        final long lastAppliedForInput = serverState.lastCommandAllEventsApplied(command.id().input());
+        if (lastAppliedForInput < command.id().sequence()) {
+            if (serverState.processCommands()) {
+                processCommand(command);
+                return POLL;
+            }
+            return PEEK;
+        }
+        skipCommand(command);
+        return POLL;
+    }
+
+    private void processCommand(final Command command) {
+        eventRouter.start(command);
         try {
-            eventRouter.start(command);
             commandProcessor.onCommand(command, eventRouter);
-            eventRouter.commit();//TODO add abort if there is an exception
         } catch (final Throwable t) {
             exceptionHandler.handleCommandProcessorException(command, t);
         }
-        return POLL;
+        eventRouter.commit();
+    }
+
+    private void skipCommand(final Command command) {
+        try {
+            commandProcessor.onCommandSkipped(command);
+        } catch (final Throwable t) {
+            exceptionHandler.handleCommandProcessorException(command, t);
+        }
     }
 }

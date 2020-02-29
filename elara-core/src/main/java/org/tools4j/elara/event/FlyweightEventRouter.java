@@ -62,7 +62,7 @@ public class FlyweightEventRouter implements EventRouter {
     }
 
     public FlyweightEventRouter commit() {
-        eventLogAppender.append(AdminEvents.noop(flyweightEvent, headerBuffer, 0, command, index));
+        eventLogAppender.append(AdminEvents.commit(flyweightEvent, headerBuffer, 0, command, index));
         this.flyweightEvent.reset();
         this.command = null;
         this.index = 0;
@@ -70,7 +70,7 @@ public class FlyweightEventRouter implements EventRouter {
     }
 
     private void checkAllowedType(final int eventType) {
-        if (eventType == EventType.NOOP.value()) {
+        if (eventType == EventType.COMMIT.value()) {
             throw new IllegalArgumentException("Illegal event type: " + eventType);
         }
     }

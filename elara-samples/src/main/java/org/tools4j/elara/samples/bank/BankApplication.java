@@ -56,7 +56,17 @@ public class BankApplication implements Application {
     private final Teller teller = new Teller(bank);
     private final Accountant accountant = new Accountant(bank);
 
-    private final CommandProcessor commandProcessor = this::process;
+    private final CommandProcessor commandProcessor = new CommandProcessor() {
+        @Override
+        public void onCommand(final Command command, final EventRouter router) {
+            process(command, router);
+        }
+
+        @Override
+        public void onCommandSkipped(final Command command) {
+            skip(command);
+        }
+    };
     private final EventApplier eventApplier = this::apply;
 
     @Override
@@ -102,6 +112,11 @@ public class BankApplication implements Application {
         System.out.println("-----------------------------------------------------------");
         System.out.println("processing: " + command + ", payload=" + payloadFor(command));
         teller.onCommand(command, router);
+    }
+
+    private void skip(final Command command) {
+        System.out.println("-----------------------------------------------------------");
+        System.out.println("skipping: " + command + ", payload=" + payloadFor(command));
     }
 
     private void apply(final Event event, final CommandLoopback commandLoopback) {

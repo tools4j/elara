@@ -23,9 +23,11 @@
  */
 package org.tools4j.elara.event;
 
-public enum  EventType {
+public enum EventType {
+    /** Default application event type if no other positive type value is provided. */
     APPLICATION(0),
-    NOOP(-1),
+    /** Final event marking the completion of processing a command. */
+    COMMIT(-1),
     TIMER_STARTED(-2),
     TIMER_STOPPED(-3),
     TIMER_EXPIRED(-4),

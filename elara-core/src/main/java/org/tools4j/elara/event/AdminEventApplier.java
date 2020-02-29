@@ -47,8 +47,8 @@ public class AdminEventApplier implements EventApplier {
 
     protected void onAdminEvent(final Event event, final CommandLoopback loopback) {
         final int type = event.type();
-        if (type == EventType.NOOP.value()) {
-            adminStateProvider.eventApplicationState().allEventsAppliedFor(event.id().commandId());
+        if (type == EventType.COMMIT.value()) {
+            adminStateProvider.serverState().allEventsAppliedFor(event.id().commandId());
         } else if (type == EventType.TIMER_STARTED.value()) {
             adminStateProvider.timerState().add(timerType(event), timerId(event), timerTimeout(event));
         } else if (type == EventType.TIMER_STOPPED.value()) {

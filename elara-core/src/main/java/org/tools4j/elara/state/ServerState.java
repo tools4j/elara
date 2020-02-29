@@ -23,6 +23,17 @@
  */
 package org.tools4j.elara.state;
 
+import org.tools4j.elara.command.Command;
+
 public interface ServerState {
+    long NO_COMMANDS = -1;
+
     boolean processCommands();
+    long lastCommandAllEventsApplied(int input);
+
+    interface Mutable extends ServerState {
+        Mutable processCommands(boolean newValue);
+
+        Mutable allEventsAppliedFor(Command.Id id);
+    }
 }
