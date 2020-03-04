@@ -48,12 +48,11 @@ public class SimpleStringApplication {
     private static int TYPE_STRING = 1;
 
     private final Application application = new SimpleApplication(
-            "simple-test-app", this::process, this::apply
+            "simple-string-app", this::process, this::apply
     );
 
     public Launcher launch(final Queue<String> inputQueue) {
-        return Launcher.launch(Context.create()
-                .application(application)
+        return Launcher.launch(Context.create(application)
                 .input(999, new StringInputPoller(inputQueue))
                 .output(this::publish)
                 .commandLog(new InMemoryLog<>(new FlyweightCommand()))

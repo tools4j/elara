@@ -21,16 +21,32 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.state;
+package org.tools4j.elara.event;
 
-public interface AdminStateProvider {
-    TimerState timerState();
-    ServerState serverState();
+import org.tools4j.elara.application.EventApplier;
+import org.tools4j.elara.command.CommandLoopback;
+import org.tools4j.elara.state.TimerState;
 
-    interface Mutable extends AdminStateProvider {
-        @Override
-        TimerState.Mutable timerState();
-        @Override
-        ServerState.Mutable serverState();
+import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.event.AdminEvents.*;
+
+public class TimerEventApplier implements EventApplier {
+
+    private final TimerState.Mutable timerState;
+
+    public TimerEventApplier(final TimerState.Mutable timerState) {
+        this.timerState = requireNonNull(timerState);
+    }
+
+    @Override
+    public void onEvent(final Event event, final CommandLoopback loopback) {
+        final int type = event.type();
+        if (type == EventType.TIMER_STARTED.value()) {
+            timerState.add(timerType(event), timerId(event), event.time(), timerTimeout(event));
+        } else if (type == EventType.TIMER_STOPPED.value()) {
+            timerState.remove(timerId(event));
+        } else if (type == EventType.TIMER_EXPIRED.value()) {
+            timerState.remove(timerId(event));
+        }
     }
 }

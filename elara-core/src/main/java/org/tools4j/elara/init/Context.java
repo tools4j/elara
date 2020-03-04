@@ -32,45 +32,56 @@ import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.log.PeekableMessageLog;
 import org.tools4j.elara.output.Output;
+import org.tools4j.elara.plugin.Plugin;
+import org.tools4j.elara.state.ServerState;
 import org.tools4j.elara.time.TimeSource;
 
+import java.util.List;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.Function;
 
-public interface Context {
-    Application application();
-    Context application(Application application);
+public interface Context<A extends Application> {
+    A application();
 
-    Input[] inputs();
-    Context input(Input input);
-    Context input(int id, Input.Poller poller);
+    List<Input> inputs();
+    Context<A> input(Input input);
+    Context<A> input(int id, Input.Poller poller);
 
     Output output();
-    Context output(Output output);
+    Context<A> output(Output output);
 
     PeekableMessageLog<Command> commandLog();
-    Context commandLog(String file);
-    Context commandLog(PeekableMessageLog<Command> commandLog);
+    Context<A> commandLog(String file);
+    Context<A> commandLog(PeekableMessageLog<Command> commandLog);
 
     MessageLog<Event> eventLog();
-    Context eventLog(String file);
-    Context eventLog(MessageLog<Event> eventLog);
+    Context<A> eventLog(String file);
+    Context<A> eventLog(MessageLog<Event> eventLog);
+
+    Context<A> plugin(Plugin<?> plugin);
+    Context<A> plugin(Plugin.Builder<? super A> plugin);
+    <P> Context<A> plugin(Plugin<P> plugin, Function<? super A, ? extends P> pluginStateProvider);
+    List<Plugin.Builder<? super A>> plugins();
 
     TimeSource timeSource();
-    Context timeSource(TimeSource timeSource);
+    Context<A> timeSource(TimeSource timeSource);
 
     ExceptionHandler exceptionHandler();
-    Context exceptionHandler(ExceptionHandler exceptionHandler);
+    Context<A> exceptionHandler(ExceptionHandler exceptionHandler);
 
     IdleStrategy idleStrategy();
-    Context idleStrategy(IdleStrategy idleStrategy);
+    Context<A> idleStrategy(IdleStrategy idleStrategy);
 
     ThreadFactory threadFactory();
-    Context threadFactory(String threadName);
-    Context threadFactory(ThreadFactory threadFactory);
+    Context<A> threadFactory(String threadName);
+    Context<A> threadFactory(ThreadFactory threadFactory);
 
-    Context validateAndPopulateDefaults();
+    ServerState.Factory<? super A> serverStateFactory();
+    Context<A> serverStateFactory(ServerState.Factory<? super A> factory);
 
-    static Context create() {
-        return new DefaultContext();
+    Context<A> validateAndPopulateDefaults();
+
+    static <A extends Application> Context<A> create(final A application) {
+        return new DefaultContext<A>(application);
     }
 }

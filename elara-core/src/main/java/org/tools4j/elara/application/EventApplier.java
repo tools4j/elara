@@ -29,4 +29,6 @@ import org.tools4j.elara.event.Event;
 @FunctionalInterface
 public interface EventApplier {
     void onEvent(Event event, CommandLoopback loopback);
+
+    EventApplier NOOP = (event, loopback) -> {};
 }

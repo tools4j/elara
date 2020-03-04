@@ -25,36 +25,22 @@ package org.tools4j.elara.event;
 
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.command.CommandLoopback;
-import org.tools4j.elara.state.AdminStateProvider;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.event.AdminEvents.*;
 
-public class AdminEventApplier implements EventApplier {
+public class CompositeEventApplier implements EventApplier {
 
-    private final AdminStateProvider.Mutable adminStateProvider;
+    private final EventApplier[] appliers;
 
-    public AdminEventApplier(final AdminStateProvider.Mutable adminStateProvider) {
-        this.adminStateProvider = requireNonNull(adminStateProvider);
+    public CompositeEventApplier(final EventApplier... appliers) {
+        this.appliers = requireNonNull(appliers);
     }
 
     @Override
     public void onEvent(final Event event, final CommandLoopback loopback) {
-        if (event.isAdmin()) {
-            onAdminEvent(event, loopback);
+        for (final EventApplier applier : appliers) {
+            applier.onEvent(event, loopback);
         }
     }
 
-    protected void onAdminEvent(final Event event, final CommandLoopback loopback) {
-        final int type = event.type();
-        if (type == EventType.COMMIT.value()) {
-            adminStateProvider.serverState().allEventsAppliedFor(event.id().commandId());
-        } else if (type == EventType.TIMER_STARTED.value()) {
-            adminStateProvider.timerState().add(timerType(event), timerId(event), timerTimeout(event));
-        } else if (type == EventType.TIMER_STOPPED.value()) {
-            adminStateProvider.timerState().remove(timerId(event));
-        } else if (type == EventType.TIMER_EXPIRED.value()) {
-            adminStateProvider.timerState().remove(timerId(event));
-        }
-    }
 }

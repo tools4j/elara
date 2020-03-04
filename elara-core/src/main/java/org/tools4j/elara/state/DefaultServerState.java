@@ -24,6 +24,7 @@
 package org.tools4j.elara.state;
 
 import org.agrona.collections.Long2LongHashMap;
+import org.tools4j.elara.application.Application;
 import org.tools4j.elara.command.Command;
 
 public class DefaultServerState implements ServerState.Mutable {
@@ -38,6 +39,8 @@ public class DefaultServerState implements ServerState.Mutable {
     public DefaultServerState(final boolean processCommands) {
         this.processCommands = processCommands;
     }
+
+    public static final Factory<Application> FACTORY = application -> new DefaultServerState();
 
     @Override
     public boolean processCommands() {

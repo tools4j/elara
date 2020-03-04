@@ -38,6 +38,9 @@ import org.tools4j.elara.loop.DutyCycle;
 import org.tools4j.elara.loop.EventApplierStep;
 import org.tools4j.elara.loop.SequencerStep;
 import org.tools4j.elara.output.Output;
+import org.tools4j.elara.plugin.Plugin;
+import org.tools4j.elara.state.DefaultServerState;
+import org.tools4j.elara.state.ServerState;
 import org.tools4j.elara.time.TimeSource;
 import org.tools4j.nobark.run.ThreadLike;
 
@@ -45,15 +48,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
-final class DefaultContext implements Context {
+final class DefaultContext<A extends Application> implements Context<A> {
 
     private static final String DEFAULT_THREAD_NAME = "duty-cycle";
 
-    private Application application;
+    private final A application;
     private final List<Input> inputs = new ArrayList<>();
+    private final List<Plugin.Builder<? super A>> plugins = new ArrayList<>();
     private Output output = event -> {};
     private PeekableMessageLog<Command> commandLog;
     private MessageLog<Event> eventLog;
@@ -61,31 +66,31 @@ final class DefaultContext implements Context {
     private ExceptionHandler exceptionHandler = ExceptionHandler.DEFAULT;
     private IdleStrategy idleStrategy = new BackoffIdleStrategy(
             100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100));
+    private ServerState.Factory<? super A> serverStateFactory = DefaultServerState.FACTORY;
     private ThreadFactory threadFactory;
 
+    public DefaultContext(final A application) {
+        this.application = requireNonNull(application);
+    }
+
     @Override
-    public Application application() {
+    public A application() {
         return application;
     }
 
-    public Context application(final Application application) {
-        this.application = requireNonNull(application);
-        return this;
+    @Override
+    public List<Input> inputs() {
+        return inputs;
     }
 
     @Override
-    public Input[] inputs() {
-        return inputs.toArray(new Input[inputs.size()]);
-    }
-
-    @Override
-    public Context input(final Input input) {
+    public Context<A> input(final Input input) {
         inputs.add(input);
         return this;
     }
 
     @Override
-    public Context input(final int id, final Input.Poller poller) {
+    public Context<A> input(final int id, final Input.Poller poller) {
         return input(Input.create(id, poller));
     }
 
@@ -95,7 +100,7 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Context output(final Output output) {
+    public Context<A> output(final Output output) {
         this.output = requireNonNull(output);
         return this;
     }
@@ -106,12 +111,12 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Context commandLog(final String file) {
+    public Context<A> commandLog(final String file) {
         throw new IllegalStateException("not supported yet");
     }
 
     @Override
-    public Context commandLog(final PeekableMessageLog<Command> commandLog) {
+    public Context<A> commandLog(final PeekableMessageLog<Command> commandLog) {
         this.commandLog = requireNonNull(commandLog);
         return this;
     }
@@ -122,14 +127,35 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Context eventLog(final String file) {
+    public Context<A> eventLog(final String file) {
         throw new IllegalStateException("not supported yet");
     }
 
     @Override
-    public Context eventLog(final MessageLog<Event> eventLog) {
+    public Context<A> eventLog(final MessageLog<Event> eventLog) {
         this.eventLog = requireNonNull(eventLog);
         return this;
+    }
+
+    @Override
+    public Context<A> plugin(final Plugin<?> plugin) {
+        return plugin(plugin.builder());
+    }
+
+    @Override
+    public <P> Context<A> plugin(final Plugin<P> plugin, final Function<? super A, ? extends P> pluginStateProvider) {
+        return plugin(plugin.builder(pluginStateProvider));
+    }
+
+    @Override
+    public Context<A> plugin(final Plugin.Builder<? super A> plugin) {
+        plugins.add(plugin);
+        return this;
+    }
+
+    @Override
+    public List<Plugin.Builder<? super A>> plugins() {
+        return plugins;
     }
 
     @Override
@@ -138,7 +164,7 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Context timeSource(final TimeSource timeSource) {
+    public Context<A> timeSource(final TimeSource timeSource) {
         this.timeSource = timeSource;//null allowed here
         return this;
     }
@@ -149,7 +175,7 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Context exceptionHandler(final ExceptionHandler exceptionHandler) {
+    public Context<A> exceptionHandler(final ExceptionHandler exceptionHandler) {
         this.exceptionHandler = requireNonNull(exceptionHandler);
         return this;
     }
@@ -160,7 +186,7 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Context idleStrategy(final IdleStrategy idleStrategy) {
+    public Context<A> idleStrategy(final IdleStrategy idleStrategy) {
         this.idleStrategy = requireNonNull(idleStrategy);
         return this;
     }
@@ -171,18 +197,29 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Context threadFactory(final ThreadFactory threadFactory) {
+    public Context<A> threadFactory(final ThreadFactory threadFactory) {
         this.threadFactory = threadFactory;//null allowed here
         return this;
     }
 
     @Override
-    public Context threadFactory(final String threadName) {
+    public Context<A> threadFactory(final String threadName) {
         return threadFactory(threadName == null ? null : r -> new Thread(null, r, threadName));
     }
 
     @Override
-    public Context validateAndPopulateDefaults() {
+    public ServerState.Factory<? super A> serverStateFactory() {
+        return serverStateFactory;
+    }
+
+    @Override
+    public Context<A> serverStateFactory(final ServerState.Factory<? super A> factory) {
+        this.serverStateFactory = requireNonNull(factory);
+        return this;
+    }
+
+    @Override
+    public Context<A> validateAndPopulateDefaults() {
         if (application == null) {
             throw new IllegalStateException("Application must be set");
         }
@@ -208,36 +245,37 @@ final class DefaultContext implements Context {
         return this;
     }
 
-    public static DutyCycle dutyCycle(final Context context) {
+    public static DutyCycle dutyCycle(final Context<?> context) {
         final Singletons singletons = new Singletons(context);
         return new DutyCycle(
-                sequencerStep(context),
+                sequencerStep(context, singletons),
                 commandPollerStep(context, singletons),
                 eventApplierStep(context, singletons)
         );
     }
 
-    static InputHandlerFactory inputHandlerFactory(final Context context) {
+    static InputHandlerFactory inputHandlerFactory(final Context<?> context) {
         return new InputHandlerFactory(context.commandLog().appender(), context.timeSource());
     }
 
-    static SequencerStep sequencerStep(final Context context) {
-        return new SequencerStep(inputHandlerFactory(context), context.inputs());
+    static SequencerStep sequencerStep(final Context<?> context,
+                                       final Singletons singletons) {
+        return new SequencerStep(inputHandlerFactory(context), singletons.plugins.inputs);
     }
 
-    static CommandPollerStep commandPollerStep(final Context context,
+    static CommandPollerStep commandPollerStep(final Context<?> context,
                                                final Singletons singletons) {
         return new CommandPollerStep(context.commandLog().poller(), singletons.commandHandler);
     }
 
-    static EventApplierStep eventApplierStep(final Context context, final Singletons singletons) {
+    static EventApplierStep eventApplierStep(final Context<?> context, final Singletons singletons) {
         return new EventApplierStep(
                 context.eventLog().poller(),
                 singletons.eventHandler
         );
     }
 
-    static org.tools4j.nobark.loop.IdleStrategy idleStrategy(final Context context) {
+    static org.tools4j.nobark.loop.IdleStrategy idleStrategy(final Context<?> context) {
         final IdleStrategy idleStrategy = requireNonNull(context.idleStrategy());
         return new org.tools4j.nobark.loop.IdleStrategy() {
             @Override
@@ -262,7 +300,7 @@ final class DefaultContext implements Context {
         };
     }
 
-    static ThreadLike start(final Context context) {
+    static ThreadLike start(final Context<?> context) {
         context.validateAndPopulateDefaults();
         return dutyCycle(context).start(
                 idleStrategy(context),

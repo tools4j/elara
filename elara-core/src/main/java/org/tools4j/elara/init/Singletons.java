@@ -24,44 +24,33 @@
 package org.tools4j.elara.init;
 
 import org.tools4j.elara.application.Application;
-import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.command.CommandLoopback;
 import org.tools4j.elara.command.DefaultCommandLoopback;
-import org.tools4j.elara.event.AdminEventApplier;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.FlyweightEventRouter;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.EventHandler;
-import org.tools4j.elara.input.SequenceGenerator;
-import org.tools4j.elara.input.SimpleSequenceGenerator;
+import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.ForwardingAppender;
 import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.state.DefaultAdminStateProvider;
-import org.tools4j.elara.state.DefaultServerState;
 import org.tools4j.elara.state.ServerState;
-import org.tools4j.elara.state.SimpleTimerState;
 
 final class Singletons {
-    Singletons(final Context context) {
-        final Application application = context.application();
-        adminSequenceGenerator = new SimpleSequenceGenerator();
-        serverState = new DefaultServerState();
+    private static final Input[] EMPTY_INPUTS = new Input[0];
+
+    <A extends Application> Singletons(final Context<A> context) {
+        final A application = context.application();
+        plugins = new Plugins(context);
+        serverState = context.serverStateFactory().create(application);
         commandLoopback = new DefaultCommandLoopback(
                 context.commandLog().appender(),
                 context.timeSource(),
-                adminSequenceGenerator
+                plugins.adminSequenceGenerator
         );
-        adminEventApplier = new AdminEventApplier(new DefaultAdminStateProvider(
-            new SimpleTimerState(1, new SimpleSequenceGenerator()),
-            serverState
-        ));
         eventHandler = new EventHandler(
                 serverState, commandLoopback,
                 context.output(),
-                (event, loopback) -> {
-                    adminEventApplier.onEvent(event, loopback);
-                    application.eventApplier().onEvent(event, loopback);
-                },
+                plugins.eventApplier,
                 context.exceptionHandler()
         );
         eventRouter = new FlyweightEventRouter(new ForwardingAppender<>(
@@ -69,15 +58,16 @@ final class Singletons {
         ));
         commandHandler = new CommandHandler(
                 serverState, eventRouter,
-                application.commandProcessor(),
+                plugins.commandProcessor,
                 context.exceptionHandler()
         );
     }
-    final SequenceGenerator adminSequenceGenerator;
+
+    final Plugins plugins;
     final ServerState.Mutable serverState;
     final CommandLoopback commandLoopback;
-    final EventApplier adminEventApplier;
     final FlyweightEventRouter eventRouter;
     final CommandHandler commandHandler;
     final MessageLog.Handler<Event> eventHandler;
-}
+
+ }

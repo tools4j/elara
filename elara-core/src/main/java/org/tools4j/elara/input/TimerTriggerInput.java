@@ -61,24 +61,32 @@ public final class TimerTriggerInput implements Input {
     }
 
     private class TimerTriggerPoller implements Poller {
+        int roundRobin = 0;
         @Override
         public int poll(final Handler handler) {
             final int count = timerState.count();
             if (count == 0) {
                 return 0;
             }
+            if (roundRobin >= count) {
+                roundRobin = 0;
+            }
             final long time = timeSource.currentTime();
-            int triggered = 0;
-            for (int i = 0; i < count; i++) {
-                final long timeout = timerState.timeout(i);
-                if (timeout <= time) {
+            for (int j = 0; j < count; j++) {
+                final int i = roundRobin;
+                final long deadline = timerState.time(i) + timerState.timeout(i);
+                if (deadline <= time) {
                     final long sequence = adminSequenceGenerator.nextSequence();
-                    final int len = triggerTimer(buffer, 0, timerState.type(i), timerState.id(i), timeout);
+                    final int len = triggerTimer(buffer, 0, timerState.type(i), timerState.id(i), timerState.timeout(i));
                     handler.onMessage(sequence, CommandType.TRIGGER_TIMER.value(), buffer, 0, len);
-                    triggered++;
+                    return 1;
+                }
+                roundRobin++;
+                if (roundRobin >= count) {
+                    roundRobin = 0;
                 }
             }
-            return triggered;
+            return 0;
         }
     }
 }

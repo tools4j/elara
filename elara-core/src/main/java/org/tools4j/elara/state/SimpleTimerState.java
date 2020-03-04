@@ -24,31 +24,14 @@
 package org.tools4j.elara.state;
 
 import org.agrona.collections.IntArrayList;
-import org.agrona.collections.Long2LongHashMap;
 import org.agrona.collections.LongArrayList;
-import org.tools4j.elara.input.AdjustableSequenceGenerator;
-
-import static java.util.Objects.requireNonNull;
 
 public class SimpleTimerState implements TimerState.Mutable {
 
-    private final long tickTime;
-    private final AdjustableSequenceGenerator timerIdGenerator;
-    private final Long2LongHashMap idToIndex = new Long2LongHashMap(-1);
     private final IntArrayList types = new IntArrayList();
     private final LongArrayList ids = new LongArrayList();
+    private final LongArrayList times = new LongArrayList();
     private final LongArrayList timeouts = new LongArrayList();
-
-    public SimpleTimerState(final long tickTime,
-                            final AdjustableSequenceGenerator timerIdGenerator) {
-        this.tickTime = tickTime;
-        this.timerIdGenerator = requireNonNull(timerIdGenerator);
-    }
-
-    @Override
-    public long tickTime() {
-        return tickTime;
-    }
 
     @Override
     public int count() {
@@ -66,12 +49,17 @@ public class SimpleTimerState implements TimerState.Mutable {
     }
 
     @Override
+    public long time(final int index) {
+        return times.get(index);
+    }
+
+    @Override
     public long timeout(final int index) {
         return timeouts.get(index);
     }
 
     public int indexById(final long id) {
-        return (int)idToIndex.get(id);
+        return ids.indexOf(id);
     }
 
     @Override
@@ -85,21 +73,21 @@ public class SimpleTimerState implements TimerState.Mutable {
     }
 
     public void removeByIndex(final int index) {
-        ids.removeLong(index);
-        types.removeInt(index);
-        timeouts.removeLong(index);
+        ids.fastUnorderedRemove(index);
+        types.fastUnorderedRemove(index);
+        times.fastUnorderedRemove(index);
+        timeouts.fastUnorderedRemove(index);
     }
 
     @Override
-    public boolean add(final int type, final long id, final long timeout) {
-        if (idToIndex.containsKey(id)) {
+    public boolean add(final int type, final long id, final long time, final long timeout) {
+        if (ids.containsLong(id)) {
             return false;
         }
-        idToIndex.put(id, count());
         types.add(type);
         ids.add(id);
+        times.add(time);
         timeouts.add(timeout);
-        timerIdGenerator.adjust(id);
         return true;
     }
 }

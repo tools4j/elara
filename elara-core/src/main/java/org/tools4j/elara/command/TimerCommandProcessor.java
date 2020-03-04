@@ -21,24 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.state;
+package org.tools4j.elara.command;
 
-import org.tools4j.elara.application.Application;
-import org.tools4j.elara.command.Command;
+import org.tools4j.elara.application.CommandProcessor;
+import org.tools4j.elara.event.AdminEvents;
+import org.tools4j.elara.event.EventRouter;
 
-public interface ServerState {
-    long NO_COMMANDS = -1;
+public class TimerCommandProcessor implements CommandProcessor {
 
-    boolean processCommands();
-    long lastCommandAllEventsApplied(int input);
-
-    interface Mutable extends ServerState {
-        Mutable processCommands(boolean newValue);
-
-        Mutable allEventsAppliedFor(Command.Id id);
-    }
-
-    interface Factory<A extends Application> {
-        ServerState.Mutable create(A application);
+    @Override
+    public void onCommand(final Command command, final EventRouter router) {
+        if (command.type() == CommandType.TRIGGER_TIMER.value()) {
+            AdminEvents.timerExpired(command, router);
+        }
     }
 }

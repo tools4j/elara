@@ -21,28 +21,33 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.state;
+package org.tools4j.elara.command;
+
+import org.tools4j.elara.application.CommandProcessor;
+import org.tools4j.elara.event.EventRouter;
 
 import static java.util.Objects.requireNonNull;
 
-public class DefaultAdminStateProvider implements AdminStateProvider.Mutable {
+public class CompositeCommandProcessor implements CommandProcessor {
 
-    private final TimerState.Mutable timerState;
-    private final ServerState.Mutable serverState;
+    private final CommandProcessor[] processors;
 
-    public DefaultAdminStateProvider(final TimerState.Mutable timerState,
-                                     final ServerState.Mutable serverState) {
-        this.timerState = requireNonNull(timerState);
-        this.serverState = requireNonNull(serverState);
+    public CompositeCommandProcessor(final CommandProcessor... processors) {
+        this.processors = requireNonNull(processors);
     }
 
     @Override
-    public TimerState.Mutable timerState() {
-        return timerState;
+    public void onCommand(final Command command, final EventRouter router) {
+        for (final CommandProcessor processor : processors) {
+            processor.onCommand(command, router);
+        }
     }
 
     @Override
-    public ServerState.Mutable serverState() {
-        return serverState;
+    public void onCommandSkipped(final Command command) {
+        for (final CommandProcessor processor : processors) {
+            processor.onCommandSkipped(command);
+        }
     }
+
 }

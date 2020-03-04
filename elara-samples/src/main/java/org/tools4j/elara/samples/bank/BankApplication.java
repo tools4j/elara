@@ -95,8 +95,7 @@ public class BankApplication implements Application {
     public Launcher launch(final Input input,
                            final PeekableMessageLog<Command> commandLog,
                            final MessageLog<Event> eventLog) {
-        return Launcher.launch(Context.create()
-                .application(this)
+        return Launcher.launch(Context.create(this)
                 .input(input)
                 .output(this::publish)
                 .commandLog(commandLog)

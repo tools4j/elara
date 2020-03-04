@@ -35,7 +35,6 @@ import org.tools4j.elara.log.PeekableMessageLog;
 import org.tools4j.elara.log.Writable;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.log.PeekableMessageLog.PeekPollHandler.Result.PEEK;
 import static org.tools4j.elara.log.PeekableMessageLog.PeekPollHandler.Result.POLL;
 
 public class ChronicleMessageLog<M extends Writable> implements PeekableMessageLog<M> {

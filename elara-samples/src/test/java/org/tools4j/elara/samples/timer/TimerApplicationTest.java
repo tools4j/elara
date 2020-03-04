@@ -21,25 +21,41 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.command;
+package org.tools4j.elara.samples.timer;
 
-import org.tools4j.elara.application.CommandProcessor;
-import org.tools4j.elara.event.AdminEvents;
-import org.tools4j.elara.event.EventRouter;
+import org.agrona.DirectBuffer;
+import org.junit.jupiter.api.Test;
+import org.tools4j.elara.init.Launcher;
 
-public class AdminCommandProcessor implements CommandProcessor {
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-    @Override
-    public void onCommand(final Command command, final EventRouter router) {
-        if (command.isAdmin()) {
-            onAdminCommand(command, router);
+class TimerApplicationTest {
+
+    @Test
+    public void singleTimers() {
+        final TimerApplication app = new TimerApplication();
+        final Queue<DirectBuffer> commands = new ConcurrentLinkedQueue<>();
+        commands.add(TimerApplication.startTimer(500));
+        commands.add(TimerApplication.startTimer(1000));
+        commands.add(TimerApplication.startTimer(2000));
+        commands.add(TimerApplication.startTimer(5000));
+        try (final Launcher launcher = app.launch(commands)) {
+            while (!commands.isEmpty()) {
+                launcher.join(20);
+            }
+            launcher.join(6000);
         }
     }
 
-    protected void onAdminCommand(final Command command, final EventRouter router) {
-        final int type = command.type();
-        if (type == CommandType.TRIGGER_TIMER.value()) {
-            AdminEvents.timerExpired(command, router);
+    @Test
+    public void periodicTimer() {
+        final TimerApplication app = new TimerApplication();
+        final Queue<DirectBuffer> commands = new ConcurrentLinkedQueue<>();
+        commands.add(TimerApplication.startPeriodic(2000));
+        try (final Launcher launcher = app.launch(commands)) {
+            launcher.join(22000);
         }
     }
+
 }

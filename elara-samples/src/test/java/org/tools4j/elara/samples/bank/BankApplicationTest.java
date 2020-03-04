@@ -24,7 +24,6 @@
 package org.tools4j.elara.samples.bank;
 
 import net.openhft.chronicle.queue.ChronicleQueue;
-import net.openhft.chronicle.wire.DocumentContext;
 import net.openhft.chronicle.wire.WireType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

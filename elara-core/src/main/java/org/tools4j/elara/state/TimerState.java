@@ -24,23 +24,14 @@
 package org.tools4j.elara.state;
 
 public interface TimerState {
-    long tickTime();
     int count();
     int type(int index);
     long id(int index);
+    long time(int index);
     long timeout(int index);
 
     interface Mutable extends TimerState {
-        boolean add(int type, long id, long timeout);
+        boolean add(int type, long id, long time, long timeout);
         boolean remove(long id);
-
-        interface Provider extends TimerState.Provider {
-            @Override
-            Mutable timerState();
-        }
-    }
-
-    interface Provider {
-        TimerState timerState();
     }
 }

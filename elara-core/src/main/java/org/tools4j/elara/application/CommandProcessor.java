@@ -39,4 +39,6 @@ public interface CommandProcessor {
     default void onCommandSkipped(final Command command) {
         //default is no-op;  apps maybe want to log something
     }
+
+    CommandProcessor NOOP = (command, router) -> {};
 }
