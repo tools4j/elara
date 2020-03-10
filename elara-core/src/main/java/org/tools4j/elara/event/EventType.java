@@ -24,25 +24,11 @@
 package org.tools4j.elara.event;
 
 public enum EventType {
+    ;
     /** Default application event type if no other positive type value is provided. */
-    APPLICATION(0),
+    public static final int APPLICATION = 0;
     /** Final event marking the completion of processing a command. */
-    COMMIT(-1),
-    TIMER_STARTED(-2),
-    TIMER_STOPPED(-3),
-    TIMER_EXPIRED(-4),
-    LEADER_VOTED(-5),
-    LEADER_ELECTED(-6);
-
-    private final int value;
-
-    EventType(final int value) {
-        this.value = value;
-    }
-
-    public int value() {
-        return value;
-    }
+    public static final int COMMIT = -1;
 
     public static boolean isAdmin(final int value) {
         return value < 0;

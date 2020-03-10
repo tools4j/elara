@@ -27,7 +27,7 @@ import org.agrona.DirectBuffer;
 
 public interface CommandLoopback {
     default void enqueueCommand(DirectBuffer command, int offset, int length) {
-        enqueueCommand(CommandType.APPLICATION.value(), command, offset, length);
+        enqueueCommand(CommandType.APPLICATION, command, offset, length);
     }
 
     void enqueueCommand(int type, DirectBuffer command, int offset, int length);

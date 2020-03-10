@@ -21,32 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.event;
+package org.tools4j.elara.plugin.timer;
 
-import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.command.CommandLoopback;
-import org.tools4j.elara.state.TimerState;
+public interface TimerState {
+    int count();
+    int type(int index);
+    long id(int index);
+    long time(int index);
+    long timeout(int index);
 
-import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.event.AdminEvents.*;
-
-public class TimerEventApplier implements EventApplier {
-
-    private final TimerState.Mutable timerState;
-
-    public TimerEventApplier(final TimerState.Mutable timerState) {
-        this.timerState = requireNonNull(timerState);
-    }
-
-    @Override
-    public void onEvent(final Event event, final CommandLoopback loopback) {
-        final int type = event.type();
-        if (type == EventType.TIMER_STARTED.value()) {
-            timerState.add(timerType(event), timerId(event), event.time(), timerTimeout(event));
-        } else if (type == EventType.TIMER_STOPPED.value()) {
-            timerState.remove(timerId(event));
-        } else if (type == EventType.TIMER_EXPIRED.value()) {
-            timerState.remove(timerId(event));
-        }
+    interface Mutable extends TimerState {
+        boolean add(int type, long id, long time, long timeout);
+        boolean remove(long id);
     }
 }

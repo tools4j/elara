@@ -21,22 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.state;
+package org.tools4j.elara.plugin.timer;
 
-public interface ServerConfig {
-    int serverId();
-    int serverCount();
-    int serverId(int index);
+public enum TimerCommandDescriptor {
+    ;
 
-    static ServerConfig singleton() {
-        return singleton(1);
-    }
+    public static final int TIMER_TYPE_OFFSET = 0;
+    public static final int TIMER_TYPE_LENGTH = Integer.BYTES;
+    public static final int TIMER_ID_OFFSET = TIMER_TYPE_OFFSET + TIMER_TYPE_LENGTH;
+    public static final int TIMER_ID_LENGTH = Long.BYTES;
+    public static final int TIMER_TIMEOUT_OFFSET = TIMER_ID_OFFSET + TIMER_ID_LENGTH;
+    public static final int TIMER_TIMEOUT_LENGTH = Long.BYTES;
 
-    static ServerConfig singleton(final int serverId) {
-        return create(serverId, serverId);
-    }
-
-    static ServerConfig create(final int serverId, final int... serverIds) {
-        return new DefaultServerConfig(serverId, serverIds);
-    }
+    public static final int TIMER_PAYLOAD_SIZE = TIMER_TYPE_LENGTH + TIMER_ID_LENGTH +
+            TIMER_TIMEOUT_LENGTH;
 }

@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.state;
+package org.tools4j.elara.plugin.timer;
 
 import org.agrona.collections.IntArrayList;
 import org.agrona.collections.LongArrayList;

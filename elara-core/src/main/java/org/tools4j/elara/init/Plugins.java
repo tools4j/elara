@@ -32,15 +32,17 @@ import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.input.SimpleSequenceGenerator;
 import org.tools4j.elara.plugin.Plugin;
+import org.tools4j.elara.plugin.base.BasePlugin;
+import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-final class Plugins {
-    private static final Input[] EMPTY_INPUTS = new Input[0];
+import static org.tools4j.elara.input.Input.EMPTY_INPUTS;
 
+final class Plugins {
     <A extends Application> Plugins(final Context<A> context) {
         final A application = context.application();
         this.timeSource = context.timeSource();
@@ -51,16 +53,25 @@ final class Plugins {
         this.eventApplier = eventApplier(application, plugins);
     }
 
-    final Plugin.Context[] plugins;
+    final Plugin.Context<?>[] plugins;
     final Input[] inputs;
     final TimeSource timeSource;
     final SequenceGenerator adminSequenceGenerator;
     final CommandProcessor commandProcessor;
     final EventApplier eventApplier;
 
+    BaseState.Mutable baseState() {
+        for (final Plugin.Context plugin : plugins) {
+            if (plugin instanceof BasePlugin.BaseContext) {
+                return ((BasePlugin.BaseContext<?>)plugin).pluginState();
+            }
+        }
+        return BasePlugin.BaseContext.createDefaultBaseStae();
+    }
+
     private static <A extends Application> Plugin.Context[] plugins(final A application,
                                                                     final List<Plugin.Builder<? super A>> builders) {
-        final Plugin.Context[] plugins = new Plugin.Context[builders.size()];
+        final Plugin.Context<?>[] plugins = new Plugin.Context<?>[builders.size()];
         for (int i = 0; i < plugins.length; i++) {
             plugins[i] = builders.get(i).create(application);
         }

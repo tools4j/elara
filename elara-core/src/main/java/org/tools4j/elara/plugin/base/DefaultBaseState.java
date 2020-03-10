@@ -21,11 +21,47 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.input;
+package org.tools4j.elara.plugin.base;
 
-import org.agrona.DirectBuffer;
+import org.agrona.collections.Long2LongHashMap;
+import org.tools4j.elara.command.Command;
 
-@FunctionalInterface
-public interface InputSequenceGenerator {
-    long nextSequence(int input, DirectBuffer buffer, int offset, int length);
+public class DefaultBaseState implements BaseState.Mutable {
+
+    private final Long2LongHashMap inputToSeqMap = new Long2LongHashMap(NO_COMMANDS);
+    private boolean processCommands;
+
+    public DefaultBaseState() {
+        this(true);
+    }
+
+    public DefaultBaseState(final boolean processCommands) {
+        this.processCommands = processCommands;
+    }
+
+    @Override
+    public boolean processCommands() {
+        return processCommands;
+    }
+
+    @Override
+    public Mutable processCommands(final boolean newValue) {
+        this.processCommands = newValue;
+        return this;
+    }
+
+    @Override
+    public long lastCommandAllEventsApplied(final int input) {
+        return inputToSeqMap.get(input);
+    }
+
+    @Override
+    public Mutable allEventsAppliedFor(final Command.Id id) {
+        final int input = id.input();
+        final long sequence = id.sequence();
+        if (sequence > lastCommandAllEventsApplied(input)) {
+            inputToSeqMap.put(input, sequence);
+        }
+        return this;
+    }
 }

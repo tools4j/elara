@@ -21,36 +21,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.event;
+package org.tools4j.elara.plugin.timer;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.command.CommandType;
+import org.tools4j.elara.event.Event;
+import org.tools4j.elara.event.EventRouter;
 
-public enum AdminEvents {
+import static org.tools4j.elara.plugin.timer.TimerEventDescriptor.*;
+
+/**
+ * Timer events applying the timer state change through {@link TimerEventApplier}.
+ */
+public enum TimerEvents {
     ;
 
-    private static final DirectBuffer EMPTY_BUFFER = new UnsafeBuffer(0, 0);
-
-    public static final int TIMER_TYPE_OFFSET = 0;
-    public static final int TIMER_TYPE_LENGTH = Integer.BYTES;
-    public static final int TIMER_ID_OFFSET = TIMER_TYPE_OFFSET + TIMER_TYPE_LENGTH;
-    public static final int TIMER_ID_LENGTH = Long.BYTES;
-    public static final int TIMER_TIMEOUT_OFFSET = TIMER_ID_OFFSET + TIMER_ID_LENGTH;
-    public static final int TIMER_TIMEOUT_LENGTH = Long.BYTES;
-    public static final int TIMER_PAYLOAD_SIZE = TIMER_TYPE_LENGTH + TIMER_ID_LENGTH +
-            TIMER_TIMEOUT_LENGTH;
-
-    public static FlyweightEvent commit(final FlyweightEvent flyweightEvent,
-                                        final MutableDirectBuffer headerBuffer,
-                                        final int offset,
-                                        final Command command,
-                                        final int index) {
-        return flyweightEvent.init(headerBuffer, offset, command.id().input(), command.id().sequence(), index,
-                EventType.COMMIT.value(), command.time(), EMPTY_BUFFER, 0, 0);
-    }
+    /** Event type for event indicating a timer has expired, usually triggered by a {@link TimerCommands#TRIGGER_TIMER TRIGGER_TIMER} command.*/
+    public static final int TIMER_EXPIRED = -10;
+    /** Event type for event indicating that a timer has been started.*/
+    public static final int TIMER_STARTED = -11;
+    /** Event type for event indicating that a timer has been stopped.*/
+    public static final int TIMER_STOPPED = -12;
 
     public static void timerStarted(final MutableDirectBuffer payloadBuffer,
                                     final int offset,
@@ -58,7 +50,7 @@ public enum AdminEvents {
                                     final long timerId,
                                     final long timeout,
                                     final EventRouter eventRouter) {
-        timerEvent(payloadBuffer, offset, EventType.TIMER_STARTED, timerType, timerId, timeout, eventRouter);
+        timerEvent(payloadBuffer, offset, TIMER_STARTED, timerType, timerId, timeout, eventRouter);
     }
 
     public static void timerStopped(final MutableDirectBuffer payloadBuffer,
@@ -67,20 +59,20 @@ public enum AdminEvents {
                                     final long timerId,
                                     final long timeout,
                                     final EventRouter eventRouter) {
-        timerEvent(payloadBuffer, offset, EventType.TIMER_STOPPED, timerType, timerId, timeout, eventRouter);
+        timerEvent(payloadBuffer, offset, TIMER_STOPPED, timerType, timerId, timeout, eventRouter);
     }
 
     public static void timerExpired(final Command command, final EventRouter eventRouter) {
-        if (command.type() != CommandType.TRIGGER_TIMER.value()) {
-            throw new IllegalArgumentException("Expected " + CommandType.TRIGGER_TIMER + " command but found " + command.type());
+        if (command.type() != TimerCommands.TRIGGER_TIMER) {
+            throw new IllegalArgumentException("Expected " + TimerCommands.TRIGGER_TIMER + " command but found " + command.type());
         }
         final DirectBuffer payload = command.payload();
-        eventRouter.routeEvent(EventType.TIMER_EXPIRED.value(), payload, 0, payload.capacity());
+        eventRouter.routeEvent(TIMER_EXPIRED, payload, 0, payload.capacity());
     }
 
     private static void timerEvent(final MutableDirectBuffer payloadBuffer,
                                    final int offset,
-                                   final EventType eventType,
+                                   final int eventType,
                                    final int timerType,
                                    final long timerId,
                                    final long timeout,
@@ -88,7 +80,7 @@ public enum AdminEvents {
         payloadBuffer.putInt(offset + TIMER_TYPE_OFFSET, timerType);
         payloadBuffer.putLong(offset + TIMER_ID_OFFSET, timerId);
         payloadBuffer.putLong(offset + TIMER_TIMEOUT_OFFSET, timeout);
-        eventRouter.routeEvent(eventType.value(), payloadBuffer, offset, TIMER_PAYLOAD_SIZE);
+        eventRouter.routeEvent(eventType, payloadBuffer, offset, TIMER_PAYLOAD_SIZE);
     }
 
     public static int timerType(final Event event) {

@@ -31,19 +31,19 @@ import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.output.Output;
-import org.tools4j.elara.state.ServerState;
+import org.tools4j.elara.plugin.base.BaseState;
 
 import static java.util.Objects.requireNonNull;
 
 public class EventHandler implements MessageLog.Handler<Event> {
 
-    private final ServerState.Mutable serverState;
+    private final BaseState.Mutable serverState;
     private final CommandLoopback commandLoopback;
     private final Output output;
     private final EventApplier eventApplier;
     private final ExceptionHandler exceptionHandler;
 
-    public EventHandler(final ServerState.Mutable serverState,
+    public EventHandler(final BaseState.Mutable serverState,
                         final CommandLoopback commandLoopback,
                         final Output output,
                         final EventApplier eventApplier,
@@ -62,7 +62,7 @@ public class EventHandler implements MessageLog.Handler<Event> {
         if (lastAppliedForInput < commandId.sequence()) {
             publishEvent(event);
             applyEvent(event);
-            if (event.type() == EventType.COMMIT.value()) {
+            if (event.type() == EventType.COMMIT) {
                 serverState.allEventsAppliedFor(event.id().commandId());
             }
         }

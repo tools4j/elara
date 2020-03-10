@@ -21,22 +21,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin;
+package org.tools4j.elara.plugin.timer;
 
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.command.TimerCommandProcessor;
-import org.tools4j.elara.event.TimerEventApplier;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.SequenceGenerator;
-import org.tools4j.elara.input.TimerTriggerInput;
-import org.tools4j.elara.state.SimpleTimerState;
-import org.tools4j.elara.state.TimerState;
+import org.tools4j.elara.plugin.Plugin;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
 
-public class TimerPlugin implements Plugin<TimerState.Mutable> {
+/**
+ * Simple timer plugin to support timers using {@link TimerCommands} and {@link TimerEvents}.
+ */
+public final class TimerPlugin implements Plugin<TimerState.Mutable> {
 
     @Override
     public <A> Builder<A> builder() {
@@ -44,9 +43,14 @@ public class TimerPlugin implements Plugin<TimerState.Mutable> {
     }
 
     @Override
-    public Context create(final TimerState.Mutable timerState) {
+    public Context<TimerState.Mutable> create(final TimerState.Mutable timerState) {
         requireNonNull(timerState);
-        return new Context() {
+        return new Context<TimerState.Mutable>() {
+            @Override
+            public TimerState.Mutable pluginState() {
+                return timerState;
+            }
+
             @Override
             public Input[] inputs(final TimeSource timeSource, final SequenceGenerator adminSequenceGenerator) {
                 return new Input[] {

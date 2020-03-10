@@ -30,16 +30,18 @@ import org.tools4j.elara.init.Launcher;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import static org.tools4j.elara.samples.timer.TimerApplication.MAX_PERIODIC_REPETITIONS;
+
 class TimerApplicationTest {
 
     @Test
     public void singleTimers() {
         final TimerApplication app = new TimerApplication();
         final Queue<DirectBuffer> commands = new ConcurrentLinkedQueue<>();
-        commands.add(TimerApplication.startTimer(500));
-        commands.add(TimerApplication.startTimer(1000));
-        commands.add(TimerApplication.startTimer(2000));
-        commands.add(TimerApplication.startTimer(5000));
+        commands.add(TimerApplication.startTimer(1001, 500));
+        commands.add(TimerApplication.startTimer(1002, 1000));
+        commands.add(TimerApplication.startTimer(1003, 2000));
+        commands.add(TimerApplication.startTimer(1004, 5000));
         try (final Launcher launcher = app.launch(commands)) {
             while (!commands.isEmpty()) {
                 launcher.join(20);
@@ -50,11 +52,17 @@ class TimerApplicationTest {
 
     @Test
     public void periodicTimer() {
+        //given
+        final long periodMillis = 2000;
         final TimerApplication app = new TimerApplication();
         final Queue<DirectBuffer> commands = new ConcurrentLinkedQueue<>();
-        commands.add(TimerApplication.startPeriodic(2000));
+
+        //when
+        commands.add(TimerApplication.startPeriodic(666666666, periodMillis));
         try (final Launcher launcher = app.launch(commands)) {
-            launcher.join(22000);
+
+            //then
+            launcher.join(100 + periodMillis * (MAX_PERIODIC_REPETITIONS + 1));
         }
     }
 

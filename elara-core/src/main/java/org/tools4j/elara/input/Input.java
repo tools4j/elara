@@ -28,6 +28,7 @@ import org.tools4j.elara.event.EventType;
 
 public interface Input {
     int ADMIN_ID = 0;
+    Input[] EMPTY_INPUTS = new Input[0];
     int id();
 
     Poller poller();
@@ -40,7 +41,7 @@ public interface Input {
     @FunctionalInterface
     interface Handler {
         default void onMessage(final long sequence, final DirectBuffer buffer, final int offset, final int length) {
-            onMessage(sequence, EventType.APPLICATION.value(), buffer, offset, length);
+            onMessage(sequence, EventType.APPLICATION, buffer, offset, length);
         }
         void onMessage(long sequence, int type, DirectBuffer buffer, int offset, int length);
     }

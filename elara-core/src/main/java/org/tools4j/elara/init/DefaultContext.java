@@ -39,8 +39,6 @@ import org.tools4j.elara.loop.EventApplierStep;
 import org.tools4j.elara.loop.SequencerStep;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.Plugin;
-import org.tools4j.elara.state.DefaultServerState;
-import org.tools4j.elara.state.ServerState;
 import org.tools4j.elara.time.TimeSource;
 import org.tools4j.nobark.run.ThreadLike;
 
@@ -66,7 +64,6 @@ final class DefaultContext<A extends Application> implements Context<A> {
     private ExceptionHandler exceptionHandler = ExceptionHandler.DEFAULT;
     private IdleStrategy idleStrategy = new BackoffIdleStrategy(
             100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100));
-    private ServerState.Factory<? super A> serverStateFactory = DefaultServerState.FACTORY;
     private ThreadFactory threadFactory;
 
     public DefaultContext(final A application) {
@@ -205,17 +202,6 @@ final class DefaultContext<A extends Application> implements Context<A> {
     @Override
     public Context<A> threadFactory(final String threadName) {
         return threadFactory(threadName == null ? null : r -> new Thread(null, r, threadName));
-    }
-
-    @Override
-    public ServerState.Factory<? super A> serverStateFactory() {
-        return serverStateFactory;
-    }
-
-    @Override
-    public Context<A> serverStateFactory(final ServerState.Factory<? super A> factory) {
-        this.serverStateFactory = requireNonNull(factory);
-        return this;
     }
 
     @Override

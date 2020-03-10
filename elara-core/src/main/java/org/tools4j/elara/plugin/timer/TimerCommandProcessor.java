@@ -21,9 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.time;
+package org.tools4j.elara.plugin.timer;
 
-public interface TimerControl {
-    long startTimer(int type, long timeout);
-    boolean stopTimer(long id);
+import org.tools4j.elara.application.CommandProcessor;
+import org.tools4j.elara.command.Command;
+import org.tools4j.elara.event.EventRouter;
+
+public class TimerCommandProcessor implements CommandProcessor {
+
+    @Override
+    public void onCommand(final Command command, final EventRouter router) {
+        if (command.type() == TimerCommands.TRIGGER_TIMER) {
+            TimerEvents.timerExpired(command, router);
+        }
+    }
 }

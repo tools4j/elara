@@ -21,17 +21,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.state;
+package org.tools4j.elara.plugin.timer;
 
-public interface TimerState {
-    int count();
-    int type(int index);
-    long id(int index);
-    long time(int index);
-    long timeout(int index);
+import org.agrona.MutableDirectBuffer;
 
-    interface Mutable extends TimerState {
-        boolean add(int type, long id, long time, long timeout);
-        boolean remove(long id);
+import static org.tools4j.elara.plugin.timer.TimerCommandDescriptor.*;
+
+/**
+ * Timer commands issued through {@link TimerTriggerInput}.
+ */
+public enum TimerCommands {
+    ;
+    /** Command issued by {@link TimerTriggerInput}; its processing subsequently triggers a {@link TimerEvents#TIMER_EXPIRED} event.*/
+    public static final int TRIGGER_TIMER = -10;
+
+    public static int triggerTimer(final MutableDirectBuffer buffer,
+                                   final int offset,
+                                   final int timerType,
+                                   final long timerId,
+                                   final long timeout) {
+        buffer.putInt(offset + TIMER_TYPE_OFFSET, timerType);
+        buffer.putLong(offset + TIMER_ID_OFFSET, timerId);
+        buffer.putLong(offset + TIMER_TIMEOUT_OFFSET, timeout);
+        return TIMER_PAYLOAD_SIZE;
     }
 }

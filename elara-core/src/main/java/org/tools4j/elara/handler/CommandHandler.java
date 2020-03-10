@@ -28,7 +28,7 @@ import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.FlyweightEventRouter;
 import org.tools4j.elara.log.PeekableMessageLog;
-import org.tools4j.elara.state.ServerState;
+import org.tools4j.elara.plugin.base.BaseState;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.log.PeekableMessageLog.PeekPollHandler.Result.PEEK;
@@ -36,16 +36,16 @@ import static org.tools4j.elara.log.PeekableMessageLog.PeekPollHandler.Result.PO
 
 public class CommandHandler implements PeekableMessageLog.PeekPollHandler<Command> {
 
-    private final ServerState serverState;
+    private final BaseState baseState;
     private final FlyweightEventRouter eventRouter;
     private final CommandProcessor commandProcessor;
     private final ExceptionHandler exceptionHandler;
 
-    public CommandHandler(final ServerState serverState,
+    public CommandHandler(final BaseState baseState,
                           final FlyweightEventRouter eventRouter,
                           final CommandProcessor commandProcessor,
                           final ExceptionHandler exceptionHandler) {
-        this.serverState = requireNonNull(serverState);
+        this.baseState = requireNonNull(baseState);
         this.eventRouter = requireNonNull(eventRouter);
         this.commandProcessor = requireNonNull(commandProcessor);
         this.exceptionHandler = requireNonNull(exceptionHandler);
@@ -53,9 +53,9 @@ public class CommandHandler implements PeekableMessageLog.PeekPollHandler<Comman
 
     @Override
     public Result onMessage(final Command command) {
-        final long lastAppliedForInput = serverState.lastCommandAllEventsApplied(command.id().input());
+        final long lastAppliedForInput = baseState.lastCommandAllEventsApplied(command.id().input());
         if (lastAppliedForInput < command.id().sequence()) {
-            if (serverState.processCommands()) {
+            if (baseState.processCommands()) {
                 processCommand(command);
                 return POLL;
             }

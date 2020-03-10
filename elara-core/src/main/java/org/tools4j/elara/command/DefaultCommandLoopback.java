@@ -32,7 +32,7 @@ import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.command.AdminCommands.TIMER_PAYLOAD_SIZE;
+import static org.tools4j.elara.plugin.timer.TimerCommandDescriptor.TIMER_PAYLOAD_SIZE;
 
 public class DefaultCommandLoopback implements CommandLoopback {
 

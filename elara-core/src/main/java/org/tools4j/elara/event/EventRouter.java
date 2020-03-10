@@ -25,11 +25,12 @@ package org.tools4j.elara.event;
 
 import org.agrona.DirectBuffer;
 
-@FunctionalInterface
 public interface EventRouter {
     default void routeEvent(final DirectBuffer event, final int offset, final int length) {
-        routeEvent(EventType.APPLICATION.value(), event, offset, length);
+        routeEvent(EventType.APPLICATION, event, offset, length);
     }
 
     void routeEvent(int type, DirectBuffer event, int offset, int length);
+
+    int nextEventIndex();
 }

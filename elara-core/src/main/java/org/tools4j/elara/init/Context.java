@@ -33,7 +33,6 @@ import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.log.PeekableMessageLog;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.Plugin;
-import org.tools4j.elara.state.ServerState;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.List;
@@ -75,9 +74,6 @@ public interface Context<A extends Application> {
     ThreadFactory threadFactory();
     Context<A> threadFactory(String threadName);
     Context<A> threadFactory(ThreadFactory threadFactory);
-
-    ServerState.Factory<? super A> serverStateFactory();
-    Context<A> serverStateFactory(ServerState.Factory<? super A> factory);
 
     Context<A> validateAndPopulateDefaults();
 

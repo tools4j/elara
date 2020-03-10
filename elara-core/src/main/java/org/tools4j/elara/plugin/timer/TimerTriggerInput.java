@@ -21,17 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.input;
+package org.tools4j.elara.plugin.timer;
 
 import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.command.CommandType;
-import org.tools4j.elara.state.TimerState;
+import org.tools4j.elara.input.Input;
+import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.command.AdminCommands.TIMER_PAYLOAD_SIZE;
-import static org.tools4j.elara.command.AdminCommands.triggerTimer;
+import static org.tools4j.elara.plugin.timer.TimerCommandDescriptor.TIMER_PAYLOAD_SIZE;
+import static org.tools4j.elara.plugin.timer.TimerCommands.triggerTimer;
 
 public final class TimerTriggerInput implements Input {
 
@@ -78,7 +78,7 @@ public final class TimerTriggerInput implements Input {
                 if (deadline <= time) {
                     final long sequence = adminSequenceGenerator.nextSequence();
                     final int len = triggerTimer(buffer, 0, timerState.type(i), timerState.id(i), timerState.timeout(i));
-                    handler.onMessage(sequence, CommandType.TRIGGER_TIMER.value(), buffer, 0, len);
+                    handler.onMessage(sequence, TimerCommands.TRIGGER_TIMER, buffer, 0, len);
                     return 1;
                 }
                 roundRobin++;

@@ -28,6 +28,7 @@ import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.plugin.base.BaseEvents;
 
 import static java.util.Objects.requireNonNull;
 
@@ -38,7 +39,7 @@ public class FlyweightEventRouter implements EventRouter {
     private final FlyweightEvent flyweightEvent = new FlyweightEvent();
 
     private Command command;
-    private int index = 0;
+    private int nextIndex = 0;
 
     public FlyweightEventRouter(final MessageLog.Appender<? super Event> eventLogAppender) {
         this.eventLogAppender = requireNonNull(eventLogAppender);
@@ -46,7 +47,7 @@ public class FlyweightEventRouter implements EventRouter {
 
     public FlyweightEventRouter start(final Command command) {
         this.command = requireNonNull(command);
-        this.index = 0;
+        this.nextIndex = 0;
         return this;
     }
 
@@ -54,23 +55,28 @@ public class FlyweightEventRouter implements EventRouter {
     public void routeEvent(final int type, final DirectBuffer event, final int offset, final int length) {
         checkAllowedType(type);
         eventLogAppender.append(flyweightEvent.init(
-                headerBuffer, 0, command.id().input(), command.id().sequence(), index, type,
+                headerBuffer, 0, command.id().input(), command.id().sequence(), nextIndex, type,
                 command.time(), event, offset, length
         ));
         this.flyweightEvent.reset();
-        index++;
+        nextIndex++;
     }
 
     public FlyweightEventRouter commit() {
-        eventLogAppender.append(AdminEvents.commit(flyweightEvent, headerBuffer, 0, command, index));
+        eventLogAppender.append(BaseEvents.commit(flyweightEvent, headerBuffer, 0, command, nextIndex));
         this.flyweightEvent.reset();
         this.command = null;
-        this.index = 0;
+        this.nextIndex = 0;
         return this;
     }
 
+    @Override
+    public int nextEventIndex() {
+        return nextIndex;
+    }
+
     private void checkAllowedType(final int eventType) {
-        if (eventType == EventType.COMMIT.value()) {
+        if (eventType == EventType.COMMIT) {
             throw new IllegalArgumentException("Illegal event type: " + eventType);
         }
     }

@@ -23,9 +23,7 @@
  */
 package org.tools4j.elara.input;
 
-import org.agrona.DirectBuffer;
-
-public class SimpleSequenceGenerator implements AdjustableSequenceGenerator, InputSequenceGenerator {
+public class SimpleSequenceGenerator implements SequenceGenerator {
 
     private long sequence = 0;
 
@@ -34,13 +32,4 @@ public class SimpleSequenceGenerator implements AdjustableSequenceGenerator, Inp
         return ++sequence;
     }
 
-    @Override
-    public long nextSequence(final int input, final DirectBuffer buffer, final int offset, final int length) {
-        return nextSequence();
-    }
-
-    @Override
-    public void adjust(final long nextAfterThis) {
-        sequence = Math.max(sequence, nextAfterThis);
-    }
 }

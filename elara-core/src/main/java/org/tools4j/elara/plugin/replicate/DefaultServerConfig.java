@@ -21,50 +21,50 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.state;
+package org.tools4j.elara.plugin.replicate;
 
-import org.agrona.collections.Long2LongHashMap;
-import org.tools4j.elara.application.Application;
-import org.tools4j.elara.command.Command;
+import java.util.Arrays;
 
-public class DefaultServerState implements ServerState.Mutable {
+public class DefaultServerConfig implements ServerConfig {
 
-    private final Long2LongHashMap inputToSeqMap = new Long2LongHashMap(NO_COMMANDS);
-    private boolean processCommands;
+    private final int serverId;
+    private final int[] serverIds;
 
-    public DefaultServerState() {
-        this(true);
+    public DefaultServerConfig(final int serverId, final int... serverIds) {
+        validateServerId(serverId, serverIds);
+        this.serverId = serverId;
+        this.serverIds = serverIds;
     }
 
-    public DefaultServerState(final boolean processCommands) {
-        this.processCommands = processCommands;
-    }
-
-    public static final Factory<Application> FACTORY = application -> new DefaultServerState();
-
-    @Override
-    public boolean processCommands() {
-        return processCommands;
-    }
-
-    @Override
-    public Mutable processCommands(final boolean newValue) {
-        this.processCommands = newValue;
-        return this;
-    }
-
-    @Override
-    public long lastCommandAllEventsApplied(final int input) {
-        return inputToSeqMap.get(input);
-    }
-
-    @Override
-    public Mutable allEventsAppliedFor(final Command.Id id) {
-        final int input = id.input();
-        final long sequence = id.sequence();
-        if (sequence > lastCommandAllEventsApplied(input)) {
-            inputToSeqMap.put(input, sequence);
+    private static void validateServerId(final int serverId, final int... serverIds) {
+        for (final int id : serverIds) {
+            if (id == serverId) {
+                return;
+            }
         }
-        return this;
+        throw new IllegalArgumentException("Server ID " + serverId + " is not in " + Arrays.toString(serverIds));
+    }
+
+    @Override
+    public int serverId() {
+        return serverId;
+    }
+
+    @Override
+    public int serverCount() {
+        return serverIds.length;
+    }
+
+    @Override
+    public int serverId(final int index) {
+        return serverIds[index];
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultServerConfig{" +
+                "serverId=" + serverId +
+                ", serverIds=" + Arrays.toString(serverIds) +
+                '}';
     }
 }

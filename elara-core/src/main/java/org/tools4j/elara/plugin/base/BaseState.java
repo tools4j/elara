@@ -21,8 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.input;
+package org.tools4j.elara.plugin.base;
 
-public interface AdjustableSequenceGenerator extends SequenceGenerator {
-    void adjust(long nextAfterThis);
+import org.tools4j.elara.command.Command;
+
+public interface BaseState {
+    long NO_COMMANDS = -1;
+
+    boolean processCommands();
+    long lastCommandAllEventsApplied(int input);
+
+    interface Mutable extends BaseState {
+        Mutable processCommands(boolean newValue);
+
+        Mutable allEventsAppliedFor(Command.Id id);
+    }
 }

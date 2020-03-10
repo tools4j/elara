@@ -24,19 +24,9 @@
 package org.tools4j.elara.command;
 
 public enum CommandType {
-    APPLICATION(0),
-    TRIGGER_TIMER(-1),
-    NOMINATE_LEADER(-2);
-
-    private final int value;
-
-    CommandType(final int value) {
-        this.value = value;
-    }
-
-    public int value() {
-        return value;
-    }
+    ;
+    /** Default application command type if no other positive type value is provided. */
+    public static final int APPLICATION = 0;
 
     public static boolean isAdmin(final int value) {
         return value < 0;
