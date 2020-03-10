@@ -111,7 +111,7 @@ allprojects {
 subprojects {
     apply plugin: 'java-library'
     apply plugin: 'license'
-    apply plugin: 'io.freefair.javadoc-links'
+    //apply plugin: 'io.freefair.javadoc-links'
 
     dependencies {
         testImplementation "org.mockito:mockito-junit-jupiter:${mockitoVersion}"
@@ -214,6 +214,7 @@ project(':elara-core') {
     apply plugin: 'maven-publish'
     apply plugin: 'signing'
     apply plugin: 'biz.aQute.bnd.builder'
+    apply plugin: 'io.freefair.javadoc-links'
 
     dependencies {
         api "org.agrona:agrona:${agronaVersion}"
