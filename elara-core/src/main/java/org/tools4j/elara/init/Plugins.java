@@ -53,7 +53,7 @@ final class Plugins {
         this.eventApplier = eventApplier(application, plugins);
     }
 
-    final Plugin.Context<?>[] plugins;
+    final Plugin.Context[] plugins;
     final Input[] inputs;
     final TimeSource timeSource;
     final SequenceGenerator adminSequenceGenerator;
@@ -63,7 +63,7 @@ final class Plugins {
     BaseState.Mutable baseState() {
         for (final Plugin.Context plugin : plugins) {
             if (plugin instanceof BasePlugin.BaseContext) {
-                return ((BasePlugin.BaseContext<?>)plugin).pluginState();
+                return ((BasePlugin.BaseContext)plugin).baseState();
             }
         }
         return BasePlugin.BaseContext.createDefaultBaseStae();
@@ -71,7 +71,7 @@ final class Plugins {
 
     private static <A extends Application> Plugin.Context[] plugins(final A application,
                                                                     final List<Plugin.Builder<? super A>> builders) {
-        final Plugin.Context<?>[] plugins = new Plugin.Context<?>[builders.size()];
+        final Plugin.Context[] plugins = new Plugin.Context[builders.size()];
         for (int i = 0; i < plugins.length; i++) {
             plugins[i] = builders.get(i).create(application);
         }

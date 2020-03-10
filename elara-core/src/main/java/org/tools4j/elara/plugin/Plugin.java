@@ -35,15 +35,14 @@ import static java.util.Objects.requireNonNull;
 
 public interface Plugin<P> {
 
-    Context<? extends P> create(P pluginState);
+    Context create(P pluginState);
     <A> Builder<A> builder();
     default <A> Builder<A> builder(final Function<? super A, ? extends P> stateProvider) {
         requireNonNull(stateProvider);
         return application -> create(stateProvider.apply(application));
     }
 
-    interface Context<P> {
-        P pluginState();
+    interface Context {
         Input[] inputs(TimeSource timeSource, SequenceGenerator adminSequenceGenerator);
         CommandProcessor commandProcessor();
         EventApplier eventApplier();

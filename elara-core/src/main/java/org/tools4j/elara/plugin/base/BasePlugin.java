@@ -41,7 +41,7 @@ import static java.util.Objects.requireNonNull;
 public final class BasePlugin implements Plugin<BaseState.Mutable> {
 
     @Override
-    public BaseContext<BaseState.Mutable> create(final BaseState.Mutable baseState) {
+    public BaseContext create(final BaseState.Mutable baseState) {
         requireNonNull(baseState);
         return () -> baseState;
     }
@@ -61,14 +61,15 @@ public final class BasePlugin implements Plugin<BaseState.Mutable> {
      * Base context to initialise base state.  Other plugins can implement this
      * context if they want to replace the default base plugin and extend the base
      * state.
-     *
-     * @param <P> the base state type
      */
     @FunctionalInterface
-    public interface BaseContext<P extends BaseState.Mutable> extends Context<P> {
+    public interface BaseContext extends Context {
         static BaseState.Mutable createDefaultBaseStae() {
             return new DefaultBaseState();
         }
+
+        BaseState.Mutable baseState();
+
         @Override
         default Input[] inputs(final TimeSource timeSource, final SequenceGenerator adminSequenceGenerator) {
             return Input.EMPTY_INPUTS;

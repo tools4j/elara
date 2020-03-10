@@ -43,14 +43,9 @@ public final class TimerPlugin implements Plugin<TimerState.Mutable> {
     }
 
     @Override
-    public Context<TimerState.Mutable> create(final TimerState.Mutable timerState) {
+    public Context create(final TimerState.Mutable timerState) {
         requireNonNull(timerState);
-        return new Context<TimerState.Mutable>() {
-            @Override
-            public TimerState.Mutable pluginState() {
-                return timerState;
-            }
-
+        return new Context() {
             @Override
             public Input[] inputs(final TimeSource timeSource, final SequenceGenerator adminSequenceGenerator) {
                 return new Input[] {
