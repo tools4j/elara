@@ -65,11 +65,11 @@ public class BankApplicationTest {
     public void chronicleQueue() throws Exception {
         final Queue<BankCommand> commands = initCommandQueue();
         final ChronicleQueue cq = ChronicleQueue.singleBuilder()
-                .path("build/chronicle/cmd.cq4")
+                .path("build/chronicle/bank/cmd.cq4")
                 .wireType(WireType.BINARY)
                 .build();
         final ChronicleQueue eq = ChronicleQueue.singleBuilder()
-                .path("build/chronicle/evt.cq4")
+                .path("build/chronicle/bank/evt.cq4")
                 .wireType(WireType.BINARY)
                 .build();
         try (final Launcher launcher = bankApplication.launch(

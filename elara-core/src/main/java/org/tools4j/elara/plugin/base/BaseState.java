@@ -24,6 +24,7 @@
 package org.tools4j.elara.plugin.base;
 
 import org.tools4j.elara.command.Command;
+import org.tools4j.elara.event.Event;
 
 public interface BaseState {
     long NO_COMMANDS = -1;
@@ -31,10 +32,12 @@ public interface BaseState {
     boolean processCommands();
     boolean allEventsPolled();
     long lastCommandAllEventsApplied(int input);
+    long lastAppliedEventTime();
 
     interface Mutable extends BaseState {
         Mutable processCommands(boolean newValue);
         Mutable allEventsPolled(boolean newValue);
         Mutable allEventsAppliedFor(Command.Id id);
+        Mutable lastAppliedEvent(Event event);
     }
 }

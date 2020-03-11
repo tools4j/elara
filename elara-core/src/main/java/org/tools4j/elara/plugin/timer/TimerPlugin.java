@@ -49,13 +49,13 @@ public final class TimerPlugin implements Plugin<TimerState.Mutable> {
             @Override
             public Input[] inputs(final TimeSource timeSource, final SequenceGenerator adminSequenceGenerator) {
                 return new Input[] {
-                        new TimerTriggerInput(timeSource, timerState, adminSequenceGenerator)
+                        new TimerTriggerInput(timerState, timeSource, adminSequenceGenerator)
                 };
             }
 
             @Override
             public CommandProcessor commandProcessor() {
-                return new TimerCommandProcessor();
+                return new TimerCommandProcessor(timerState);
             }
 
             @Override

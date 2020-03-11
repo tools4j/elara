@@ -25,12 +25,15 @@ package org.tools4j.elara.plugin.base;
 
 import org.agrona.collections.Long2LongHashMap;
 import org.tools4j.elara.command.Command;
+import org.tools4j.elara.event.Event;
+import org.tools4j.elara.time.TimeSource;
 
 public class DefaultBaseState implements BaseState.Mutable {
 
     private final Long2LongHashMap inputToLastCommandAllEventsApplied = new Long2LongHashMap(NO_COMMANDS);
     private boolean processCommands;
     private boolean allEventsPolled;
+    private long lastAppliedEventTime = TimeSource.BIG_BANG;
 
     public DefaultBaseState() {
         this(true);
@@ -71,6 +74,19 @@ public class DefaultBaseState implements BaseState.Mutable {
     public Mutable allEventsAppliedFor(final Command.Id id) {
         assert id.sequence() > inputToLastCommandAllEventsApplied.get(id.input());
         inputToLastCommandAllEventsApplied.put(id.input(), id.sequence());
+        return this;
+    }
+
+    @Override
+    public long lastAppliedEventTime() {
+        return lastAppliedEventTime;
+    }
+
+    @Override
+    public Mutable lastAppliedEvent(final Event event) {
+        final long time = event.time();
+        assert lastAppliedEventTime <= time;
+        lastAppliedEventTime = time;
         return this;
     }
 }

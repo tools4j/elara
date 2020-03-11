@@ -35,18 +35,18 @@ import static org.tools4j.elara.plugin.timer.TimerCommands.triggerTimer;
 
 public final class TimerTriggerInput implements Input {
 
-    private final TimeSource timeSource;
     private final TimerState timerState;
+    private final TimeSource timeSource;
     private final SequenceGenerator adminSequenceGenerator;
 
     private final MutableDirectBuffer buffer = new ExpandableDirectByteBuffer(TIMER_PAYLOAD_SIZE);
     private final Poller poller = new TimerTriggerPoller();
 
-    public TimerTriggerInput(final TimeSource timeSource,
-                             final TimerState timerState,
+    public TimerTriggerInput(final TimerState timerState,
+                             final TimeSource timeSource,
                              final SequenceGenerator adminSequenceGenerator) {
-        this.timeSource = requireNonNull(timeSource);
         this.timerState = requireNonNull(timerState);
+        this.timeSource = requireNonNull(timeSource);
         this.adminSequenceGenerator = requireNonNull(adminSequenceGenerator);
     }
 
@@ -61,19 +61,19 @@ public final class TimerTriggerInput implements Input {
     }
 
     private class TimerTriggerPoller implements Poller {
-        int roundRobin = 0;
+        int roundRobinIndex = 0;
         @Override
         public int poll(final Handler handler) {
             final int count = timerState.count();
             if (count == 0) {
                 return 0;
             }
-            if (roundRobin >= count) {
-                roundRobin = 0;
+            if (roundRobinIndex >= count) {
+                roundRobinIndex = 0;
             }
             final long time = timeSource.currentTime();
             for (int j = 0; j < count; j++) {
-                final int i = roundRobin;
+                final int i = getAndIncrementRoundRobinIndex(count);
                 final long deadline = timerState.time(i) + timerState.timeout(i);
                 if (deadline <= time) {
                     final long sequence = adminSequenceGenerator.nextSequence();
@@ -81,12 +81,17 @@ public final class TimerTriggerInput implements Input {
                     handler.onMessage(sequence, TimerCommands.TRIGGER_TIMER, buffer, 0, len);
                     return 1;
                 }
-                roundRobin++;
-                if (roundRobin >= count) {
-                    roundRobin = 0;
-                }
             }
             return 0;
+        }
+
+        private int getAndIncrementRoundRobinIndex(final int count) {
+            final int index = roundRobinIndex;
+            roundRobinIndex++;
+            if (roundRobinIndex >= count) {
+                roundRobinIndex = 0;
+            }
+            return index;
         }
     }
 }

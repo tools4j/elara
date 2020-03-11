@@ -37,25 +37,19 @@ import static java.util.Objects.requireNonNull;
 
 public final class InputHandlerFactory implements Function<Input, Input.Handler> {
 
-    private final MessageLog.Appender<? super Command> commandLogAppender;
     private final TimeSource timeSource;
+    private final MessageLog.Appender<? super Command> commandLogAppender;
     private final MutableDirectBuffer headerBuffer = new ExpandableDirectByteBuffer(FlyweightCommand.HEADER_LENGTH);
     private final FlyweightCommand flyweightCommand = new FlyweightCommand();
 
-    public InputHandlerFactory(final MessageLog.Appender<? super Command> commandLogAppender,
-                               final TimeSource timeSource) {
+    public InputHandlerFactory(final TimeSource timeSource,
+                               final MessageLog.Appender<? super Command> commandLogAppender) {
         this.commandLogAppender = requireNonNull(commandLogAppender);
         this.timeSource = requireNonNull(timeSource);
     }
 
     @Override
     public Input.Handler apply(final Input input) {
-        return new InputHandler(
-                commandLogAppender,
-                timeSource,
-                input,
-                headerBuffer,
-                flyweightCommand
-        );
+        return new InputHandler(timeSource, input, commandLogAppender, headerBuffer, flyweightCommand);
     }
 }

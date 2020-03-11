@@ -23,21 +23,25 @@
  */
 package org.tools4j.elara.time;
 
-import org.tools4j.elara.application.CommandProcessor;
-import org.tools4j.elara.command.Command;
-import org.tools4j.elara.event.EventRouter;
+import org.tools4j.elara.plugin.base.BaseState;
 
-public class ReplayTimeSource implements TimeSource, CommandProcessor {
+import static java.util.Objects.requireNonNull;
 
-    private long time = BIG_BANG;
+public class ReplayTimeSource implements TimeSource {
 
-    @Override
-    public long currentTime() {
-        return time;
+    private final BaseState baseState;
+    private final TimeSource timeSource;
+
+    public ReplayTimeSource(final BaseState baseState, final TimeSource timeSource) {
+        this.baseState = requireNonNull(baseState);
+        this.timeSource = requireNonNull(timeSource);
     }
 
     @Override
-    public void onCommand(final Command command, final EventRouter router) {
-        time = command.time();
+    public long currentTime() {
+        if (baseState.allEventsPolled()) {
+            return timeSource.currentTime();
+        }
+        return baseState.lastAppliedEventTime();
     }
 }

@@ -49,7 +49,7 @@ public interface Event extends Writable {
     }
 
     default boolean isCommit() {
-        return type() == EventType.COMMIT;
+        return EventType.isCommit(type());
     }
 
     DirectBuffer payload();

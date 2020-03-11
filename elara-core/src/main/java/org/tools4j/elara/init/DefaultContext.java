@@ -260,7 +260,7 @@ final class DefaultContext<A extends Application> implements Context<A> {
                 context.duplicateHandler(),
                 context.commandLog().poller()
         );
-        return new InputHandlerFactory(commandAppender, context.timeSource());
+        return new InputHandlerFactory(context.timeSource(), commandAppender);
     }
 
     static SequencerStep sequencerStep(final Context<?> context,
@@ -270,12 +270,12 @@ final class DefaultContext<A extends Application> implements Context<A> {
 
     static CommandPollerStep commandPollerStep(final Context<?> context,
                                                final Singletons singletons) {
-        return new CommandPollerStep(singletons.baseState, context.commandLog().poller(), singletons.commandHandler);
+        return new CommandPollerStep(singletons.plugins.baseState, context.commandLog().poller(), singletons.commandHandler);
     }
 
     static EventPollerStep eventApplierStep(final Context<?> context, final Singletons singletons) {
         return new EventPollerStep(
-                singletons.baseState,
+                singletons.plugins.baseState,
                 context.eventLog().poller(),
                 singletons.eventHandler
         );

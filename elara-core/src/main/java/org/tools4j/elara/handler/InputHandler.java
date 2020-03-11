@@ -35,20 +35,20 @@ import static java.util.Objects.requireNonNull;
 
 public final class InputHandler implements Input.Handler {
 
-    private final MessageLog.Appender<? super Command> commandLogAppender;
     private final TimeSource timeSource;
     private final Input input;
+    private final MessageLog.Appender<? super Command> commandLogAppender;
     private final MutableDirectBuffer headerBuffer;
     private final FlyweightCommand flyweightCommand;
 
-    public InputHandler(final MessageLog.Appender<? super Command> commandLogAppender,
-                        final TimeSource timeSource,
+    public InputHandler(final TimeSource timeSource,
                         final Input input,
+                        final MessageLog.Appender<? super Command> commandLogAppender,
                         final MutableDirectBuffer headerBuffer,
                         final FlyweightCommand flyweightCommand) {
-        this.commandLogAppender = requireNonNull(commandLogAppender);
         this.timeSource = requireNonNull(timeSource);
         this.input = requireNonNull(input);
+        this.commandLogAppender = requireNonNull(commandLogAppender);
         this.headerBuffer  = requireNonNull(headerBuffer);
         this.flyweightCommand  = requireNonNull(flyweightCommand);
     }

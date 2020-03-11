@@ -56,7 +56,7 @@ public class ChronicleMessageLog<M extends Writable> implements PeekableMessageL
         final MutableDirectBuffer buffer = new UnsafeBuffer(0, 0);
         return message -> {
             try (final DocumentContext context = appender.writingDocument()) {
-                final Bytes bytes = context.wire().bytes();
+                final Bytes<?> bytes = context.wire().bytes();
                 final int offset = (int)bytes.writePosition();
                 final long addr = bytes.addressForWrite(offset);
                 final int capacity = (int)Math.min(MAX_MESSAGE_SIZE, bytes.writeRemaining());
@@ -78,7 +78,7 @@ public class ChronicleMessageLog<M extends Writable> implements PeekableMessageL
             public int peekOrPoll(final PeekableMessageLog.PeekPollHandler<? super M> handler) {
                 try (final DocumentContext context = tailer.readingDocument()) {
                     if (context.isData()) {
-                        final Bytes bytes = context.wire().bytes();
+                        final Bytes<?> bytes = context.wire().bytes();
                         final int size = bytes.readInt();
                         final int offset = (int)bytes.readPosition();
                         final long addr = bytes.addressForRead(offset);
@@ -104,7 +104,7 @@ public class ChronicleMessageLog<M extends Writable> implements PeekableMessageL
             public int poll(final Handler<? super M> handler) {
                 try (final DocumentContext context = tailer.readingDocument()) {
                     if (context.isData()) {
-                        final Bytes bytes = context.wire().bytes();
+                        final Bytes<?> bytes = context.wire().bytes();
                         final int size = bytes.readInt();
                         final int offset = (int)bytes.readPosition();
                         final long addr = bytes.addressForRead(offset);

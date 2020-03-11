@@ -27,12 +27,23 @@ import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.EventRouter;
 
+import static java.util.Objects.requireNonNull;
+
 public class TimerCommandProcessor implements CommandProcessor {
+
+    private final TimerState timerState;
+
+    public TimerCommandProcessor(final TimerState timerState) {
+        this.timerState = requireNonNull(timerState);
+    }
 
     @Override
     public void onCommand(final Command command, final EventRouter router) {
         if (command.type() == TimerCommands.TRIGGER_TIMER) {
-            TimerEvents.timerExpired(command, router);
+            final long timerId = TimerCommands.timerId(command);
+            if (timerState.indexById(timerId) >= 0) {
+                TimerEvents.timerExpired(command, router);
+            }
         }
     }
 }

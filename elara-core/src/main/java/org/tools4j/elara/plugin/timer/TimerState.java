@@ -30,6 +30,8 @@ public interface TimerState {
     long time(int index);
     long timeout(int index);
 
+    int indexById(long id);
+
     interface Mutable extends TimerState {
         boolean add(int type, long id, long time, long timeout);
         boolean remove(long id);

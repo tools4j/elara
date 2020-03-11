@@ -37,4 +37,8 @@ public enum EventType {
     public static boolean isApplication(final int value) {
         return value >= 0;
     }
+
+    public static boolean isCommit(final int value) {
+        return value== COMMIT;
+    }
 }

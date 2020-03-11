@@ -26,6 +26,10 @@ package org.tools4j.elara.application;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 
+/**
+ * Duplicate commands and events are detected and skipped by the engine.  This handler allows applications to log react
+ * in such situations for instance to log an information or warning message.
+ */
 @FunctionalInterface
 public interface DuplicateHandler {
 

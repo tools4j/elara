@@ -36,34 +36,54 @@ class TimerApplicationTest {
 
     @Test
     public void singleTimers() {
+        singleTimers(false);
+    }
+
+    @Test
+    public void singleTimersPersisted() {
+        singleTimers(true);
+    }
+
+    private void singleTimers(final boolean persisted) {
         final TimerApplication app = new TimerApplication();
         final Queue<DirectBuffer> commands = new ConcurrentLinkedQueue<>();
-        commands.add(TimerApplication.startTimer(1001, 500));
-        commands.add(TimerApplication.startTimer(1002, 1000));
-        commands.add(TimerApplication.startTimer(1003, 2000));
-        commands.add(TimerApplication.startTimer(1004, 5000));
-        try (final Launcher launcher = app.launch(commands)) {
+        commands.add(TimerApplication.startTimer(1001, 200));
+        commands.add(TimerApplication.startTimer(1002, 500));
+        commands.add(TimerApplication.startTimer(1003, 1000));
+        commands.add(TimerApplication.startTimer(1004, 1000));
+        try (final Launcher launcher = persisted ? app.chronicleQueue(commands, "single") : app.inMemory(commands)) {
             while (!commands.isEmpty()) {
                 launcher.join(20);
             }
-            launcher.join(6000);
+            launcher.join(3000);
         }
     }
 
     @Test
     public void periodicTimer() {
+        periodicTimer(false);
+    }
+
+    @Test
+    public void periodicTimerPersisted() {
+        periodicTimer(true);
+    }
+
+    private void periodicTimer(final boolean persisted) {
         //given
-        final long periodMillis = 2000;
+        final long periodMillis = 500;
         final TimerApplication app = new TimerApplication();
         final Queue<DirectBuffer> commands = new ConcurrentLinkedQueue<>();
 
         //when
         commands.add(TimerApplication.startPeriodic(666666666, periodMillis));
-        try (final Launcher launcher = app.launch(commands)) {
+        try (final Launcher launcher = persisted ? app.chronicleQueue(commands, "periodic") : app.inMemory(commands)) {
 
             //then
             launcher.join(100 + periodMillis * (MAX_PERIODIC_REPETITIONS + 1));
         }
     }
+
+
 
 }

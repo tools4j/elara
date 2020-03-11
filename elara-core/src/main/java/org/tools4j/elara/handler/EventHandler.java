@@ -72,7 +72,7 @@ public class EventHandler implements MessageLog.Handler<Event> {
                 publishEvent(event);
             }
             applyEvent(event);
-            commitEvent(event);
+            updateBaseState(event);
         } else {
             skipEvent(event);
         }
@@ -94,7 +94,8 @@ public class EventHandler implements MessageLog.Handler<Event> {
         }
     }
 
-    private void commitEvent(final Event event) {
+    private void updateBaseState(final Event event) {
+        baseState.lastAppliedEvent(event);
         if (event.type() == EventType.COMMIT) {
             baseState.allEventsAppliedFor(event.id().commandId());
         }

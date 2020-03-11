@@ -34,6 +34,7 @@ import org.tools4j.elara.input.SimpleSequenceGenerator;
 import org.tools4j.elara.plugin.Plugin;
 import org.tools4j.elara.plugin.base.BasePlugin;
 import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.time.ReplayTimeSource;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.ArrayList;
@@ -45,22 +46,26 @@ import static org.tools4j.elara.input.Input.EMPTY_INPUTS;
 final class Plugins {
     <A extends Application> Plugins(final Context<A> context) {
         final A application = context.application();
-        this.timeSource = context.timeSource();
-        this.adminSequenceGenerator = new SimpleSequenceGenerator();
         this.plugins = plugins(application, context.plugins());
-        this.inputs = inputs(context.inputs(), timeSource, adminSequenceGenerator, plugins);
+        this.baseState = baseState();
+        this.timeSource = context.timeSource();
+        this.replayTimeSource = new ReplayTimeSource(baseState, timeSource);
+        this.adminSequenceGenerator = new SimpleSequenceGenerator();
+        this.inputs = inputs(context.inputs(), replayTimeSource, adminSequenceGenerator, plugins);
         this.commandProcessor = commandProcessor(application, plugins);
         this.eventApplier = eventApplier(application, plugins);
     }
 
     final Plugin.Context[] plugins;
-    final Input[] inputs;
+    final BaseState.Mutable baseState;
     final TimeSource timeSource;
+    final ReplayTimeSource replayTimeSource;
     final SequenceGenerator adminSequenceGenerator;
+    final Input[] inputs;
     final CommandProcessor commandProcessor;
     final EventApplier eventApplier;
 
-    BaseState.Mutable baseState() {
+    private BaseState.Mutable baseState() {
         for (final Plugin.Context plugin : plugins) {
             if (plugin instanceof BasePlugin.BaseContext) {
                 return ((BasePlugin.BaseContext)plugin).baseState();

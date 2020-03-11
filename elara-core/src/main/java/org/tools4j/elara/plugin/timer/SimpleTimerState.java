@@ -40,24 +40,25 @@ public class SimpleTimerState implements TimerState.Mutable {
 
     @Override
     public int type(final int index) {
-        return types.get(index);
+        return types.getInt(index);
     }
 
     @Override
     public long id(final int index) {
-        return ids.get(index);
+        return ids.getLong(index);
     }
 
     @Override
     public long time(final int index) {
-        return times.get(index);
+        return times.getLong(index);
     }
 
     @Override
     public long timeout(final int index) {
-        return timeouts.get(index);
+        return timeouts.getLong(index);
     }
 
+    @Override
     public int indexById(final long id) {
         return ids.indexOf(id);
     }

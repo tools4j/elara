@@ -24,6 +24,7 @@
 package org.tools4j.elara.plugin.timer;
 
 import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.command.Command;
 
 import static org.tools4j.elara.plugin.timer.TimerCommandDescriptor.*;
 
@@ -44,5 +45,15 @@ public enum TimerCommands {
         buffer.putLong(offset + TIMER_ID_OFFSET, timerId);
         buffer.putLong(offset + TIMER_TIMEOUT_OFFSET, timeout);
         return TIMER_PAYLOAD_SIZE;
+    }
+
+    public static int timerType(final Command command) {
+        return command.payload().getInt(TIMER_TYPE_OFFSET);
+    }
+    public static long timerId(final Command command) {
+        return command.payload().getLong(TIMER_ID_OFFSET);
+    }
+    public static long timerTimeout(final Command command) {
+        return command.payload().getLong(TIMER_TIMEOUT_OFFSET);
     }
 }

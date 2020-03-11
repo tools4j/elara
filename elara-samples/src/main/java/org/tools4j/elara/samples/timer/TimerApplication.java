@@ -23,12 +23,15 @@
  */
 package org.tools4j.elara.samples.timer;
 
+import net.openhft.chronicle.queue.ChronicleQueue;
+import net.openhft.chronicle.wire.WireType;
 import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.collections.Long2LongCounterMap;
 import org.tools4j.elara.application.Application;
 import org.tools4j.elara.application.SimpleApplication;
+import org.tools4j.elara.chronicle.ChronicleMessageLog;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.command.CommandLoopback;
 import org.tools4j.elara.command.FlyweightCommand;
@@ -63,12 +66,30 @@ public class TimerApplication {
 
     private final Long2LongCounterMap periodicState = new Long2LongCounterMap(MAX_PERIODIC_REPETITIONS);
 
-    public Launcher launch(final Queue<DirectBuffer> commandQueue) {
+    public Launcher inMemory(final Queue<DirectBuffer> commandQueue) {
         return Launcher.launch(Context.create(application)
                 .plugin(new TimerPlugin())
                 .input(666, new CommandPoller(commandQueue))
                 .commandLog(new InMemoryLog<>(new FlyweightCommand()))
                 .eventLog(new InMemoryLog<>(new FlyweightEvent()))
+        );
+    }
+
+    public Launcher chronicleQueue(final Queue<DirectBuffer> commandQueue,
+                                   final String name) {
+        final ChronicleQueue cq = ChronicleQueue.singleBuilder()
+                .path("build/chronicle/timer/" + name + "-cmd.cq4")
+                .wireType(WireType.BINARY)
+                .build();
+        final ChronicleQueue eq = ChronicleQueue.singleBuilder()
+                .path("build/chronicle/timer/" + name + "-evt.cq4")
+                .wireType(WireType.BINARY)
+                .build();
+        return Launcher.launch(Context.create(application)
+                .plugin(new TimerPlugin())
+                .input(666, new CommandPoller(commandQueue))
+                .commandLog(new ChronicleMessageLog<>(cq, new FlyweightCommand()))
+                .eventLog(new ChronicleMessageLog<>(eq, new FlyweightEvent()))
         );
     }
 
