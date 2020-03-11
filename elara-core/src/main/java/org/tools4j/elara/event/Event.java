@@ -48,6 +48,10 @@ public interface Event extends Writable {
         return EventType.isApplication(type());
     }
 
+    default boolean isCommit() {
+        return type() == EventType.COMMIT;
+    }
+
     DirectBuffer payload();
 
     @Override

@@ -26,16 +26,18 @@ package org.tools4j.elara.init;
 import org.agrona.concurrent.BackoffIdleStrategy;
 import org.agrona.concurrent.IdleStrategy;
 import org.tools4j.elara.application.Application;
+import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.handler.InputHandlerFactory;
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.log.InputTrackingAppender;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.log.PeekableMessageLog;
 import org.tools4j.elara.loop.CommandPollerStep;
 import org.tools4j.elara.loop.DutyCycle;
-import org.tools4j.elara.loop.EventApplierStep;
+import org.tools4j.elara.loop.EventPollerStep;
 import org.tools4j.elara.loop.SequencerStep;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.Plugin;
@@ -62,6 +64,7 @@ final class DefaultContext<A extends Application> implements Context<A> {
     private MessageLog<Event> eventLog;
     private TimeSource timeSource;
     private ExceptionHandler exceptionHandler = ExceptionHandler.DEFAULT;
+    private DuplicateHandler duplicateHandler = DuplicateHandler.DEFAULT;
     private IdleStrategy idleStrategy = new BackoffIdleStrategy(
             100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100));
     private ThreadFactory threadFactory;
@@ -178,6 +181,17 @@ final class DefaultContext<A extends Application> implements Context<A> {
     }
 
     @Override
+    public DuplicateHandler duplicateHandler() {
+        return duplicateHandler;
+    }
+
+    @Override
+    public Context<A> duplicateHandler(final DuplicateHandler duplicateHandler) {
+        this.duplicateHandler = requireNonNull(duplicateHandler);
+        return this;
+    }
+
+    @Override
     public IdleStrategy idleStrategy() {
         return idleStrategy;
     }
@@ -241,7 +255,12 @@ final class DefaultContext<A extends Application> implements Context<A> {
     }
 
     static InputHandlerFactory inputHandlerFactory(final Context<?> context) {
-        return new InputHandlerFactory(context.commandLog().appender(), context.timeSource());
+        final MessageLog.Appender<? super Command> commandAppender = new InputTrackingAppender(
+                context.commandLog().appender(),
+                context.duplicateHandler(),
+                context.commandLog().poller()
+        );
+        return new InputHandlerFactory(commandAppender, context.timeSource());
     }
 
     static SequencerStep sequencerStep(final Context<?> context,
@@ -251,11 +270,12 @@ final class DefaultContext<A extends Application> implements Context<A> {
 
     static CommandPollerStep commandPollerStep(final Context<?> context,
                                                final Singletons singletons) {
-        return new CommandPollerStep(context.commandLog().poller(), singletons.commandHandler);
+        return new CommandPollerStep(singletons.baseState, context.commandLog().poller(), singletons.commandHandler);
     }
 
-    static EventApplierStep eventApplierStep(final Context<?> context, final Singletons singletons) {
-        return new EventApplierStep(
+    static EventPollerStep eventApplierStep(final Context<?> context, final Singletons singletons) {
+        return new EventPollerStep(
+                singletons.baseState,
                 context.eventLog().poller(),
                 singletons.eventHandler
         );

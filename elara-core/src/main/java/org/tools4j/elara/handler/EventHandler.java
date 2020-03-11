@@ -23,6 +23,7 @@
  */
 package org.tools4j.elara.handler;
 
+import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
@@ -37,34 +38,43 @@ import static java.util.Objects.requireNonNull;
 
 public class EventHandler implements MessageLog.Handler<Event> {
 
-    private final BaseState.Mutable serverState;
+    private final BaseState.Mutable baseState;
     private final CommandLoopback commandLoopback;
+    private final MessageLog.Appender<? super Event> eventLogAppender;
     private final Output output;
     private final EventApplier eventApplier;
     private final ExceptionHandler exceptionHandler;
+    private final DuplicateHandler duplicateHandler;
 
-    public EventHandler(final BaseState.Mutable serverState,
+    public EventHandler(final BaseState.Mutable baseState,
                         final CommandLoopback commandLoopback,
+                        final MessageLog.Appender<? super Event> eventLogAppender,
                         final Output output,
                         final EventApplier eventApplier,
-                        final ExceptionHandler exceptionHandler) {
-        this.serverState = requireNonNull(serverState);
+                        final ExceptionHandler exceptionHandler,
+                        final DuplicateHandler duplicateHandler) {
+        this.baseState = requireNonNull(baseState);
         this.commandLoopback = requireNonNull(commandLoopback);
+        this.eventLogAppender = requireNonNull(eventLogAppender);
         this.output = requireNonNull(output);
         this.eventApplier = requireNonNull(eventApplier);
         this.exceptionHandler = requireNonNull(exceptionHandler);
+        this.duplicateHandler = requireNonNull(duplicateHandler);
     }
 
     @Override
     public void onMessage(final Event event) {
         final Command.Id commandId = event.id().commandId();
-        final long lastAppliedForInput = serverState.lastCommandAllEventsApplied(commandId.input());
+        final long lastAppliedForInput = baseState.lastCommandAllEventsApplied(commandId.input());
         if (lastAppliedForInput < commandId.sequence()) {
-            publishEvent(event);
-            applyEvent(event);
-            if (event.type() == EventType.COMMIT) {
-                serverState.allEventsAppliedFor(event.id().commandId());
+            if (baseState.allEventsPolled()) {
+                eventLogAppender.append(event);
+                publishEvent(event);
             }
+            applyEvent(event);
+            commitEvent(event);
+        } else {
+            skipEvent(event);
         }
     }
 
@@ -83,4 +93,19 @@ public class EventHandler implements MessageLog.Handler<Event> {
             exceptionHandler.handleEventApplierException(event, t);
         }
     }
+
+    private void commitEvent(final Event event) {
+        if (event.type() == EventType.COMMIT) {
+            baseState.allEventsAppliedFor(event.id().commandId());
+        }
+    }
+
+    private void skipEvent(final Event event) {
+        try {
+            duplicateHandler.skipEventApplying(event);
+        } catch (final Throwable t) {
+            exceptionHandler.handleEventApplierException(event, t);
+        }
+    }
+
 }

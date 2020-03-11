@@ -39,17 +39,17 @@ public class DutyCycle {
 
     public DutyCycle(final SequencerStep sequencerStep,
                      final CommandPollerStep commandPollerStep,
-                     final EventApplierStep eventApplierStep) {
-        this.steps = steps(sequencerStep, commandPollerStep, eventApplierStep);
+                     final EventPollerStep eventPollerStep) {
+        this.steps = steps(sequencerStep, commandPollerStep, eventPollerStep);
     }
 
     private Step[] steps(final SequencerStep sequencerStep,
                          final CommandPollerStep commandPollerStep,
-                         final EventApplierStep eventApplierStep) {
+                         final EventPollerStep eventPollerStep) {
         requireNonNull(sequencerStep);
         requireNonNull(commandPollerStep);
-        requireNonNull(eventApplierStep);
-        return new Step[] {sequencerStep, commandPollerStep, eventApplierStep};
+        requireNonNull(eventPollerStep);
+        return new Step[] {sequencerStep, commandPollerStep, eventPollerStep};
     }
 
     /**

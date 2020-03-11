@@ -34,15 +34,15 @@ import static java.util.Objects.requireNonNull;
 
 public class FlyweightEventRouter implements EventRouter {
 
-    private final MessageLog.Appender<? super Event> eventLogAppender;
+    private final MessageLog.Handler<? super Event> eventHandler;
     private final MutableDirectBuffer headerBuffer = new ExpandableDirectByteBuffer(FlyweightEvent.HEADER_LENGTH);
     private final FlyweightEvent flyweightEvent = new FlyweightEvent();
 
     private Command command;
     private int nextIndex = 0;
 
-    public FlyweightEventRouter(final MessageLog.Appender<? super Event> eventLogAppender) {
-        this.eventLogAppender = requireNonNull(eventLogAppender);
+    public FlyweightEventRouter(final MessageLog.Handler<? super Event> eventHandler) {
+        this.eventHandler = requireNonNull(eventHandler);
     }
 
     public FlyweightEventRouter start(final Command command) {
@@ -54,7 +54,7 @@ public class FlyweightEventRouter implements EventRouter {
     @Override
     public void routeEvent(final int type, final DirectBuffer event, final int offset, final int length) {
         checkAllowedType(type);
-        eventLogAppender.append(flyweightEvent.init(
+        eventHandler.onMessage(flyweightEvent.init(
                 headerBuffer, 0, command.id().input(), command.id().sequence(), nextIndex, type,
                 command.time(), event, offset, length
         ));
@@ -63,7 +63,7 @@ public class FlyweightEventRouter implements EventRouter {
     }
 
     public FlyweightEventRouter commit() {
-        eventLogAppender.append(BaseEvents.commit(flyweightEvent, headerBuffer, 0, command, nextIndex));
+        eventHandler.onMessage(BaseEvents.commit(flyweightEvent, headerBuffer, 0, command, nextIndex));
         this.flyweightEvent.reset();
         this.command = null;
         this.nextIndex = 0;

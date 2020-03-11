@@ -24,6 +24,7 @@
 package org.tools4j.elara.handler;
 
 import org.tools4j.elara.application.CommandProcessor;
+import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.FlyweightEventRouter;
@@ -40,21 +41,25 @@ public class CommandHandler implements PeekableMessageLog.PeekPollHandler<Comman
     private final FlyweightEventRouter eventRouter;
     private final CommandProcessor commandProcessor;
     private final ExceptionHandler exceptionHandler;
+    private final DuplicateHandler duplicateHandler;
 
     public CommandHandler(final BaseState baseState,
                           final FlyweightEventRouter eventRouter,
                           final CommandProcessor commandProcessor,
-                          final ExceptionHandler exceptionHandler) {
+                          final ExceptionHandler exceptionHandler,
+                          final DuplicateHandler duplicateHandler) {
         this.baseState = requireNonNull(baseState);
         this.eventRouter = requireNonNull(eventRouter);
         this.commandProcessor = requireNonNull(commandProcessor);
         this.exceptionHandler = requireNonNull(exceptionHandler);
+        this.duplicateHandler = requireNonNull(duplicateHandler);
     }
 
     @Override
     public Result onMessage(final Command command) {
-        final long lastAppliedForInput = baseState.lastCommandAllEventsApplied(command.id().input());
-        if (lastAppliedForInput < command.id().sequence()) {
+        final Command.Id cid = command.id();
+        final long lastAppliedForInput = baseState.lastCommandAllEventsApplied(cid.input());
+        if (lastAppliedForInput < cid.sequence()) {
             if (baseState.processCommands()) {
                 processCommand(command);
                 return POLL;
@@ -77,7 +82,7 @@ public class CommandHandler implements PeekableMessageLog.PeekPollHandler<Comman
 
     private void skipCommand(final Command command) {
         try {
-            commandProcessor.onCommandSkipped(command);
+            duplicateHandler.skipCommandProcessing(command);
         } catch (final Throwable t) {
             exceptionHandler.handleCommandProcessorException(command, t);
         }

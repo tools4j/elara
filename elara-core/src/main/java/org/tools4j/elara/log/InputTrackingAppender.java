@@ -24,6 +24,7 @@
 package org.tools4j.elara.log;
 
 import org.agrona.collections.Long2LongHashMap;
+import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.command.Command;
 
 import static java.util.Objects.requireNonNull;
@@ -32,10 +33,13 @@ public class InputTrackingAppender implements MessageLog.Appender<Command>, Mess
 
     private final MessageLog.Appender<? super Command> appender;
     private final Long2LongHashMap inputToSeqMap = new Long2LongHashMap(Long.MIN_VALUE);
+    private final DuplicateHandler duplicateHandler;
 
     public InputTrackingAppender(final MessageLog.Appender<? super Command> appender,
+                                 final DuplicateHandler duplicateHandler,
                                  final MessageLog.Poller<? extends Command> poller) {
         this.appender = requireNonNull(appender);
+        this.duplicateHandler = requireNonNull(duplicateHandler);
         while (poller.poll(this) > 0) {
             //keep going until we have updated the whole map
         }
@@ -43,17 +47,19 @@ public class InputTrackingAppender implements MessageLog.Appender<Command>, Mess
 
     @Override
     public void append(final Command command) {
-        if (update(command)) {
+        if (isNewCommand(command)) {
             appender.append(command);
+        } else {
+            duplicateHandler.dropCommandReceived(command);
         }
     }
 
     @Override
     public void onMessage(final Command command) {
-        update(command);
+        isNewCommand(command);
     }
 
-    private boolean update(final Command command) {
+    private boolean isNewCommand(final Command command) {
         final int input = command.id().input();
         final long currentSeq = command.id().sequence();
         final long lastAppendedSeq = inputToSeqMap.get(input);

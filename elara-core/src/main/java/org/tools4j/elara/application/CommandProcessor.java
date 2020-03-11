@@ -30,15 +30,5 @@ import org.tools4j.elara.event.EventRouter;
 public interface CommandProcessor {
     void onCommand(Command command, EventRouter router);
 
-    /**
-     * Command is skipped as all events for this command ID have already been applied.  This usually happens
-     * for duplicate commmands or when replaying commands from the command queue.
-     *
-     * @param command the skipped command
-     */
-    default void onCommandSkipped(final Command command) {
-        //default is no-op;  apps may want to log something
-    }
-
     CommandProcessor NOOP = (command, router) -> {};
 }

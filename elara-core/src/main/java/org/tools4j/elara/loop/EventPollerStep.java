@@ -21,24 +21,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.log;
+package org.tools4j.elara.loop;
+
+import org.tools4j.elara.event.Event;
+import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
 
-public class ForwardingAppender<M> implements MessageLog.Appender<M> {
+public class EventPollerStep implements Step {
 
-    private final MessageLog.Appender<? super M> appender;
-    private final MessageLog.Handler<? super M> forwarder;
+    private final BaseState.Mutable baseState;
+    private final MessageLog.Poller<? extends Event> eventPoller;
+    private final MessageLog.Handler<? super Event> handler;
 
-    public ForwardingAppender(final MessageLog.Appender<? super M> appender,
-                              final MessageLog.Handler<? super M> forwarder) {
-        this.appender = requireNonNull(appender);
-        this.forwarder = requireNonNull(forwarder);
+    public EventPollerStep(final BaseState.Mutable baseState,
+                           final MessageLog.Poller<? extends Event> eventPoller,
+                           final MessageLog.Handler<? super Event> handler) {
+        this.baseState = requireNonNull(baseState);
+        this.eventPoller = requireNonNull(eventPoller);
+        this.handler = requireNonNull(handler);
     }
 
     @Override
-    public void append(final M message) {
-        appender.append(message);
-        forwarder.onMessage(message);
+    public boolean perform() {
+        if (eventPoller.poll(handler) > 0) {
+            return true;
+        }
+        if (!baseState.allEventsPolled()) {
+            baseState.allEventsPolled(true);
+            return true;
+        }
+        return false;
     }
 }

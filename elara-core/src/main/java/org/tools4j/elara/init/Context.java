@@ -25,6 +25,7 @@ package org.tools4j.elara.init;
 
 import org.agrona.concurrent.IdleStrategy;
 import org.tools4j.elara.application.Application;
+import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
@@ -67,6 +68,9 @@ public interface Context<A extends Application> {
 
     ExceptionHandler exceptionHandler();
     Context<A> exceptionHandler(ExceptionHandler exceptionHandler);
+
+    DuplicateHandler duplicateHandler();
+    Context<A> duplicateHandler(DuplicateHandler duplicateHandler);
 
     IdleStrategy idleStrategy();
     Context<A> idleStrategy(IdleStrategy idleStrategy);

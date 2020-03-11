@@ -29,11 +29,12 @@ public interface BaseState {
     long NO_COMMANDS = -1;
 
     boolean processCommands();
+    boolean allEventsPolled();
     long lastCommandAllEventsApplied(int input);
 
     interface Mutable extends BaseState {
         Mutable processCommands(boolean newValue);
-
+        Mutable allEventsPolled(boolean newValue);
         Mutable allEventsAppliedFor(Command.Id id);
     }
 }

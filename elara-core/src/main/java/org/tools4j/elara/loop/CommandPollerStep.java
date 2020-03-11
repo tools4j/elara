@@ -25,23 +25,30 @@ package org.tools4j.elara.loop;
 
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.log.PeekableMessageLog;
+import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
 
 public class CommandPollerStep implements Step {
 
+    private final BaseState baseState;
     private final PeekableMessageLog.PeekablePoller<? extends Command> commandPoller;
-    private final PeekableMessageLog.PeekPollHandler<Command> handler;
+    private final PeekableMessageLog.PeekPollHandler<? super Command> handler;
 
-    public CommandPollerStep(final PeekableMessageLog.PeekablePoller<? extends Command> commandPoller,
-                             final PeekableMessageLog.PeekPollHandler<Command> handler) {
+    public CommandPollerStep(final BaseState baseState,
+                             final PeekableMessageLog.PeekablePoller<? extends Command> commandPoller,
+                             final PeekableMessageLog.PeekPollHandler<? super Command> handler) {
+        this.baseState = requireNonNull(baseState);
         this.commandPoller = requireNonNull(commandPoller);
         this.handler = requireNonNull(handler);
     }
 
     @Override
     public boolean perform() {
-        return commandPoller.peekOrPoll(handler) > 0;
+        if (baseState.allEventsPolled()) {
+            return commandPoller.peekOrPoll(handler) > 0;
+        }
+        return false;
     }
 }

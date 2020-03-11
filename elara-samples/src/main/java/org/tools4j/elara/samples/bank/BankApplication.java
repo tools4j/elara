@@ -26,6 +26,7 @@ package org.tools4j.elara.samples.bank;
 import org.agrona.DirectBuffer;
 import org.tools4j.elara.application.Application;
 import org.tools4j.elara.application.CommandProcessor;
+import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.command.CommandLoopback;
@@ -56,18 +57,25 @@ public class BankApplication implements Application {
     private final Teller teller = new Teller(bank);
     private final Accountant accountant = new Accountant(bank);
 
-    private final CommandProcessor commandProcessor = new CommandProcessor() {
+    private final CommandProcessor commandProcessor = this::process;
+    private final EventApplier eventApplier = this::apply;
+    private final DuplicateHandler duplicateHandler = new DuplicateHandler() {
         @Override
-        public void onCommand(final Command command, final EventRouter router) {
-            process(command, router);
+        public void skipCommandProcessing(final Command command) {
+            System.out.println("-----------------------------------------------------------");
+            System.out.println("skipping: " + command + ", payload=" + payloadFor(command));
         }
 
         @Override
-        public void onCommandSkipped(final Command command) {
-            skip(command);
+        public void skipEventApplying(final Event event) {
+            //System.out.println("skipping: " + event + ", payload=" + payloadFor(event));
+        }
+
+        @Override
+        public void dropCommandReceived(final Command command) {
+            System.out.println("dropping: " + command + ", payload=" + payloadFor(command));
         }
     };
-    private final EventApplier eventApplier = this::apply;
 
     @Override
     public CommandProcessor commandProcessor() {
@@ -100,6 +108,7 @@ public class BankApplication implements Application {
                 .output(this::publish)
                 .commandLog(commandLog)
                 .eventLog(eventLog)
+                .duplicateHandler(duplicateHandler)
         );
     }
 
@@ -113,15 +122,10 @@ public class BankApplication implements Application {
         teller.onCommand(command, router);
     }
 
-    private void skip(final Command command) {
-        System.out.println("-----------------------------------------------------------");
-        System.out.println("skipping: " + command + ", payload=" + payloadFor(command));
-    }
-
     private void apply(final Event event, final CommandLoopback commandLoopback) {
         System.out.println("applying: " + event + ", payload=" + payloadFor(event));
         accountant.onEvent(event, commandLoopback);
-        if (event.isApplication()) {
+        if (event.isCommit()) {
             printBankAccounts(bank);
         }
     }

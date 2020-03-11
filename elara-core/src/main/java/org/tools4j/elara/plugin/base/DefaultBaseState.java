@@ -28,8 +28,9 @@ import org.tools4j.elara.command.Command;
 
 public class DefaultBaseState implements BaseState.Mutable {
 
-    private final Long2LongHashMap inputToSeqMap = new Long2LongHashMap(NO_COMMANDS);
+    private final Long2LongHashMap inputToLastCommandAllEventsApplied = new Long2LongHashMap(NO_COMMANDS);
     private boolean processCommands;
+    private boolean allEventsPolled;
 
     public DefaultBaseState() {
         this(true);
@@ -51,17 +52,25 @@ public class DefaultBaseState implements BaseState.Mutable {
     }
 
     @Override
+    public boolean allEventsPolled() {
+        return allEventsPolled;
+    }
+
+    @Override
+    public Mutable allEventsPolled(final boolean newValue) {
+        this.allEventsPolled = newValue;
+        return this;
+    }
+
+    @Override
     public long lastCommandAllEventsApplied(final int input) {
-        return inputToSeqMap.get(input);
+        return inputToLastCommandAllEventsApplied.get(input);
     }
 
     @Override
     public Mutable allEventsAppliedFor(final Command.Id id) {
-        final int input = id.input();
-        final long sequence = id.sequence();
-        if (sequence > lastCommandAllEventsApplied(input)) {
-            inputToSeqMap.put(input, sequence);
-        }
+        assert id.sequence() > inputToLastCommandAllEventsApplied.get(id.input());
+        inputToLastCommandAllEventsApplied.put(id.input(), id.sequence());
         return this;
     }
 }

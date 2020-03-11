@@ -43,11 +43,4 @@ public class CompositeCommandProcessor implements CommandProcessor {
         }
     }
 
-    @Override
-    public void onCommandSkipped(final Command command) {
-        for (final CommandProcessor processor : processors) {
-            processor.onCommandSkipped(command);
-        }
-    }
-
 }

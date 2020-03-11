@@ -33,7 +33,7 @@ public final class SequencerStep implements Step {
     private final Input.Poller[] inputPollers;
     private final Input.Handler[] handlers;
 
-    private int inputIndex = 0;
+    private int roundRobinIndex = 0;
 
     public SequencerStep(final Function<? super Input, ? extends Input.Handler> handlerFactory,
                          final Input... inputs) {
@@ -45,15 +45,21 @@ public final class SequencerStep implements Step {
     public boolean perform() {
         final int count = inputPollers.length;
         for (int i = 0; i < count; i++) {
-            if (inputPollers[inputIndex].poll(handlers[inputIndex]) > 0) {
+            final int index = getAndIncrementRoundRobinIndex(count);
+            if (inputPollers[index].poll(handlers[index]) > 0) {
                 return true;
-            }
-            inputIndex++;
-            if (inputIndex >= count) {
-                inputIndex = 0;
             }
         }
         return false;
+    }
+
+    private int getAndIncrementRoundRobinIndex(final int count) {
+        final int index = roundRobinIndex;
+        roundRobinIndex++;
+        if (roundRobinIndex >= count) {
+            roundRobinIndex = 0;
+        }
+        return index;
     }
 
     private Input.Poller[] initPollersFor(final Input... inputs) {
