@@ -27,6 +27,7 @@ import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.SequenceGenerator;
+import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.function.Function;
@@ -37,15 +38,16 @@ public interface Plugin<P> {
 
     Context create(P pluginState);
     <A> Builder<A> builder();
+
     default <A> Builder<A> builder(final Function<? super A, ? extends P> stateProvider) {
         requireNonNull(stateProvider);
         return application -> create(stateProvider.apply(application));
     }
 
     interface Context {
-        Input[] inputs(TimeSource timeSource, SequenceGenerator adminSequenceGenerator);
-        CommandProcessor commandProcessor();
-        EventApplier eventApplier();
+        Input[] inputs(BaseState baseState, TimeSource timeSource, SequenceGenerator adminSequenceGenerator);
+        CommandProcessor commandProcessor(BaseState baseState);
+        EventApplier eventApplier(BaseState.Mutable baseState);
     }
 
     @FunctionalInterface

@@ -61,37 +61,16 @@ public final class TimerTriggerInput implements Input {
     }
 
     private class TimerTriggerPoller implements Poller {
-        int roundRobinIndex = 0;
         @Override
         public int poll(final Handler handler) {
-            final int count = timerState.count();
-            if (count == 0) {
-                return 0;
-            }
-            if (roundRobinIndex >= count) {
-                roundRobinIndex = 0;
-            }
-            final long time = timeSource.currentTime();
-            for (int j = 0; j < count; j++) {
-                final int i = getAndIncrementRoundRobinIndex(count);
-                final long deadline = timerState.time(i) + timerState.timeout(i);
-                if (deadline <= time) {
-                    final long sequence = adminSequenceGenerator.nextSequence();
-                    final int len = triggerTimer(buffer, 0, timerState.type(i), timerState.id(i), timerState.timeout(i));
-                    handler.onMessage(sequence, TimerCommands.TRIGGER_TIMER, buffer, 0, len);
-                    return 1;
-                }
+            final int next = timerState.indexOfNextDeadline();
+            if (next >= 0 && timerState.deadline(next) <= timeSource.currentTime()) {
+                final long seq = adminSequenceGenerator.nextSequence();
+                final int len = triggerTimer(buffer, 0, timerState.id(next), timerState.type(next), timerState.timeout(next));
+                handler.onMessage(seq, TimerCommands.TRIGGER_TIMER, buffer, 0, len);
+                return 1;
             }
             return 0;
-        }
-
-        private int getAndIncrementRoundRobinIndex(final int count) {
-            final int index = roundRobinIndex;
-            roundRobinIndex++;
-            if (roundRobinIndex >= count) {
-                roundRobinIndex = 0;
-            }
-            return index;
         }
     }
 }

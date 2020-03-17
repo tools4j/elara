@@ -50,6 +50,7 @@ public class EventPollerStep implements Step {
             return true;
         }
         if (!baseState.allEventsPolled()) {
+            //NOTE: if nothing was polled we have polled everything
             baseState.allEventsPolled(true);
             return true;
         }

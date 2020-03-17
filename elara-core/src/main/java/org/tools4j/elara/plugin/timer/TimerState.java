@@ -23,17 +23,49 @@
  */
 package org.tools4j.elara.plugin.timer;
 
+import org.tools4j.elara.time.TimeSource;
+
 public interface TimerState {
     int count();
-    int type(int index);
+    int indexById(long id);
     long id(int index);
+    int type(int index);
     long time(int index);
     long timeout(int index);
 
-    int indexById(long id);
+    default long deadline(final int index) {
+        return time(index) + timeout(index);
+    }
+
+    default boolean hasTimer(final long id) {
+        return indexById(id) >= 0;
+    }
+
+    default int indexOfNextDeadline() {
+        final int count = count();
+        int index = -1;
+        long minDeadline = TimeSource.END_OF_TIME;
+        for (int i = 0; i < count; i++) {
+            final long deadline = deadline(i);
+            if (deadline < minDeadline) {
+                index = i;
+                minDeadline = deadline;
+            }
+        }
+        return index;
+    }
 
     interface Mutable extends TimerState {
-        boolean add(int type, long id, long time, long timeout);
-        boolean remove(long id);
+        boolean add(long id, int type, long time, long timeout);
+        void remove(int index);
+
+        default boolean removeById(final long id) {
+            final int index = indexById(id);
+            if (index >= 0) {
+                remove(index);
+                return true;
+            }
+            return false;
+        }
     }
 }

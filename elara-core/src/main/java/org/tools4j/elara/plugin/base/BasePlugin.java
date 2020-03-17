@@ -71,16 +71,16 @@ public final class BasePlugin implements Plugin<BaseState.Mutable> {
         BaseState.Mutable baseState();
 
         @Override
-        default Input[] inputs(final TimeSource timeSource, final SequenceGenerator adminSequenceGenerator) {
+        default Input[] inputs(final BaseState baseState, final TimeSource timeSource, final SequenceGenerator adminSequenceGenerator) {
             return Input.EMPTY_INPUTS;
         }
         @Override
-        default CommandProcessor commandProcessor() {
+        default CommandProcessor commandProcessor(final BaseState baseState) {
             return CommandProcessor.NOOP;
         }
 
         @Override
-        default EventApplier eventApplier() {
+        default EventApplier eventApplier(final BaseState.Mutable baseState) {
             return EventApplier.NOOP;
         }
     }

@@ -52,18 +52,16 @@ public class DefaultTimerControl implements TimerControl {
     @Override
     public long startTimer(final int type, final long timeout, final TimerState timerState, final EventRouter eventRouter) {
         final long id = nextTimerId(timerState, eventRouter);
-        TimerEvents.timerStarted(buffer, 0, type, id, timeout, eventRouter);
+        TimerEvents.timerStarted(buffer, 0, id, type, timeout, eventRouter);
         return id;
     }
 
     @Override
     public boolean stopTimer(final long id, final TimerState timerState, final EventRouter eventRouter) {
-        final int count = timerState.count();
-        for (int i = 0; i < count; i++) {
-            if (id == timerState.id(i)) {
-                TimerEvents.timerStopped(buffer, 0, timerState.type(i), id, timerState.timeout(i), eventRouter);
-                return true;
-            }
+        final int index = timerState.indexById(id);
+        if (index >= 0) {
+            TimerEvents.timerStopped(buffer, 0, id, timerState.type(index), timerState.timeout(index), eventRouter);
+            return true;
         }
         return false;
     }

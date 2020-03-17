@@ -46,20 +46,20 @@ public enum TimerEvents {
 
     public static void timerStarted(final MutableDirectBuffer payloadBuffer,
                                     final int offset,
-                                    final int timerType,
                                     final long timerId,
+                                    final int timerType,
                                     final long timeout,
                                     final EventRouter eventRouter) {
-        timerEvent(payloadBuffer, offset, TIMER_STARTED, timerType, timerId, timeout, eventRouter);
+        timerEvent(payloadBuffer, offset, TIMER_STARTED, timerId, timerType, timeout, eventRouter);
     }
 
     public static void timerStopped(final MutableDirectBuffer payloadBuffer,
                                     final int offset,
-                                    final int timerType,
                                     final long timerId,
+                                    final int timerType,
                                     final long timeout,
                                     final EventRouter eventRouter) {
-        timerEvent(payloadBuffer, offset, TIMER_STOPPED, timerType, timerId, timeout, eventRouter);
+        timerEvent(payloadBuffer, offset, TIMER_STOPPED, timerId, timerType, timeout, eventRouter);
     }
 
     public static void timerExpired(final Command command, final EventRouter eventRouter) {
@@ -73,21 +73,21 @@ public enum TimerEvents {
     private static void timerEvent(final MutableDirectBuffer payloadBuffer,
                                    final int offset,
                                    final int eventType,
-                                   final int timerType,
                                    final long timerId,
+                                   final int timerType,
                                    final long timeout,
                                    final EventRouter eventRouter) {
-        payloadBuffer.putInt(offset + TIMER_TYPE_OFFSET, timerType);
         payloadBuffer.putLong(offset + TIMER_ID_OFFSET, timerId);
+        payloadBuffer.putInt(offset + TIMER_TYPE_OFFSET, timerType);
         payloadBuffer.putLong(offset + TIMER_TIMEOUT_OFFSET, timeout);
         eventRouter.routeEvent(eventType, payloadBuffer, offset, TIMER_PAYLOAD_SIZE);
     }
 
-    public static int timerType(final Event event) {
-        return event.payload().getInt(TIMER_TYPE_OFFSET);
-    }
     public static long timerId(final Event event) {
         return event.payload().getLong(TIMER_ID_OFFSET);
+    }
+    public static int timerType(final Event event) {
+        return event.payload().getInt(TIMER_TYPE_OFFSET);
     }
     public static long timerTimeout(final Event event) {
         return event.payload().getLong(TIMER_TIMEOUT_OFFSET);

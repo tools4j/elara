@@ -23,16 +23,21 @@
  */
 package org.tools4j.elara.plugin.timer;
 
+import org.agrona.ExpandableDirectByteBuffer;
+import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.command.CommandLoopback;
 import org.tools4j.elara.event.Event;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.plugin.timer.TimerCommandDescriptor.TIMER_PAYLOAD_SIZE;
+import static org.tools4j.elara.plugin.timer.TimerCommands.triggerTimer;
 import static org.tools4j.elara.plugin.timer.TimerEvents.*;
 
 public class TimerEventApplier implements EventApplier {
 
     private final TimerState.Mutable timerState;
+    private final MutableDirectBuffer buffer = new ExpandableDirectByteBuffer(TIMER_PAYLOAD_SIZE);
 
     public TimerEventApplier(final TimerState.Mutable timerState) {
         this.timerState = requireNonNull(timerState);
@@ -42,12 +47,21 @@ public class TimerEventApplier implements EventApplier {
     public void onEvent(final Event event, final CommandLoopback loopback) {
         switch (event.type()) {
             case TimerEvents.TIMER_STARTED:
-                timerState.add(timerType(event), timerId(event), event.time(), timerTimeout(event));
+                timerState.add(timerId(event), timerType(event), event.time(), timerTimeout(event));
                 break;
             case TimerEvents.TIMER_EXPIRED://fall through
             case TimerEvents.TIMER_STOPPED:
-                timerState.remove(timerId(event));
+                timerState.removeById(timerId(event));
                 break;
+        }
+        tryEnqueueNextTriggerTimerCommand(event.time(), loopback);
+    }
+
+    private void tryEnqueueNextTriggerTimerCommand(final long time, final CommandLoopback loopback) {
+        final int next = timerState.indexOfNextDeadline();
+        if (next >= 0 && timerState.deadline(next) <= time) {
+            final int len = triggerTimer(buffer, 0, timerState.id(next), timerState.type(next), timerState.timeout(next));
+            loopback.enqueueCommand(TimerCommands.TRIGGER_TIMER, buffer, 0, len);
         }
     }
 }

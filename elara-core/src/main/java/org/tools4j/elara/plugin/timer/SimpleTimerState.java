@@ -24,14 +24,32 @@
 package org.tools4j.elara.plugin.timer;
 
 import org.agrona.collections.IntArrayList;
+import org.agrona.collections.Long2LongHashMap;
 import org.agrona.collections.LongArrayList;
+
+import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
 
 public class SimpleTimerState implements TimerState.Mutable {
 
-    private final IntArrayList types = new IntArrayList();
-    private final LongArrayList ids = new LongArrayList();
-    private final LongArrayList times = new LongArrayList();
-    private final LongArrayList timeouts = new LongArrayList();
+    public static final int DEFAULT_INITIAL_CAPACITY = 64;
+
+    private final Long2LongHashMap idToIndex;
+    private final LongArrayList ids;
+    private final IntArrayList types;
+    private final LongArrayList times;
+    private final LongArrayList timeouts;
+
+    public SimpleTimerState() {
+        this(DEFAULT_INITIAL_CAPACITY);
+    }
+
+    public SimpleTimerState(final int initialCapacity) {
+        this.idToIndex = new Long2LongHashMap(2 * initialCapacity, DEFAULT_LOAD_FACTOR, -1);
+        this.ids = new LongArrayList(initialCapacity, 0);
+        this.types = new IntArrayList(initialCapacity, 0);
+        this.times = new LongArrayList(initialCapacity, 0);
+        this.timeouts = new LongArrayList(initialCapacity, 0);
+    }
 
     @Override
     public int count() {
@@ -39,13 +57,18 @@ public class SimpleTimerState implements TimerState.Mutable {
     }
 
     @Override
-    public int type(final int index) {
-        return types.getInt(index);
+    public boolean hasTimer(final long id) {
+        return idToIndex.containsKey(id);
     }
 
     @Override
     public long id(final int index) {
         return ids.getLong(index);
+    }
+
+    @Override
+    public int type(final int index) {
+        return types.getInt(index);
     }
 
     @Override
@@ -60,35 +83,31 @@ public class SimpleTimerState implements TimerState.Mutable {
 
     @Override
     public int indexById(final long id) {
-        return ids.indexOf(id);
+        return (int)idToIndex.get(id);
     }
 
     @Override
-    public boolean remove(final long id) {
-        final int index = indexById(id);
-        if (index >= 0) {
-            removeByIndex(index);
-            return true;
-        }
-        return false;
-    }
-
-    public void removeByIndex(final int index) {
-        ids.fastUnorderedRemove(index);
+    public void remove(final int index) {
+        final long id = ids.fastUnorderedRemove(index);
+        idToIndex.remove(id);
         types.fastUnorderedRemove(index);
         times.fastUnorderedRemove(index);
         timeouts.fastUnorderedRemove(index);
+        if (index < ids.size()) {
+            idToIndex.put(ids.get(index), index);
+        }
     }
 
     @Override
-    public boolean add(final int type, final long id, final long time, final long timeout) {
-        if (ids.containsLong(id)) {
-            return false;
+    public boolean add(final long id, final int type, final long time, final long timeout) {
+        if (!hasTimer(id)) {
+            idToIndex.put(id, ids.size());
+            ids.addLong(id);
+            types.addInt(type);
+            times.addLong(time);
+            timeouts.addLong(timeout);
+            return true;
         }
-        types.add(type);
-        ids.add(id);
-        times.add(time);
-        timeouts.add(timeout);
-        return true;
+        return false;
     }
 }

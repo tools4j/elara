@@ -24,32 +24,43 @@
 package org.tools4j.elara.loop;
 
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.nobark.loop.Step;
 
 import java.util.function.Function;
 
+import static java.util.Objects.requireNonNull;
+
 public final class SequencerStep implements Step {
 
+    private final BaseState baseState;
     private final Input.Poller[] inputPollers;
     private final Input.Handler[] handlers;
 
     private int roundRobinIndex = 0;
 
-    public SequencerStep(final Function<? super Input, ? extends Input.Handler> handlerFactory,
+    public SequencerStep(final BaseState baseState,
+                         final Function<? super Input, ? extends Input.Handler> handlerFactory,
                          final Input... inputs) {
+        this.baseState = requireNonNull(baseState);
         this.inputPollers = initPollersFor(inputs);
         this.handlers = initHandlersFor(handlerFactory, inputs);
     }
 
     @Override
     public boolean perform() {
-        final int count = inputPollers.length;
-        for (int i = 0; i < count; i++) {
-            final int index = getAndIncrementRoundRobinIndex(count);
-            if (inputPollers[index].poll(handlers[index]) > 0) {
-                return true;
+        if (baseState.allEventsPolled()) {
+            final int count = inputPollers.length;
+            for (int i = 0; i < count; i++) {
+                final int index = getAndIncrementRoundRobinIndex(count);
+                if (inputPollers[index].poll(handlers[index]) > 0) {
+                    return true;
+                }
             }
         }
+        //NOTE: we don't poll inputs during replay since
+        //       (i) the command time would be difficult to define
+        //      (ii) sources depending on state would operate on incomplete state
         return false;
     }
 

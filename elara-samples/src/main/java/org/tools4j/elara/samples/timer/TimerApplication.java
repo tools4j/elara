@@ -120,7 +120,7 @@ public class TimerApplication {
             final long timerId = command.payload().getInt(4);
             final long timeout = command.payload().getLong(8);
             final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
-            TimerEvents.timerStarted(buffer, 0, timerType, timerId, timeout, router);
+            TimerEvents.timerStarted(buffer, 0, timerId, timerType, timeout, router);
         } else if (command.type() == TimerCommands.TRIGGER_TIMER) {
             System.out.println("...COMMAND: trigger timer: " + command + ", payload=" + payloadFor(command.type(), command.payload()) + ", time=" + formatTime(command.time()));
         }

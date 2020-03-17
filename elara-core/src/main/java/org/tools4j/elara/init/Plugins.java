@@ -34,7 +34,6 @@ import org.tools4j.elara.input.SimpleSequenceGenerator;
 import org.tools4j.elara.plugin.Plugin;
 import org.tools4j.elara.plugin.base.BasePlugin;
 import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.elara.time.ReplayTimeSource;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.ArrayList;
@@ -48,18 +47,14 @@ final class Plugins {
         final A application = context.application();
         this.plugins = plugins(application, context.plugins());
         this.baseState = baseState();
-        this.timeSource = context.timeSource();
-        this.replayTimeSource = new ReplayTimeSource(baseState, timeSource);
         this.adminSequenceGenerator = new SimpleSequenceGenerator();
-        this.inputs = inputs(context.inputs(), replayTimeSource, adminSequenceGenerator, plugins);
-        this.commandProcessor = commandProcessor(application, plugins);
-        this.eventApplier = eventApplier(application, plugins);
+        this.inputs = inputs(context.inputs(), baseState, context.timeSource(), adminSequenceGenerator, plugins);
+        this.commandProcessor = commandProcessor(baseState, application, plugins);
+        this.eventApplier = eventApplier(baseState, application, plugins);
     }
 
     final Plugin.Context[] plugins;
     final BaseState.Mutable baseState;
-    final TimeSource timeSource;
-    final ReplayTimeSource replayTimeSource;
     final SequenceGenerator adminSequenceGenerator;
     final Input[] inputs;
     final CommandProcessor commandProcessor;
@@ -83,7 +78,8 @@ final class Plugins {
         return plugins;
     }
 
-    private static CommandProcessor commandProcessor(final Application application,
+    private static CommandProcessor commandProcessor(final BaseState baseState,
+                                                     final Application application,
                                                      final Plugin.Context... plugins) {
         if (plugins.length == 0) {
             return application.commandProcessor();
@@ -91,7 +87,7 @@ final class Plugins {
         final CommandProcessor[] processors = new CommandProcessor[plugins.length + 1];
         int count = 1;
         for (final Plugin.Context plugin : plugins) {
-            processors[count] = plugin.commandProcessor();
+            processors[count] = plugin.commandProcessor(baseState);
             if (processors[count] != CommandProcessor.NOOP) {
                 count++;
             }
@@ -105,7 +101,8 @@ final class Plugins {
         );
     }
 
-    private static EventApplier eventApplier(final Application application,
+    private static EventApplier eventApplier(final BaseState.Mutable baseState,
+                                             final Application application,
                                              final Plugin.Context... plugins) {
         if (plugins.length == 0) {
             return application.eventApplier();
@@ -113,7 +110,7 @@ final class Plugins {
         final EventApplier[] appliers = new EventApplier[plugins.length + 1];
         int count = 0;
         for (final Plugin.Context plugin : plugins) {
-            appliers[count] = plugin.eventApplier();
+            appliers[count] = plugin.eventApplier(baseState);
             if (appliers[count] != EventApplier.NOOP) {
                 count++;
             }
@@ -128,6 +125,7 @@ final class Plugins {
     }
 
     private static Input[] inputs(final List<Input> inputs,
+                                  final BaseState baseState,
                                   final TimeSource timeSource,
                                   final SequenceGenerator adminSequenceGenerator,
                                   final Plugin.Context... plugins) {
@@ -137,7 +135,7 @@ final class Plugins {
         final List<Input> allInputs = new ArrayList<>(inputs.size() + 3 * plugins.length);
         allInputs.addAll(inputs);
         for (final Plugin.Context plugin : plugins) {
-            allInputs.addAll(Arrays.asList(plugin.inputs(timeSource, adminSequenceGenerator)));
+            allInputs.addAll(Arrays.asList(plugin.inputs(baseState, timeSource, adminSequenceGenerator)));
         }
         return allInputs.toArray(EMPTY_INPUTS);
     }

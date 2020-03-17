@@ -41,7 +41,7 @@ public class TimerCommandProcessor implements CommandProcessor {
     public void onCommand(final Command command, final EventRouter router) {
         if (command.type() == TimerCommands.TRIGGER_TIMER) {
             final long timerId = TimerCommands.timerId(command);
-            if (timerState.indexById(timerId) >= 0) {
+            if (timerState.hasTimer(timerId)) {
                 TimerEvents.timerExpired(command, router);
             }
         }

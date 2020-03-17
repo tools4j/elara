@@ -265,7 +265,7 @@ final class DefaultContext<A extends Application> implements Context<A> {
 
     static SequencerStep sequencerStep(final Context<?> context,
                                        final Singletons singletons) {
-        return new SequencerStep(inputHandlerFactory(context), singletons.plugins.inputs);
+        return new SequencerStep(singletons.plugins.baseState, inputHandlerFactory(context), singletons.plugins.inputs);
     }
 
     static CommandPollerStep commandPollerStep(final Context<?> context,

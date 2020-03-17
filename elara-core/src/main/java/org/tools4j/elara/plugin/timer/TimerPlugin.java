@@ -28,6 +28,7 @@ import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.plugin.Plugin;
+import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
@@ -47,19 +48,19 @@ public final class TimerPlugin implements Plugin<TimerState.Mutable> {
         requireNonNull(timerState);
         return new Context() {
             @Override
-            public Input[] inputs(final TimeSource timeSource, final SequenceGenerator adminSequenceGenerator) {
+            public Input[] inputs(final BaseState baseState, final TimeSource timeSource, final SequenceGenerator adminSequenceGenerator) {
                 return new Input[] {
                         new TimerTriggerInput(timerState, timeSource, adminSequenceGenerator)
                 };
             }
 
             @Override
-            public CommandProcessor commandProcessor() {
+            public CommandProcessor commandProcessor(final BaseState baseState) {
                 return new TimerCommandProcessor(timerState);
             }
 
             @Override
-            public EventApplier eventApplier() {
+            public EventApplier eventApplier(final BaseState.Mutable baseState) {
                 return new TimerEventApplier(timerState);
             }
         };

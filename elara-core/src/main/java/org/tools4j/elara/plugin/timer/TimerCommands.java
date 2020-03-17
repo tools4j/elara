@@ -38,20 +38,20 @@ public enum TimerCommands {
 
     public static int triggerTimer(final MutableDirectBuffer buffer,
                                    final int offset,
-                                   final int timerType,
                                    final long timerId,
+                                   final int timerType,
                                    final long timeout) {
-        buffer.putInt(offset + TIMER_TYPE_OFFSET, timerType);
         buffer.putLong(offset + TIMER_ID_OFFSET, timerId);
+        buffer.putInt(offset + TIMER_TYPE_OFFSET, timerType);
         buffer.putLong(offset + TIMER_TIMEOUT_OFFSET, timeout);
         return TIMER_PAYLOAD_SIZE;
     }
 
-    public static int timerType(final Command command) {
-        return command.payload().getInt(TIMER_TYPE_OFFSET);
-    }
     public static long timerId(final Command command) {
         return command.payload().getLong(TIMER_ID_OFFSET);
+    }
+    public static int timerType(final Command command) {
+        return command.payload().getInt(TIMER_TYPE_OFFSET);
     }
     public static long timerTimeout(final Command command) {
         return command.payload().getLong(TIMER_TIMEOUT_OFFSET);

@@ -49,6 +49,8 @@ public class CommandPollerStep implements Step {
         if (baseState.allEventsPolled()) {
             return commandPoller.peekOrPoll(handler) > 0;
         }
+        //NOTE: only start playing new commands when state has been completely restored
+        //      through replaying of events
         return false;
     }
 }
