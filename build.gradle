@@ -50,9 +50,11 @@ def mockitoVersion = '3.3.0'
 def hdrHistogramVersion = '2.1.12'
 
 ext {
-    isReleaseVersion = !version.endsWith('-SNAPSHOT')
+    isReleaseVersion = !projVersion.endsWith('-SNAPSHOT')
     releasesRepoUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
     snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
+
+    println name + " version=" + projVersion + " release=" + isReleaseVersion
 
     if (!project.hasProperty('ossrhUsername')) {
         ossrhUsername = ''

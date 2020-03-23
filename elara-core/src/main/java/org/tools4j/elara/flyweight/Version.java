@@ -21,16 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.event;
+package org.tools4j.elara.flyweight;
 
-import org.agrona.DirectBuffer;
+/**
+ * Version of the current flyweight format as defined by {@link HeaderDescriptor}.
+ */
+public enum Version {
+    ;
+    /** Current flyweight version */
+    public static final short CURRENT = 1;
 
-public interface EventRouter {
-    default void routeEvent(final DirectBuffer event, final int offset, final int length) {
-        routeEvent(EventType.APPLICATION, event, offset, length);
+    public static void validate(final short version) {
+        if (version != CURRENT) {
+            throw new IllegalArgumentException("Version " + version + " is not compatible with current version " + CURRENT);
+        }
     }
-
-    void routeEvent(int type, DirectBuffer event, int offset, int length);
-
-    short nextEventIndex();
 }

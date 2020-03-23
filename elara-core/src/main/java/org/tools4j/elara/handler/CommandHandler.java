@@ -27,7 +27,7 @@ import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.event.FlyweightEventRouter;
+import org.tools4j.elara.flyweight.FlyweightEventRouter;
 import org.tools4j.elara.log.PeekableMessageLog;
 import org.tools4j.elara.plugin.base.BaseState;
 

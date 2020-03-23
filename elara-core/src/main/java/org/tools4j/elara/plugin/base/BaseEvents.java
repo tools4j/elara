@@ -28,7 +28,7 @@ import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.EventType;
-import org.tools4j.elara.event.FlyweightEvent;
+import org.tools4j.elara.flyweight.FlyweightEvent;
 
 public enum BaseEvents {
     ;
@@ -38,7 +38,7 @@ public enum BaseEvents {
                                         final MutableDirectBuffer headerBuffer,
                                         final int offset,
                                         final Command command,
-                                        final int index) {
+                                        final short index) {
         return empty(flyweightEvent, headerBuffer, offset, command, index,
                 EventType.COMMIT);
     }
@@ -47,7 +47,7 @@ public enum BaseEvents {
                                        final MutableDirectBuffer headerBuffer,
                                        final int offset,
                                        final Command command,
-                                       final int index,
+                                       final short index,
                                        final int type) {
         return flyweightEvent.init(headerBuffer, offset, command.id().input(), command.id().sequence(), index,
                 type, command.time(), EMPTY_BUFFER, 0, 0);

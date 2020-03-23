@@ -28,8 +28,8 @@ import net.openhft.chronicle.wire.WireType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.tools4j.elara.chronicle.ChronicleMessageLog;
-import org.tools4j.elara.command.FlyweightCommand;
-import org.tools4j.elara.event.FlyweightEvent;
+import org.tools4j.elara.flyweight.FlyweightCommand;
+import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.init.Launcher;
 import org.tools4j.elara.samples.bank.command.*;
 

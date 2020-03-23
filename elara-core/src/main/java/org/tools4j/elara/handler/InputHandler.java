@@ -26,7 +26,7 @@ package org.tools4j.elara.handler;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.command.FlyweightCommand;
+import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.time.TimeSource;

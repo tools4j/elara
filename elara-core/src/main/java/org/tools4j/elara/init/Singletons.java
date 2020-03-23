@@ -27,7 +27,7 @@ import org.tools4j.elara.application.Application;
 import org.tools4j.elara.command.CommandLoopback;
 import org.tools4j.elara.command.DefaultCommandLoopback;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.event.FlyweightEventRouter;
+import org.tools4j.elara.flyweight.FlyweightEventRouter;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.log.MessageLog;

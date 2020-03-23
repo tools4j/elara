@@ -21,12 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.event;
+package org.tools4j.elara.flyweight;
 
 import org.agrona.DirectBuffer;
 import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
+import org.tools4j.elara.event.Event;
+import org.tools4j.elara.event.EventRouter;
+import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.plugin.base.BaseEvents;
 
@@ -35,11 +38,11 @@ import static java.util.Objects.requireNonNull;
 public class FlyweightEventRouter implements EventRouter {
 
     private final MessageLog.Handler<? super Event> eventHandler;
-    private final MutableDirectBuffer headerBuffer = new ExpandableDirectByteBuffer(FlyweightEvent.HEADER_LENGTH);
+    private final MutableDirectBuffer headerBuffer = new ExpandableDirectByteBuffer(HeaderDescriptor.HEADER_LENGTH);
     private final FlyweightEvent flyweightEvent = new FlyweightEvent();
 
     private Command command;
-    private int nextIndex = 0;
+    private short nextIndex = 0;
 
     public FlyweightEventRouter(final MessageLog.Handler<? super Event> eventHandler) {
         this.eventHandler = requireNonNull(eventHandler);
@@ -71,7 +74,7 @@ public class FlyweightEventRouter implements EventRouter {
     }
 
     @Override
-    public int nextEventIndex() {
+    public short nextEventIndex() {
         return nextIndex;
     }
 

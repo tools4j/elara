@@ -21,52 +21,59 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.command;
+package org.tools4j.elara.flyweight;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
+import org.tools4j.elara.command.Command;
+import org.tools4j.elara.event.Event;
 import org.tools4j.elara.log.Flyweight;
 
-public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, Command.Id {
+import static org.tools4j.elara.flyweight.HeaderDescriptor.HEADER_LENGTH;
+import static org.tools4j.elara.flyweight.HeaderDescriptor.HEADER_OFFSET;
+import static org.tools4j.elara.flyweight.HeaderDescriptor.INDEX_OFFSET;
+import static org.tools4j.elara.flyweight.HeaderDescriptor.INPUT_OFFSET;
+import static org.tools4j.elara.flyweight.HeaderDescriptor.PAYLOAD_OFFSET;
+import static org.tools4j.elara.flyweight.HeaderDescriptor.SEQUENCE_OFFSET;
+import static org.tools4j.elara.flyweight.HeaderDescriptor.SIZE_OFFSET;
+import static org.tools4j.elara.flyweight.HeaderDescriptor.TIME_OFFSET;
+import static org.tools4j.elara.flyweight.HeaderDescriptor.TYPE_OFFSET;
+import static org.tools4j.elara.flyweight.HeaderDescriptor.VERSION_OFFSET;
 
-    public static final int INPUT_OFFSET = 0;
-    public static final int INPUT_LENGTH = Integer.BYTES;
-    public static final int SEQUENCE_OFFSET = INPUT_OFFSET + INPUT_LENGTH;
-    public static final int SEQUENCE_LENGTH = Long.BYTES;
-    public static final int TYPE_OFFSET = SEQUENCE_OFFSET + SEQUENCE_LENGTH;
-    public static final int TYPE_LENGTH = Integer.BYTES;
-    public static final int TIME_OFFSET = TYPE_OFFSET + TYPE_LENGTH;
-    public static final int TIME_LENGTH = Long.BYTES;
-    public static final int SIZE_OFFSET = TIME_OFFSET + TIME_LENGTH;
-    public static final int SIZE_LENGTH = Integer.BYTES;
-
-    public static final int HEADER_OFFSET = 0;
-    public static final int HEADER_LENGTH = INPUT_LENGTH + SEQUENCE_LENGTH +
-            TYPE_LENGTH + TIME_LENGTH + SIZE_LENGTH;
-    public static final int PAYLOAD_OFFSET = HEADER_OFFSET + HEADER_LENGTH;
+public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.Id, Command.Id {
 
     private final MutableDirectBuffer header = new UnsafeBuffer(0, 0);
     private final DirectBuffer payload = new UnsafeBuffer(0, 0);
 
-    public FlyweightCommand init(final MutableDirectBuffer header,
-                                 final int headerOffset,
-                                 final int input,
-                                 final long sequence,
-                                 final int type,
-                                 final long time,
-                                 final DirectBuffer payload,
-                                 final int payloadOffset,
-                                 final int payloadLSize) {
-        writeHeaderTo(header, headerOffset, input, sequence, type, time, payloadLSize);
-        return init(header, headerOffset, payload, payloadOffset, payloadLSize);
+    public FlyweightEvent init(final MutableDirectBuffer header,
+                               final int headerOffset,
+                               final int input,
+                               final long sequence,
+                               final short index,
+                               final int type,
+                               final long time,
+                               final DirectBuffer payload,
+                               final int payloadOffset,
+                               final int payloadLSize) {
+        writeHeaderTo(header, headerOffset, input, sequence, index, type, time, payloadLSize);
+        return initSilent(header, headerOffset, payload, payloadOffset, payloadLSize);
     }
 
-    public FlyweightCommand init(final DirectBuffer header,
-                                 final int headerOffset,
-                                 final DirectBuffer payload,
-                                 final int payloadOffset,
-                                 final int payloadSize) {
+    public FlyweightEvent init(final DirectBuffer header,
+                               final int headerOffset,
+                               final DirectBuffer payload,
+                               final int payloadOffset,
+                               final int payloadSize) {
+        Version.validate(header.getShort(headerOffset + VERSION_OFFSET));
+        return initSilent(header, headerOffset, payload, payloadOffset, payloadSize);
+    }
+
+    private FlyweightEvent initSilent(final DirectBuffer header,
+                                      final int headerOffset,
+                                      final DirectBuffer payload,
+                                      final int payloadOffset,
+                                      final int payloadSize) {
         this.header.wrap(header, headerOffset, HEADER_LENGTH);
         if (payloadSize == 0) {
             this.payload.wrap(0, 0);
@@ -77,15 +84,15 @@ public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, C
     }
 
     @Override
-    public FlyweightCommand init(final DirectBuffer command, final int offset) {
+    public FlyweightEvent init(final DirectBuffer event, final int offset) {
         return this.init(
-                command, offset + HEADER_OFFSET,
-                command, offset + PAYLOAD_OFFSET,
-                command.getInt(offset + SIZE_OFFSET)
+                event, offset + HEADER_OFFSET,
+                event, offset + PAYLOAD_OFFSET,
+                event.getInt(offset + SIZE_OFFSET)
         );
     }
 
-    public FlyweightCommand reset() {
+    public FlyweightEvent reset() {
         header.wrap(0, 0);
         payload.wrap(0, 0);
         return this;
@@ -93,6 +100,11 @@ public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, C
 
     @Override
     public Id id() {
+        return this;
+    }
+
+    @Override
+    public Command.Id commandId() {
         return this;
     }
 
@@ -107,8 +119,13 @@ public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, C
     }
 
     @Override
+    public int index() {
+        return header.getShort(INDEX_OFFSET);
+    }
+
+    @Override
     public int type() {
-        return header.getInt(TYPE_OFFSET);
+        return header.getShort(TYPE_OFFSET);
     }
 
     @Override
@@ -125,13 +142,16 @@ public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, C
                                     final int headerOffset,
                                     final int input,
                                     final long sequence,
+                                    final short index,
                                     final int type,
                                     final long time,
                                     final int payloadLSize) {
         header.putInt(headerOffset + INPUT_OFFSET, input);
-        header.putLong(headerOffset + SEQUENCE_OFFSET, sequence);
         header.putInt(headerOffset + TYPE_OFFSET, type);
+        header.putLong(headerOffset + SEQUENCE_OFFSET, sequence);
         header.putLong(headerOffset + TIME_OFFSET, time);
+        header.putShort(headerOffset + VERSION_OFFSET, Version.CURRENT);
+        header.putShort(headerOffset + INDEX_OFFSET, index);
         header.putInt(headerOffset + SIZE_OFFSET, payloadLSize);
         return HEADER_LENGTH;
     }
@@ -146,13 +166,15 @@ public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, C
     @Override
     public String toString() {
         if (header.capacity() < HEADER_LENGTH) {
-            return "FlyweightCommand";
+            return "FlyweightEvent";
         }
-        return "FlyweightCommand{" +
+        return "FlyweightEvent{" +
                 "input=" + header.getInt(INPUT_OFFSET) +
-                ", sequence=" + header.getLong(SEQUENCE_OFFSET) +
                 ", type=" + header.getInt(TYPE_OFFSET) +
+                ", sequence=" + header.getLong(SEQUENCE_OFFSET) +
                 ", time=" + header.getLong(TIME_OFFSET) +
+                ", version=" + header.getShort(VERSION_OFFSET) +
+                ", index=" + header.getShort(INDEX_OFFSET) +
                 ", payload-size=" + header.getInt(SIZE_OFFSET) +
                 '}';
     }
