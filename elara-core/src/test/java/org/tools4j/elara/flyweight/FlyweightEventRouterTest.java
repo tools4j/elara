@@ -36,6 +36,7 @@ import java.util.ArrayDeque;
 import java.util.Queue;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for {@link FlyweightEventRouter}
@@ -65,7 +66,7 @@ public class FlyweightEventRouterTest {
         final int input = 11;
         final long sequence = 22;
         final int type = 33;
-        final long time =44;
+        final long time = 44;
         command.init(new ExpandableArrayBuffer(), 0, input, sequence, type, time,
                 new ExpandableArrayBuffer(12), 2, 10);
 
@@ -90,7 +91,7 @@ public class FlyweightEventRouterTest {
         final int input = 11;
         final long sequence = 22;
         final int type = 33;
-        final long time =44;
+        final long time = 44;
         final int eventType = 55;
         final int msgOffset = 2;
         final String msg = "Hello world";
@@ -123,6 +124,24 @@ public class FlyweightEventRouterTest {
         assertEvent(command, events.peek(), eventType, 1, 20, "events[1]");
         assertEquals(msg, events.poll().payload().getStringAscii(msgOffset), "events[1].payload.msg");
         assertEvent(command, events.poll(), EventType.COMMIT, 2, 0, "events[2]");
+    }
+
+    @Test
+    public void commitEventNotAllowed() {
+        //given
+        final int input = 11;
+        final long sequence = 22;
+        final int type = 33;
+        final long time = 44;
+        command.init(new ExpandableArrayBuffer(), 0, input, sequence, type, time,
+                new ExpandableArrayBuffer(12), 2, 10);
+        final DirectBuffer zeroPayload = new ExpandableArrayBuffer(0);
+        eventRouter.start(command);
+
+        //when
+        assertThrows(IllegalArgumentException.class,
+                () -> eventRouter.routeEvent(EventType.COMMIT, zeroPayload, 0, 0)
+        );
     }
 
     private void assertEvent(final Command command, final Event event,
