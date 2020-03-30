@@ -51,10 +51,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit test for {@link EventHandler}
+ * Unit test for {@link ApplyingEventHandler}
  */
 @ExtendWith(MockitoExtension.class)
-public class EventHandlerTest {
+public class ApplyingEventHandlerTest {
 
     @Mock
     private BaseState.Mutable baseState;
@@ -80,11 +80,11 @@ public class EventHandlerTest {
     private Event event;
 
     //under test
-    private EventHandler eventHandler;
+    private ApplyingEventHandler eventHandler;
 
     @BeforeEach
     public void init() {
-        eventHandler = new EventHandler(baseState, new DefaultCommandLoopback(evt -> {}, timeSource,
+        eventHandler = new ApplyingEventHandler(baseState, new DefaultCommandLoopback(evt -> {}, timeSource,
                 adminSequenceGenerator), eventLogAppender, output, eventApplier, exceptionHandler, duplicateHandler);
         when(eventId.commandId()).thenReturn(commandId);
         when(event.id()).thenReturn(eventId);
@@ -101,7 +101,7 @@ public class EventHandlerTest {
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq);
-        eventHandler.onMessage(event);
+        eventHandler.onEvent(event);
 
         //then
         inOrder.verify(eventLogAppender, never()).append(any());
@@ -113,7 +113,7 @@ public class EventHandlerTest {
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq + 1);
-        eventHandler.onMessage(event);
+        eventHandler.onEvent(event);
 
         //then
         inOrder.verify(eventLogAppender, never()).append(any());
@@ -136,7 +136,7 @@ public class EventHandlerTest {
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 2);
-        eventHandler.onMessage(event);
+        eventHandler.onEvent(event);
 
         //then
         inOrder.verify(eventLogAppender).append(event);
@@ -147,7 +147,7 @@ public class EventHandlerTest {
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
-        eventHandler.onMessage(event);
+        eventHandler.onEvent(event);
 
         //then
         inOrder.verify(eventLogAppender).append(event);
@@ -171,7 +171,7 @@ public class EventHandlerTest {
         //when
         when(event.type()).thenReturn(EventType.COMMIT);
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
-        eventHandler.onMessage(event);
+        eventHandler.onEvent(event);
 
         //then
         inOrder.verify(eventLogAppender).append(event);
@@ -194,7 +194,7 @@ public class EventHandlerTest {
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
-        eventHandler.onMessage(event);
+        eventHandler.onEvent(event);
 
         //then
         inOrder.verify(eventLogAppender, never()).append(any());
@@ -217,7 +217,7 @@ public class EventHandlerTest {
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
         doThrow(testException).when(eventApplier).onEvent(any(), any());
-        eventHandler.onMessage(event);
+        eventHandler.onEvent(event);
 
         //then
         inOrder.verify(eventApplier).onEvent(same(event), notNull());
@@ -239,7 +239,7 @@ public class EventHandlerTest {
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
         doThrow(testException).when(output).publish(any());
-        eventHandler.onMessage(event);
+        eventHandler.onEvent(event);
 
         //then
         inOrder.verify(output).publish(event);
@@ -261,7 +261,7 @@ public class EventHandlerTest {
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq + 1);
         doThrow(testException).when(duplicateHandler).skipEventApplying(any());
-        eventHandler.onMessage(event);
+        eventHandler.onEvent(event);
 
         //then
         inOrder.verify(eventApplier, never()).onEvent(same(event), notNull());

@@ -21,19 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.flyweight;
+package org.tools4j.elara.log;
 
-/**
- * Version of the current flyweight format as defined by {@link FrameDescriptor}.
- */
-public enum Version {
-    ;
-    /** Current flyweight version */
-    public static final short CURRENT = 1;
+import org.tools4j.elara.flyweight.Header;
 
-    public static void validate(final short version) {
-        if (version != CURRENT) {
-            throw new IllegalArgumentException("Version " + version + " is not compatible with current version " + CURRENT);
-        }
-    }
+import java.io.PrintWriter;
+
+@FunctionalInterface
+public interface MessageFormatter<M> {
+    String NEW_LINE = System.getProperty("line.separator");
+    void format(long line, M message, PrintWriter writer);
 }

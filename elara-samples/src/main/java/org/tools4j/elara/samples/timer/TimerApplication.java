@@ -79,11 +79,11 @@ public class TimerApplication {
                                    final String name) {
         final ChronicleQueue cq = ChronicleQueue.singleBuilder()
                 .path("build/chronicle/timer/" + name + "-cmd.cq4")
-                .wireType(WireType.BINARY)
+                .wireType(WireType.BINARY_LIGHT)
                 .build();
         final ChronicleQueue eq = ChronicleQueue.singleBuilder()
                 .path("build/chronicle/timer/" + name + "-evt.cq4")
-                .wireType(WireType.BINARY)
+                .wireType(WireType.BINARY_LIGHT)
                 .build();
         return Launcher.launch(Context.create(application)
                 .plugin(new TimerPlugin())

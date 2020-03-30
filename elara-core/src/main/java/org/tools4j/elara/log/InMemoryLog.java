@@ -59,15 +59,17 @@ public class InMemoryLog<M extends Writable> implements PeekableMessageLog<M> {
     public PeekablePoller<M> poller() {
         return new PeekablePoller<M>() {
             Element current = root;
+            long index = 0;
             @Override
             public int peekOrPoll(final PeekPollHandler<? super M> handler) {
                 if (current.next == null) {
                     return 0;
                 }
                 final M flyMessage = flyweight.init(current.buffer, 0);
-                final Result result = handler.onMessage(flyMessage);
+                final Result result = handler.onMessage(index, flyMessage);
                 if (result == POLL) {
                     current = current.next;
+                    index++;
                     if (remoteOnPoll) {
                         root.next = null;
                         root = current;
@@ -87,8 +89,9 @@ public class InMemoryLog<M extends Writable> implements PeekableMessageLog<M> {
                     return 0;
                 }
                 final M flyMessage = flyweight.init(current.buffer, 0);
-                handler.onMessage(flyMessage);
+                handler.onMessage(index, flyMessage);
                 current = current.next;
+                index++;
                 if (remoteOnPoll) {
                     root.next = null;
                     root = current;

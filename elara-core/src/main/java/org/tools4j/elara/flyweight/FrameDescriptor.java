@@ -24,8 +24,8 @@
 package org.tools4j.elara.flyweight;
 
 /**
- * Descriptor of header values for commands and events in a byte buffer.
- *
+ * Descriptor of frame layout for commands and events in a byte buffer.  A frame
+ * starts with a header followed by payload data:
  * <pre>
 
      0         1         2         3         4         5         6
@@ -44,7 +44,7 @@ package org.tools4j.elara.flyweight;
 
  * </pre>
  */
-public enum HeaderDescriptor {
+public enum FrameDescriptor {
     ;
 
     public static final int INPUT_OFFSET = 0;
@@ -59,12 +59,12 @@ public enum HeaderDescriptor {
     public static final int VERSION_LENGTH = Short.BYTES;
     public static final int INDEX_OFFSET = VERSION_OFFSET + VERSION_LENGTH;
     public static final int INDEX_LENGTH = Short.BYTES;
-    public static final int SIZE_OFFSET = INDEX_OFFSET + INDEX_LENGTH;
-    public static final int SIZE_LENGTH = Integer.BYTES;
+    public static final int PAYLOAD_SIZE_OFFSET = INDEX_OFFSET + INDEX_LENGTH;
+    public static final int PAYLOAD_SIZE_LENGTH = Integer.BYTES;
 
     public static final int HEADER_OFFSET = 0;
     public static final int HEADER_LENGTH = INPUT_LENGTH + TYPE_LENGTH +
-            SEQUENCE_LENGTH + TIME_LENGTH + VERSION_LENGTH + INDEX_LENGTH + SIZE_LENGTH;
+            SEQUENCE_LENGTH + TIME_LENGTH + VERSION_LENGTH + INDEX_LENGTH + PAYLOAD_SIZE_LENGTH;
 
     public static final int PAYLOAD_OFFSET = HEADER_OFFSET + HEADER_LENGTH;
 }

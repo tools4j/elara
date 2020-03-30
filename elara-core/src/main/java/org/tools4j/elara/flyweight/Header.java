@@ -23,17 +23,28 @@
  */
 package org.tools4j.elara.flyweight;
 
-/**
- * Version of the current flyweight format as defined by {@link FrameDescriptor}.
- */
-public enum Version {
-    ;
-    /** Current flyweight version */
-    public static final short CURRENT = 1;
+import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.log.Writable;
 
-    public static void validate(final short version) {
-        if (version != CURRENT) {
-            throw new IllegalArgumentException("Version " + version + " is not compatible with current version " + CURRENT);
-        }
-    }
+/**
+ * A header of a frame as described by {@link FrameDescriptor}.
+ */
+public interface Header extends Writable {
+
+    int input();
+
+    int type();
+
+    long sequence();
+
+    long time();
+
+    int version();
+
+    short index();
+
+    int payloadSize();
+
+    @Override
+    int writeTo(MutableDirectBuffer dst, int offset);
 }

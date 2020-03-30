@@ -27,7 +27,7 @@ import org.agrona.DirectBuffer;
 import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.flyweight.HeaderDescriptor;
+import org.tools4j.elara.flyweight.FrameDescriptor;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.log.MessageLog;
@@ -43,7 +43,7 @@ public class DefaultCommandLoopback implements CommandLoopback {
     private final SequenceGenerator adminSequenceGenerator;
 
     private final MutableDirectBuffer buffer = new ExpandableDirectByteBuffer(
-            HeaderDescriptor.HEADER_LENGTH + TIMER_PAYLOAD_SIZE);
+            FrameDescriptor.HEADER_LENGTH + TIMER_PAYLOAD_SIZE);
     private final FlyweightCommand flyweightCommand = new FlyweightCommand();
 
     public DefaultCommandLoopback(final MessageLog.Appender<? super Command> commandLogAppender,

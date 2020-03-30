@@ -39,6 +39,6 @@ public interface MessageLog<M> {
 
     @FunctionalInterface
     interface Handler<M> {
-        void onMessage(M message);
+        void onMessage(long index, M message);
     }
 }

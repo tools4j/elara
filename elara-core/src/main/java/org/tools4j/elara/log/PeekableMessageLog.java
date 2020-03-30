@@ -32,14 +32,14 @@ public interface PeekableMessageLog<M> extends MessageLog<M> {
 
     @FunctionalInterface
     interface PeekablePoller<M> extends Poller<M> {
-        int peekOrPoll(final PeekPollHandler<? super M> handler);
+        int peekOrPoll(PeekPollHandler<? super M> handler);
 
         //not garbage free, better to override
         @Override
         default int poll(final Handler<? super M> handler) {
             requireNonNull(handler);
-            return peekOrPoll(msg -> {
-                handler.onMessage(msg);
+            return peekOrPoll((index, msg) -> {
+                handler.onMessage(index, msg);
                 return PeekPollHandler.Result.POLL;
             });
         }
@@ -50,6 +50,6 @@ public interface PeekableMessageLog<M> extends MessageLog<M> {
         enum Result {
             PEEK, POLL
         }
-        Result onMessage(M message);
+        Result onMessage(long index, M message);
     }
 }

@@ -56,7 +56,7 @@ public class CommandHandler implements PeekableMessageLog.PeekPollHandler<Comman
     }
 
     @Override
-    public Result onMessage(final Command command) {
+    public Result onMessage(final long index, final Command command) {
         final Command.Id cid = command.id();
         final long lastAppliedForInput = baseState.lastCommandAllEventsApplied(cid.input());
         if (lastAppliedForInput < cid.sequence()) {

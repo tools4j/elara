@@ -29,6 +29,7 @@ import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.command.CommandLoopback;
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.event.EventHandler;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.output.Output;
@@ -36,7 +37,10 @@ import org.tools4j.elara.plugin.base.BaseState;
 
 import static java.util.Objects.requireNonNull;
 
-public class EventHandler implements MessageLog.Handler<Event> {
+/**
+ * Event handler that appends, outputs and applies events in one go.
+ */
+public class ApplyingEventHandler implements EventHandler, MessageLog.Handler<Event> {
 
     private final BaseState.Mutable baseState;
     private final CommandLoopback commandLoopback;
@@ -46,13 +50,13 @@ public class EventHandler implements MessageLog.Handler<Event> {
     private final ExceptionHandler exceptionHandler;
     private final DuplicateHandler duplicateHandler;
 
-    public EventHandler(final BaseState.Mutable baseState,
-                        final CommandLoopback commandLoopback,
-                        final MessageLog.Appender<? super Event> eventLogAppender,
-                        final Output output,
-                        final EventApplier eventApplier,
-                        final ExceptionHandler exceptionHandler,
-                        final DuplicateHandler duplicateHandler) {
+    public ApplyingEventHandler(final BaseState.Mutable baseState,
+                                final CommandLoopback commandLoopback,
+                                final MessageLog.Appender<? super Event> eventLogAppender,
+                                final Output output,
+                                final EventApplier eventApplier,
+                                final ExceptionHandler exceptionHandler,
+                                final DuplicateHandler duplicateHandler) {
         this.baseState = requireNonNull(baseState);
         this.commandLoopback = requireNonNull(commandLoopback);
         this.eventLogAppender = requireNonNull(eventLogAppender);
@@ -63,7 +67,12 @@ public class EventHandler implements MessageLog.Handler<Event> {
     }
 
     @Override
-    public void onMessage(final Event event) {
+    public void onMessage(final long index, final Event event) {
+        onEvent(event);
+    }
+
+    @Override
+    public void onEvent(final Event event) {
         final Command.Id commandId = event.id().commandId();
         final long lastAppliedForInput = baseState.lastCommandAllEventsApplied(commandId.input());
         if (lastAppliedForInput < commandId.sequence()) {

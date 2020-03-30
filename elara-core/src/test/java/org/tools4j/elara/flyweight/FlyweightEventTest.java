@@ -29,9 +29,11 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.tools4j.elara.flyweight.HeaderDescriptor.HEADER_LENGTH;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
 
 /**
  * Unit test for {@link FlyweightEvent}
@@ -46,6 +48,7 @@ public class FlyweightEventTest {
         //when + then
         assertNotNull(event.payload(), "id.payload");
         assertEquals(0, event.payload().capacity(), "id.payload.capacity");
+        assertFalse(event.valid(), "event.valid");
 
         try {
             event.input();
@@ -65,7 +68,7 @@ public class FlyweightEventTest {
     public void defaultValues() {
         //given
         final MutableDirectBuffer buffer = new ExpandableArrayBuffer(HEADER_LENGTH);
-        buffer.putShort(HeaderDescriptor.VERSION_OFFSET, Version.CURRENT);
+        buffer.putShort(FrameDescriptor.VERSION_OFFSET, Version.CURRENT);
         final FlyweightEvent event = new FlyweightEvent().init(buffer, 0);
 
         //when + then
@@ -76,6 +79,7 @@ public class FlyweightEventTest {
         assertEquals(0, event.time(), "id.time");
         assertNotNull(event.payload(), "payload");
         assertEquals(0, event.payload().capacity(), "payload.capacity");
+        assertTrue(event.valid(), "event.valid");
     }
 
     @Test
@@ -113,9 +117,9 @@ public class FlyweightEventTest {
         final FlyweightEvent copy = new FlyweightEvent().init(buffer, copyOffset);
 
         //then
-        assertEquals(values.input, event.id().commandId().input(), "id..commandId.input");
-        assertEquals(values.seq, event.id().commandId().sequence(), "id.commandId.sequence");
-        assertEquals(values.index, event.id().index(), "id.index");
+        assertEquals(values.input, copy.id().commandId().input(), "id..commandId.input");
+        assertEquals(values.seq, copy.id().commandId().sequence(), "id.commandId.sequence");
+        assertEquals(values.index, copy.id().index(), "id.index");
         assertEquals(values.type, copy.type(), "id.type");
         assertEquals(values.time, copy.time(), "id.time");
         assertNotNull(copy.payload(), "id.payload");

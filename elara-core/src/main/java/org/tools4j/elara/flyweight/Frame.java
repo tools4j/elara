@@ -23,17 +23,7 @@
  */
 package org.tools4j.elara.flyweight;
 
-/**
- * Version of the current flyweight format as defined by {@link FrameDescriptor}.
- */
-public enum Version {
-    ;
-    /** Current flyweight version */
-    public static final short CURRENT = 1;
-
-    public static void validate(final short version) {
-        if (version != CURRENT) {
-            throw new IllegalArgumentException("Version " + version + " is not compatible with current version " + CURRENT);
-        }
-    }
+@FunctionalInterface
+public interface Frame {
+    Header header();
 }

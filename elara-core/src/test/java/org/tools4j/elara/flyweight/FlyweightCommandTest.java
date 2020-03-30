@@ -29,9 +29,11 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.tools4j.elara.flyweight.HeaderDescriptor.HEADER_LENGTH;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
 
 /**
  * Unit test for {@link FlyweightCommand}
@@ -46,6 +48,7 @@ public class FlyweightCommandTest {
         //when + then
         assertNotNull(command.payload(), "id.payload");
         assertEquals(0, command.payload().capacity(), "id.payload.capacity");
+        assertFalse(command.valid(), "command.valid");
 
         try {
             command.input();
@@ -65,7 +68,7 @@ public class FlyweightCommandTest {
     public void defaultValues() {
         //given
         final MutableDirectBuffer buffer = new ExpandableArrayBuffer(HEADER_LENGTH);
-        buffer.putShort(HeaderDescriptor.VERSION_OFFSET, Version.CURRENT);
+        buffer.putShort(FrameDescriptor.VERSION_OFFSET, Version.CURRENT);
         final FlyweightCommand command = new FlyweightCommand().init(buffer, 0);
 
         //when + then
@@ -75,6 +78,7 @@ public class FlyweightCommandTest {
         assertEquals(0, command.time(), "id.time");
         assertNotNull(command.payload(), "payload");
         assertEquals(0, command.payload().capacity(), "payload.capacity");
+        assertTrue(command.valid(), "command.valid");
     }
 
     @Test

@@ -21,19 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.flyweight;
+package org.tools4j.elara.event;
 
-/**
- * Version of the current flyweight format as defined by {@link FrameDescriptor}.
- */
-public enum Version {
-    ;
-    /** Current flyweight version */
-    public static final short CURRENT = 1;
-
-    public static void validate(final short version) {
-        if (version != CURRENT) {
-            throw new IllegalArgumentException("Version " + version + " is not compatible with current version " + CURRENT);
-        }
-    }
+@FunctionalInterface
+public interface EventHandler {
+    void onEvent(Event event);
 }

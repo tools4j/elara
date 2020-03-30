@@ -55,7 +55,7 @@ public class InputTrackingAppender implements MessageLog.Appender<Command>, Mess
     }
 
     @Override
-    public void onMessage(final Command command) {
+    public void onMessage(final long index, final Command command) {
         isNewCommand(command);
     }
 
