@@ -25,20 +25,13 @@ package org.tools4j.elara.flyweight;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.log.Flyweight;
-
-import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
-import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
 
 public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, Command.Id, Frame {
 
     private static final short INDEX_NEG = Short.MIN_VALUE;
-    private final FlyweightHeader header = new FlyweightHeader();
-    private final DirectBuffer payload = new UnsafeBuffer(0, 0);
+    private final FlyweightDataFrame frame = new FlyweightDataFrame();
 
     public FlyweightCommand init(final MutableDirectBuffer header,
                                  final int headerOffset,
@@ -48,9 +41,9 @@ public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, C
                                  final long time,
                                  final DirectBuffer payload,
                                  final int payloadOffset,
-                                 final int payloadLSize) {
-        this.header.init(input, type, sequence, time, INDEX_NEG, payloadLSize, header, headerOffset);
-        return initPayload(payload, payloadOffset, payloadLSize);
+                                 final int payloadSize) {
+        frame.init(header, headerOffset, input, type, sequence, time, INDEX_NEG, payload, payloadOffset, payloadSize);
+        return this;
     }
 
     public FlyweightCommand init(final DirectBuffer header,
@@ -58,43 +51,28 @@ public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, C
                                  final DirectBuffer payload,
                                  final int payloadOffset,
                                  final int payloadSize) {
-        this.header.init(header, headerOffset);
-        return initPayload(payload, payloadOffset, payloadSize);
+        frame.init(header, headerOffset, payload, payloadOffset, payloadSize);
+        return this;
     }
 
     @Override
     public FlyweightCommand init(final DirectBuffer command, final int offset) {
-        return this.init(
-                command, offset + HEADER_OFFSET,
-                command, offset + PAYLOAD_OFFSET,
-                command.getInt(offset + PAYLOAD_SIZE_OFFSET)
-        );
-    }
-
-    private FlyweightCommand initPayload(final DirectBuffer payload,
-                                         final int payloadOffset,
-                                         final int payloadSize) {
-        if (payloadSize == 0) {
-            this.payload.wrap(0, 0);
-        } else {
-            this.payload.wrap(payload, payloadOffset, payloadSize);
-        }
+        frame.init(command, offset);
         return this;
     }
 
     public boolean valid() {
-        return header.valid();
+        return frame.valid();
     }
 
     public FlyweightCommand reset() {
-        header.reset();
-        payload.wrap(0, 0);
+        frame.reset();
         return this;
     }
 
     @Override
     public Header header() {
-        return header;
+        return frame.header();
     }
 
     @Override
@@ -104,34 +82,32 @@ public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, C
 
     @Override
     public int input() {
-        return header.input();
+        return header().input();
     }
 
     @Override
     public long sequence() {
-        return header.sequence();
+        return header().sequence();
     }
 
     @Override
     public int type() {
-        return header.type();
+        return header().type();
     }
 
     @Override
     public long time() {
-        return header.time();
+        return header().time();
     }
 
     @Override
     public DirectBuffer payload() {
-        return payload;
+        return frame.payload();
     }
 
     @Override
     public int writeTo(final MutableDirectBuffer buffer, final int offset) {
-        header.writeTo(buffer, offset);
-        payload.getBytes(0, buffer, offset + PAYLOAD_OFFSET, payload.capacity());
-        return HEADER_LENGTH + payload.capacity();
+        return frame.writeTo(buffer, offset);
     }
 
     @Override
@@ -141,9 +117,8 @@ public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, C
                 ", type=" + type() +
                 ", sequence=" + sequence() +
                 ", time=" + time() +
-                ", version=" + header.version() +
-                ", index=" + header.index() +
-                ", payload-size=" + header.payloadSize() +
+                ", version=" + header().version() +
+                ", payload-size=" + header().payloadSize() +
                 '}' : "FlyweightCommand";
     }
 }

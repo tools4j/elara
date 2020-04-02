@@ -26,7 +26,10 @@ package org.tools4j.elara.plugin.timer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 
-import static org.tools4j.elara.plugin.timer.TimerCommandDescriptor.*;
+import static org.tools4j.elara.plugin.timer.TimerCommandDescriptor.TIMER_ID_OFFSET;
+import static org.tools4j.elara.plugin.timer.TimerCommandDescriptor.TIMER_PAYLOAD_SIZE;
+import static org.tools4j.elara.plugin.timer.TimerCommandDescriptor.TIMER_TIMEOUT_OFFSET;
+import static org.tools4j.elara.plugin.timer.TimerCommandDescriptor.TIMER_TYPE_OFFSET;
 
 /**
  * Timer commands issued through {@link TimerTriggerInput}.

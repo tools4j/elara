@@ -23,6 +23,8 @@
  */
 package org.tools4j.elara.log;
 
+import org.tools4j.elara.format.MessagePrinter;
+
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -73,21 +75,19 @@ public class MessageLogPrinter implements AutoCloseable {
     }
 
     public <M> void print(final MessageLog.Poller<M> poller) {
-        final MessageFormatter<M> formatter = (line, msg, printWriter) ->
-                printWriter.printf("[%s]: %s", line, msg);
-        print(poller, formatter);
+        print(poller, MessagePrinter.DEFAULT);
     }
 
-    public <M> void print(final MessageLog.Poller<M> poller, final MessageFormatter<? super M> formatter) {
-        print(poller, msg -> true, formatter);
+    public <M> void print(final MessageLog.Poller<M> poller, final MessagePrinter<? super M> printer) {
+        print(poller, msg -> true, printer);
     }
 
     public <M> void print(final MessageLog.Poller<M> poller,
                           final Predicate<? super M> filter,
-                          final MessageFormatter<? super M> formatter) {
+                          final MessagePrinter<? super M> printer) {
         final MessageLog.Handler<M> handler = (index, message) -> {
             if (filter.test(message)) {
-                formatter.format(index, message, printWriter);
+                printer.print(index, message, printWriter);
             }
         };
         while (poller.poll(handler) > 0);

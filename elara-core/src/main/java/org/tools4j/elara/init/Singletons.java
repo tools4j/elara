@@ -27,8 +27,8 @@ import org.tools4j.elara.application.Application;
 import org.tools4j.elara.command.CommandLoopback;
 import org.tools4j.elara.command.DefaultCommandLoopback;
 import org.tools4j.elara.flyweight.FlyweightEventRouter;
-import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.ApplyingEventHandler;
+import org.tools4j.elara.handler.CommandHandler;
 
 final class Singletons {
     <A extends Application> Singletons(final Context<A> context) {

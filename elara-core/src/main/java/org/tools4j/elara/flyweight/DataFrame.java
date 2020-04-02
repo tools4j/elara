@@ -21,14 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.log;
+package org.tools4j.elara.flyweight;
 
-import org.tools4j.elara.flyweight.Header;
+import org.agrona.DirectBuffer;
+import org.tools4j.elara.log.Writable;
 
-import java.io.PrintWriter;
-
-@FunctionalInterface
-public interface MessageFormatter<M> {
-    String NEW_LINE = System.getProperty("line.separator");
-    void format(long line, M message, PrintWriter writer);
+/**
+ * A {@link Frame} with {@link #payload()}.
+ */
+public interface DataFrame extends Frame, Writable {
+    DirectBuffer payload();
 }

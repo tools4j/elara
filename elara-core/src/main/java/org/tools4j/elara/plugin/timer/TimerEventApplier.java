@@ -32,7 +32,9 @@ import org.tools4j.elara.event.Event;
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.timer.TimerCommandDescriptor.TIMER_PAYLOAD_SIZE;
 import static org.tools4j.elara.plugin.timer.TimerCommands.triggerTimer;
-import static org.tools4j.elara.plugin.timer.TimerEvents.*;
+import static org.tools4j.elara.plugin.timer.TimerEvents.timerId;
+import static org.tools4j.elara.plugin.timer.TimerEvents.timerTimeout;
+import static org.tools4j.elara.plugin.timer.TimerEvents.timerType;
 
 public class TimerEventApplier implements EventApplier {
 

@@ -25,11 +25,12 @@ package org.tools4j.elara.chronicle;
 
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.wire.WireType;
-import org.tools4j.elara.event.EventType;
-import org.tools4j.elara.flyweight.FlyweightHeader;
+import org.tools4j.elara.flyweight.DataFrame;
+import org.tools4j.elara.flyweight.FlyweightDataFrame;
+import org.tools4j.elara.format.DataFrameFormatter;
+import org.tools4j.elara.format.MessagePrinter;
+import org.tools4j.elara.format.MessagePrinters;
 import org.tools4j.elara.log.Flyweight;
-import org.tools4j.elara.log.FrameFormatter;
-import org.tools4j.elara.log.MessageFormatter;
 import org.tools4j.elara.log.MessageLogPrinter;
 
 import java.io.OutputStream;
@@ -85,18 +86,18 @@ public class ChronicleLogPrinter implements AutoCloseable {
 
     public <M> void print(final ChronicleQueue queue,
                           final Flyweight<M> flyweight,
-                          final MessageFormatter<? super M> formatter) {
+                          final MessagePrinter<? super M> printer) {
         messageLogPrinter.print(
-                new ChronicleLogPoller<>(queue, flyweight), msg -> true, formatter
+                new ChronicleLogPoller<>(queue, flyweight), msg -> true, printer
         );
     }
 
     public <M> void print(final ChronicleQueue queue,
                           final Flyweight<M> flyweight,
                           final Predicate<? super M> filter,
-                          final MessageFormatter<? super M> formatter) {
+                          final MessagePrinter<? super M> printer) {
         messageLogPrinter.print(
-                new ChronicleLogPoller<>(queue, flyweight), filter, formatter
+                new ChronicleLogPoller<>(queue, flyweight), filter, printer
         );
     }
 
@@ -109,16 +110,11 @@ public class ChronicleLogPrinter implements AutoCloseable {
                 .path(args[0])
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
-        new ChronicleLogPrinter().print(queue, new FlyweightHeader(), FrameFormatter.getDefault(
-                new FrameFormatter.ValueFormatter() {
+        new ChronicleLogPrinter().print(queue, new FlyweightDataFrame(), MessagePrinters.frame(
+                new DataFrameFormatter() {
                     @Override
-                    public Object type(final int type) {
-                        return type == EventType.COMMIT ? "C" : type;
-                    }
-
-                    @Override
-                    public Object time(final long time) {
-                        return Instant.ofEpochMilli(time);
+                    public Object time(final long line, final DataFrame frame) {
+                        return Instant.ofEpochMilli(frame.header().time());
                     }
                 }
         ));

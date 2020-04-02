@@ -29,7 +29,10 @@ import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventRouter;
 
-import static org.tools4j.elara.plugin.timer.TimerEventDescriptor.*;
+import static org.tools4j.elara.plugin.timer.TimerEventDescriptor.TIMER_ID_OFFSET;
+import static org.tools4j.elara.plugin.timer.TimerEventDescriptor.TIMER_PAYLOAD_SIZE;
+import static org.tools4j.elara.plugin.timer.TimerEventDescriptor.TIMER_TIMEOUT_OFFSET;
+import static org.tools4j.elara.plugin.timer.TimerEventDescriptor.TIMER_TYPE_OFFSET;
 
 /**
  * Timer events applying the timer state change through {@link TimerEventApplier}.

@@ -25,20 +25,13 @@ package org.tools4j.elara.flyweight;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.log.Flyweight;
 
-import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
-import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
-
 public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.Id, Command.Id, Frame {
 
-    private final FlyweightHeader header = new FlyweightHeader();
-    private final DirectBuffer payload = new UnsafeBuffer(0, 0);
+    private final FlyweightDataFrame frame = new FlyweightDataFrame();
 
     public FlyweightEvent init(final MutableDirectBuffer header,
                                final int headerOffset,
@@ -49,9 +42,9 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.I
                                final long time,
                                final DirectBuffer payload,
                                final int payloadOffset,
-                               final int payloadLSize) {
-        this.header.init(input, type, sequence, time, index, payloadLSize, header, headerOffset);
-        return initPayload(payload, payloadOffset, payloadLSize);
+                               final int payloadSize) {
+        frame.init(header, headerOffset, input, type, sequence, time, index, payload, payloadOffset, payloadSize);
+        return this;
     }
 
     public FlyweightEvent init(final DirectBuffer header,
@@ -59,43 +52,28 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.I
                                final DirectBuffer payload,
                                final int payloadOffset,
                                final int payloadSize) {
-        this.header.init(header, headerOffset);
-        return initPayload(payload, payloadOffset, payloadSize);
+        frame.init(header, headerOffset, payload, payloadOffset, payloadSize);
+        return this;
     }
 
     @Override
     public FlyweightEvent init(final DirectBuffer event, final int offset) {
-        return this.init(
-                event, offset + HEADER_OFFSET,
-                event, offset + PAYLOAD_OFFSET,
-                event.getInt(offset + PAYLOAD_SIZE_OFFSET)
-        );
-    }
-
-    private FlyweightEvent initPayload(final DirectBuffer payload,
-                                       final int payloadOffset,
-                                       final int payloadSize) {
-        if (payloadSize == 0) {
-            this.payload.wrap(0, 0);
-        } else {
-            this.payload.wrap(payload, payloadOffset, payloadSize);
-        }
+        frame.init(event, offset);
         return this;
     }
 
     public boolean valid() {
-        return header.valid();
+        return frame.valid();
     }
 
     public FlyweightEvent reset() {
-        header.reset();
-        payload.wrap(0, 0);
+        frame.reset();
         return this;
     }
 
     @Override
     public Header header() {
-        return header;
+        return frame.header();
     }
 
     @Override
@@ -110,39 +88,37 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.I
 
     @Override
     public int input() {
-        return header.input();
+        return header().input();
     }
 
     @Override
     public long sequence() {
-        return header.sequence();
+        return header().sequence();
     }
 
     @Override
     public int index() {
-        return header.index();
+        return header().index();
     }
 
     @Override
     public int type() {
-        return header.type();
+        return header().type();
     }
 
     @Override
     public long time() {
-        return header.time();
+        return header().time();
     }
 
     @Override
     public DirectBuffer payload() {
-        return payload;
+        return frame.payload();
     }
 
     @Override
     public int writeTo(final MutableDirectBuffer buffer, final int offset) {
-        header.writeTo(buffer, offset);
-        payload.getBytes(0, buffer, offset + PAYLOAD_OFFSET, payload.capacity());
-        return HEADER_LENGTH + payload.capacity();
+        return frame.writeTo(buffer, offset);
     }
 
     @Override
@@ -152,9 +128,9 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.I
                 ", type=" + type() +
                 ", sequence=" + sequence() +
                 ", time=" + time() +
-                ", version=" + header.version() +
+                ", version=" + header().version() +
                 ", index=" + index() +
-                ", payload-size=" + header.payloadSize() +
+                ", payload-size=" + header().payloadSize() +
                 '}' : "FlyweightEvent";
     }
 }
