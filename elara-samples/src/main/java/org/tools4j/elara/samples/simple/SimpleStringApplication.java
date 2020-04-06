@@ -35,10 +35,10 @@ import org.tools4j.elara.event.EventRouter;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.init.Context;
-import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.InMemoryLog;
-import org.tools4j.nobark.run.ThreadLike;
+import org.tools4j.elara.run.Elara;
+import org.tools4j.elara.run.ElaraRunner;
 
 import java.util.Queue;
 
@@ -52,7 +52,7 @@ public class SimpleStringApplication {
             "simple-string-app", this::process, this::apply
     );
 
-    public ThreadLike launch(final Queue<String> inputQueue) {
+    public ElaraRunner launch(final Queue<String> inputQueue) {
         return Elara.launch(Context.create()
                     .input(999, new StringInputPoller(inputQueue))
                     .output(this::publish)

@@ -21,33 +21,40 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.samples.simple;
+package org.tools4j.elara.run;
 
-import org.junit.jupiter.api.Test;
-import org.tools4j.elara.run.ElaraRunner;
+import org.tools4j.nobark.run.ThreadLike;
 
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import static java.util.Objects.requireNonNull;
 
-public class SimpleStringApplicationTest {
+/**
+ * Running java app returned by launch methods of {@link Elara}.
+ */
+public class ElaraRunner implements ThreadLike {
 
-    @Test
-    public void run() throws Exception {
-        final SimpleStringApplication app = new SimpleStringApplication();
-        final Queue<String> strings = new ConcurrentLinkedQueue<>();
-        strings.add("1");
-        strings.add("12");
-        try (final ElaraRunner runner = app.launch(strings)) {
-            //
-            Thread.sleep(500);
-            strings.add("123");
-            Thread.sleep(1000);
-            strings.add("hello world");
-            while (!strings.isEmpty()) {
-                runner.join(20);
-            }
-            runner.join(200);
-        }
+    private final ThreadLike threadLike;
+
+    public ElaraRunner(final ThreadLike threadLike) {
+        this.threadLike = requireNonNull(threadLike);
     }
 
+    @Override
+    public Thread.State threadState() {
+        return threadLike.threadState();
+    }
+
+    @Override
+    public void join(final long millis) {
+        threadLike.join(millis);
+    }
+
+    @Override
+    public void stop() {
+        threadLike.stop();
+    }
+
+    @Override
+    public String toString() {
+        return threadLike.toString();
+    }
 }

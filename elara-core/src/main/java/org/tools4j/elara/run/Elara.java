@@ -28,7 +28,6 @@ import org.tools4j.elara.init.Context;
 import org.tools4j.elara.init.Launcher;
 import org.tools4j.elara.init.PluginConfigurer;
 import org.tools4j.elara.plugin.Plugin;
-import org.tools4j.nobark.run.ThreadLike;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,15 +36,15 @@ import java.util.List;
 public enum  Elara {
     ;
 
-    public static ThreadLike launch(final Application application) {
+    public static ElaraRunner launch(final Application application) {
         return launch(Context.create(), application);
     }
 
-    public static ThreadLike launch(final Context context, final Application application) {
+    public static ElaraRunner launch(final Context context, final Application application) {
         return launch(context, application, Collections.emptyList());
     }
 
-    public static <A extends Application> ThreadLike launch(final Context context,
+    public static <A extends Application> ElaraRunner launch(final Context context,
                                                             final A application,
                                                             final Plugin<?>... plugins) {
         final List<Plugin.Builder<? super A>> builders = new ArrayList<>(plugins.length);
@@ -55,13 +54,13 @@ public enum  Elara {
         return launch(context, application, builders);
     }
 
-    public static <A extends Application> ThreadLike launch(final Context context,
+    public static <A extends Application> ElaraRunner launch(final Context context,
                                                             final A application,
                                                             final PluginConfigurer<A> plugins) {
         return launch(context, application, plugins.plugins());
     }
 
-    public static <A extends Application> ThreadLike launch(final Context context,
+    public static <A extends Application> ElaraRunner launch(final Context context,
                                                             final A application,
                                                             final List<Plugin.Builder<? super A>> pluginBuilders) {
         return Launcher.start(context, application, pluginBuilders);

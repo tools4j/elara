@@ -35,18 +35,18 @@ import org.tools4j.elara.event.EventRouter;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.init.Context;
-import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.InMemoryLog;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.log.PeekableMessageLog;
+import org.tools4j.elara.run.Elara;
+import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.samples.bank.actor.Accountant;
 import org.tools4j.elara.samples.bank.actor.Teller;
 import org.tools4j.elara.samples.bank.command.BankCommand;
 import org.tools4j.elara.samples.bank.command.CommandType;
 import org.tools4j.elara.samples.bank.event.EventType;
 import org.tools4j.elara.samples.bank.state.Bank;
-import org.tools4j.nobark.run.ThreadLike;
 
 import java.util.Queue;
 
@@ -88,22 +88,22 @@ public class BankApplication implements Application {
         return eventApplier;
     }
 
-    public ThreadLike launch(final Queue<BankCommand> inputQueue) {
+    public ElaraRunner launch(final Queue<BankCommand> inputQueue) {
         return launch(inputQueue,
                 new InMemoryLog<>(new FlyweightCommand()),
                 new InMemoryLog<>(new FlyweightEvent()));
     }
 
-    public ThreadLike launch(final Queue<BankCommand> inputQueue,
-                             final PeekableMessageLog<Command> commandLog,
-                             final MessageLog<Event> eventLog) {
+    public ElaraRunner launch(final Queue<BankCommand> inputQueue,
+                              final PeekableMessageLog<Command> commandLog,
+                              final MessageLog<Event> eventLog) {
         return launch(Input.create(666, new CommandPoller(inputQueue)),
                 commandLog, eventLog);
     }
 
-    public ThreadLike launch(final Input input,
-                             final PeekableMessageLog<Command> commandLog,
-                             final MessageLog<Event> eventLog) {
+    public ElaraRunner launch(final Input input,
+                              final PeekableMessageLog<Command> commandLog,
+                              final MessageLog<Event> eventLog) {
         return Elara.launch(
                 Context.create()
                         .input(input)

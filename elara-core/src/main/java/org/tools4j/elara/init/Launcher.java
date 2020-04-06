@@ -26,7 +26,7 @@ package org.tools4j.elara.init;
 import org.tools4j.elara.application.Application;
 import org.tools4j.elara.plugin.Plugin;
 import org.tools4j.elara.run.Elara;
-import org.tools4j.nobark.run.ThreadLike;
+import org.tools4j.elara.run.ElaraRunner;
 
 import java.util.List;
 
@@ -35,9 +35,9 @@ import java.util.List;
  */
 public enum Launcher {
     ;
-    public static <A extends Application> ThreadLike start(final Context context,
-                                                           final A application,
-                                                           final List<Plugin.Builder<? super A>> pluginBuilders) {
-        return DefaultContext.start(context, application, pluginBuilders);
+    public static <A extends Application> ElaraRunner start(final Context context,
+                                                            final A application,
+                                                            final List<Plugin.Builder<? super A>> pluginBuilders) {
+        return new ElaraRunner(DefaultContext.start(context, application, pluginBuilders));
     }
 }

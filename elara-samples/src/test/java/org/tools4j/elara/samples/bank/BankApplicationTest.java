@@ -30,12 +30,12 @@ import org.junit.jupiter.api.Test;
 import org.tools4j.elara.chronicle.ChronicleMessageLog;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FlyweightEvent;
+import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.samples.bank.command.BankCommand;
 import org.tools4j.elara.samples.bank.command.CreateAccountCommand;
 import org.tools4j.elara.samples.bank.command.DepositCommand;
 import org.tools4j.elara.samples.bank.command.TransferCommand;
 import org.tools4j.elara.samples.bank.command.WithdrawCommand;
-import org.tools4j.nobark.run.ThreadLike;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -53,14 +53,14 @@ public class BankApplicationTest {
     @Test
     public void inMemory() {
         final Queue<BankCommand> commands = initCommandQueue();
-        try (final ThreadLike app = bankApplication.launch(commands)) {
+        try (final ElaraRunner runner = bankApplication.launch(commands)) {
             //when
             injectSomeCommands(commands);
             //then: await termination
             while (!commands.isEmpty()) {
-                app.join(20);
+                runner.join(20);
             }
-            app.join(200);
+            runner.join(200);
         }
         bankApplication.printEnd();
     }
@@ -76,7 +76,7 @@ public class BankApplicationTest {
                 .path("build/chronicle/bank/evt.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
-        try (final ThreadLike app = bankApplication.launch(
+        try (final ElaraRunner runner = bankApplication.launch(
                 commands,
                 new ChronicleMessageLog<>(cq, new FlyweightCommand()),
                 new ChronicleMessageLog<>(eq, new FlyweightEvent())
@@ -85,9 +85,9 @@ public class BankApplicationTest {
             injectSomeCommands(commands);
             //then: await termination
             while (!commands.isEmpty()) {
-                app.join(20);
+                runner.join(20);
             }
-            app.join(200);
+            runner.join(200);
         }
         bankApplication.printEnd();
     }
