@@ -21,33 +21,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.samples.simple;
+package org.tools4j.elara.init;
 
-import org.junit.jupiter.api.Test;
-import org.tools4j.nobark.run.ThreadLike;
+import org.tools4j.elara.plugin.Plugin;
 
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.List;
+import java.util.function.Function;
 
-public class SimpleStringApplicationTest {
+public interface PluginConfigurer<A> {
+    PluginConfigurer<A> plugin(Plugin<?> plugin);
 
-    @Test
-    public void run() throws Exception {
-        final SimpleStringApplication app = new SimpleStringApplication();
-        final Queue<String> strings = new ConcurrentLinkedQueue<>();
-        strings.add("1");
-        strings.add("12");
-        try (final ThreadLike threadLike = app.launch(strings)) {
-            //
-            Thread.sleep(500);
-            strings.add("123");
-            Thread.sleep(1000);
-            strings.add("hello world");
-            while (!strings.isEmpty()) {
-                threadLike.join(20);
-            }
-            threadLike.join(200);
-        }
+    PluginConfigurer<A> plugin(Plugin.Builder<? super A> plugin);
+
+    <P> PluginConfigurer<A> plugin(Plugin<P> plugin, Function<? super A, ? extends P> pluginStateProvider);
+
+    List<Plugin.Builder<? super A>> plugins();
+
+    static <A> PluginConfigurer<A> create() {
+        return new DefaultPluginConfigurer<>();
     }
 
+    static <A> PluginConfigurer<A> create(final A application) {
+        return create();
+    }
+
+    static <A> PluginConfigurer<A> create(final Class<A> applicationType) {
+        return create();
+    }
 }

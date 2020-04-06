@@ -30,14 +30,15 @@ import org.tools4j.elara.application.Application;
 import org.tools4j.elara.application.SimpleApplication;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.command.CommandLoopback;
-import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventRouter;
+import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.init.Context;
-import org.tools4j.elara.init.Launcher;
+import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.InMemoryLog;
+import org.tools4j.nobark.run.ThreadLike;
 
 import java.util.Queue;
 
@@ -51,12 +52,13 @@ public class SimpleStringApplication {
             "simple-string-app", this::process, this::apply
     );
 
-    public Launcher launch(final Queue<String> inputQueue) {
-        return Launcher.launch(Context.create(application)
-                .input(999, new StringInputPoller(inputQueue))
-                .output(this::publish)
-                .commandLog(new InMemoryLog<>(new FlyweightCommand()))
-                .eventLog(new InMemoryLog<>(new FlyweightEvent()))
+    public ThreadLike launch(final Queue<String> inputQueue) {
+        return Elara.launch(Context.create()
+                    .input(999, new StringInputPoller(inputQueue))
+                    .output(this::publish)
+                    .commandLog(new InMemoryLog<>(new FlyweightCommand()))
+                    .eventLog(new InMemoryLog<>(new FlyweightEvent())),
+                application
         );
     }
 

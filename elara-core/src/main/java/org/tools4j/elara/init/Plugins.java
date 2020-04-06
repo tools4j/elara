@@ -43,9 +43,10 @@ import java.util.List;
 import static org.tools4j.elara.input.Input.EMPTY_INPUTS;
 
 final class Plugins {
-    <A extends Application> Plugins(final Context<A> context) {
-        final A application = context.application();
-        this.plugins = plugins(application, context.plugins());
+    <A extends Application> Plugins(final Context context,
+                                    final A application,
+                                    final List<Plugin.Builder<? super A>> pluginBuilders) {
+        this.plugins = plugins(application, pluginBuilders);
         this.baseState = baseState();
         this.adminSequenceGenerator = new SimpleSequenceGenerator();
         this.inputs = inputs(context.inputs(), baseState, context.timeSource(), adminSequenceGenerator, plugins);

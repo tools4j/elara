@@ -25,7 +25,7 @@ package org.tools4j.elara.samples.timer;
 
 import org.agrona.DirectBuffer;
 import org.junit.jupiter.api.Test;
-import org.tools4j.elara.init.Launcher;
+import org.tools4j.nobark.run.ThreadLike;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -51,11 +51,11 @@ class TimerApplicationTest {
         commands.add(TimerApplication.startTimer(1002, 500));
         commands.add(TimerApplication.startTimer(1003, 1000));
         commands.add(TimerApplication.startTimer(1004, 1000));
-        try (final Launcher launcher = persisted ? app.chronicleQueue(commands, "single") : app.inMemory(commands)) {
+        try (final ThreadLike threadLike = persisted ? app.chronicleQueue(commands, "single") : app.inMemory(commands)) {
             while (!commands.isEmpty()) {
-                launcher.join(20);
+                threadLike.join(20);
             }
-            launcher.join(3000);
+            threadLike.join(3000);
         }
     }
 
@@ -77,10 +77,10 @@ class TimerApplicationTest {
 
         //when
         commands.add(TimerApplication.startPeriodic(666666666, periodMillis));
-        try (final Launcher launcher = persisted ? app.chronicleQueue(commands, "periodic") : app.inMemory(commands)) {
+        try (final ThreadLike threadLike = persisted ? app.chronicleQueue(commands, "periodic") : app.inMemory(commands)) {
 
             //then
-            launcher.join(100 + periodMillis * (MAX_PERIODIC_REPETITIONS + 1));
+            threadLike.join(100 + periodMillis * (MAX_PERIODIC_REPETITIONS + 1));
         }
     }
 

@@ -30,12 +30,12 @@ import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.command.CommandLoopback;
-import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventRouter;
+import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.init.Context;
-import org.tools4j.elara.init.Launcher;
+import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.InMemoryLog;
 import org.tools4j.elara.log.MessageLog;
@@ -46,6 +46,7 @@ import org.tools4j.elara.samples.bank.command.BankCommand;
 import org.tools4j.elara.samples.bank.command.CommandType;
 import org.tools4j.elara.samples.bank.event.EventType;
 import org.tools4j.elara.samples.bank.state.Bank;
+import org.tools4j.nobark.run.ThreadLike;
 
 import java.util.Queue;
 
@@ -87,28 +88,30 @@ public class BankApplication implements Application {
         return eventApplier;
     }
 
-    public Launcher launch(final Queue<BankCommand> inputQueue) {
+    public ThreadLike launch(final Queue<BankCommand> inputQueue) {
         return launch(inputQueue,
                 new InMemoryLog<>(new FlyweightCommand()),
                 new InMemoryLog<>(new FlyweightEvent()));
     }
 
-    public Launcher launch(final Queue<BankCommand> inputQueue,
-                           final PeekableMessageLog<Command> commandLog,
-                           final MessageLog<Event> eventLog) {
+    public ThreadLike launch(final Queue<BankCommand> inputQueue,
+                             final PeekableMessageLog<Command> commandLog,
+                             final MessageLog<Event> eventLog) {
         return launch(Input.create(666, new CommandPoller(inputQueue)),
                 commandLog, eventLog);
     }
 
-    public Launcher launch(final Input input,
-                           final PeekableMessageLog<Command> commandLog,
-                           final MessageLog<Event> eventLog) {
-        return Launcher.launch(Context.create(this)
-                .input(input)
-                .output(this::publish)
-                .commandLog(commandLog)
-                .eventLog(eventLog)
-                .duplicateHandler(duplicateHandler)
+    public ThreadLike launch(final Input input,
+                             final PeekableMessageLog<Command> commandLog,
+                             final MessageLog<Event> eventLog) {
+        return Elara.launch(
+                Context.create()
+                        .input(input)
+                        .output(this::publish)
+                        .commandLog(commandLog)
+                        .eventLog(eventLog)
+                        .duplicateHandler(duplicateHandler),
+                this
         );
     }
 

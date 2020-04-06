@@ -23,37 +23,21 @@
  */
 package org.tools4j.elara.init;
 
+import org.tools4j.elara.application.Application;
+import org.tools4j.elara.plugin.Plugin;
+import org.tools4j.elara.run.Elara;
 import org.tools4j.nobark.run.ThreadLike;
 
-public class Launcher implements ThreadLike {
+import java.util.List;
 
-    private final ThreadLike threadLike;
-
-    private Launcher(final ThreadLike threadLike) {
-        this.threadLike = threadLike;
-    }
-
-    public static Launcher launch(final Context<?> context) {
-        return new Launcher(DefaultContext.start(context));
-    }
-
-    @Override
-    public Thread.State threadState() {
-        return threadLike.threadState();
-    }
-
-    @Override
-    public void join(final long millis) {
-        threadLike.join(millis);
-    }
-
-    @Override
-    public void stop() {
-        threadLike.stop();
-    }
-
-    @Override
-    public String toString() {
-        return threadLike.toString();
+/**
+ * Launcher used by {@link Elara} to launch an application.
+ */
+public enum Launcher {
+    ;
+    public static <A extends Application> ThreadLike start(final Context context,
+                                                           final A application,
+                                                           final List<Plugin.Builder<? super A>> pluginBuilders) {
+        return DefaultContext.start(context, application, pluginBuilders);
     }
 }

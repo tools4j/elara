@@ -31,8 +31,7 @@ import org.tools4j.elara.handler.ApplyingEventHandler;
 import org.tools4j.elara.handler.CommandHandler;
 
 final class Singletons {
-    <A extends Application> Singletons(final Context<A> context) {
-        plugins = new Plugins(context);
+    <A extends Application> Singletons(final Context context, final Plugins plugins) {
         commandLoopback = new DefaultCommandLoopback(
                 context.commandLog().appender(),
                 context.timeSource(),
@@ -55,7 +54,6 @@ final class Singletons {
         );
     }
 
-    final Plugins plugins;
     final CommandLoopback commandLoopback;
     final FlyweightEventRouter eventRouter;
     final CommandHandler commandHandler;

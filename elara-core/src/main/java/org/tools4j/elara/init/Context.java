@@ -24,7 +24,6 @@
 package org.tools4j.elara.init;
 
 import org.agrona.concurrent.IdleStrategy;
-import org.tools4j.elara.application.Application;
 import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
@@ -33,55 +32,46 @@ import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.log.PeekableMessageLog;
 import org.tools4j.elara.output.Output;
-import org.tools4j.elara.plugin.Plugin;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
-import java.util.function.Function;
 
-public interface Context<A extends Application> {
-    A application();
-
+public interface Context {
     List<Input> inputs();
-    Context<A> input(Input input);
-    Context<A> input(int id, Input.Poller poller);
+    Context input(Input input);
+    Context input(int id, Input.Poller poller);
 
     Output output();
-    Context<A> output(Output output);
+    Context output(Output output);
 
     PeekableMessageLog<Command> commandLog();
-    Context<A> commandLog(String file);
-    Context<A> commandLog(PeekableMessageLog<Command> commandLog);
+    Context commandLog(String file);
+    Context commandLog(PeekableMessageLog<Command> commandLog);
 
     MessageLog<Event> eventLog();
-    Context<A> eventLog(String file);
-    Context<A> eventLog(MessageLog<Event> eventLog);
-
-    Context<A> plugin(Plugin<?> plugin);
-    Context<A> plugin(Plugin.Builder<? super A> plugin);
-    <P> Context<A> plugin(Plugin<P> plugin, Function<? super A, ? extends P> pluginStateProvider);
-    List<Plugin.Builder<? super A>> plugins();
+    Context eventLog(String file);
+    Context eventLog(MessageLog<Event> eventLog);
 
     TimeSource timeSource();
-    Context<A> timeSource(TimeSource timeSource);
+    Context timeSource(TimeSource timeSource);
 
     ExceptionHandler exceptionHandler();
-    Context<A> exceptionHandler(ExceptionHandler exceptionHandler);
+    Context exceptionHandler(ExceptionHandler exceptionHandler);
 
     DuplicateHandler duplicateHandler();
-    Context<A> duplicateHandler(DuplicateHandler duplicateHandler);
+    Context duplicateHandler(DuplicateHandler duplicateHandler);
 
     IdleStrategy idleStrategy();
-    Context<A> idleStrategy(IdleStrategy idleStrategy);
+    Context idleStrategy(IdleStrategy idleStrategy);
 
     ThreadFactory threadFactory();
-    Context<A> threadFactory(String threadName);
-    Context<A> threadFactory(ThreadFactory threadFactory);
+    Context threadFactory(String threadName);
+    Context threadFactory(ThreadFactory threadFactory);
 
-    Context<A> validateAndPopulateDefaults();
+    Context validateAndPopulateDefaults();
 
-    static <A extends Application> Context<A> create(final A application) {
-        return new DefaultContext<A>(application);
+    static Context create() {
+        return new DefaultContext();
     }
 }

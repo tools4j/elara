@@ -34,17 +34,18 @@ import org.tools4j.elara.application.SimpleApplication;
 import org.tools4j.elara.chronicle.ChronicleMessageLog;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.command.CommandLoopback;
-import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventRouter;
+import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.init.Context;
-import org.tools4j.elara.init.Launcher;
+import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.InMemoryLog;
 import org.tools4j.elara.plugin.timer.TimerCommands;
 import org.tools4j.elara.plugin.timer.TimerEvents;
 import org.tools4j.elara.plugin.timer.TimerPlugin;
+import org.tools4j.nobark.run.ThreadLike;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -66,17 +67,18 @@ public class TimerApplication {
 
     private final Long2LongCounterMap periodicState = new Long2LongCounterMap(MAX_PERIODIC_REPETITIONS);
 
-    public Launcher inMemory(final Queue<DirectBuffer> commandQueue) {
-        return Launcher.launch(Context.create(application)
-                .plugin(new TimerPlugin())
-                .input(666, new CommandPoller(commandQueue))
-                .commandLog(new InMemoryLog<>(new FlyweightCommand()))
-                .eventLog(new InMemoryLog<>(new FlyweightEvent()))
+    public ThreadLike inMemory(final Queue<DirectBuffer> commandQueue) {
+        return Elara.launch(Context.create()
+                    .input(666, new CommandPoller(commandQueue))
+                    .commandLog(new InMemoryLog<>(new FlyweightCommand()))
+                    .eventLog(new InMemoryLog<>(new FlyweightEvent())),
+                application,
+                new TimerPlugin()
         );
     }
 
-    public Launcher chronicleQueue(final Queue<DirectBuffer> commandQueue,
-                                   final String name) {
+    public ThreadLike chronicleQueue(final Queue<DirectBuffer> commandQueue,
+                                     final String name) {
         final ChronicleQueue cq = ChronicleQueue.singleBuilder()
                 .path("build/chronicle/timer/" + name + "-cmd.cq4")
                 .wireType(WireType.BINARY_LIGHT)
@@ -85,11 +87,12 @@ public class TimerApplication {
                 .path("build/chronicle/timer/" + name + "-evt.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
-        return Launcher.launch(Context.create(application)
-                .plugin(new TimerPlugin())
-                .input(666, new CommandPoller(commandQueue))
-                .commandLog(new ChronicleMessageLog<>(cq, new FlyweightCommand()))
-                .eventLog(new ChronicleMessageLog<>(eq, new FlyweightEvent()))
+        return Elara.launch(Context.create()
+                    .input(666, new CommandPoller(commandQueue))
+                    .commandLog(new ChronicleMessageLog<>(cq, new FlyweightCommand()))
+                    .eventLog(new ChronicleMessageLog<>(eq, new FlyweightEvent())),
+                application,
+                new TimerPlugin()
         );
     }
 

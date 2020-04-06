@@ -34,8 +34,8 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Controller to simplify routing of timer start and stop events.  Requires application access to timer state which can
- * be acquired by registering the plugin via {@link org.tools4j.elara.init.Context#plugin(Plugin, Function)} and
- * providing the timer state from the application state.
+ * be acquired by registering the plugin via {@link org.tools4j.elara.init.PluginConfigurer#plugin(Plugin, Function)}
+ * and providing the timer state from the application state.
  */
 public class DefaultTimerControl implements TimerControl {
 
