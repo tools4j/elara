@@ -33,7 +33,7 @@ public class Launcher implements ThreadLike {
         this.threadLike = threadLike;
     }
 
-    public static Launcher launch(final Context context) {
+    public static Launcher launch(final Context<?> context) {
         return new Launcher(DefaultContext.start(context));
     }
 
