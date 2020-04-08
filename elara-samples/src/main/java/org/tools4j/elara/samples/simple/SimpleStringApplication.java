@@ -56,8 +56,8 @@ public class SimpleStringApplication {
         return Elara.launch(Context.create()
                     .input(999, new StringInputPoller(inputQueue))
                     .output(this::publish)
-                    .commandLog(new InMemoryLog<>(new FlyweightCommand()))
-                    .eventLog(new InMemoryLog<>(new FlyweightEvent())),
+                    .commandLog(new InMemoryLog<>(FlyweightCommand::new))
+                    .eventLog(new InMemoryLog<>(FlyweightEvent::new)),
                 application
         );
     }

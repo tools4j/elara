@@ -29,18 +29,20 @@ import org.tools4j.elara.log.Flyweight;
 import org.tools4j.elara.log.PeekableMessageLog;
 import org.tools4j.elara.log.Writable;
 
+import java.util.function.Supplier;
+
 import static java.util.Objects.requireNonNull;
 
 public class ChronicleMessageLog<M extends Writable> implements PeekableMessageLog<M> {
 
     private final ChronicleQueue queue;
-    private final Flyweight<? extends M> flyweight;
+    private final Supplier<? extends Flyweight<? extends M>> flyweightSupplier;
     private ExcerptTailer sizeTailer; //lazy init
 
     public ChronicleMessageLog(final ChronicleQueue queue,
-                               final Flyweight<? extends M> flyweight) {
+                               final Supplier<? extends Flyweight<? extends M>> flyweightSupplier) {
         this.queue = requireNonNull(queue);
-        this.flyweight = requireNonNull(flyweight);
+        this.flyweightSupplier = requireNonNull(flyweightSupplier);
     }
 
     @Override
@@ -50,7 +52,12 @@ public class ChronicleMessageLog<M extends Writable> implements PeekableMessageL
 
     @Override
     public PeekableMessageLog.PeekablePoller<M> poller() {
-        return new ChronicleLogPoller<M>(queue, flyweight);
+        return new ChronicleLogPoller<M>(queue, flyweightSupplier.get());
+    }
+
+    @Override
+    public PeekablePoller<M> poller(final String id) {
+        return new ChronicleLogPoller<M>(id, queue, flyweightSupplier.get());
     }
 
     @Override
@@ -63,5 +70,10 @@ public class ChronicleMessageLog<M extends Writable> implements PeekableMessageL
         }
         sizeTailer.toEnd();
         return sizeTailer.index() + 1;
+    }
+
+    @Override
+    public void close() {
+        queue.close();
     }
 }

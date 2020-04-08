@@ -27,23 +27,25 @@ import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.log.PeekableMessageLog.PeekPollHandler.Result;
 
+import java.util.function.Supplier;
+
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.log.PeekableMessageLog.PeekPollHandler.Result.POLL;
 
 public class InMemoryLog<M extends Writable> implements PeekableMessageLog<M> {
 
-    private final Flyweight<? extends M> flyweight;
-    private final boolean remoteOnPoll;
+    private final Supplier<? extends Flyweight<? extends M>> flyweightSupplier;
+    private final boolean removeOnPoll;
     private Element root = new Element();
     private Element last = root;
 
-    public InMemoryLog(final Flyweight<? extends M> flyweight) {
-        this(flyweight, true);
+    public InMemoryLog(final Supplier<? extends Flyweight<? extends M>> flyweightSupplier) {
+        this(flyweightSupplier, true);
     }
 
-    public InMemoryLog(final Flyweight<? extends M> flyweight, final boolean remoteOnPoll) {
-        this.flyweight = requireNonNull(flyweight);
-        this.remoteOnPoll = remoteOnPoll;
+    public InMemoryLog(final Supplier<? extends Flyweight<? extends M>> flyweightSupplier, final boolean removeOnPoll) {
+        this.flyweightSupplier = requireNonNull(flyweightSupplier);
+        this.removeOnPoll = removeOnPoll;
     }
 
     @Override
@@ -58,6 +60,7 @@ public class InMemoryLog<M extends Writable> implements PeekableMessageLog<M> {
     @Override
     public PeekablePoller<M> poller() {
         return new PeekablePoller<M>() {
+            final Flyweight<? extends M> flyweight = flyweightSupplier.get();
             Element current = root;
             long index = 0;
             @Override
@@ -70,7 +73,7 @@ public class InMemoryLog<M extends Writable> implements PeekableMessageLog<M> {
                 if (result == POLL) {
                     current = current.next;
                     index++;
-                    if (remoteOnPoll) {
+                    if (removeOnPoll) {
                         root.next = null;
                         root = current;
                     }
@@ -92,13 +95,18 @@ public class InMemoryLog<M extends Writable> implements PeekableMessageLog<M> {
                 handler.onMessage(index, flyMessage);
                 current = current.next;
                 index++;
-                if (remoteOnPoll) {
+                if (removeOnPoll) {
                     root.next = null;
                     root = current;
                 }
                 return 1;
             }
         };
+    }
+
+    @Override
+    public PeekablePoller<M> poller(final String id) {
+        throw new UnsupportedOperationException("tracking poller not supported");
     }
 
     @Override
@@ -110,6 +118,11 @@ public class InMemoryLog<M extends Writable> implements PeekableMessageLog<M> {
             e = e.next;
         }
         return size;
+    }
+
+    @Override
+    public void close() {
+        //nothing to do
     }
 
     private static final class Element {

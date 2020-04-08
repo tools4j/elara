@@ -30,6 +30,9 @@ public interface PeekableMessageLog<M> extends MessageLog<M> {
     @Override
     PeekablePoller<M> poller();
 
+    @Override
+    PeekablePoller<M> poller(String id);
+
     @FunctionalInterface
     interface PeekablePoller<M> extends Poller<M> {
         int peekOrPoll(PeekPollHandler<? super M> handler);

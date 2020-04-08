@@ -50,6 +50,12 @@ public class ChronicleLogPoller<M> implements PeekableMessageLog.PeekablePoller<
         this(queue.createTailer(), queue.rollCycle(), flyweight);
     }
 
+    public ChronicleLogPoller(final String id,
+                              final ChronicleQueue queue,
+                              final Flyweight<? extends M> flyweight) {
+        this(queue.createTailer(id), queue.rollCycle(), flyweight);
+    }
+
     public ChronicleLogPoller(final ExcerptTailer tailer,
                               final RollCycle rollCycle,
                               final Flyweight<? extends M> flyweight) {

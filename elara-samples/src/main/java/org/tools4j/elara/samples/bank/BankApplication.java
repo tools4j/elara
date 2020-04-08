@@ -90,8 +90,8 @@ public class BankApplication implements Application {
 
     public ElaraRunner launch(final Queue<BankCommand> inputQueue) {
         return launch(inputQueue,
-                new InMemoryLog<>(new FlyweightCommand()),
-                new InMemoryLog<>(new FlyweightEvent()));
+                new InMemoryLog<>(FlyweightCommand::new),
+                new InMemoryLog<>(FlyweightEvent::new));
     }
 
     public ElaraRunner launch(final Queue<BankCommand> inputQueue,

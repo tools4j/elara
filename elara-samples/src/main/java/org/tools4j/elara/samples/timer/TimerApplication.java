@@ -70,8 +70,8 @@ public class TimerApplication {
     public ElaraRunner inMemory(final Queue<DirectBuffer> commandQueue) {
         return Elara.launch(Context.create()
                     .input(666, new CommandPoller(commandQueue))
-                    .commandLog(new InMemoryLog<>(new FlyweightCommand()))
-                    .eventLog(new InMemoryLog<>(new FlyweightEvent())),
+                    .commandLog(new InMemoryLog<>(FlyweightCommand::new))
+                    .eventLog(new InMemoryLog<>(FlyweightEvent::new)),
                 application,
                 new TimerPlugin()
         );
@@ -89,8 +89,8 @@ public class TimerApplication {
                 .build();
         return Elara.launch(Context.create()
                     .input(666, new CommandPoller(commandQueue))
-                    .commandLog(new ChronicleMessageLog<>(cq, new FlyweightCommand()))
-                    .eventLog(new ChronicleMessageLog<>(eq, new FlyweightEvent())),
+                    .commandLog(new ChronicleMessageLog<>(cq, FlyweightCommand::new))
+                    .eventLog(new ChronicleMessageLog<>(eq, FlyweightEvent::new)),
                 application,
                 new TimerPlugin()
         );

@@ -23,10 +23,13 @@
  */
 package org.tools4j.elara.log;
 
-public interface MessageLog<M> {
+public interface MessageLog<M> extends AutoCloseable {
     Appender<M> appender();
     Poller<M> poller();
+    Poller<M> poller(String id);
     long size();
+    @Override
+    void close();
 
     @FunctionalInterface
     interface Appender<M> {

@@ -66,7 +66,7 @@ public class BankApplicationTest {
     }
 
     @Test
-    public void chronicleQueue() throws Exception {
+    public void chronicleQueue() {
         final Queue<BankCommand> commands = initCommandQueue();
         final ChronicleQueue cq = ChronicleQueue.singleBuilder()
                 .path("build/chronicle/bank/cmd.cq4")
@@ -78,8 +78,8 @@ public class BankApplicationTest {
                 .build();
         try (final ElaraRunner runner = bankApplication.launch(
                 commands,
-                new ChronicleMessageLog<>(cq, new FlyweightCommand()),
-                new ChronicleMessageLog<>(eq, new FlyweightEvent())
+                new ChronicleMessageLog<>(cq, FlyweightCommand::new),
+                new ChronicleMessageLog<>(eq, FlyweightEvent::new)
         )) {
             //when
             injectSomeCommands(commands);
