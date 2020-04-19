@@ -125,9 +125,9 @@ public class BankApplication implements Application {
         teller.onCommand(command, router);
     }
 
-    private void apply(final Event event, final CommandLoopback commandLoopback) {
+    private void apply(final Event event) {
         System.out.println("applying: " + event + ", payload=" + payloadFor(event));
-        accountant.onEvent(event, commandLoopback);
+        accountant.onEvent(event);
         if (event.isCommit()) {
             printBankAccounts(bank);
         }
@@ -142,7 +142,7 @@ public class BankApplication implements Application {
 
     }
 
-    private void publish(final Event event) {
+    private void publish(final Event event, final CommandLoopback loopback) {
         System.out.println("published: " + event + ", payload=" + payloadFor(event));
     }
 

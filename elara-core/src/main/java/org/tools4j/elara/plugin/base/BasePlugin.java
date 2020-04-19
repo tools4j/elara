@@ -27,6 +27,7 @@ import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.SequenceGenerator;
+import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.Plugin;
 import org.tools4j.elara.time.TimeSource;
 
@@ -74,6 +75,12 @@ public final class BasePlugin implements Plugin<BaseState.Mutable> {
         default Input[] inputs(final BaseState baseState, final TimeSource timeSource, final SequenceGenerator adminSequenceGenerator) {
             return Input.EMPTY_INPUTS;
         }
+
+        @Override
+        default Output output(final BaseState baseState) {
+            return Output.NOOP;
+        }
+
         @Override
         default CommandProcessor commandProcessor(final BaseState baseState) {
             return CommandProcessor.NOOP;

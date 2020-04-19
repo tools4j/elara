@@ -76,12 +76,15 @@ public class ApplyingEventHandler implements EventHandler, MessageLog.Handler<Ev
         final Command.Id commandId = event.id().commandId();
         final long lastAppliedForInput = baseState.lastCommandAllEventsApplied(commandId.input());
         if (lastAppliedForInput < commandId.sequence()) {
-            if (baseState.allEventsPolled()) {
+            final boolean append = baseState.allEventsPolled();
+            if (append) {
                 eventLogAppender.append(event);
-                publishEvent(event);
             }
             applyEvent(event);
             updateBaseState(event);
+            if (append) {
+                publishEvent(event);
+            }
         } else {
             skipEvent(event);
         }
@@ -89,7 +92,7 @@ public class ApplyingEventHandler implements EventHandler, MessageLog.Handler<Ev
 
     private void publishEvent(final Event event) {
         try {
-            output.publish(event);
+            output.publish(event, commandLoopback);
         } catch (final Throwable t) {
             exceptionHandler.handleEventOutputException(event, t);
         }
@@ -97,7 +100,7 @@ public class ApplyingEventHandler implements EventHandler, MessageLog.Handler<Ev
 
     private void applyEvent(final Event event) {
         try {
-            eventApplier.onEvent(event, commandLoopback);
+            eventApplier.onEvent(event);
         } catch (final Throwable t) {
             exceptionHandler.handleEventApplierException(event, t);
         }

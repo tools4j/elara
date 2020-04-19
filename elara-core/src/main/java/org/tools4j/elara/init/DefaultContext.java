@@ -56,7 +56,7 @@ final class DefaultContext implements Context {
     private static final String DEFAULT_THREAD_NAME = "duty-cycle";
 
     private final List<Input> inputs = new ArrayList<>();
-    private Output output = event -> {};
+    private Output output = (event, commandLoopback) -> {};
     private PeekableMessageLog<Command> commandLog;
     private MessageLog<Event> eventLog;
     private TimeSource timeSource;

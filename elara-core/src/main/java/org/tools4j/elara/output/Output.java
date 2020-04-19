@@ -23,9 +23,12 @@
  */
 package org.tools4j.elara.output;
 
+import org.tools4j.elara.command.CommandLoopback;
 import org.tools4j.elara.event.Event;
 
 @FunctionalInterface
 public interface Output {
-    void publish(Event event);
+    Output NOOP = (event, loopback) -> {};
+
+    void publish(Event event, CommandLoopback loopback);
 }

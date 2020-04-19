@@ -27,6 +27,7 @@ import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.SequenceGenerator;
+import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.time.TimeSource;
 
@@ -46,6 +47,7 @@ public interface Plugin<P> {
 
     interface Context {
         Input[] inputs(BaseState baseState, TimeSource timeSource, SequenceGenerator adminSequenceGenerator);
+        Output output(BaseState baseState);
         CommandProcessor commandProcessor(BaseState baseState);
         EventApplier eventApplier(BaseState.Mutable baseState);
     }

@@ -70,6 +70,7 @@ public class TimerApplication {
     public ElaraRunner inMemory(final Queue<DirectBuffer> commandQueue) {
         return Elara.launch(Context.create()
                     .input(666, new CommandPoller(commandQueue))
+                    .output(this::publish)
                     .commandLog(new InMemoryLog<>(FlyweightCommand::new))
                     .eventLog(new InMemoryLog<>(FlyweightEvent::new)),
                 application,
@@ -89,6 +90,7 @@ public class TimerApplication {
                 .build();
         return Elara.launch(Context.create()
                     .input(666, new CommandPoller(commandQueue))
+                    .output(this::publish)
                     .commandLog(new ChronicleMessageLog<>(cq, FlyweightCommand::new))
                     .eventLog(new ChronicleMessageLog<>(eq, FlyweightEvent::new)),
                 application,
@@ -129,7 +131,7 @@ public class TimerApplication {
         }
     }
 
-    private void apply(final Event event, final CommandLoopback commandLoopback) {
+    private void apply(final Event event) {
 //        System.out.println("applied: " + event + ", payload=" + payloadFor(event.type(), event.payload()));
         if (event.type() == TimerEvents.TIMER_STARTED) {
             final long timerId = TimerEvents.timerId(event);
@@ -147,11 +149,25 @@ public class TimerApplication {
                     System.out.println("...EVENT: timer expired (periodic end): timerId=" + timerId + ", timerType=" + timerType + ", timeout=" + timeout + ", time=" + formatTime(event.time()));
                 } else {
                     System.out.println("...EVENT: timer expired (periodic reload, remaining=" + remaining + "): timerId=" + timerId + ", timerType=" + timerType + ", timeout=" + timeout + ", time=" + formatTime(event.time()));
-                    final DirectBuffer command = startTimerCommand(timerType, timerId, timeout);
-                    commandLoopback.enqueueCommand(command, 0, command.capacity());
                 }
             } else {
                 System.out.println("...EVENT: timer expired (single): timerId=" + timerId + ", timerType=" + timerType + ", timeout=" + timeout + ", time=" + formatTime(event.time()));
+            }
+        }
+    }
+
+    private void publish(final Event event, final CommandLoopback loopback) {
+        if (event.type() == TimerEvents.TIMER_EXPIRED) {
+            final long timerId = TimerEvents.timerId(event);
+            final int timerType = TimerEvents.timerType(event);
+            final long timeout = TimerEvents.timerTimeout(event);
+            if (timerType == TIMER_TYPE_PERIODIC) {
+                final long remaining = periodicState.get(timerId);
+                if (remaining > 0) {
+                    final DirectBuffer command = startTimerCommand(timerType, timerId, timeout);
+                    loopback.enqueueCommand(command, 0, command.capacity());
+                    System.out.println("...PUBLISH: timer reload command enqueued (periodic reload, remaining=" + remaining + "): timerId=" + timerId + ", timerType=" + timerType + ", timeout=" + timeout + ", time=" + formatTime(event.time()));
+                }
             }
         }
     }

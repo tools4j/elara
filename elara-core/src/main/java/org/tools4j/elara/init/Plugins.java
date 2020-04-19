@@ -31,6 +31,8 @@ import org.tools4j.elara.event.CompositeEventApplier;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.input.SimpleSequenceGenerator;
+import org.tools4j.elara.output.CompositeOutput;
+import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.Plugin;
 import org.tools4j.elara.plugin.base.BasePlugin;
 import org.tools4j.elara.plugin.base.BaseState;
@@ -50,6 +52,7 @@ final class Plugins {
         this.baseState = baseState();
         this.adminSequenceGenerator = new SimpleSequenceGenerator();
         this.inputs = inputs(context.inputs(), baseState, context.timeSource(), adminSequenceGenerator, plugins);
+        this.output = output(baseState, context, plugins);
         this.commandProcessor = commandProcessor(baseState, application, plugins);
         this.eventApplier = eventApplier(baseState, application, plugins);
     }
@@ -58,6 +61,7 @@ final class Plugins {
     final BaseState.Mutable baseState;
     final SequenceGenerator adminSequenceGenerator;
     final Input[] inputs;
+    final Output output;
     final CommandProcessor commandProcessor;
     final EventApplier eventApplier;
 
@@ -139,5 +143,28 @@ final class Plugins {
             allInputs.addAll(Arrays.asList(plugin.inputs(baseState, timeSource, adminSequenceGenerator)));
         }
         return allInputs.toArray(EMPTY_INPUTS);
+    }
+
+    private static Output output(final BaseState.Mutable baseState,
+                                 final Context context,
+                                 final Plugin.Context... plugins) {
+        if (plugins.length == 0) {
+            return context.output();
+        }
+        final Output[] outputs = new Output[plugins.length + 1];
+        int count = 0;
+        for (final Plugin.Context plugin : plugins) {
+            outputs[count] = plugin.output(baseState);
+            if (outputs[count] != EventApplier.NOOP) {
+                count++;
+            }
+        }
+        if (count == 0) {
+            return context.output();
+        }
+        outputs[count++] = context.output();//application output last
+        return new CompositeOutput(
+                count == outputs.length ? outputs : Arrays.copyOf(outputs, count)
+        );
     }
 }

@@ -33,6 +33,7 @@ import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
+import org.tools4j.elara.command.CommandLoopback;
 import org.tools4j.elara.command.DefaultCommandLoopback;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventType;
@@ -43,7 +44,6 @@ import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.time.TimeSource;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -79,13 +79,16 @@ public class ApplyingEventHandlerTest {
     @Mock
     private Event event;
 
+    private CommandLoopback loopback;
+
     //under test
     private ApplyingEventHandler eventHandler;
 
     @BeforeEach
     public void init() {
-        eventHandler = new ApplyingEventHandler(baseState, new DefaultCommandLoopback(evt -> {}, timeSource,
-                adminSequenceGenerator), eventLogAppender, output, eventApplier, exceptionHandler, duplicateHandler);
+        loopback =  new DefaultCommandLoopback(evt -> {}, timeSource, adminSequenceGenerator);
+        eventHandler = new ApplyingEventHandler(baseState, loopback, eventLogAppender, output, eventApplier,
+                exceptionHandler, duplicateHandler);
         when(eventId.commandId()).thenReturn(commandId);
         when(event.id()).thenReturn(eventId);
     }
@@ -105,8 +108,8 @@ public class ApplyingEventHandlerTest {
 
         //then
         inOrder.verify(eventLogAppender, never()).append(any());
-        inOrder.verify(output, never()).publish(any());
-        inOrder.verify(eventApplier, never()).onEvent(any(), any());
+        inOrder.verify(output, never()).publish(any(), any());
+        inOrder.verify(eventApplier, never()).onEvent(any());
         inOrder.verify(baseState, never()).lastAppliedEvent(any());
         inOrder.verify(duplicateHandler).skipEventApplying(event);
         inOrder.verifyNoMoreInteractions();
@@ -117,8 +120,8 @@ public class ApplyingEventHandlerTest {
 
         //then
         inOrder.verify(eventLogAppender, never()).append(any());
-        inOrder.verify(output, never()).publish(any());
-        inOrder.verify(eventApplier, never()).onEvent(any(), any());
+        inOrder.verify(output, never()).publish(any(), any());
+        inOrder.verify(eventApplier, never()).onEvent(any());
         inOrder.verify(baseState, never()).lastAppliedEvent(any());
         inOrder.verify(duplicateHandler).skipEventApplying(event);
         inOrder.verifyNoMoreInteractions();
@@ -140,9 +143,9 @@ public class ApplyingEventHandlerTest {
 
         //then
         inOrder.verify(eventLogAppender).append(event);
-        inOrder.verify(output).publish(event);
-        inOrder.verify(eventApplier).onEvent(same(event), notNull());
+        inOrder.verify(eventApplier).onEvent(same(event));
         inOrder.verify(baseState).lastAppliedEvent(event);
+        inOrder.verify(output).publish(event, loopback);
         inOrder.verifyNoMoreInteractions();
 
         //when
@@ -151,10 +154,10 @@ public class ApplyingEventHandlerTest {
 
         //then
         inOrder.verify(eventLogAppender).append(event);
-        inOrder.verify(output).publish(event);
-        inOrder.verify(eventApplier).onEvent(same(event), notNull());
+        inOrder.verify(eventApplier).onEvent(same(event));
         inOrder.verify(baseState).lastAppliedEvent(event);
         inOrder.verify(baseState, never()).allEventsAppliedFor(any());
+        inOrder.verify(output).publish(event, loopback);
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -175,10 +178,10 @@ public class ApplyingEventHandlerTest {
 
         //then
         inOrder.verify(eventLogAppender).append(event);
-        inOrder.verify(output).publish(event);
-        inOrder.verify(eventApplier).onEvent(same(event), notNull());
+        inOrder.verify(eventApplier).onEvent(same(event));
         inOrder.verify(baseState).lastAppliedEvent(event);
         inOrder.verify(baseState).allEventsAppliedFor(commandId);
+        inOrder.verify(output).publish(event, loopback);
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -198,8 +201,8 @@ public class ApplyingEventHandlerTest {
 
         //then
         inOrder.verify(eventLogAppender, never()).append(any());
-        inOrder.verify(output, never()).publish(event);
-        inOrder.verify(eventApplier).onEvent(same(event), notNull());
+        inOrder.verify(output, never()).publish(event, loopback);
+        inOrder.verify(eventApplier).onEvent(same(event));
         inOrder.verify(baseState).lastAppliedEvent(event);
         inOrder.verifyNoMoreInteractions();
     }
@@ -216,11 +219,11 @@ public class ApplyingEventHandlerTest {
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
-        doThrow(testException).when(eventApplier).onEvent(any(), any());
+        doThrow(testException).when(eventApplier).onEvent(any());
         eventHandler.onEvent(event);
 
         //then
-        inOrder.verify(eventApplier).onEvent(same(event), notNull());
+        inOrder.verify(eventApplier).onEvent(same(event));
         inOrder.verify(exceptionHandler).handleEventApplierException(event, testException);
         inOrder.verifyNoMoreInteractions();
     }
@@ -238,13 +241,13 @@ public class ApplyingEventHandlerTest {
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
-        doThrow(testException).when(output).publish(any());
+        doThrow(testException).when(output).publish(any(), any());
         eventHandler.onEvent(event);
 
         //then
-        inOrder.verify(output).publish(event);
+        inOrder.verify(eventApplier).onEvent(same(event));
+        inOrder.verify(output).publish(event, loopback);
         inOrder.verify(exceptionHandler).handleEventOutputException(event, testException);
-        inOrder.verify(eventApplier).onEvent(same(event), notNull());
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -264,7 +267,7 @@ public class ApplyingEventHandlerTest {
         eventHandler.onEvent(event);
 
         //then
-        inOrder.verify(eventApplier, never()).onEvent(same(event), notNull());
+        inOrder.verify(eventApplier, never()).onEvent(same(event));
         inOrder.verify(duplicateHandler).skipEventApplying(event);
         inOrder.verify(exceptionHandler).handleEventApplierException(event, testException);
         inOrder.verifyNoMoreInteractions();

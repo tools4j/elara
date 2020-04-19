@@ -21,24 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.event;
+package org.tools4j.elara.output;
 
-import org.tools4j.elara.application.EventApplier;
+import org.tools4j.elara.command.CommandLoopback;
+import org.tools4j.elara.event.Event;
 
 import static java.util.Objects.requireNonNull;
 
-public class CompositeEventApplier implements EventApplier {
+public class CompositeOutput implements Output {
 
-    private final EventApplier[] appliers;
+    private final Output[] outputs;
 
-    public CompositeEventApplier(final EventApplier... appliers) {
-        this.appliers = requireNonNull(appliers);
+    public CompositeOutput(final Output... outputs) {
+        this.outputs = requireNonNull(outputs);
     }
 
     @Override
-    public void onEvent(final Event event) {
-        for (final EventApplier applier : appliers) {
-            applier.onEvent(event);
+    public void publish(final Event event, final CommandLoopback loopback) {
+        for (final Output output : outputs) {
+            output.publish(event, loopback);
         }
     }
 

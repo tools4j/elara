@@ -56,9 +56,6 @@ public class DefaultCommandLoopback implements CommandLoopback {
 
     @Override
     public void enqueueCommand(final int type, final DirectBuffer command, final int offset, final int length) {
-        if (CommandType.isAdmin(type)) {
-            throw new IllegalArgumentException("Invalid command type: " + type);
-        }
         commandLogAppender.append(flyweightCommand.init(buffer, 0, Input.ADMIN_ID,
                 adminSequenceGenerator.nextSequence(), type, timeSource.currentTime(), command, offset, length
         ));

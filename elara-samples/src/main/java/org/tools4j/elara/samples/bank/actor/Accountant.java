@@ -24,7 +24,6 @@
 package org.tools4j.elara.samples.bank.actor;
 
 import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.command.CommandLoopback;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.samples.bank.event.AccountCreatedEvent;
 import org.tools4j.elara.samples.bank.event.AmountAddedOrRemovedEvent;
@@ -42,7 +41,7 @@ public class Accountant implements EventApplier {
     }
 
     @Override
-    public void onEvent(final Event event, final CommandLoopback loopback) {
+    public void onEvent(final Event event) {
         if (event.isApplication()) {
             final EventType type = EventType.byValue(event.type());
             switch (type) {

@@ -67,11 +67,11 @@ public class SimpleStringApplication {
         router.routeEvent(command.type(), command.payload(), 0, command.payload().capacity());
     }
 
-    private void apply(final Event event, final CommandLoopback commandLoopback) {
+    private void apply(final Event event) {
         System.out.println("applied: " + event + ", payload=" + payloadFor(event.type(), event.payload()));
     }
 
-    private void publish(final Event event) {
+    private void publish(final Event event, final CommandLoopback loopback) {
         System.out.println("published: " + event + ", payload=" + payloadFor(event.type(), event.payload()));
     }
 

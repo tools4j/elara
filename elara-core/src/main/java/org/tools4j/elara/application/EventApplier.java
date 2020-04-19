@@ -23,12 +23,11 @@
  */
 package org.tools4j.elara.application;
 
-import org.tools4j.elara.command.CommandLoopback;
 import org.tools4j.elara.event.Event;
 
 @FunctionalInterface
 public interface EventApplier {
-    void onEvent(Event event, CommandLoopback loopback);
+    void onEvent(Event event);
 
-    EventApplier NOOP = (event, loopback) -> {};
+    EventApplier NOOP = (event) -> {};
 }

@@ -40,7 +40,7 @@ final class Singletons {
         eventHandler = new ApplyingEventHandler(
                 plugins.baseState, commandLoopback,
                 context.eventLog().appender(),
-                context.output(),
+                plugins.output,
                 plugins.eventApplier,
                 context.exceptionHandler(),
                 context.duplicateHandler()

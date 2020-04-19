@@ -21,25 +21,33 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.event;
+package org.tools4j.elara.plugin.timer;
 
-import org.tools4j.elara.application.EventApplier;
+import org.agrona.ExpandableDirectByteBuffer;
+import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.command.CommandLoopback;
+import org.tools4j.elara.event.Event;
+import org.tools4j.elara.output.Output;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.plugin.timer.TimerCommandDescriptor.TIMER_PAYLOAD_SIZE;
+import static org.tools4j.elara.plugin.timer.TimerCommands.triggerTimer;
 
-public class CompositeEventApplier implements EventApplier {
+public class TimerCommandLoopback implements Output {
 
-    private final EventApplier[] appliers;
+    private final TimerState.Mutable timerState;
+    private final MutableDirectBuffer buffer = new ExpandableDirectByteBuffer(TIMER_PAYLOAD_SIZE);
 
-    public CompositeEventApplier(final EventApplier... appliers) {
-        this.appliers = requireNonNull(appliers);
+    public TimerCommandLoopback(final TimerState.Mutable timerState) {
+        this.timerState = requireNonNull(timerState);
     }
 
     @Override
-    public void onEvent(final Event event) {
-        for (final EventApplier applier : appliers) {
-            applier.onEvent(event);
+    public void publish(final Event event, final CommandLoopback loopback) {
+        final int next = timerState.indexOfNextDeadline();
+        if (next >= 0 && timerState.deadline(next) <= event.time()) {
+            final int len = triggerTimer(buffer, 0, timerState.id(next), timerState.type(next), timerState.timeout(next));
+            loopback.enqueueCommand(TimerCommands.TRIGGER_TIMER, buffer, 0, len);
         }
     }
-
 }
