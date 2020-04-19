@@ -52,6 +52,10 @@ public interface Event extends Writable {
         return EventType.isCommit(type());
     }
 
+    default boolean isRollback() {
+        return EventType.isRollback(type());
+    }
+
     DirectBuffer payload();
 
     @Override

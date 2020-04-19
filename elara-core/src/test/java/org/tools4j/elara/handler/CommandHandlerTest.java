@@ -52,7 +52,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class CommandHandlerTest {
 
-    private static final long INDEX = 123;
     @Mock
     private BaseState baseState;
     @Mock
@@ -88,7 +87,7 @@ public class CommandHandlerTest {
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq);
-        result = commandHandler.onMessage(INDEX, command);
+        result = commandHandler.onMessage(command);
 
         //then
         assertEquals(Result.POLL, result, "result");
@@ -98,7 +97,7 @@ public class CommandHandlerTest {
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq + 1);
-        result = commandHandler.onMessage(INDEX, command);
+        result = commandHandler.onMessage(command);
 
         //then
         assertEquals(Result.POLL, result, "result");
@@ -120,7 +119,7 @@ public class CommandHandlerTest {
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 2);
-        result = commandHandler.onMessage(INDEX, command);
+        result = commandHandler.onMessage(command);
 
         //then
         assertEquals(Result.POLL, result, "result");
@@ -130,7 +129,7 @@ public class CommandHandlerTest {
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
-        result = commandHandler.onMessage(INDEX, command);
+        result = commandHandler.onMessage(command);
 
         //then
         assertEquals(Result.POLL, result, "result");
@@ -152,7 +151,7 @@ public class CommandHandlerTest {
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
-        result = commandHandler.onMessage(INDEX, command);
+        result = commandHandler.onMessage(command);
 
         //then
         assertEquals(Result.PEEK, result, "result");
@@ -176,7 +175,7 @@ public class CommandHandlerTest {
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
         doThrow(testException).when(commandProcessor).onCommand(any(), any());
-        result = commandHandler.onMessage(INDEX, command);
+        result = commandHandler.onMessage(command);
 
         //then
         assertEquals(Result.POLL, result, "result");
@@ -199,7 +198,7 @@ public class CommandHandlerTest {
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq);
         doThrow(testException).when(duplicateHandler).skipCommandProcessing(any());
-        result = commandHandler.onMessage(INDEX, command);
+        result = commandHandler.onMessage(command);
 
         //then
         assertEquals(Result.POLL, result, "result");

@@ -51,7 +51,7 @@ public enum MessagePrinters {
     public static MessagePrinter<DataFrame> command(final DataFrameFormatter formatter) {
         requireNonNull(formatter);
         return composite(
-                (line, frame) -> line == 0 ? 0 : 1,
+                (line, entryId, frame) -> line == 0 ? 0 : 1,
                 parameterized(COMMAND_FORMAT.replace(VERSION, " (V {version})"), formatter),
                 parameterized(COMMAND_FORMAT.replace(VERSION, ""), formatter)
         );
@@ -62,19 +62,19 @@ public enum MessagePrinters {
         requireNonNull(formatter);
         final DataFrameFormatter inputSeqSpacer = new DataFrameFormatter() {
             @Override
-            public Object value(final String placeholder, final long line, final DataFrame frame) {
+            public Object value(final String placeholder, final long line, final long entryId, final DataFrame frame) {
                 switch (placeholder) {
                     case "{in-spc}":
-                        return String.valueOf(formatter.input(line, frame)).replaceAll(".", ".");
+                        return String.valueOf(formatter.input(line, entryId, frame)).replaceAll(".", ".");
                     case "{seq-spc}":
-                        return String.valueOf(formatter.sequence(line, frame)).replaceAll(".", ".");
+                        return String.valueOf(formatter.sequence(line, entryId, frame)).replaceAll(".", ".");
                     default:
-                        return formatter.value(placeholder, line, frame);
+                        return formatter.value(placeholder, line, entryId, frame);
                 }
             }
         };
         return composite(
-                (line, frame) -> {
+                (line, entryId, frame) -> {
                     if (line == 0) return 0;
                     if (frame.header().index() == 0) return 1;
                     return 2;
@@ -88,6 +88,6 @@ public enum MessagePrinters {
     public static final MessagePrinter<DataFrame> FRAME = frame(DEFAULT);
     public static MessagePrinter<DataFrame> frame(final DataFrameFormatter formatter) {
         requireNonNull(formatter);
-        return composite((line, frame) -> frame.header().index() < 0 ? 0 : 1, command(formatter), event(formatter));
+        return composite((line, entryId, frame) -> frame.header().index() < 0 ? 0 : 1, command(formatter), event(formatter));
     }
 }

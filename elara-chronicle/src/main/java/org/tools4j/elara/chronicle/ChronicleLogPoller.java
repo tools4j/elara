@@ -26,7 +26,6 @@ package org.tools4j.elara.chronicle;
 import net.openhft.chronicle.bytes.Bytes;
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.queue.ExcerptTailer;
-import net.openhft.chronicle.queue.RollCycle;
 import net.openhft.chronicle.wire.DocumentContext;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
@@ -42,26 +41,57 @@ public class ChronicleLogPoller<M> implements PeekableMessageLog.PeekablePoller<
 
     private final ExcerptTailer tailer;
     private final Flyweight<? extends M> flyweight;
-    private final RollCycle rollCycle;
     private final MutableDirectBuffer buffer = new UnsafeBuffer(0, 0);
 
-    public ChronicleLogPoller(final ChronicleQueue queue,
-                              final Flyweight<? extends M> flyweight) {
-        this(queue.createTailer(), queue.rollCycle(), flyweight);
+    public ChronicleLogPoller(final ChronicleQueue queue, final Flyweight<? extends M> flyweight) {
+        this(queue.createTailer(), flyweight);
     }
 
     public ChronicleLogPoller(final String id,
                               final ChronicleQueue queue,
                               final Flyweight<? extends M> flyweight) {
-        this(queue.createTailer(id), queue.rollCycle(), flyweight);
+        this(queue.createTailer(id), flyweight);
     }
 
-    public ChronicleLogPoller(final ExcerptTailer tailer,
-                              final RollCycle rollCycle,
-                              final Flyweight<? extends M> flyweight) {
+    public ChronicleLogPoller(final ExcerptTailer tailer, final Flyweight<? extends M> flyweight) {
         this.tailer = requireNonNull(tailer);
-        this.rollCycle = requireNonNull(rollCycle);
         this.flyweight = requireNonNull(flyweight);
+    }
+
+    @Override
+    public long entryId() {
+        return tailer.index();
+    }
+
+    @Override
+    public boolean moveTo(final long entryId) {
+        return tailer.moveToIndex(entryId);
+    }
+
+    @Override
+    public ChronicleLogPoller<M> moveToStart() {
+        tailer.toStart();
+        return this;
+    }
+
+    @Override
+    public PeekableMessageLog.PeekablePoller<M> moveToEnd() {
+        tailer.toEnd();
+        return this;
+    }
+
+    @Override
+    public boolean moveToNext() {
+        boolean present;
+        do {
+            try (final DocumentContext context = tailer.readingDocument()) {
+                if (context.isData()) {
+                    return true;
+                }
+                present = context.isPresent();
+            }
+        } while (present);
+        return false;
     }
 
     @Override
@@ -74,7 +104,7 @@ public class ChronicleLogPoller<M> implements PeekableMessageLog.PeekablePoller<
                 final long addr = bytes.addressForRead(offset);
                 buffer.wrap(addr, size);
                 final M flyMessage = flyweight.init(buffer, 0);
-                handler.onMessage(index(context), flyMessage);
+                handler.onMessage(flyMessage);
                 buffer.wrap(0, 0);
                 bytes.readPosition(offset + size);
                 return 1;
@@ -93,7 +123,7 @@ public class ChronicleLogPoller<M> implements PeekableMessageLog.PeekablePoller<
                 final long addr = bytes.addressForRead(offset);
                 buffer.wrap(addr, size);
                 final M flyMessage = flyweight.init(buffer, 0);
-                final Result result = handler.onMessage(index(context), flyMessage);
+                final Result result = handler.onMessage(flyMessage);
                 buffer.wrap(0, 0);
                 bytes.readPosition(offset + size);
                 if (result == POLL) {
@@ -107,10 +137,6 @@ public class ChronicleLogPoller<M> implements PeekableMessageLog.PeekablePoller<
             }
             return 0;
         }
-    }
-
-    private long index(final DocumentContext context) {
-        return rollCycle.toSequenceNumber(context.index());
     }
 
 }

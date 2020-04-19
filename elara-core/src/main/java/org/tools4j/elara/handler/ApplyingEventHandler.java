@@ -67,7 +67,7 @@ public class ApplyingEventHandler implements EventHandler, MessageLog.Handler<Ev
     }
 
     @Override
-    public void onMessage(final long index, final Event event) {
+    public void onMessage(final Event event) {
         onEvent(event);
     }
 

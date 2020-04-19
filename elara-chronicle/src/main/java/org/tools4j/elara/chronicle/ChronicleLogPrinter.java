@@ -113,7 +113,7 @@ public class ChronicleLogPrinter implements AutoCloseable {
         new ChronicleLogPrinter().print(queue, new FlyweightDataFrame(), MessagePrinters.frame(
                 new DataFrameFormatter() {
                     @Override
-                    public Object time(final long line, final DataFrame frame) {
+                    public Object time(final long line, final long entryId, final DataFrame frame) {
                         return Instant.ofEpochMilli(frame.header().time());
                     }
                 }

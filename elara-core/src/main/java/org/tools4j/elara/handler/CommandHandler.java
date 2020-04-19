@@ -56,13 +56,12 @@ public class CommandHandler implements PeekableMessageLog.PeekPollHandler<Comman
     }
 
     @Override
-    public Result onMessage(final long index, final Command command) {
+    public Result onMessage(final Command command) {
         final Command.Id cid = command.id();
         final long lastAppliedForInput = baseState.lastCommandAllEventsApplied(cid.input());
         if (lastAppliedForInput < cid.sequence()) {
             if (baseState.processCommands()) {
-                processCommand(command);
-                return POLL;
+                return processCommand(command);
             }
             return PEEK;
         }
@@ -70,14 +69,17 @@ public class CommandHandler implements PeekableMessageLog.PeekPollHandler<Comman
         return POLL;
     }
 
-    private void processCommand(final Command command) {
+    private Result processCommand(final Command command) {
         eventRouter.start(command);
         try {
             commandProcessor.onCommand(command, eventRouter);
         } catch (final Throwable t) {
             exceptionHandler.handleCommandProcessorException(command, t);
         }
-        eventRouter.commit();
+        if (eventRouter.complete()) {
+            return POLL;
+        }
+        return PEEK;
     }
 
     private void skipCommand(final Command command) {

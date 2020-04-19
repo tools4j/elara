@@ -31,12 +31,12 @@ public class CompositeMessagePrinter<M> implements MessagePrinter<M> {
 
     @FunctionalInterface
     public interface PrinterProvider<M> {
-        MessagePrinter<? super M> provide(long line, M message);
+        MessagePrinter<? super M> provide(long line, long entryId, M message);
     }
 
     @FunctionalInterface
     public interface PrinterSelector<M> {
-        int select(long line, M message);
+        int select(long line, long entryId, M message);
     }
 
     private final PrinterProvider<M> printerProvider;
@@ -47,11 +47,11 @@ public class CompositeMessagePrinter<M> implements MessagePrinter<M> {
 
     public CompositeMessagePrinter(final PrinterSelector<M> printerSelector,
                                    final MessagePrinter<? super M>... printers) {
-        this((line, message) -> printers[printerSelector.select(line, message)]);
+        this((line, entryId, message) -> printers[printerSelector.select(line, entryId, message)]);
     }
 
     @Override
-    public void print(final long line, final M message, final PrintWriter writer) {
-        printerProvider.provide(line, message).print(line, message, writer);
+    public void print(final long line, final long entryId, final M message, final PrintWriter writer) {
+        printerProvider.provide(line, entryId, message).print(line, entryId, message, writer);
     }
 }

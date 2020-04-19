@@ -85,9 +85,11 @@ public class MessageLogPrinter implements AutoCloseable {
     public <M> void print(final MessageLog.Poller<M> poller,
                           final Predicate<? super M> filter,
                           final MessagePrinter<? super M> printer) {
-        final MessageLog.Handler<M> handler = (index, message) -> {
+        final long[] linePtr = {0};
+        final MessageLog.Handler<M> handler = message -> {
+            final long line = linePtr[0]++;
             if (filter.test(message)) {
-                printer.print(index, message, printWriter);
+                printer.print(line, poller.entryId(), message, printWriter);
             }
         };
         while (poller.poll(handler) > 0);

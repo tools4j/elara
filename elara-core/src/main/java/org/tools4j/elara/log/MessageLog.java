@@ -37,11 +37,16 @@ public interface MessageLog<M> extends AutoCloseable {
     }
 
     interface Poller<M> {
+        long entryId();
+        boolean moveTo(long entryId);
+        boolean moveToNext();//skip one
+        Poller<M> moveToStart();
+        Poller<M> moveToEnd();
         int poll(Handler<? super M> handler);
     }
 
     @FunctionalInterface
     interface Handler<M> {
-        void onMessage(long index, M message);
+        void onMessage(M message);
     }
 }

@@ -30,6 +30,7 @@ import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.EventHandler;
 import org.tools4j.elara.event.EventRouter;
 import org.tools4j.elara.event.EventType;
+import org.tools4j.elara.event.RollbackMode;
 import org.tools4j.elara.plugin.base.BaseEvents;
 
 import static java.util.Objects.requireNonNull;
@@ -41,6 +42,7 @@ public class FlyweightEventRouter implements EventRouter {
     private final FlyweightEvent flyweightEvent = new FlyweightEvent();
 
     private Command command;
+    private RollbackMode rollbackMode;
     private short nextIndex = 0;
 
     public FlyweightEventRouter(final EventHandler eventHandler) {
@@ -50,6 +52,7 @@ public class FlyweightEventRouter implements EventRouter {
     public FlyweightEventRouter start(final Command command) {
         this.command = requireNonNull(command);
         this.nextIndex = 0;
+        this.rollbackMode = null;
         return this;
     }
 
@@ -64,12 +67,23 @@ public class FlyweightEventRouter implements EventRouter {
         nextIndex++;
     }
 
-    public FlyweightEventRouter commit() {
-        eventHandler.onEvent(BaseEvents.commit(flyweightEvent, headerBuffer, 0, command, nextIndex));
+    public boolean complete() {
+        final RollbackMode mode = rollbackMode;
+        if (mode == null) {
+            eventHandler.onEvent(BaseEvents.commit(flyweightEvent, headerBuffer, 0, command, nextIndex));
+        } else {
+            eventHandler.onEvent(BaseEvents.rollback(flyweightEvent, headerBuffer, 0, command, nextIndex));
+        }
         this.flyweightEvent.reset();
         this.command = null;
+        this.rollbackMode = null;
         this.nextIndex = 0;
-        return this;
+        return mode != RollbackMode.REPLAY_COMMAND;
+    }
+
+    @Override
+    public void rollbackAfterProcessing(final RollbackMode mode) {
+        this.rollbackMode = requireNonNull(mode);
     }
 
     @Override
@@ -78,7 +92,7 @@ public class FlyweightEventRouter implements EventRouter {
     }
 
     private void checkAllowedType(final int eventType) {
-        if (eventType == EventType.COMMIT) {
+        if (eventType == EventType.COMMIT || eventType == EventType.ROLLBACK) {
             throw new IllegalArgumentException("Illegal event type: " + eventType);
         }
     }

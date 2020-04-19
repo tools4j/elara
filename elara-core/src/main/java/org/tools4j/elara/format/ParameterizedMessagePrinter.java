@@ -42,9 +42,9 @@ public class ParameterizedMessagePrinter<M> implements MessagePrinter<M> {
     }
 
     @Override
-    public void print(final long line, final M message, final PrintWriter writer) {
+    public void print(final long line, final long entryId, final M message, final PrintWriter writer) {
         for (final MessagePrinter<? super M> p : printers) {
-            p.print(line, message, writer);
+            p.print(line, entryId, message, writer);
         }
     }
 
@@ -92,12 +92,12 @@ public class ParameterizedMessagePrinter<M> implements MessagePrinter<M> {
     }
 
     private static MessagePrinter<Object> stringPrinter(final String s) {
-        return (line, message, writer) -> writer.write(s);
+        return (line, entryId, message, writer) -> writer.write(s);
     }
 
     private MessagePrinter<M> placeHolderPrinter(final String placeHolder) {
-        return (line, message, writer) -> writer.write(
-                String.valueOf(formatter.value(placeHolder, line, message))
+        return (line, entryId, message, writer) -> writer.write(
+                String.valueOf(formatter.value(placeHolder, line, entryId, message))
         );
     }
 }

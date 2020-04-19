@@ -63,20 +63,59 @@ public class InMemoryLog<M extends Writable> implements PeekableMessageLog<M> {
             final Flyweight<? extends M> flyweight = flyweightSupplier.get();
             Element current = root;
             long index = 0;
+
+            @Override
+            public long entryId() {
+                return index;
+            }
+
+            @Override
+            public PeekablePoller<M> moveToStart() {
+                current = root;
+                index = 0;
+                return this;
+            }
+
+            @Override
+            public PeekablePoller<M> moveToEnd() {
+                while (current.next != null) {
+                    moveToNext();
+                }
+                return this;
+            }
+
+            @Override
+            public boolean moveToNext() {
+                if (current.next != null) {
+                    doMoveToNext();
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public boolean moveTo(final long entryId) {
+                throw new UnsupportedOperationException();
+            }
+
+            private void doMoveToNext() {
+                current = current.next;
+                index++;
+                if (removeOnPoll) {
+                    root.next = null;
+                    root = current;
+                }
+            }
+
             @Override
             public int peekOrPoll(final PeekPollHandler<? super M> handler) {
                 if (current.next == null) {
                     return 0;
                 }
                 final M flyMessage = flyweight.init(current.buffer, 0);
-                final Result result = handler.onMessage(index, flyMessage);
+                final Result result = handler.onMessage(flyMessage);
                 if (result == POLL) {
-                    current = current.next;
-                    index++;
-                    if (removeOnPoll) {
-                        root.next = null;
-                        root = current;
-                    }
+                    doMoveToNext();
                     return 1;
                 }
                 //NOTE: we have work done here, but if this work is the only
@@ -92,13 +131,8 @@ public class InMemoryLog<M extends Writable> implements PeekableMessageLog<M> {
                     return 0;
                 }
                 final M flyMessage = flyweight.init(current.buffer, 0);
-                handler.onMessage(index, flyMessage);
-                current = current.next;
-                index++;
-                if (removeOnPoll) {
-                    root.next = null;
-                    root = current;
-                }
+                handler.onMessage(flyMessage);
+                doMoveToNext();
                 return 1;
             }
         };

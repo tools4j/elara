@@ -31,12 +31,15 @@ import org.junit.jupiter.api.Test;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventType;
+import org.tools4j.elara.event.RollbackMode;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit test for {@link FlyweightEventRouter}
@@ -67,19 +70,18 @@ public class FlyweightEventRouterTest {
         final long sequence = 22;
         final int type = 33;
         final long time = 44;
-        command.init(new ExpandableArrayBuffer(), 0, input, sequence, type, time,
-                new ExpandableArrayBuffer(12), 2, 10);
 
         //when
-        eventRouter.start(command);
+        startWithCommand(input, sequence, type, time);
 
         //then
         assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[0]");
 
         //when
-        eventRouter.commit();
+        final boolean result = eventRouter.complete();
 
         //then
+        assertTrue(result, "result");
         assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[x]");
         assertEquals(1, events.size(), "events.size");
         assertEvent(command, events.poll(), EventType.COMMIT, 0, 0, "events[0]");
@@ -95,35 +97,104 @@ public class FlyweightEventRouterTest {
         final int eventType = 55;
         final int msgOffset = 2;
         final String msg = "Hello world";
-        command.init(new ExpandableArrayBuffer(), 0, input, sequence, type, time,
-                new ExpandableArrayBuffer(12), 2, 10);
-        final DirectBuffer zeroPayload = new ExpandableArrayBuffer(0);
-        final MutableDirectBuffer msgPayload = new ExpandableArrayBuffer(20);
-        msgPayload.putStringAscii(msgOffset, msg);
+
+        startWithCommand(input, sequence, type, time);
 
         //when
-        eventRouter.start(command);
-        eventRouter.routeEvent(zeroPayload, 0, 0);
+        routeEmptyApplicationEvent();
 
         //then
         assertEquals(1, eventRouter.nextEventIndex(), "commitIndex[1]");
 
         //when
-        eventRouter.routeEvent(eventType, msgPayload, 0, 20);
+        final int payloadSize = routeEvent(eventType, msgOffset,  msg);
 
         //then
         assertEquals(2, eventRouter.nextEventIndex(), "commitIndex[2]");
 
         //when
-        eventRouter.commit();
+        final boolean result = eventRouter.complete();
 
         //then
+        assertTrue(result, "result");
         assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[x]");
         assertEquals(3, events.size(), "events.size");
         assertEvent(command, events.poll(), EventType.APPLICATION, 0, 0, "events[0]");
-        assertEvent(command, events.peek(), eventType, 1, 20, "events[1]");
+        assertEvent(command, events.peek(), eventType, 1, payloadSize, "events[1]");
         assertEquals(msg, events.poll().payload().getStringAscii(msgOffset), "events[1].payload.msg");
         assertEvent(command, events.poll(), EventType.COMMIT, 2, 0, "events[2]");
+    }
+
+    @Test
+    public void rollbackNoEventsSkip() {
+        //given
+        final int input = 11;
+        final long sequence = 22;
+        final int type = 33;
+        final long time = 44;
+
+        startWithCommand(input, sequence, type, time);
+
+        //when
+        eventRouter.rollbackAfterProcessing(RollbackMode.SKIP_COMMAND);
+        final boolean result = eventRouter.complete();
+
+        //then
+        assertTrue(result, "result");
+        assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[x]");
+        assertEquals(1, events.size(), "events.size");
+        assertEvent(command, events.poll(), EventType.ROLLBACK, 0, 0, "events[0]");
+    }
+
+    @Test
+    public void rollbackSomeEventsReplay() {
+        //given
+        final int input = 11;
+        final long sequence = 22;
+        final int type = 33;
+        final long time = 44;
+        final int eventType = 55;
+        final int msgOffset = 2;
+        final String msg = "Hello world";
+
+        startWithCommand(input, sequence, type, time);
+        routeEmptyApplicationEvent();
+        final int payloadSize = routeEvent(eventType, msgOffset, msg);
+
+        //when
+        eventRouter.rollbackAfterProcessing(RollbackMode.REPLAY_COMMAND);
+        final boolean result = eventRouter.complete();
+
+        //then
+        assertFalse(result, "result");
+        assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[x]");
+        assertEquals(3, events.size(), "events.size");
+        assertEvent(command, events.poll(), EventType.APPLICATION, 0, 0, "events[0]");
+        assertEvent(command, events.poll(), eventType, 1, payloadSize, "events[1]");
+        assertEvent(command, events.poll(), EventType.ROLLBACK, 2, 0, "events[0]");
+
+    }
+
+    private void startWithCommand(final int input,
+                                  final long sequence,
+                                  final int type,
+                                  final long time) {
+        command.init(new ExpandableArrayBuffer(), 0, input, sequence, type, time,
+                new ExpandableArrayBuffer(12), 2, 10);
+        eventRouter.start(command);
+    }
+
+    private void routeEmptyApplicationEvent() {
+        final DirectBuffer zeroPayload = new ExpandableArrayBuffer(0);
+        eventRouter.routeEvent(zeroPayload, 0, 0);
+    }
+
+    private int routeEvent(final int eventType, final int msgOffset, final String msg) {
+        final MutableDirectBuffer msgPayload = new ExpandableArrayBuffer();
+        final int msgLength = msgPayload.putStringAscii(msgOffset, msg);
+        final int payloadSize = msgOffset + msgLength;
+        eventRouter.routeEvent(eventType, msgPayload, 0, payloadSize);
+        return payloadSize;
     }
 
     @Test
@@ -133,14 +204,28 @@ public class FlyweightEventRouterTest {
         final long sequence = 22;
         final int type = 33;
         final long time = 44;
-        command.init(new ExpandableArrayBuffer(), 0, input, sequence, type, time,
-                new ExpandableArrayBuffer(12), 2, 10);
         final DirectBuffer zeroPayload = new ExpandableArrayBuffer(0);
-        eventRouter.start(command);
+        startWithCommand(input, sequence, type, time);
 
         //when
         assertThrows(IllegalArgumentException.class,
                 () -> eventRouter.routeEvent(EventType.COMMIT, zeroPayload, 0, 0)
+        );
+    }
+
+    @Test
+    public void rollbackEventNotAllowed() {
+        //given
+        final int input = 11;
+        final long sequence = 22;
+        final int type = 33;
+        final long time = 44;
+        final DirectBuffer zeroPayload = new ExpandableArrayBuffer(0);
+        startWithCommand(input, sequence, type, time);
+
+        //when
+        assertThrows(IllegalArgumentException.class,
+                () -> eventRouter.routeEvent(EventType.ROLLBACK, zeroPayload, 0, 0)
         );
     }
 

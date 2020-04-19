@@ -36,8 +36,6 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
     /** Placeholder in format string for data frame's header */
     String HEADER = "{header}";
 
-    /** Placeholder in format string for log line no */
-    String LINE = "{line}";
     /** Placeholder in format string for data frame header's input value */
     String INPUT = "{input}";
     /** Placeholder in format string for data frame header's type value */
@@ -55,37 +53,44 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
     /** Placeholder in format string for data frame's payload value */
     String PAYLOAD = "{payload}";
 
-    default Object line(long line, DataFrame frame) {return line;}
-    default Object input(long line, DataFrame frame) {return frame.header().input();}
-    default Object type(long line, DataFrame frame) {
+    default Object line(long line, long entryId, DataFrame frame) {return line;}
+    default Object entryId(long line, long entryId, DataFrame frame) {return entryId;}
+    default Object input(long line, long entryId, DataFrame frame) {return frame.header().input();}
+    default Object type(long line, long entryId, DataFrame frame) {
         final Header header = frame.header();
-        return header.index() >= 0 && header.type() == EventType.COMMIT ? "C" : header.type();
+        final int type = header.type();
+        if (header.index() >= 0) {
+            if (type == EventType.COMMIT) return "C";
+            if (type == EventType.ROLLBACK) return "R";
+        }
+        return type;
     }
-    default Object sequence(long line, DataFrame frame) {return frame.header().sequence();}
-    default Object time(long line, DataFrame frame) {return frame.header().time();}
-    default Object version(long line, DataFrame frame) {return frame.header().version();}
-    default Object index(long line, DataFrame frame) {return frame.header().index();}
-    default Object payloadSize(long line, DataFrame frame) {return frame.header().payloadSize();}
-    default Object payload(long line, DataFrame frame) {
+    default Object sequence(long line, long entryId, DataFrame frame) {return frame.header().sequence();}
+    default Object time(long line, long entryId, DataFrame frame) {return frame.header().time();}
+    default Object version(long line,long entryId,  DataFrame frame) {return frame.header().version();}
+    default Object index(long line, long entryId, DataFrame frame) {return frame.header().index();}
+    default Object payloadSize(long line, long entryId, DataFrame frame) {return frame.header().payloadSize();}
+    default Object payload(long line, long entryId, DataFrame frame) {
         final int size = frame.payload().capacity();
         return size == 0 ? "(empty)" : "(" + size + " bytes)";}
 
     @Override
-    default Object value(final String placeholder, final long line, final DataFrame frame) {
+    default Object value(final String placeholder, final long line, final long entryId, final DataFrame frame) {
         switch (placeholder) {
             case LINE_SEPARATOR: return System.lineSeparator();
             case MESSAGE://fallthrough
             case FRAME: return frame;
             case HEADER: return frame.header();
-            case LINE: return line(line, frame);
-            case INPUT: return input(line, frame);
-            case TYPE: return type(line, frame);
-            case SEQUENCE: return sequence(line, frame);
-            case TIME: return time(line, frame);
-            case VERSION: return version(line, frame);
-            case INDEX: return index(line, frame);
-            case PAYLOAD_SIZE: return payloadSize(line, frame);
-            case PAYLOAD: return payload(line, frame);
+            case LINE: return line(line, entryId, frame);
+            case ENTRY_ID: return entryId(line, entryId, frame);
+            case INPUT: return input(entryId, entryId, frame);
+            case TYPE: return type(entryId, entryId, frame);
+            case SEQUENCE: return sequence(entryId, entryId, frame);
+            case TIME: return time(entryId, entryId, frame);
+            case VERSION: return version(entryId, entryId, frame);
+            case INDEX: return index(entryId, entryId, frame);
+            case PAYLOAD_SIZE: return payloadSize(entryId, entryId, frame);
+            case PAYLOAD: return payload(entryId, entryId, frame);
             default: return placeholder;
         }
     }

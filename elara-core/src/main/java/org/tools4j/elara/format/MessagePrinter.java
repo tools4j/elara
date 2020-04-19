@@ -33,7 +33,7 @@ public interface MessagePrinter<M> {
 
     MessagePrinter<Object> DEFAULT = MessagePrinters.GENERAL;
 
-    void print(long line, M message, PrintWriter writer);
+    void print(long line, long entryId, M message, PrintWriter writer);
 
     static <M> MessagePrinter<M> parameterized(final String pattern, final ValueFormatter<? super M> formatter) {
         return new ParameterizedMessagePrinter<>(pattern, formatter);

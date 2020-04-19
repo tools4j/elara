@@ -28,16 +28,22 @@ public interface ValueFormatter<M> {
     /** Placeholder in format string for line separator */
     String LINE_SEPARATOR = "{nl}";
 
+    /** Placeholder in format string for log line no */
+    String LINE = "{line}";
+    /** Placeholder in format string for log entry ID */
+    String ENTRY_ID = "{entry-id}";
     /** Placeholder in format string for message itself */
     String MESSAGE = "{message}";
 
-    ValueFormatter<Object> DEFAULT = (placeholder, line, message) -> {
+    ValueFormatter<Object> DEFAULT = (placeholder, line, entryId, message) -> {
         switch (placeholder) {
             case LINE_SEPARATOR: return System.lineSeparator();
+            case LINE: return line;
+            case ENTRY_ID: return entryId;
             case MESSAGE: return message;
             default: return placeholder;
         }
     };
 
-    Object value(String placeholder, long line, M message);
+    Object value(String placeholder, long line, long entryId, M message);
 }
