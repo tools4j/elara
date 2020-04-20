@@ -31,9 +31,10 @@ import org.tools4j.elara.samples.bank.event.BankEvent;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 public interface Bank {
-    Iterable<String> accounts();
+    Set<String> accounts();
     boolean hasAccount(String name);
     BankAccount account(String name);
 
@@ -50,7 +51,7 @@ public interface Bank {
         private final Map<String, BankAccount.Mutable> accountByName = new LinkedHashMap<>();
 
         @Override
-        public Iterable<String> accounts() {
+        public Set<String> accounts() {
             return Collections.unmodifiableSet(accountByName.keySet());
         }
 

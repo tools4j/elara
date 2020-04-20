@@ -51,41 +51,40 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Queue;
+import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
 public class TimerApplication {
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss:SSS");
-    private static int TIMER_TYPE_SINGLE = 1;
-    private static int TIMER_TYPE_PERIODIC = 2;
-    public static final int MAX_PERIODIC_REPETITIONS = 5;
-
-    private final Application application = new SimpleApplication(
-            "timer-app", this::process, this::apply
-    );
+    public static int TIMER_TYPE_SINGLE = 1;
+    public static int TIMER_TYPE_PERIODIC = 2;
+    public static final int PERIODIC_REPETITIONS = 5;
 
     private final Long2LongHashMap periodicState = new Long2LongHashMap(0);
 
-    public ElaraRunner inMemory(final Queue<DirectBuffer> commandQueue) {
+    public ElaraRunner inMemory(final Queue<DirectBuffer> commandQueue,
+                                final Consumer<? super Event> eventConsumer) {
         return Elara.launch(Context.create()
                     .input(666, new CommandPoller(commandQueue))
                     .output(this::publish)
                     .commandLog(new InMemoryLog<>(FlyweightCommand::new))
                     .eventLog(new InMemoryLog<>(FlyweightEvent::new)),
-                application,
+                application(eventConsumer),
                 new TimerPlugin()
         );
     }
 
     public ElaraRunner chronicleQueue(final Queue<DirectBuffer> commandQueue,
-                                     final String name) {
+                                      final String queueName,
+                                      final Consumer<? super Event> eventConsumer) {
         final ChronicleQueue cq = ChronicleQueue.singleBuilder()
-                .path("build/chronicle/timer/" + name + "-cmd.cq4")
+                .path("build/chronicle/timer/" + queueName + "-cmd.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         final ChronicleQueue eq = ChronicleQueue.singleBuilder()
-                .path("build/chronicle/timer/" + name + "-evt.cq4")
+                .path("build/chronicle/timer/" + queueName + "-evt.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         return Elara.launch(Context.create()
@@ -93,9 +92,17 @@ public class TimerApplication {
                     .output(this::publish)
                     .commandLog(new ChronicleMessageLog<>(cq, FlyweightCommand::new))
                     .eventLog(new ChronicleMessageLog<>(eq, FlyweightEvent::new)),
-                application,
+                application(eventConsumer),
                 new TimerPlugin()
         );
+    }
+
+    private Application application(final Consumer<? super Event> eventConsumer) {
+        requireNonNull(eventConsumer);
+        return new SimpleApplication("timer-app", this::process, event -> {
+            this.apply(event);
+            eventConsumer.accept(cloneEvent(event));
+        });
     }
 
     public static DirectBuffer startTimer(final long timerId, final long timeoutMillis) {
@@ -138,13 +145,11 @@ public class TimerApplication {
             final int timerType = TimerEvents.timerType(event);
             final long timeout = TimerEvents.timerTimeout(event);
             if (timerType == TIMER_TYPE_PERIODIC) {
-                final long remaining = periodicState.get(timerId);
-                if (remaining == 0) {
-                    periodicState.put(timerId, MAX_PERIODIC_REPETITIONS);
-                } else if (remaining == 1) {
+                final long iteration = periodicState.get(timerId);
+                if (iteration == PERIODIC_REPETITIONS) {
                     periodicState.remove(timerId);
                 } else {
-                    periodicState.put(timerId, remaining - 1);
+                    periodicState.put(timerId, iteration + 1);
                 }
             }
             System.out.println("...EVENT: timer started: timerId=" + timerId + ", timerType=" + timerType + ", timeout=" + timeout + ", time=" + formatTime(event.time()));
@@ -153,8 +158,8 @@ public class TimerApplication {
             final int timerType = TimerEvents.timerType(event);
             final long timeout = TimerEvents.timerTimeout(event);
             if (timerType == TIMER_TYPE_PERIODIC) {
-                final long remaining = periodicState.get(timerId);
-                System.out.println("...EVENT: timer expired (periodic, remaining=" + remaining + "): timerId=" + timerId + ", timerType=" + timerType + ", timeout=" + timeout + ", time=" + formatTime(event.time()));
+                final long iteration = periodicState.get(timerId);
+                System.out.println("...EVENT: timer expired (periodic, iteration=" + iteration + "): timerId=" + timerId + ", timerType=" + timerType + ", timeout=" + timeout + ", time=" + formatTime(event.time()));
             } else {
                 System.out.println("...EVENT: timer expired (single): timerId=" + timerId + ", timerType=" + timerType + ", timeout=" + timeout + ", time=" + formatTime(event.time()));
             }
@@ -170,11 +175,11 @@ public class TimerApplication {
             final int timerType = TimerEvents.timerType(event);
             final long timeout = TimerEvents.timerTimeout(event);
             if (timerType == TIMER_TYPE_PERIODIC) {
-                final long remaining = periodicState.get(timerId);
-                if (remaining > 0) {
+                final long iteration = periodicState.get(timerId);
+                if (iteration < PERIODIC_REPETITIONS) {
                     final DirectBuffer command = startTimerCommand(timerType, timerId, timeout);
                     loopback.enqueueCommand(command, 0, command.capacity());
-                    System.out.println("...PUBLISH: timer reload command enqueued (periodic, remaining=" + remaining + "): timerId=" + timerId + ", timerType=" + timerType + ", timeout=" + timeout + ", time=" + formatTime(event.time()));
+                    System.out.println("...PUBLISH: timer reload command enqueued (periodic, iteration=" + iteration + "): timerId=" + timerId + ", timerType=" + timerType + ", timeout=" + timeout + ", time=" + formatTime(event.time()));
                 }
             }
         }
@@ -192,6 +197,12 @@ public class TimerApplication {
             return "timer-type=" + timerType + ", timerId=" + timerId + ", timeout=" + timeout;
         }
         return "(unknown)";
+    }
+
+    private static Event cloneEvent(final Event event) {
+        final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
+        event.writeTo(buffer, 0);
+        return new FlyweightEvent().init(buffer, 0);
     }
 
     private static class CommandPoller implements Input.Poller {

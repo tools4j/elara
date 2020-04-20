@@ -25,7 +25,6 @@ package org.tools4j.elara.samples.bank;
 
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.wire.WireType;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.tools4j.elara.chronicle.ChronicleMessageLog;
 import org.tools4j.elara.flyweight.FlyweightCommand;
@@ -36,37 +35,38 @@ import org.tools4j.elara.samples.bank.command.CreateAccountCommand;
 import org.tools4j.elara.samples.bank.command.DepositCommand;
 import org.tools4j.elara.samples.bank.command.TransferCommand;
 import org.tools4j.elara.samples.bank.command.WithdrawCommand;
+import org.tools4j.elara.samples.bank.state.Bank;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class BankApplicationTest {
-
-    //under test
-    private BankApplication bankApplication;
-
-    @BeforeEach
-    public void initApplication() {
-        bankApplication = new BankApplication();
-    }
 
     @Test
     public void inMemory() {
+        //given
+        final BankApplication bankApplication = new BankApplication();
         final Queue<BankCommand> commands = initCommandQueue();
+
+        //when
         try (final ElaraRunner runner = bankApplication.launch(commands)) {
-            //when
             injectSomeCommands(commands);
-            //then: await termination
             while (!commands.isEmpty()) {
                 runner.join(20);
             }
             runner.join(200);
         }
         bankApplication.printEnd();
+
+        //then
+        assertBankAccounts(bankApplication.bank());
     }
 
     @Test
     public void chronicleQueue() {
+        //given
         final Queue<BankCommand> commands = initCommandQueue();
         final ChronicleQueue cq = ChronicleQueue.singleBuilder()
                 .path("build/chronicle/bank/cmd.cq4")
@@ -76,20 +76,42 @@ public class BankApplicationTest {
                 .path("build/chronicle/bank/evt.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
-        try (final ElaraRunner runner = bankApplication.launch(
+
+        //when
+        final BankApplication bankOne = new BankApplication();
+        try (final ElaraRunner runner = bankOne.launch(
                 commands,
                 new ChronicleMessageLog<>(cq, FlyweightCommand::new),
                 new ChronicleMessageLog<>(eq, FlyweightEvent::new)
         )) {
-            //when
             injectSomeCommands(commands);
-            //then: await termination
             while (!commands.isEmpty()) {
                 runner.join(20);
             }
             runner.join(200);
         }
-        bankApplication.printEnd();
+        bankOne.printEnd();
+
+        //then
+        assertBankAccounts(bankOne.bank());
+
+        //when
+        final BankApplication bankTwo = new BankApplication();
+        try (final ElaraRunner runner = bankTwo.launch(
+                commands,
+                new ChronicleMessageLog<>(cq, FlyweightCommand::new),
+                new ChronicleMessageLog<>(eq, FlyweightEvent::new)
+        )) {
+            injectSomeCommands(commands);
+            while (!commands.isEmpty()) {
+                runner.join(20);
+            }
+            runner.join(200);
+        }
+        bankTwo.printEnd();
+
+        //then
+        assertBankAccounts(bankTwo.bank());
     }
 
     private Queue<BankCommand> initCommandQueue() {
@@ -122,6 +144,15 @@ public class BankApplicationTest {
         commands.add(new DepositCommand("Lawry", 50.0));
         commands.add(new TransferCommand("Marco", "Frank", 100.0));
         commands.add(new WithdrawCommand("Frank", 200.0));
+    }
+
+    private void assertBankAccounts(final Bank bank) {
+        assertEquals(4, bank.accounts().size(), "accounts.size");
+        assertEquals(1100, bank.account("Marco").balance(),  "accounts('Marco').balance");
+        assertEquals(0, bank.account("Henry").balance(),  "accounts('Henry').balance");
+        assertEquals(50, bank.account("Frank").balance(),  "accounts('Frank').balance");
+        assertEquals(50, bank.account("Lawry").balance(),  "accounts('Lawry').balance");
+        System.out.println(bank.accounts().size() + " bank accounts asserted.");
     }
 
     private static void sleep(final long millis) {

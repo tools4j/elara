@@ -25,12 +25,24 @@ package org.tools4j.elara.samples.timer;
 
 import org.agrona.DirectBuffer;
 import org.junit.jupiter.api.Test;
+import org.tools4j.elara.event.Event;
+import org.tools4j.elara.event.EventType;
+import org.tools4j.elara.plugin.timer.TimerEvents;
 import org.tools4j.elara.run.ElaraRunner;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
 
-import static org.tools4j.elara.samples.timer.TimerApplication.MAX_PERIODIC_REPETITIONS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.tools4j.elara.plugin.timer.TimerEvents.timerId;
+import static org.tools4j.elara.plugin.timer.TimerEvents.timerTimeout;
+import static org.tools4j.elara.plugin.timer.TimerEvents.timerType;
+import static org.tools4j.elara.samples.timer.TimerApplication.PERIODIC_REPETITIONS;
+import static org.tools4j.elara.samples.timer.TimerApplication.TIMER_TYPE_PERIODIC;
+import static org.tools4j.elara.samples.timer.TimerApplication.TIMER_TYPE_SINGLE;
 
 class TimerApplicationTest {
 
@@ -45,17 +57,69 @@ class TimerApplicationTest {
     }
 
     private void singleTimers(final boolean persisted) {
+        //given
+        final int[] timeouts = {200, 500, 800, 1000};
         final TimerApplication app = new TimerApplication();
         final Queue<DirectBuffer> commands = new ConcurrentLinkedQueue<>();
-        commands.add(TimerApplication.startTimer(1001, 200));
-        commands.add(TimerApplication.startTimer(1002, 500));
-        commands.add(TimerApplication.startTimer(1003, 1000));
-        commands.add(TimerApplication.startTimer(1004, 1000));
-        try (final ElaraRunner runner = persisted ? app.chronicleQueue(commands, "single") : app.inMemory(commands)) {
+        commands.add(TimerApplication.startTimer(1001, timeouts[0]));
+        commands.add(TimerApplication.startTimer(1002, timeouts[1]));
+        commands.add(TimerApplication.startTimer(1003, timeouts[2]));
+        commands.add(TimerApplication.startTimer(1004, timeouts[3]));
+        final Queue<DirectBuffer> cmdClone = new ConcurrentLinkedQueue<>(commands);
+        final List<Event> events = new ArrayList<>();
+
+        //when
+        try (final ElaraRunner runner = persisted ?
+                app.chronicleQueue(commands, "single", events::add) :
+                app.inMemory(commands, events::add)) {
             while (!commands.isEmpty()) {
                 runner.join(20);
             }
             runner.join(3000);
+        }
+
+        //then
+        final Consumer<List<Event>> asserter = evts -> {
+            assertEquals(16, evts.size(), "events.size");
+            for (int i = 0; i < timeouts.length; i++) {
+                final int se = 2 * i;
+                final int sc = se + 1;
+                final int te = 2 * i + 8;
+                final int tc = te + 1;
+                final Event started = evts.get(se);
+                final Event trigger = evts.get(te);
+                assertEquals(TimerEvents.TIMER_STARTED, started.type(), "events[" + se + "].type");
+                assertEquals(1000 + (i + 1), timerId(started), "events[" + se + "].timerId");
+                assertEquals(TIMER_TYPE_SINGLE, timerType(started), "events[" + se + "].timerType");
+                assertEquals(timeouts[i], timerTimeout(started), "events[" + se + "].timerTimeout");
+                assertEquals(EventType.COMMIT, evts.get(sc).type(), "events[" + sc + "].type");
+
+                assertEquals(TimerEvents.TIMER_EXPIRED, trigger.type(), "events[" + te + "].type");
+                assertEquals(1000 + (i + 1), timerId(trigger), "events[" + te + "].timerId");
+                assertEquals(TIMER_TYPE_SINGLE, timerType(trigger), "events[" + te + "].timerType");
+                assertEquals(timeouts[i], timerTimeout(trigger), "events[" + te + "].timerTimeout");
+                assertEquals(EventType.COMMIT, evts.get(tc).type(), "events[" + tc + "].type");
+            }
+        };
+        asserter.accept(events);
+        System.out.println(events.size() + " events asserted");
+
+        if (persisted) {
+            //when
+            final List<Event> replay = new ArrayList<>();
+            try (final ElaraRunner runner = app.chronicleQueue(cmdClone, "single", replay::add)) {
+                while (!cmdClone.isEmpty()) {
+                    runner.join(20);
+                }
+                runner.join(100);
+            }
+
+            //then
+            asserter.accept(replay);
+            for (int i = 0; i < events.size(); i++) {
+                assertEquals(events.get(i).time(), replay.get(i).time(), "events[" + i + "].time == replay[" + i + "].time");
+            }
+            System.out.println(replay.size() + " replay events asserted");
         }
     }
 
@@ -71,19 +135,65 @@ class TimerApplicationTest {
 
     private void periodicTimer(final boolean persisted) {
         //given
+        final int timerId = 666666666;
         final long periodMillis = 500;
         final TimerApplication app = new TimerApplication();
         final Queue<DirectBuffer> commands = new ConcurrentLinkedQueue<>();
+        final List<Event> events = new ArrayList<>();
 
         //when
-        commands.add(TimerApplication.startPeriodic(666666666, periodMillis));
-        try (final ElaraRunner runner = persisted ? app.chronicleQueue(commands, "periodic") : app.inMemory(commands)) {
+        commands.add(TimerApplication.startPeriodic(timerId, periodMillis));
+        try (final ElaraRunner runner = persisted ?
+                app.chronicleQueue(commands, "periodic", events::add) :
+                app.inMemory(commands, events::add)) {
 
             //then
-            runner.join(100 + periodMillis * (MAX_PERIODIC_REPETITIONS + 1));
+            runner.join(100 + periodMillis * (PERIODIC_REPETITIONS + 1));
+        }
+
+        //then
+        final Consumer<List<Event>> asserter = evts -> {
+            assertEquals(4* PERIODIC_REPETITIONS, evts.size(), "events.size");
+            for (int i = 0; i < PERIODIC_REPETITIONS; i++) {
+                final int se = 4 * i;
+                final int sc = se + 1;
+                final int ee = sc + 1;
+                final int ec = ee + 1;
+                final Event started = evts.get(se);
+                final Event expired = evts.get(ee);
+                assertEquals(TimerEvents.TIMER_STARTED, started.type(), "events[" + se + "].type");
+                assertEquals(timerId, timerId(started), "events[" + se + "].timerId");
+                assertEquals(TIMER_TYPE_PERIODIC, timerType(started), "events[" + se + "].timerType");
+                assertEquals(periodMillis, timerTimeout(started), "events[" + se + "].timerTimeout");
+                assertEquals(EventType.COMMIT, evts.get(sc).type(), "events[" + sc + "].type");
+
+                assertEquals(TimerEvents.TIMER_EXPIRED, expired.type(), "events[" + ee + "].type");
+                assertEquals(timerId, timerId(expired), "events[" + ee + "].timerId");
+                assertEquals(TIMER_TYPE_PERIODIC, timerType(expired), "events[" + ee + "].timerType");
+                assertEquals(periodMillis, timerTimeout(expired), "events[" + ee + "].timerTimeout");
+                assertEquals(EventType.COMMIT, evts.get(ec).type(), "events[" + ec + "].type");
+            }
+        };
+        asserter.accept(events);
+        System.out.println(events.size() + " events asserted");
+
+        if (persisted) {
+            //when
+            final List<Event> replay = new ArrayList<>();
+            try (final ElaraRunner runner = app.chronicleQueue(commands, "periodic", replay::add)) {
+                while (!commands.isEmpty()) {
+                    runner.join(20);
+                }
+                runner.join(100);
+            }
+
+            //then
+            asserter.accept(replay);
+            for (int i = 0; i < events.size(); i++) {
+                assertEquals(events.get(i).time(), replay.get(i).time(), "events[" + i + "].time == replay[" + i + "].time");
+            }
+            System.out.println(replay.size() + " replay events asserted");
         }
     }
-
-
 
 }

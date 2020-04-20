@@ -78,6 +78,10 @@ public class BankApplication implements Application {
         }
     };
 
+    public Bank bank() {
+        return bank;
+    }
+
     @Override
     public CommandProcessor commandProcessor() {
         return commandProcessor;
