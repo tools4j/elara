@@ -28,7 +28,7 @@ public enum TimerEventDescriptor {
 
     public static final int TIMER_ID_OFFSET = 0;
     public static final int TIMER_ID_LENGTH = Long.BYTES;
-    public static final int TIMER_TYPE_OFFSET = TIMER_ID_OFFSET + TIMER_ID_OFFSET;
+    public static final int TIMER_TYPE_OFFSET = TIMER_ID_OFFSET + TIMER_ID_LENGTH;
     public static final int TIMER_TYPE_LENGTH = Integer.BYTES;
     public static final int TIMER_TIMEOUT_OFFSET = TIMER_TYPE_OFFSET + TIMER_TYPE_LENGTH;
     public static final int TIMER_TIMEOUT_LENGTH = Long.BYTES;

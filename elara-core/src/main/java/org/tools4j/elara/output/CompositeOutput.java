@@ -37,9 +37,9 @@ public class CompositeOutput implements Output {
     }
 
     @Override
-    public void publish(final Event event, final CommandLoopback loopback) {
+    public void publish(final Event event, final boolean replay, final CommandLoopback loopback) {
         for (final Output output : outputs) {
-            output.publish(event, loopback);
+            output.publish(event, replay, loopback);
         }
     }
 

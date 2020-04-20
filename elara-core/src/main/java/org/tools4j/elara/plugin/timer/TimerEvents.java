@@ -95,4 +95,15 @@ public enum TimerEvents {
     public static long timerTimeout(final Event event) {
         return event.payload().getLong(TIMER_TIMEOUT_OFFSET);
     }
+
+    public static boolean isTimerEvent(final Event event) {
+        switch (event.type()) {
+            case TIMER_EXPIRED://fallthrough
+            case TIMER_STARTED://fallthrough
+            case TIMER_STOPPED://fallthrough
+                return true;
+            default:
+                return false;
+        }
+    }
 }

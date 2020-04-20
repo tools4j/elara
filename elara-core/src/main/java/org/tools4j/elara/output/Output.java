@@ -28,7 +28,7 @@ import org.tools4j.elara.event.Event;
 
 @FunctionalInterface
 public interface Output {
-    Output NOOP = (event, loopback) -> {};
+    Output NOOP = (event, replay, loopback) -> {};
 
-    void publish(Event event, CommandLoopback loopback);
+    void publish(Event event, boolean replay, CommandLoopback loopback);
 }

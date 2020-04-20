@@ -27,7 +27,7 @@ import org.agrona.DirectBuffer;
 import org.tools4j.elara.event.EventType;
 
 public interface Input {
-    int ADMIN_ID = 0;
+    int LOOPBACK_ID = -1;
     Input[] EMPTY_INPUTS = new Input[0];
     int id();
 

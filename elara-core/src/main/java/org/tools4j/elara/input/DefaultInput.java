@@ -31,9 +31,6 @@ public class DefaultInput implements Input {
     private final Input.Poller poller;
 
     public DefaultInput(final int id, final Input.Poller poller) {
-        if (id == ADMIN_ID) {
-            throw new IllegalStateException("id " + id + " is reserved for admin input");
-        }
         this.id = id;
         this.poller = requireNonNull(poller);
     }

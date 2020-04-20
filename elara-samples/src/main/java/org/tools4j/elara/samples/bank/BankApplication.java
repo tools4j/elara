@@ -142,8 +142,8 @@ public class BankApplication implements Application {
 
     }
 
-    private void publish(final Event event, final CommandLoopback loopback) {
-        System.out.println("published: " + event + ", payload=" + payloadFor(event));
+    private void publish(final Event event, final boolean replay, final CommandLoopback loopback) {
+        System.out.println("published: " + event + ", replay=" + replay + ", payload=" + payloadFor(event));
     }
 
     private String payloadFor(final Command command) {

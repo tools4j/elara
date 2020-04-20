@@ -100,7 +100,7 @@ public class SimpleTimerState implements TimerState.Mutable {
 
     @Override
     public boolean add(final long id, final int type, final long time, final long timeout) {
-        if (!hasTimer(id)) {
+        if (!hasTimer(id) && timeout >= 0) {
             idToIndex.put(id, ids.size());
             ids.addLong(id);
             types.addInt(type);

@@ -32,11 +32,12 @@ import static org.tools4j.elara.plugin.timer.TimerCommandDescriptor.TIMER_TIMEOU
 import static org.tools4j.elara.plugin.timer.TimerCommandDescriptor.TIMER_TYPE_OFFSET;
 
 /**
- * Timer commands issued through {@link TimerTriggerInput}.
+ * Timer commands issued through {@link TimerTrigger} either when outputting an event through the
+ * command loopback or when polling the timer trigger input.
  */
 public enum TimerCommands {
     ;
-    /** Command issued by {@link TimerTriggerInput}; its processing subsequently triggers a {@link TimerEvents#TIMER_EXPIRED} event.*/
+    /** Command issued by {@link TimerTrigger}; its processing subsequently triggers a {@link TimerEvents#TIMER_EXPIRED} event.*/
     public static final int TRIGGER_TIMER = -10;
 
     public static int triggerTimer(final MutableDirectBuffer buffer,

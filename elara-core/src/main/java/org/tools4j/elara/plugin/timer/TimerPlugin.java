@@ -32,12 +32,12 @@ import org.tools4j.elara.plugin.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.time.TimeSource;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * Simple timer plugin to support timers using {@link TimerCommands} and {@link TimerEvents}.
  */
 public final class TimerPlugin implements Plugin<TimerState.Mutable> {
+
+    public static final int INPUT_ID = -10;
 
     @Override
     public <A> Builder<A> builder() {
@@ -46,18 +46,18 @@ public final class TimerPlugin implements Plugin<TimerState.Mutable> {
 
     @Override
     public Context create(final TimerState.Mutable timerState) {
-        requireNonNull(timerState);
         return new Context() {
+            final TimerTrigger timerTrigger = new TimerTrigger(timerState);
             @Override
             public Input[] inputs(final BaseState baseState, final TimeSource timeSource, final SequenceGenerator adminSequenceGenerator) {
                 return new Input[] {
-                        new TimerTriggerInput(timerState, timeSource, adminSequenceGenerator)
+                        timerTrigger.asInput(INPUT_ID, timeSource, adminSequenceGenerator)
                 };
             }
 
             @Override
             public Output output(final BaseState baseState) {
-                return new TimerCommandLoopback(timerState);
+                return timerTrigger.asOutput();
             }
 
             @Override

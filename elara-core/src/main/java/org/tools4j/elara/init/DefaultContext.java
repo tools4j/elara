@@ -56,7 +56,7 @@ final class DefaultContext implements Context {
     private static final String DEFAULT_THREAD_NAME = "duty-cycle";
 
     private final List<Input> inputs = new ArrayList<>();
-    private Output output = (event, commandLoopback) -> {};
+    private Output output = Output.NOOP;
     private PeekableMessageLog<Command> commandLog;
     private MessageLog<Event> eventLog;
     private TimeSource timeSource;
@@ -73,6 +73,9 @@ final class DefaultContext implements Context {
 
     @Override
     public Context input(final Input input) {
+        if (input.id() == Input.LOOPBACK_ID) {
+            throw new IllegalStateException("Input id " + Input.LOOPBACK_ID + " is reserved for command loopback");
+        }
         inputs.add(input);
         return this;
     }

@@ -82,17 +82,15 @@ public class ApplyingEventHandler implements EventHandler, MessageLog.Handler<Ev
             }
             applyEvent(event);
             updateBaseState(event);
-            if (append) {
-                publishEvent(event);
-            }
+            publishEvent(event, !append);
         } else {
             skipEvent(event);
         }
     }
 
-    private void publishEvent(final Event event) {
+    private void publishEvent(final Event event, final boolean replay) {
         try {
-            output.publish(event, commandLoopback);
+            output.publish(event, replay, commandLoopback);
         } catch (final Throwable t) {
             exceptionHandler.handleEventOutputException(event, t);
         }

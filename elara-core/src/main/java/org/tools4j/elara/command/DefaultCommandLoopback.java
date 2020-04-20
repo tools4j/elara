@@ -56,7 +56,7 @@ public class DefaultCommandLoopback implements CommandLoopback {
 
     @Override
     public void enqueueCommand(final int type, final DirectBuffer command, final int offset, final int length) {
-        commandLogAppender.append(flyweightCommand.init(buffer, 0, Input.ADMIN_ID,
+        commandLogAppender.append(flyweightCommand.init(buffer, 0, Input.LOOPBACK_ID,
                 adminSequenceGenerator.nextSequence(), type, timeSource.currentTime(), command, offset, length
         ));
         flyweightCommand.reset();

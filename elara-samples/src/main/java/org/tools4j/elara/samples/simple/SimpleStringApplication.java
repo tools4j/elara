@@ -71,8 +71,8 @@ public class SimpleStringApplication {
         System.out.println("applied: " + event + ", payload=" + payloadFor(event.type(), event.payload()));
     }
 
-    private void publish(final Event event, final CommandLoopback loopback) {
-        System.out.println("published: " + event + ", payload=" + payloadFor(event.type(), event.payload()));
+    private void publish(final Event event, final boolean replay, final CommandLoopback loopback) {
+        System.out.println("published: " + event + ", replay=" + replay + ", payload=" + payloadFor(event.type(), event.payload()));
     }
 
     private String payloadFor(final int type, final DirectBuffer payload) {
