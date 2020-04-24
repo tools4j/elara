@@ -117,8 +117,13 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.I
     }
 
     @Override
-    public int writeTo(final MutableDirectBuffer buffer, final int offset) {
-        return frame.writeTo(buffer, offset);
+    public int write(final BufferAcquirer bufferAcquirer) {
+        return frame.write(bufferAcquirer);
+    }
+
+    @Override
+    public int writeTo(final MutableDirectBuffer dst, final int dstOffset) {
+        return frame.writeTo(dst, dstOffset);
     }
 
     @Override

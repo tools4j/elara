@@ -36,10 +36,8 @@ import static java.util.Objects.requireNonNull;
 
 public class ChronicleLogAppender<M extends Writable> implements MessageLog.Appender<M> {
 
-    private static final int MAX_MESSAGE_SIZE = 1 << 16;//TODO make this configurable
-
     private final ExcerptAppender appender;
-    private final MutableDirectBuffer buffer = new UnsafeBuffer(0, 0);
+    private final BufferAcquirer bufferAcquirer = new BufferAcquirer();
 
     public ChronicleLogAppender(final ChronicleQueue queue) {
         this(queue.acquireAppender());
@@ -52,16 +50,45 @@ public class ChronicleLogAppender<M extends Writable> implements MessageLog.Appe
     @Override
     public void append(final M message) {
         try (final DocumentContext context = appender.writingDocument()) {
-            final Bytes<?> bytes = context.wire().bytes();
-            bytes.ensureCapacity(MAX_MESSAGE_SIZE);
-            final int offset = (int)bytes.writePosition();
+            try {
+                bufferAcquirer.init(context.wire().bytes());
+                final int written = message.write(bufferAcquirer);
+                bufferAcquirer.finish(written);
+            } catch (final Exception e) {
+                context.rollbackOnClose();
+                throw e;
+            }
+        }
+    }
+
+    private static class BufferAcquirer implements Writable.BufferAcquirer {
+        private Bytes<?> bytes;
+        private final MutableDirectBuffer buffer = new UnsafeBuffer(0, 0);
+
+        BufferAcquirer init(final Bytes<?> bytes) {
+            this.bytes = requireNonNull(bytes);
+            return this;
+        }
+
+        @Override
+        public MutableDirectBuffer acquireBuffer(final int length) {
+            bytes.ensureCapacity(length + 4);
+            final int offset = (int) bytes.writePosition();
             final long addr = bytes.addressForWrite(offset);
-            final int capacity = (int)Math.min(MAX_MESSAGE_SIZE, bytes.writeRemaining());
-            buffer.wrap(addr, capacity);
-            final int written = message.writeTo(buffer, 4);
+            buffer.wrap(addr + 4, length);
+            return buffer;
+        }
+
+        void finish(final int written) {
+            if (written < 0 || written > buffer.capacity()) {
+                throw new IllegalArgumentException("Invalid written length Writable.write(..). Expected in [0," +
+                        buffer.capacity() + "] but was " + written);
+            }
+            buffer.wrap(buffer.addressOffset() - 4, 4);
             buffer.putInt(0, written);
             buffer.wrap(0, 0);
-            bytes.writePosition(offset + written + 4);
+            bytes.writePosition(bytes.writePosition() + written + 4);
+            bytes = null;
         }
     }
 

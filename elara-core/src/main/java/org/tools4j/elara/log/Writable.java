@@ -25,7 +25,13 @@ package org.tools4j.elara.log;
 
 import org.agrona.MutableDirectBuffer;
 
-@FunctionalInterface
 public interface Writable {
-    int writeTo(MutableDirectBuffer dst, int offset);
+    int write(BufferAcquirer bufferAcquirer);
+
+    int writeTo(MutableDirectBuffer dst, int dstOffset);
+
+    @FunctionalInterface
+    interface BufferAcquirer {
+        MutableDirectBuffer acquireBuffer(int length);
+    }
 }

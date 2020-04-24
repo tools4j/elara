@@ -120,6 +120,13 @@ public class FlyweightHeader implements Flyweight<FlyweightHeader>, Header, Fram
     }
 
     @Override
+    public int write(final BufferAcquirer bufferAcquirer) {
+        final MutableDirectBuffer buffer = bufferAcquirer.acquireBuffer(HEADER_LENGTH);
+        buffer.putBytes(HEADER_OFFSET, header, 0, HEADER_LENGTH);
+        return HEADER_LENGTH;
+    }
+
+    @Override
     public int writeTo(final MutableDirectBuffer dst, final int dstOffset) {
         dst.putBytes(dstOffset + HEADER_OFFSET, header, 0, HEADER_LENGTH);
         return HEADER_LENGTH;

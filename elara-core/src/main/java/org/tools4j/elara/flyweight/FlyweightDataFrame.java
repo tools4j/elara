@@ -102,10 +102,20 @@ public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFr
     }
 
     @Override
-    public int writeTo(final MutableDirectBuffer buffer, final int offset) {
-        header.writeTo(buffer, offset);
-        payload.getBytes(0, buffer, offset + PAYLOAD_OFFSET, payload.capacity());
-        return HEADER_LENGTH + payload.capacity();
+    public int write(final BufferAcquirer bufferAcquirer) {
+        final int payloadSize = payload.capacity();
+        final MutableDirectBuffer dst = bufferAcquirer.acquireBuffer(HEADER_LENGTH + payloadSize);
+        header.writeTo(dst, 0);
+        payload.getBytes(0, dst, PAYLOAD_OFFSET, payloadSize);
+        return HEADER_LENGTH + payloadSize;
+    }
+
+    @Override
+    public int writeTo(final MutableDirectBuffer dst, final int offset) {
+        final int payloadSize = payload.capacity();
+        header.writeTo(dst, offset);
+        payload.getBytes(0, dst, offset + PAYLOAD_OFFSET, payloadSize);
+        return HEADER_LENGTH + payloadSize;
     }
 
     @Override
