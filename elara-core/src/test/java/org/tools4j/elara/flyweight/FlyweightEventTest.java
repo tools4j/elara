@@ -25,7 +25,13 @@ package org.tools4j.elara.flyweight;
 
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
+import org.agrona.concurrent.UnsafeBuffer;
 import org.junit.jupiter.api.Test;
+import org.tools4j.elara.event.Event;
+import org.tools4j.elara.log.Writable;
+
+import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -95,15 +101,8 @@ public class FlyweightEventTest {
                 values.type, values.time, values.payload, payloadOffset, values.payloadLength()
         );
 
-        //when + then
-        assertEquals(values.input, event.id().commandId().input(), "id..commandId.input");
-        assertEquals(values.seq, event.id().commandId().sequence(), "id.commandId.sequence");
-        assertEquals(values.index, event.id().index(), "id.index");
-        assertEquals(values.type, event.type(), "id.type");
-        assertEquals(values.time, event.time(), "id.time");
-        assertNotNull(event.payload(), "id.payload");
-        assertEquals(values.payloadLength(), event.payload().capacity(), "payload.capacity");
-        assertEquals(values.msg, event.payload().getStringAscii(0), "payload.msg");
+        //then
+        values.assertEvent(event);
 
         //when
         final int copyOffset = 7;
@@ -117,14 +116,7 @@ public class FlyweightEventTest {
         final FlyweightEvent copy = new FlyweightEvent().init(buffer, copyOffset);
 
         //then
-        assertEquals(values.input, copy.id().commandId().input(), "id..commandId.input");
-        assertEquals(values.seq, copy.id().commandId().sequence(), "id.commandId.sequence");
-        assertEquals(values.index, copy.id().index(), "id.index");
-        assertEquals(values.type, copy.type(), "id.type");
-        assertEquals(values.time, copy.time(), "id.time");
-        assertNotNull(copy.payload(), "id.payload");
-        assertEquals(values.payloadLength(), copy.payload().capacity(), "payload.capacity");
-        assertEquals(values.msg, copy.payload().getStringAscii(0), "payload.msg");
+        values.assertEvent(copy);
     }
 
     @Test
@@ -148,14 +140,7 @@ public class FlyweightEventTest {
         final FlyweightEvent copy = new FlyweightEvent().init(buffer, copyOffset);
 
         //then
-        assertEquals(values.input, event.id().commandId().input(), "id..commandId.input");
-        assertEquals(values.seq, event.id().commandId().sequence(), "id.commandId.sequence");
-        assertEquals(values.index, event.id().index(), "id.index");
-        assertEquals(values.type, copy.type(), "id.type");
-        assertEquals(values.time, copy.time(), "id.time");
-        assertNotNull(copy.payload(), "id.payload");
-        assertEquals(values.payloadLength(), copy.payload().capacity(), "payload.capacity");
-        assertEquals(values.msg, copy.payload().getStringAscii(0), "payload.msg");
+        values.assertEvent(copy);
     }
 
     @Test
@@ -181,14 +166,43 @@ public class FlyweightEventTest {
         final FlyweightEvent copy = new FlyweightEvent().init(header, headerOffset, payload, payloadOffset, values.payloadLength());
 
         //then
-        assertEquals(values.input, event.id().commandId().input(), "id..commandId.input");
-        assertEquals(values.seq, event.id().commandId().sequence(), "id.commandId.sequence");
-        assertEquals(values.index, event.id().index(), "id.index");
-        assertEquals(values.type, copy.type(), "id.type");
-        assertEquals(values.time, copy.time(), "id.time");
-        assertNotNull(copy.payload(), "id.payload");
-        assertEquals(values.payloadLength(), copy.payload().capacity(), "payload.capacity");
-        assertEquals(values.msg, copy.payload().getStringAscii(0), "payload.msg");
+        values.assertEvent(copy);
+    }
+
+    @Test
+    public void write() {
+        //given
+        final int headerOffset = 23;
+        final int payloadOffset = 13;
+        final Values values = new Values(payloadOffset, "Hello world");
+        final FlyweightEvent event = new FlyweightEvent();
+        event.init(new ExpandableArrayBuffer(), headerOffset, values.input, values.seq, values.index,
+                values.type, values.time, values.payload, payloadOffset, values.payloadLength()
+        );
+
+        //when
+        final int copyOffset = 7;
+        final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
+        final int writeToLen = event.writeTo(buffer, copyOffset);
+        final FlyweightEvent writtenTo = new FlyweightEvent().init(buffer, copyOffset);
+
+        //then
+        assertEquals(HEADER_LENGTH + values.payloadLength(), writeToLen, "write-to length");
+        values.assertEvent(writtenTo);
+
+        //when
+        final AtomicReference<MutableDirectBuffer> bufferRef = new AtomicReference<>();
+        final Writable.BufferAcquirer acquirer = length -> {
+            bufferRef.set(new UnsafeBuffer(ByteBuffer.allocate(length)));
+            return bufferRef.get();
+        };
+        final int writeLen = event.write(acquirer);
+        final FlyweightEvent written = new FlyweightEvent().init(bufferRef.get(), 0);
+
+        //then
+        assertEquals(HEADER_LENGTH + values.payloadLength(), bufferRef.get().capacity(), "buffer capacity (reserved length)");
+        assertEquals(HEADER_LENGTH + values.payloadLength(), writeLen, "write length");
+        values.assertEvent(written);
     }
 
     private static class Values {
@@ -207,6 +221,17 @@ public class FlyweightEventTest {
 
         int payloadLength() {
             return Integer.BYTES + msg.length();
+        }
+
+        void assertEvent(final Event event) {
+            assertEquals(input, event.id().commandId().input(), "id..commandId.input");
+            assertEquals(seq, event.id().commandId().sequence(), "id.commandId.sequence");
+            assertEquals(index, event.id().index(), "id.index");
+            assertEquals(type, event.type(), "id.type");
+            assertEquals(time, event.time(), "id.time");
+            assertNotNull(event.payload(), "id.payload");
+            assertEquals(payloadLength(), event.payload().capacity(), "payload.capacity");
+            assertEquals(msg, event.payload().getStringAscii(0), "payload.msg");
         }
     }
 }

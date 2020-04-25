@@ -25,7 +25,13 @@ package org.tools4j.elara.flyweight;
 
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
+import org.agrona.concurrent.UnsafeBuffer;
 import org.junit.jupiter.api.Test;
+import org.tools4j.elara.command.Command;
+import org.tools4j.elara.log.Writable;
+
+import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -94,14 +100,8 @@ public class FlyweightCommandTest {
                 values.input, values.seq, values.type, values.time, values.payload, payloadOffset, values.payloadLength()
         );
 
-        //when + then
-        assertEquals(values.input, command.id().input(), "id.input");
-        assertEquals(values.seq, command.id().sequence(), "id.sequence");
-        assertEquals(values.type, command.type(), "id.type");
-        assertEquals(values.time, command.time(), "id.time");
-        assertNotNull(command.payload(), "id.payload");
-        assertEquals(values.payloadLength(), command.payload().capacity(), "payload.capacity");
-        assertEquals(values.msg, command.payload().getStringAscii(0), "payload.msg");
+        //then
+        values.assertCommand(command);
 
         //when
         final int copyOffset = 7;
@@ -115,13 +115,7 @@ public class FlyweightCommandTest {
         final FlyweightCommand copy = new FlyweightCommand().init(buffer, copyOffset);
 
         //then
-        assertEquals(values.input, copy.id().input(), "id.input");
-        assertEquals(values.seq, copy.id().sequence(), "id.sequence");
-        assertEquals(values.type, copy.type(), "id.type");
-        assertEquals(values.time, copy.time(), "id.time");
-        assertNotNull(copy.payload(), "id.payload");
-        assertEquals(values.payloadLength(), copy.payload().capacity(), "payload.capacity");
-        assertEquals(values.msg, copy.payload().getStringAscii(0), "payload.msg");
+        values.assertCommand(copy);
     }
 
     @Test
@@ -145,13 +139,7 @@ public class FlyweightCommandTest {
         final FlyweightCommand copy = new FlyweightCommand().init(buffer, copyOffset);
 
         //then
-        assertEquals(values.input, copy.id().input(), "id.input");
-        assertEquals(values.seq, copy.id().sequence(), "id.sequence");
-        assertEquals(values.type, copy.type(), "id.type");
-        assertEquals(values.time, copy.time(), "id.time");
-        assertNotNull(copy.payload(), "id.payload");
-        assertEquals(values.payloadLength(), copy.payload().capacity(), "payload.capacity");
-        assertEquals(values.msg, copy.payload().getStringAscii(0), "payload.msg");
+        values.assertCommand(copy);
     }
 
     @Test
@@ -177,13 +165,43 @@ public class FlyweightCommandTest {
         final FlyweightCommand copy = new FlyweightCommand().init(header, headerOffset, payload, payloadOffset, values.payloadLength());
 
         //then
-        assertEquals(values.input, copy.id().input(), "id.input");
-        assertEquals(values.seq, copy.id().sequence(), "id.sequence");
-        assertEquals(values.type, copy.type(), "id.type");
-        assertEquals(values.time, copy.time(), "id.time");
-        assertNotNull(copy.payload(), "id.payload");
-        assertEquals(values.payloadLength(), copy.payload().capacity(), "payload.capacity");
-        assertEquals(values.msg, copy.payload().getStringAscii(0), "payload.msg");
+        values.assertCommand(copy);
+    }
+
+    @Test
+    public void write() {
+        //given
+        final int headerOffset = 23;
+        final int payloadOffset = 13;
+        final Values values = new Values(payloadOffset, "Hello world");
+        final FlyweightCommand command = new FlyweightCommand();
+        command.init(new ExpandableArrayBuffer(), headerOffset,
+                values.input, values.seq, values.type, values.time, values.payload, payloadOffset, values.payloadLength()
+        );
+
+        //when
+        final int copyOffset = 7;
+        final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
+        final int writeToLen = command.writeTo(buffer, copyOffset);
+        final FlyweightCommand writtenTo = new FlyweightCommand().init(buffer, copyOffset);
+
+        //then
+        assertEquals(HEADER_LENGTH + values.payloadLength(), writeToLen, "write-to byte length");
+        values.assertCommand(writtenTo);
+
+        //when
+        final AtomicReference<MutableDirectBuffer> bufferRef = new AtomicReference<>();
+        final Writable.BufferAcquirer acquirer = length -> {
+            bufferRef.set(new UnsafeBuffer(ByteBuffer.allocate(length)));
+            return bufferRef.get();
+        };
+        final int writeLen = command.write(acquirer);
+        final FlyweightCommand written = new FlyweightCommand().init(bufferRef.get(), 0);
+
+        //then
+        assertEquals(HEADER_LENGTH + values.payloadLength(), bufferRef.get().capacity(), "buffer capacity (reserved length)");
+        assertEquals(HEADER_LENGTH + values.payloadLength(), writeLen, "written byte length");
+        values.assertCommand(written);
     }
 
     private static class Values {
@@ -201,6 +219,16 @@ public class FlyweightCommandTest {
 
         int payloadLength() {
             return Integer.BYTES + msg.length();
+        }
+
+        void assertCommand(final Command command) {
+            assertEquals(input, command.id().input(), "id.input");
+            assertEquals(seq, command.id().sequence(), "id.sequence");
+            assertEquals(type, command.type(), "id.type");
+            assertEquals(time, command.time(), "id.time");
+            assertNotNull(command.payload(), "id.payload");
+            assertEquals(payloadLength(), command.payload().capacity(), "payload.capacity");
+            assertEquals(msg, command.payload().getStringAscii(0), "payload.msg");
         }
     }
 }

@@ -25,7 +25,12 @@ package org.tools4j.elara.flyweight;
 
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
+import org.agrona.concurrent.UnsafeBuffer;
 import org.junit.jupiter.api.Test;
+import org.tools4j.elara.log.Writable;
+
+import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -79,7 +84,6 @@ public class FlyweightHeaderTest {
     public void initWithValues() {
         //given
         final int headerOffset = 23;
-        final int payloadOffset = 13;
         final Values values = new Values();
         final FlyweightHeader header = new FlyweightHeader();
 
@@ -87,13 +91,8 @@ public class FlyweightHeaderTest {
         header.init(values.input, values.type, values.seq, values.time, values.index, values.payloadSize,
                 new ExpandableArrayBuffer(), headerOffset);
 
-        //when + then
-        assertEquals(values.input, header.input(), "header.input");
-        assertEquals(values.type, header.type(), "header.type");
-        assertEquals(values.seq, header.sequence(), "header.sequence");
-        assertEquals(values.time, header.time(), "header.time");
-        assertEquals(values.index, header.index(), "header.index");
-        assertEquals(values.payloadSize, header.payloadSize(), "header.payload-size");
+        //then
+        values.assertHeader(header);
 
         //when
         final int copyOffset = 7;
@@ -107,25 +106,46 @@ public class FlyweightHeaderTest {
         final FlyweightHeader copy = new FlyweightHeader().init(buffer, copyOffset);
 
         //then
-        assertEquals(values.input, copy.input(), "header.input");
-        assertEquals(values.type, copy.type(), "header.type");
-        assertEquals(values.seq, copy.sequence(), "header.sequence");
-        assertEquals(values.time, copy.time(), "header.time");
-        assertEquals(Version.CURRENT, copy.version(), "header.version");
-        assertEquals(values.index, copy.index(), "header.index");
-        assertEquals(values.payloadSize, copy.payloadSize(), "header.payload-size");
+        values.assertHeader(copy);
 
         //when
         final FlyweightHeader third = new FlyweightHeader().init(header, new ExpandableArrayBuffer(), 123);
 
         //then
-        assertEquals(values.input, third.input(), "header.input");
-        assertEquals(values.type, third.type(), "header.type");
-        assertEquals(values.seq, third.sequence(), "header.sequence");
-        assertEquals(values.time, third.time(), "header.time");
-        assertEquals(Version.CURRENT, third.version(), "header.version");
-        assertEquals(values.index, third.index(), "header.index");
-        assertEquals(values.payloadSize, third.payloadSize(), "header.payload-size");
+        values.assertHeader(third);
+    }
+
+    @Test
+    public void write() {
+        final int headerOffset = 23;
+        final Values values = new Values();
+        final FlyweightHeader header = new FlyweightHeader();
+        header.init(values.input, values.type, values.seq, values.time, values.index, values.payloadSize,
+                new ExpandableArrayBuffer(), headerOffset);
+
+        //when
+        final int copyOffset = 7;
+        final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
+        final int writeToLen = header.writeTo(buffer, copyOffset);
+        final FlyweightHeader writtenTo = new FlyweightHeader().init(buffer, copyOffset);
+
+        //then
+        assertEquals(HEADER_LENGTH, writeToLen, "write-to length");
+        values.assertHeader(writtenTo);
+
+        //when
+        final AtomicReference<MutableDirectBuffer> bufferRef = new AtomicReference<>();
+        final Writable.BufferAcquirer acquirer = length -> {
+            bufferRef.set(new UnsafeBuffer(ByteBuffer.allocate(length)));
+            return bufferRef.get();
+        };
+        final int writeLen = header.write(acquirer);
+        final FlyweightHeader written = new FlyweightHeader().init(bufferRef.get(), 0);
+
+        //then
+        assertEquals(HEADER_LENGTH, bufferRef.get().capacity(), "buffer capacity (reserved length)");
+        assertEquals(HEADER_LENGTH, writeLen, "write length");
+        values.assertHeader(written);
     }
 
     private static class Values {
@@ -135,5 +155,14 @@ public class FlyweightHeaderTest {
         final long time = 998877665544L;
         final short index = 7;
         final int payloadSize = 22;
+
+        void assertHeader(final Header header) {
+            assertEquals(input, header.input(), "header.input");
+            assertEquals(type, header.type(), "header.type");
+            assertEquals(seq, header.sequence(), "header.sequence");
+            assertEquals(time, header.time(), "header.time");
+            assertEquals(index, header.index(), "header.index");
+            assertEquals(payloadSize, header.payloadSize(), "header.payload-size");
+        }
     }
 }
