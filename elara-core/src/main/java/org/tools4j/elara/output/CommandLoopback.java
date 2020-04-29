@@ -21,9 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.command;
+package org.tools4j.elara.output;
 
 import org.agrona.DirectBuffer;
+import org.tools4j.elara.command.CommandType;
 
 public interface CommandLoopback {
     default void enqueueCommand(DirectBuffer command, int offset, int length) {

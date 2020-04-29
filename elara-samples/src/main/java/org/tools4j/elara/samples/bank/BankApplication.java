@@ -29,7 +29,7 @@ import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.command.CommandLoopback;
+import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventRouter;
 import org.tools4j.elara.flyweight.FlyweightCommand;

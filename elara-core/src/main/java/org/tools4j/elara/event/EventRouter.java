@@ -32,7 +32,7 @@ public interface EventRouter {
 
     void routeEvent(int type, DirectBuffer event, int offset, int length);
 
-    void rollbackAfterProcessing(RollbackMode mode);
+    StateImpact rollbackAfterProcessing(RollbackMode mode);
 
     short nextEventIndex();
 }

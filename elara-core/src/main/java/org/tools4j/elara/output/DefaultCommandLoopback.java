@@ -21,16 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.command;
+package org.tools4j.elara.output;
 
 import org.agrona.DirectBuffer;
 import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FrameDescriptor;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;

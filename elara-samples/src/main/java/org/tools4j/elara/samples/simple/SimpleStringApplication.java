@@ -29,7 +29,7 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.application.Application;
 import org.tools4j.elara.application.SimpleApplication;
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.command.CommandLoopback;
+import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventRouter;
 import org.tools4j.elara.flyweight.FlyweightCommand;

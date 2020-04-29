@@ -31,9 +31,13 @@ import org.tools4j.elara.event.EventHandler;
 import org.tools4j.elara.event.EventRouter;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.event.RollbackMode;
+import org.tools4j.elara.event.StateImpact;
 import org.tools4j.elara.plugin.base.BaseEvents;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.event.RollbackMode.REPLAY_COMMAND;
+import static org.tools4j.elara.event.StateImpact.STATE_CORRUPTION_POSSIBLE;
+import static org.tools4j.elara.event.StateImpact.STATE_UNAFFECTED;
 
 public class FlyweightEventRouter implements EventRouter {
 
@@ -58,7 +62,8 @@ public class FlyweightEventRouter implements EventRouter {
 
     @Override
     public void routeEvent(final int type, final DirectBuffer event, final int offset, final int length) {
-        checkAllowedType(type);
+        checkEventType(type);
+        checkNotRolledBack();
         eventHandler.onEvent(flyweightEvent.init(
                 headerBuffer, 0, command.id().input(), command.id().sequence(), nextIndex, type,
                 command.time(), event, offset, length
@@ -72,18 +77,21 @@ public class FlyweightEventRouter implements EventRouter {
         if (mode == null) {
             eventHandler.onEvent(BaseEvents.commit(flyweightEvent, headerBuffer, 0, command, nextIndex));
         } else {
-            eventHandler.onEvent(BaseEvents.rollback(flyweightEvent, headerBuffer, 0, command, nextIndex));
+            if (nextIndex > 0 || mode != REPLAY_COMMAND) {
+                eventHandler.onEvent(BaseEvents.rollback(flyweightEvent, headerBuffer, 0, command, nextIndex));
+            }
         }
         this.flyweightEvent.reset();
         this.command = null;
         this.rollbackMode = null;
         this.nextIndex = 0;
-        return mode != RollbackMode.REPLAY_COMMAND;
+        return mode != REPLAY_COMMAND;
     }
 
     @Override
-    public void rollbackAfterProcessing(final RollbackMode mode) {
+    public StateImpact rollbackAfterProcessing(final RollbackMode mode) {
         this.rollbackMode = requireNonNull(mode);
+        return nextIndex == 0 ? STATE_UNAFFECTED : STATE_CORRUPTION_POSSIBLE;
     }
 
     @Override
@@ -91,9 +99,15 @@ public class FlyweightEventRouter implements EventRouter {
         return nextIndex;
     }
 
-    private void checkAllowedType(final int eventType) {
+    private static void checkEventType(final int eventType) {
         if (eventType == EventType.COMMIT || eventType == EventType.ROLLBACK) {
             throw new IllegalArgumentException("Illegal event type: " + eventType);
+        }
+    }
+
+    private void checkNotRolledBack() {
+        if (rollbackMode != null) {
+            throw new IllegalStateException("It is illegal to route events after setting rollback mode");
         }
     }
 }
