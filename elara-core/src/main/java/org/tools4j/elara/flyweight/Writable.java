@@ -26,12 +26,5 @@ package org.tools4j.elara.flyweight;
 import org.agrona.MutableDirectBuffer;
 
 public interface Writable {
-    int write(BufferAcquirer bufferAcquirer);
-
     int writeTo(MutableDirectBuffer dst, int dstOffset);
-
-    @FunctionalInterface
-    interface BufferAcquirer {
-        MutableDirectBuffer acquireBuffer(int length);
-    }
 }

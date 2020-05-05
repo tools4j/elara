@@ -25,12 +25,8 @@ package org.tools4j.elara.flyweight;
 
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.agrona.concurrent.UnsafeBuffer;
 import org.junit.jupiter.api.Test;
 import org.tools4j.elara.event.Event;
-
-import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -188,20 +184,6 @@ public class FlyweightEventTest {
         //then
         assertEquals(HEADER_LENGTH + values.payloadLength(), writeToLen, "write-to length");
         values.assertEvent(writtenTo);
-
-        //when
-        final AtomicReference<MutableDirectBuffer> bufferRef = new AtomicReference<>();
-        final Writable.BufferAcquirer acquirer = length -> {
-            bufferRef.set(new UnsafeBuffer(ByteBuffer.allocate(length)));
-            return bufferRef.get();
-        };
-        final int writeLen = event.write(acquirer);
-        final FlyweightEvent written = new FlyweightEvent().init(bufferRef.get(), 0);
-
-        //then
-        assertEquals(HEADER_LENGTH + values.payloadLength(), bufferRef.get().capacity(), "buffer capacity (reserved length)");
-        assertEquals(HEADER_LENGTH + values.payloadLength(), writeLen, "write length");
-        values.assertEvent(written);
     }
 
     private static class Values {
