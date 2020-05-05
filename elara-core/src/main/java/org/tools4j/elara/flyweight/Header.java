@@ -24,7 +24,6 @@
 package org.tools4j.elara.flyweight;
 
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.log.Writable;
 
 /**
  * A header of a frame as described by {@link FrameDescriptor}.
@@ -39,7 +38,9 @@ public interface Header extends Writable {
 
     long time();
 
-    int version();
+    short version();
+
+    byte flags();
 
     short index();
 

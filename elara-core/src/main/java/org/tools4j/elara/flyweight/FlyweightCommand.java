@@ -26,7 +26,6 @@ package org.tools4j.elara.flyweight;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.log.Flyweight;
 
 public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, Command.Id, Frame {
 
@@ -42,7 +41,7 @@ public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, C
                                  final DirectBuffer payload,
                                  final int payloadOffset,
                                  final int payloadSize) {
-        frame.init(header, headerOffset, input, type, sequence, time, INDEX_NEG, payload, payloadOffset, payloadSize);
+        frame.init(header, headerOffset, input, type, sequence, time, Flags.NONE, INDEX_NEG, payload, payloadOffset, payloadSize);
         return this;
     }
 

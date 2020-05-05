@@ -27,7 +27,6 @@ import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.junit.jupiter.api.Test;
-import org.tools4j.elara.log.Writable;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
@@ -76,6 +75,7 @@ public class FlyweightHeaderTest {
         assertEquals(0, header.sequence(), "header.sequence");
         assertEquals(0, header.time(), "header.time");
         assertEquals(Version.CURRENT, header.version(), "header.version");
+        assertEquals(0, header.flags(), "header.flags");
         assertEquals(0, header.index(), "header.index");
         assertEquals(0, header.payloadSize(), "header.payload-size");
     }
@@ -88,8 +88,8 @@ public class FlyweightHeaderTest {
         final FlyweightHeader header = new FlyweightHeader();
 
         //when
-        header.init(values.input, values.type, values.seq, values.time, values.index, values.payloadSize,
-                new ExpandableArrayBuffer(), headerOffset);
+        header.init(values.input, values.type, values.seq, values.time, values.flags, values.index,
+                values.payloadSize, new ExpandableArrayBuffer(), headerOffset);
 
         //then
         values.assertHeader(header);
@@ -120,8 +120,8 @@ public class FlyweightHeaderTest {
         final int headerOffset = 23;
         final Values values = new Values();
         final FlyweightHeader header = new FlyweightHeader();
-        header.init(values.input, values.type, values.seq, values.time, values.index, values.payloadSize,
-                new ExpandableArrayBuffer(), headerOffset);
+        header.init(values.input, values.type, values.seq, values.time, values.flags, values.index,
+                values.payloadSize, new ExpandableArrayBuffer(), headerOffset);
 
         //when
         final int copyOffset = 7;
@@ -153,6 +153,7 @@ public class FlyweightHeaderTest {
         final int type = 123;
         final long seq = 998877;
         final long time = 998877665544L;
+        final byte flags = Flags.COMMIT | Flags.ROLLBACK;
         final short index = 7;
         final int payloadSize = 22;
 
@@ -161,6 +162,7 @@ public class FlyweightHeaderTest {
             assertEquals(type, header.type(), "header.type");
             assertEquals(seq, header.sequence(), "header.sequence");
             assertEquals(time, header.time(), "header.time");
+            assertEquals(flags, header.flags(), "header.flags");
             assertEquals(index, header.index(), "header.index");
             assertEquals(payloadSize, header.payloadSize(), "header.payload-size");
         }

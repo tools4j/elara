@@ -25,7 +25,6 @@ package org.tools4j.elara.handler;
 
 import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FrameDescriptor;
 import org.tools4j.elara.input.Input;
@@ -39,12 +38,12 @@ import static java.util.Objects.requireNonNull;
 public final class InputHandlerFactory implements Function<Input, Input.Handler> {
 
     private final TimeSource timeSource;
-    private final MessageLog.Appender<? super Command> commandLogAppender;
+    private final MessageLog.Appender commandLogAppender;
     private final MutableDirectBuffer headerBuffer = new ExpandableDirectByteBuffer(FrameDescriptor.HEADER_LENGTH);
     private final FlyweightCommand flyweightCommand = new FlyweightCommand();
 
     public InputHandlerFactory(final TimeSource timeSource,
-                               final MessageLog.Appender<? super Command> commandLogAppender) {
+                               final MessageLog.Appender commandLogAppender) {
         this.commandLogAppender = requireNonNull(commandLogAppender);
         this.timeSource = requireNonNull(timeSource);
     }

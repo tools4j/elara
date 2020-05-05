@@ -26,7 +26,7 @@ package org.tools4j.elara.event;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.log.Writable;
+import org.tools4j.elara.flyweight.Writable;
 
 public interface Event extends Writable {
     interface Id {
@@ -34,11 +34,28 @@ public interface Event extends Writable {
         int index();
     }
 
+    interface Flags {
+        /** @return true if this is the last event of the command and all events are hereby committed */
+        boolean isCommit();
+        /** @return true if this is the last event of the command and all events are hereby rolled back */
+        boolean isRollback();
+        /** @return true if it is not yet defined whether this is a final or non-final event */
+        boolean isUndefined();
+        /** @return true if commit or rollback is true */
+        boolean isFinal();
+        /** @return true if neither commit nor rollback nor undefined */
+        boolean isNonFinal();
+        /** @return flags as raw bits value */
+        byte value();
+    }
+
     Id id();
 
     int type();
 
     long time();
+
+    Flags flags();
 
     default boolean isAdmin() {
         return EventType.isAdmin(type());
@@ -48,16 +65,13 @@ public interface Event extends Writable {
         return EventType.isApplication(type());
     }
 
-    default boolean isCommit() {
-        return EventType.isCommit(type());
-    }
-
-    default boolean isRollback() {
-        return EventType.isRollback(type());
-    }
-
     DirectBuffer payload();
 
     @Override
     int writeTo(MutableDirectBuffer dst, int offset);
+
+    @Deprecated
+    default boolean isCommit() {
+        return EventType.isCommit(type());
+    }
 }

@@ -25,7 +25,7 @@ package org.tools4j.elara.command;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.log.Writable;
+import org.tools4j.elara.flyweight.Writable;
 
 public interface Command extends Writable {
     interface Id {

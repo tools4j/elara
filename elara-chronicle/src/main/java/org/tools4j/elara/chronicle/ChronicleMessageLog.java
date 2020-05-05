@@ -24,52 +24,31 @@
 package org.tools4j.elara.chronicle;
 
 import net.openhft.chronicle.queue.ChronicleQueue;
-import net.openhft.chronicle.queue.ExcerptTailer;
-import org.tools4j.elara.log.Flyweight;
-import org.tools4j.elara.log.PeekableMessageLog;
-import org.tools4j.elara.log.Writable;
-
-import java.util.function.Supplier;
+import org.tools4j.elara.log.MessageLog;
 
 import static java.util.Objects.requireNonNull;
 
-public class ChronicleMessageLog<M extends Writable> implements PeekableMessageLog<M> {
+public class ChronicleMessageLog implements MessageLog {
 
     private final ChronicleQueue queue;
-    private final Supplier<? extends Flyweight<? extends M>> flyweightSupplier;
-    private ExcerptTailer sizeTailer; //lazy init
 
-    public ChronicleMessageLog(final ChronicleQueue queue,
-                               final Supplier<? extends Flyweight<? extends M>> flyweightSupplier) {
+    public ChronicleMessageLog(final ChronicleQueue queue) {
         this.queue = requireNonNull(queue);
-        this.flyweightSupplier = requireNonNull(flyweightSupplier);
     }
 
     @Override
-    public Appender<M> appender() {
-        return new ChronicleLogAppender<M>(queue);
+    public Appender appender() {
+        return new ChronicleLogAppender(queue);
     }
 
     @Override
-    public PeekableMessageLog.PeekablePoller<M> poller() {
-        return new ChronicleLogPoller<M>(queue, flyweightSupplier.get());
+    public Poller poller() {
+        return new ChronicleLogPoller(queue);
     }
 
     @Override
-    public PeekablePoller<M> poller(final String id) {
-        return new ChronicleLogPoller<M>(id, queue, flyweightSupplier.get());
-    }
-
-    @Override
-    public long size() {
-        if (sizeTailer == null) {
-            if (queue.firstIndex() == Long.MAX_VALUE) {
-                return 0;
-            }
-            sizeTailer = queue.createTailer();
-        }
-        sizeTailer.toEnd();
-        return sizeTailer.index() + 1;
+    public Poller poller(final String id) {
+        return new ChronicleLogPoller(id, queue);
     }
 
     @Override

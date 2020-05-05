@@ -23,46 +23,180 @@
  */
 package org.tools4j.elara.log;
 
+import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.log.PeekableMessageLog.PeekPollHandler.Result;
+import org.agrona.concurrent.UnsafeBuffer;
+import org.tools4j.elara.log.MessageLog.Handler.Result;
 
-import java.util.function.Supplier;
+import static org.tools4j.elara.log.MessageLog.Handler.Result.POLL;
 
-import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.log.PeekableMessageLog.PeekPollHandler.Result.POLL;
+public class InMemoryLog implements MessageLog {
 
-public class InMemoryLog<M extends Writable> implements PeekableMessageLog<M> {
+    public static final int DEFAULT_INITIAL_QUEUE_CAPACITY = 16;
+    public static final int DEFAULT_INITIAL_BUFFER_CAPACITY = 256;
 
-    private final Supplier<? extends Flyweight<? extends M>> flyweightSupplier;
+    private final int initialBufferCapacity;
     private final boolean removeOnPoll;
-    private Element root = new Element();
-    private Element last = root;
+    private final boolean initEagerly;
+    private int[] lengths;
+    private MutableDirectBuffer[] buffers;
+    private int start;
+    private int size;
 
-    public InMemoryLog(final Supplier<? extends Flyweight<? extends M>> flyweightSupplier) {
-        this(flyweightSupplier, true);
+    public InMemoryLog() {
+        this(DEFAULT_INITIAL_QUEUE_CAPACITY, DEFAULT_INITIAL_BUFFER_CAPACITY, true, false);
     }
 
-    public InMemoryLog(final Supplier<? extends Flyweight<? extends M>> flyweightSupplier, final boolean removeOnPoll) {
-        this.flyweightSupplier = requireNonNull(flyweightSupplier);
+    public InMemoryLog(final int initialQueueCapacity,
+                       final int initialBufferCapacity,
+                       final boolean removeOnPoll,
+                       final boolean initEagerly) {
+        this.initialBufferCapacity = initialBufferCapacity;
         this.removeOnPoll = removeOnPoll;
+        this.initEagerly = initEagerly;
+        this.lengths = new int[initialQueueCapacity];
+        this.buffers = new MutableDirectBuffer[initialQueueCapacity];
+        if (initEagerly) {
+            for (int i = 0; i < initialQueueCapacity; i++) {
+                buffers[i] = new ExpandableArrayBuffer(initialBufferCapacity);
+            }
+        }
     }
 
     @Override
-    public Appender<M> appender() {
-        return message -> {
-            final MutableDirectBuffer buffer = last.buffer;
-            last = last.append();
-            message.writeTo(buffer, 0);
+    public Appender appender() {
+        ensureMessageLogNotClosed();
+        return new Appender() {
+            final AppendContext appendContext = new AppendContext();
+            @Override
+            public void append(final DirectBuffer buffer, final int offset, final int length) {
+                ensureMessageLogNotClosed();
+                final int ix;
+                if (size < buffers.length) {
+                    int index = start + size;
+                    if (index >= buffers.length) {
+                        index -= buffers.length;
+                    }
+                    ix = index;
+                } else {
+                    assert size == buffers.length;
+                    final int newLen = extendedQueueCapacity(buffers.length);
+                    final int[] newLengths = new int[newLen];
+                    final MutableDirectBuffer[] newBuffers = new MutableDirectBuffer[newLen];
+                    System.arraycopy(lengths, start, newLengths, 0, size - start);
+                    System.arraycopy(lengths, 0, newLengths, size - start, start);
+                    System.arraycopy(buffers, start, newBuffers, 0, size - start);
+                    System.arraycopy(buffers, 0, newBuffers, size - start, start);
+                    if (initEagerly) {
+                        for (int i = size; i < newLen; i++) {
+                            newBuffers[i] = new ExpandableArrayBuffer(initialBufferCapacity);
+                        }
+                    }
+                    start = 0;
+                    lengths = newLengths;
+                    buffers = newBuffers;
+                    ix = size;
+                }
+                notNull(ix, length).putBytes(0, buffer, offset, length);
+                lengths[ix] = length;
+                size++;
+            }
+
+            @Override
+            public AppendContext appending() {
+                ensureMessageLogNotClosed();
+                return appendContext.init();
+            }
+
+            final class AppendContext implements MessageLog.AppendContext {
+
+                MutableDirectBuffer buffer;
+                int index = -1;
+
+                void reset() {
+                    buffer = null;
+                    index = -1;
+                }
+
+                AppendContext init() {
+                    if (buffer != null) {
+                        abort();
+                        throw new IllegalStateException("Aborted unclosed append context");
+                    }
+                    final int ix;
+                    if (size < buffers.length) {
+                        int index = start + size;
+                        if (index >= buffers.length) {
+                            index -= buffers.length;
+                        }
+                        ix = index;
+                    } else {
+                        assert size == buffers.length;
+                        final int newLen = extendedQueueCapacity(buffers.length);
+                        final int[] newLengths = new int[newLen];
+                        final MutableDirectBuffer[] newBuffers = new MutableDirectBuffer[newLen];
+                        System.arraycopy(lengths, start, newLengths, 0, size - start);
+                        System.arraycopy(lengths, 0, newLengths, size - start, start);
+                        System.arraycopy(buffers, start, newBuffers, 0, size - start);
+                        System.arraycopy(buffers, 0, newBuffers, size - start, start);
+                        if (initEagerly) {
+                            for (int i = size; i < newLen; i++) {
+                                newBuffers[i] = new ExpandableArrayBuffer(initialBufferCapacity);
+                            }
+                        }
+                        start = 0;
+                        lengths = newLengths;
+                        buffers = newBuffers;
+                        ix = size;
+                    }
+                    buffer = notNull(ix, 0);
+                    lengths[ix] = 0;
+                    index = ix;
+                    return this;
+                }
+
+                @Override
+                public MutableDirectBuffer buffer() {
+                    if (buffer != null) {
+                        return buffer;
+                    }
+                    throw new IllegalStateException("Append context is closed");
+                }
+
+                @Override
+                public void commit(final int length) {
+                    if (index < 0) {
+                        throw new IllegalStateException("Append context is closed");
+                    }
+                    ensureMessageLogNotClosed();
+                    lengths[index] = length;
+                    size++;
+                    reset();
+                }
+
+                @Override
+                public void abort() {
+                    if (index < 0) {
+                        throw new IllegalStateException("Append context is closed");
+                    }
+                    reset();
+                }
+
+                @Override
+                public boolean isClosed() {
+                    return buffer == null;
+                }
+            }
         };
     }
 
     @Override
-    public PeekablePoller<M> poller() {
-        return new PeekablePoller<M>() {
-            final Flyweight<? extends M> flyweight = flyweightSupplier.get();
-            Element current = root;
-            long index = 0;
+    public MessageLog.Poller poller() {
+        ensureMessageLogNotClosed();
+        return new Poller() {
+            final MutableDirectBuffer message = new UnsafeBuffer(0, 0);
+            int index = 0;
 
             @Override
             public long entryId() {
@@ -70,101 +204,108 @@ public class InMemoryLog<M extends Writable> implements PeekableMessageLog<M> {
             }
 
             @Override
-            public PeekablePoller<M> moveToStart() {
-                current = root;
+            public Poller moveToStart() {
                 index = 0;
                 return this;
             }
 
             @Override
-            public PeekablePoller<M> moveToEnd() {
-                while (current.next != null) {
-                    moveToNext();
-                }
+            public Poller moveToEnd() {
+                index = size;
                 return this;
             }
 
             @Override
             public boolean moveToNext() {
-                if (current.next != null) {
-                    doMoveToNext();
+                int next = index + 1;
+                if (next >= size) {
+                    return false;
+                }
+                index = next;
+                return true;
+            }
+
+            @Override
+            public boolean moveTo(final long entryId) {
+                if (entryId < 0) {
+                    return false;
+                }
+                if (entryId < size) {
+                    index = (int)entryId;
                     return true;
                 }
                 return false;
             }
 
-            @Override
-            public boolean moveTo(final long entryId) {
-                throw new UnsupportedOperationException();
-            }
-
             private void doMoveToNext() {
-                current = current.next;
-                index++;
                 if (removeOnPoll) {
-                    root.next = null;
-                    root = current;
+                    start = start < buffers.length ? start + 1 : 0;
+                    size--;
+                } else {
+                    index++;
                 }
             }
 
+            private int position() {
+                final int pos = start + index;
+                return pos < buffers.length ? pos : pos - buffers.length;
+            }
+
             @Override
-            public int peekOrPoll(final PeekPollHandler<? super M> handler) {
-                if (current.next == null) {
-                    return 0;
+            public int poll(final Handler handler) {
+                ensureMessageLogNotClosed();
+                if (index < size) {
+                    final int pos = position();
+                    final int length = lengths[pos];
+                    final DirectBuffer buffer = buffers[pos];
+                    message.wrap(buffer, 0, length);
+                    final Result result = handler.onMessage(message);
+                    message.wrap(0, 0);
+                    if (result == POLL) {
+                        doMoveToNext();
+                        return 1;
+                    }
+                    //NOTE: we have work done here, but if this work is the only
+                    //      bit performed in the duty cycle loop then the result
+                    //      in the next loop iteration will be the same, hence we
+                    //      better let the idle strategy do its job
                 }
-                final M flyMessage = flyweight.init(current.buffer, 0);
-                final Result result = handler.onMessage(flyMessage);
-                if (result == POLL) {
-                    doMoveToNext();
-                    return 1;
-                }
-                //NOTE: we have work done here, but if this work is the only
-                //      bit performed in the duty cycle loop then the result
-                //      in the next loop iteration will be the same, hence we
-                //      better let the idle strategy do its job
                 return 0;
-            }
-
-            @Override
-            public int poll(final Handler<? super M> handler) {
-                if (current.next == null) {
-                    return 0;
-                }
-                final M flyMessage = flyweight.init(current.buffer, 0);
-                handler.onMessage(flyMessage);
-                doMoveToNext();
-                return 1;
             }
         };
     }
 
     @Override
-    public PeekablePoller<M> poller(final String id) {
+    public Poller poller(final String id) {
         throw new UnsupportedOperationException("tracking poller not supported");
     }
 
-    @Override
     public long size() {
-        int size = 0;
-        Element e = root;
-        while (e.next != null) {
-            size++;
-            e = e.next;
-        }
         return size;
     }
 
     @Override
     public void close() {
-        //nothing to do
+        size = 0;
+        start = 0;
+        buffers = null;
     }
 
-    private static final class Element {
-        final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
-        Element next;
-        Element append() {
-            next = new Element();
-            return next;
+    private void ensureMessageLogNotClosed() {
+        if (buffers == null) {
+            throw new IllegalStateException("InMemoryLog is closed");
         }
+    }
+
+    private MutableDirectBuffer notNull(final int index, final int minCapacity) {
+        final MutableDirectBuffer buffer = buffers[index];
+        if (buffer != null) {
+            return buffer;
+        }
+        return buffers[index] = new ExpandableArrayBuffer(Math.max(initialBufferCapacity, minCapacity));
+    }
+
+    private static int extendedQueueCapacity(final int length) {
+        return (int)(Math.min(length * 2L, Integer.MAX_VALUE));
     }
 }

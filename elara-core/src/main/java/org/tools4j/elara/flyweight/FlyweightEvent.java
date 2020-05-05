@@ -27,11 +27,12 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.log.Flyweight;
+import org.tools4j.elara.event.EventType;
 
 public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.Id, Command.Id, Frame {
 
     private final FlyweightDataFrame frame = new FlyweightDataFrame();
+    private final Flags flags = new FlyweightFlags();
 
     public FlyweightEvent init(final MutableDirectBuffer header,
                                final int headerOffset,
@@ -40,10 +41,11 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.I
                                final short index,
                                final int type,
                                final long time,
+                               final byte flags,
                                final DirectBuffer payload,
                                final int payloadOffset,
                                final int payloadSize) {
-        frame.init(header, headerOffset, input, type, sequence, time, index, payload, payloadOffset, payloadSize);
+        frame.init(header, headerOffset, input, type, sequence, time, flags, index, payload, payloadOffset, payloadSize);
         return this;
     }
 
@@ -87,6 +89,11 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.I
     }
 
     @Override
+    public Flags flags() {
+        return flags;
+    }
+
+    @Override
     public int input() {
         return header().input();
     }
@@ -99,6 +106,11 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.I
     @Override
     public int index() {
         return header().index();
+    }
+
+    @Override
+    public boolean isCommit() {
+        return EventType.isCommit(type());
     }
 
     @Override
@@ -134,8 +146,46 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.I
                 ", sequence=" + sequence() +
                 ", time=" + time() +
                 ", version=" + header().version() +
+                ", flags=" + org.tools4j.elara.flyweight.Flags.toString(header().flags()) +
                 ", index=" + index() +
                 ", payload-size=" + header().payloadSize() +
                 '}' : "FlyweightEvent";
+    }
+
+    private final class FlyweightFlags implements Flags {
+        @Override
+        public boolean isCommit() {
+            return org.tools4j.elara.flyweight.Flags.isCommit(value());
+        }
+
+        @Override
+        public boolean isRollback() {
+            return org.tools4j.elara.flyweight.Flags.isRollback(value());
+        }
+
+        @Override
+        public boolean isUndefined() {
+            return org.tools4j.elara.flyweight.Flags.isUndefined(value());
+        }
+
+        @Override
+        public boolean isFinal() {
+            return org.tools4j.elara.flyweight.Flags.isFinal(value());
+        }
+
+        @Override
+        public boolean isNonFinal() {
+            return org.tools4j.elara.flyweight.Flags.isNonFinal(value());
+        }
+
+        @Override
+        public byte value() {
+            return header().flags();
+        }
+
+        @Override
+        public String toString() {
+            return org.tools4j.elara.flyweight.Flags.toString(value());
+        }
     }
 }

@@ -26,13 +26,11 @@ package org.tools4j.elara.output;
 import org.agrona.DirectBuffer;
 import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FrameDescriptor;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
@@ -40,7 +38,7 @@ import static org.tools4j.elara.plugin.timer.TimerCommandDescriptor.TIMER_PAYLOA
 
 public class DefaultCommandLoopback implements CommandLoopback {
 
-    private final MessageLog.Appender<? super Command> commandLogAppender;
+    private final MessageLog.Appender commandLogAppender;
     private final TimeSource timeSource;
     private final SequenceGenerator adminSequenceGenerator;
 
@@ -48,7 +46,7 @@ public class DefaultCommandLoopback implements CommandLoopback {
             FrameDescriptor.HEADER_LENGTH + TIMER_PAYLOAD_SIZE);
     private final FlyweightCommand flyweightCommand = new FlyweightCommand();
 
-    public DefaultCommandLoopback(final MessageLog.Appender<? super Command> commandLogAppender,
+    public DefaultCommandLoopback(final MessageLog.Appender commandLogAppender,
                                   final TimeSource timeSource,
                                   final SequenceGenerator adminSequenceGenerator) {
         this.commandLogAppender = requireNonNull(commandLogAppender);
@@ -58,9 +56,13 @@ public class DefaultCommandLoopback implements CommandLoopback {
 
     @Override
     public void enqueueCommand(final int type, final DirectBuffer command, final int offset, final int length) {
-        commandLogAppender.append(flyweightCommand.init(buffer, 0, Input.LOOPBACK_ID,
-                adminSequenceGenerator.nextSequence(), type, timeSource.currentTime(), command, offset, length
-        ));
-        flyweightCommand.reset();
+        flyweightCommand.init(buffer, 0, Input.LOOPBACK_ID, adminSequenceGenerator.nextSequence(), type,
+                timeSource.currentTime(), command, offset, length);
+        try (final MessageLog.AppendContext context = commandLogAppender.appending()) {
+            final int written = flyweightCommand.writeTo(context.buffer(), 0);
+            context.commit(written);
+        } finally {
+            flyweightCommand.reset();
+        }
     }
 }

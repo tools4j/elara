@@ -66,10 +66,15 @@ public class FlyweightEventRouter implements EventRouter {
         checkNotRolledBack();
         eventHandler.onEvent(flyweightEvent.init(
                 headerBuffer, 0, command.id().input(), command.id().sequence(), nextIndex, type,
-                command.time(), event, offset, length
+                command.time(), Flags.NONE, event, offset, length
         ));
         this.flyweightEvent.reset();
         nextIndex++;
+    }
+
+    @Override
+    public RouteContext routingEvent(final int type) {
+        throw new UnsupportedOperationException();//FIXME implement
     }
 
     public boolean complete() {

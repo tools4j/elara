@@ -23,8 +23,13 @@
  */
 package org.tools4j.elara.log;
 
+import org.agrona.DirectBuffer;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventType;
+import org.tools4j.elara.flyweight.FlyweightEvent;
+import org.tools4j.elara.log.MessageLog.Poller;
+
+import static org.tools4j.elara.log.MessageLog.Handler.Result.POLL;
 
 /**
  * An event poller that works with two underlying pollers to ensure only committed events
@@ -32,19 +37,19 @@ import org.tools4j.elara.event.EventType;
  * abort event is found; the event poller then invokes the handler for the corresponding events
  * or skips them if they were aborted.
  */
-public class CommittedEventPoller implements PeekableMessageLog.PeekablePoller<Event> {
+public class CommittedEventPoller implements Poller {
 
-    private final PeekableMessageLog.PeekablePoller<? extends Event> aheadPoller;
-    private final PeekableMessageLog.PeekablePoller<? extends Event> eventPoller;
+    private final Poller aheadPoller;
+    private final Poller eventPoller;
 
     private final LookAheadState aheadState = new LookAheadState();
 
-    public CommittedEventPoller(final PeekableMessageLog<? extends Event> eventLog) {
+    public CommittedEventPoller(final MessageLog eventLog) {
         this.aheadPoller = eventLog.poller();
         this.eventPoller = eventLog.poller();
     }
 
-    public CommittedEventPoller(final PeekableMessageLog<? extends Event> eventLog, final String id) {
+    public CommittedEventPoller(final MessageLog eventLog, final String id) {
         this.eventPoller = eventLog.poller(id);
         this.aheadPoller = eventLog.poller();
         aheadPoller.moveTo(eventPoller.entryId());
@@ -56,7 +61,7 @@ public class CommittedEventPoller implements PeekableMessageLog.PeekablePoller<E
     }
 
     @Override
-    public PeekableMessageLog.PeekablePoller<Event> moveToStart() {
+    public Poller moveToStart() {
         aheadPoller.moveToStart();
         eventPoller.moveToStart();
         aheadState.reset();
@@ -64,15 +69,15 @@ public class CommittedEventPoller implements PeekableMessageLog.PeekablePoller<E
     }
 
     @Override
-    public PeekableMessageLog.PeekablePoller<Event> moveToEnd() {
-        while (poll(event -> {}) > 0);
+    public Poller moveToEnd() {
+        while (poll(event -> POLL) > 0);
         return this;
     }
 
     @Override
     public boolean moveToNext() {
         final long entryId = entryId();
-        while (poll(event -> {}) > 0) {
+        while (poll(event -> POLL) > 0) {
             if (entryId() != entryId) {
                 return true;
             }
@@ -105,7 +110,7 @@ public class CommittedEventPoller implements PeekableMessageLog.PeekablePoller<E
     }
 
     @Override
-    public int poll(final MessageLog.Handler<? super Event> handler) {
+    public int poll(final MessageLog.Handler handler) {
         if (eventPoller.entryId() == aheadPoller.entryId()) {
             aheadState.reset();
         }
@@ -119,25 +124,17 @@ public class CommittedEventPoller implements PeekableMessageLog.PeekablePoller<E
         return aheadPoller.poll(aheadState);
     }
 
-    @Override
-    public int peekOrPoll(final PeekableMessageLog.PeekPollHandler<? super Event> handler) {
-        if (eventPoller.entryId() == aheadPoller.entryId()) {
-            aheadState.reset();
-        }
-        if (aheadState.isCommit()) {
-            return eventPoller.peekOrPoll(handler);
-        }
-        if (aheadState.isRollback()) {
-            eventPoller.moveTo(aheadPoller.entryId());
-            aheadState.reset();
-        }
-        return aheadPoller.poll(aheadState);
-    }
-
-    private static class LookAheadState implements MessageLog.Handler<Event> {
+    private static class LookAheadState implements MessageLog.Handler {
         int lastEventType;
+        final FlyweightEvent event = new FlyweightEvent();
+
         @Override
-        public void onMessage(final Event event) {
+        public Result onMessage(final DirectBuffer buffer) {
+            onEvent(event.init(buffer, 0));
+            return POLL;
+        }
+
+        void onEvent(final Event event) {
             lastEventType = event.type();
         }
         void reset() {

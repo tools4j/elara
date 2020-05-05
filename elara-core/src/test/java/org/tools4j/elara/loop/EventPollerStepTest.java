@@ -29,7 +29,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.event.EventHandler;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.plugin.base.BaseState;
 
@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
@@ -50,9 +51,9 @@ public class EventPollerStepTest {
     @Mock
     private BaseState.Mutable baseState;
     @Mock
-    private MessageLog.Poller<? extends Event> eventPoller;
+    private MessageLog.Poller eventPoller;
     @Mock
-    private MessageLog.Handler<? super Event> handler;
+    private EventHandler handler;
 
     //under test
     private EventPollerStep step;
@@ -74,7 +75,7 @@ public class EventPollerStepTest {
 
         //then
         assertTrue(performed, "performed");
-        inOrder.verify(eventPoller).poll(handler);
+        inOrder.verify(eventPoller).poll(notNull());
         inOrder.verifyNoMoreInteractions();
 
         //when
@@ -83,7 +84,7 @@ public class EventPollerStepTest {
 
         //then
         assertTrue(performed, "performed");
-        inOrder.verify(eventPoller).poll(handler);
+        inOrder.verify(eventPoller).poll(notNull());
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -99,7 +100,7 @@ public class EventPollerStepTest {
 
         //then
         assertTrue(performed, "performed");
-        inOrder.verify(eventPoller).poll(handler);
+        inOrder.verify(eventPoller).poll(notNull());
         inOrder.verifyNoMoreInteractions();
 
         //when
@@ -107,7 +108,7 @@ public class EventPollerStepTest {
 
         //then
         assertTrue(performed, "performed");
-        inOrder.verify(eventPoller).poll(handler);
+        inOrder.verify(eventPoller).poll(notNull());
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -124,7 +125,7 @@ public class EventPollerStepTest {
 
         //then
         assertTrue(performed, "performed");
-        inOrder.verify(eventPoller).poll(handler);
+        inOrder.verify(eventPoller).poll(notNull());
         inOrder.verify(baseState, never()).allEventsPolled();
         inOrder.verify(baseState, never()).allEventsPolled(anyBoolean());
         inOrder.verifyNoMoreInteractions();
@@ -146,7 +147,7 @@ public class EventPollerStepTest {
 
         //then
         assertFalse(performed, "performed");
-        inOrder.verify(eventPoller).poll(handler);
+        inOrder.verify(eventPoller).poll(notNull());
         inOrder.verify(baseState).allEventsPolled();
         inOrder.verify(baseState, never()).allEventsPolled(anyBoolean());
         inOrder.verifyNoMoreInteractions();

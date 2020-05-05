@@ -33,14 +33,13 @@ import org.tools4j.elara.application.Application;
 import org.tools4j.elara.application.SimpleApplication;
 import org.tools4j.elara.chronicle.ChronicleMessageLog;
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventRouter;
-import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.InMemoryLog;
+import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.plugin.timer.TimerCommands;
 import org.tools4j.elara.plugin.timer.TimerEvents;
 import org.tools4j.elara.plugin.timer.TimerPlugin;
@@ -69,8 +68,8 @@ public class TimerApplication {
         return Elara.launch(Context.create()
                     .input(666, new CommandPoller(commandQueue))
                     .output(this::publish)
-                    .commandLog(new InMemoryLog<>(FlyweightCommand::new))
-                    .eventLog(new InMemoryLog<>(FlyweightEvent::new)),
+                    .commandLog(new InMemoryLog())
+                    .eventLog(new InMemoryLog()),
                 application(eventConsumer),
                 new TimerPlugin()
         );
@@ -90,8 +89,8 @@ public class TimerApplication {
         return Elara.launch(Context.create()
                     .input(666, new CommandPoller(commandQueue))
                     .output(this::publish)
-                    .commandLog(new ChronicleMessageLog<>(cq, FlyweightCommand::new))
-                    .eventLog(new ChronicleMessageLog<>(eq, FlyweightEvent::new)),
+                    .commandLog(new ChronicleMessageLog(cq))
+                    .eventLog(new ChronicleMessageLog(eq)),
                 application(eventConsumer),
                 new TimerPlugin()
         );

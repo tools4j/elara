@@ -23,18 +23,26 @@
  */
 package org.tools4j.elara.handler;
 
+import org.agrona.DirectBuffer;
+import org.agrona.ExpandableArrayBuffer;
+import org.agrona.MutableDirectBuffer;
+import org.agrona.concurrent.UnsafeBuffer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
+import org.tools4j.elara.event.EventType;
+import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FlyweightEventRouter;
-import org.tools4j.elara.log.PeekableMessageLog.PeekPollHandler.Result;
+import org.tools4j.elara.log.MessageLog.Handler.Result;
 import org.tools4j.elara.plugin.base.BaseState;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,7 +55,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit test for {@link CommandHandler}
+ * Unit test for {@link ProcessingCommandHandler}
  */
 @ExtendWith(MockitoExtension.class)
 public class CommandHandlerTest {
@@ -60,19 +68,14 @@ public class CommandHandlerTest {
     private ExceptionHandler exceptionHandler;
     @Mock
     private DuplicateHandler duplicateHandler;
-    @Mock
-    private Command.Id commandId;
-    @Mock
-    private Command command;
 
     //under test
-    private CommandHandler commandHandler;
+    private ProcessingCommandHandler commandHandler;
 
     @BeforeEach
     public void init() {
-        commandHandler = new CommandHandler(baseState, new FlyweightEventRouter(evt -> {}),
+        commandHandler = new ProcessingCommandHandler(baseState, new FlyweightEventRouter(evt -> {}),
                 commandProcessor, exceptionHandler, duplicateHandler);
-        when(command.id()).thenReturn(commandId);
     }
 
     @Test
@@ -80,29 +83,28 @@ public class CommandHandlerTest {
         //given
         final int input = 1;
         final long seq = 22;
-        when(commandId.input()).thenReturn(input);
-        when(commandId.sequence()).thenReturn(seq);
+        final Command command = command(input, seq);
         final InOrder inOrder = inOrder(commandProcessor, duplicateHandler);
         Result result;
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq);
-        result = commandHandler.onMessage(command);
+        result = commandHandler.onMessage(toDirectBuffer(command));
 
         //then
         assertEquals(Result.POLL, result, "result");
         inOrder.verify(commandProcessor, never()).onCommand(any(), any());
-        inOrder.verify(duplicateHandler).skipCommandProcessing(command);
+        inOrder.verify(duplicateHandler).skipCommandProcessing(eqCommand(command));
         inOrder.verifyNoMoreInteractions();
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq + 1);
-        result = commandHandler.onMessage(command);
+        result = commandHandler.onMessage(toDirectBuffer(command));
 
         //then
         assertEquals(Result.POLL, result, "result");
         inOrder.verify(commandProcessor, never()).onCommand(any(), any());
-        inOrder.verify(duplicateHandler).skipCommandProcessing(command);
+        inOrder.verify(duplicateHandler).skipCommandProcessing(eqCommand(command));
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -111,29 +113,28 @@ public class CommandHandlerTest {
         //given
         final int input = 1;
         final long seq = 22;
-        when(commandId.input()).thenReturn(input);
-        when(commandId.sequence()).thenReturn(seq);
+        final Command command = command(input, seq);
         when(baseState.processCommands()).thenReturn(true);
         final InOrder inOrder = inOrder(commandProcessor, duplicateHandler);
         Result result;
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 2);
-        result = commandHandler.onMessage(command);
+        result = commandHandler.onMessage(toDirectBuffer(command));
 
         //then
         assertEquals(Result.POLL, result, "result");
-        inOrder.verify(commandProcessor).onCommand(same(command), notNull());
+        inOrder.verify(commandProcessor).onCommand(eqCommand(command), notNull());
         inOrder.verify(duplicateHandler, never()).skipCommandProcessing(any());
         inOrder.verifyNoMoreInteractions();
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
-        result = commandHandler.onMessage(command);
+        result = commandHandler.onMessage(toDirectBuffer(command));
 
         //then
         assertEquals(Result.POLL, result, "result");
-        inOrder.verify(commandProcessor).onCommand(same(command), notNull());
+        inOrder.verify(commandProcessor).onCommand(eqCommand(command), notNull());
         inOrder.verify(duplicateHandler, never()).skipCommandProcessing(any());
         inOrder.verifyNoMoreInteractions();
     }
@@ -143,15 +144,14 @@ public class CommandHandlerTest {
         //given
         final int input = 1;
         final long seq = 22;
-        when(commandId.input()).thenReturn(input);
-        when(commandId.sequence()).thenReturn(seq);
+        final Command command = command(input, seq);
         when(baseState.processCommands()).thenReturn(false);
         final InOrder inOrder = inOrder(commandProcessor, duplicateHandler);
         Result result;
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
-        result = commandHandler.onMessage(command);
+        result = commandHandler.onMessage(toDirectBuffer(command));
 
         //then
         assertEquals(Result.PEEK, result, "result");
@@ -165,9 +165,8 @@ public class CommandHandlerTest {
         //given
         final int input = 1;
         final long seq = 22;
+        final Command command = command(input, seq);
         final RuntimeException testException = new RuntimeException("test command processor exception");
-        when(commandId.input()).thenReturn(input);
-        when(commandId.sequence()).thenReturn(seq);
         when(baseState.processCommands()).thenReturn(true);
         final InOrder inOrder = inOrder(commandProcessor, exceptionHandler);
         Result result;
@@ -175,12 +174,12 @@ public class CommandHandlerTest {
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
         doThrow(testException).when(commandProcessor).onCommand(any(), any());
-        result = commandHandler.onMessage(command);
+        result = commandHandler.onMessage(toDirectBuffer(command));
 
         //then
         assertEquals(Result.POLL, result, "result");
-        inOrder.verify(commandProcessor).onCommand(same(command), notNull());
-        inOrder.verify(exceptionHandler).handleCommandProcessorException(command, testException);
+        inOrder.verify(commandProcessor).onCommand(eqCommand(command), notNull());
+        inOrder.verify(exceptionHandler).handleCommandProcessorException(eqCommand(command), same(testException));
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -189,22 +188,50 @@ public class CommandHandlerTest {
         //given
         final int input = 1;
         final long seq = 22;
+        final Command command = command(input, seq);
         final RuntimeException testException = new RuntimeException("test skip command exception");
-        when(commandId.input()).thenReturn(input);
-        when(commandId.sequence()).thenReturn(seq);
         final InOrder inOrder = inOrder(commandProcessor, duplicateHandler, exceptionHandler);
         Result result;
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq);
         doThrow(testException).when(duplicateHandler).skipCommandProcessing(any());
-        result = commandHandler.onMessage(command);
+        result = commandHandler.onMessage(toDirectBuffer(command));
 
         //then
         assertEquals(Result.POLL, result, "result");
         inOrder.verify(commandProcessor, never()).onCommand(any(), any());
-        inOrder.verify(duplicateHandler).skipCommandProcessing(command);
-        inOrder.verify(exceptionHandler).handleCommandProcessorException(command, testException);
+        inOrder.verify(duplicateHandler).skipCommandProcessing(eqCommand(command));
+        inOrder.verify(exceptionHandler).handleCommandProcessorException(eqCommand(command), same(testException));
         inOrder.verifyNoMoreInteractions();
+    }
+
+    private static Command eqCommand(final Command command) {
+        final String exp ="eq[command=" + command + "]";
+        final DirectBuffer raw = toDirectBuffer(command);
+        return Mockito.argThat(new ArgumentMatcher<Command>() {
+            @Override
+            public boolean matches(final Command argument) {
+                return 0 == raw.compareTo(toDirectBuffer(argument));
+            }
+
+            @Override
+            public String toString() {
+                return exp;
+            }
+        });
+    }
+
+    private static Command command(final int input, final long seq) {
+        return new FlyweightCommand()
+                .init(new ExpandableArrayBuffer(), 0, input, seq, EventType.APPLICATION, 123L,
+                        new UnsafeBuffer(0, 0), 0, 0
+                );
+    }
+
+    private static DirectBuffer toDirectBuffer(final Command command) {
+        final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
+        command.writeTo(buffer, 0);
+        return buffer;
     }
 }

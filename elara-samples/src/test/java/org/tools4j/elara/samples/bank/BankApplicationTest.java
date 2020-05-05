@@ -27,8 +27,6 @@ import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.wire.WireType;
 import org.junit.jupiter.api.Test;
 import org.tools4j.elara.chronicle.ChronicleMessageLog;
-import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.samples.bank.command.BankCommand;
 import org.tools4j.elara.samples.bank.command.CreateAccountCommand;
@@ -68,21 +66,13 @@ public class BankApplicationTest {
     public void chronicleQueue() {
         //given
         final Queue<BankCommand> commands = initCommandQueue();
-        final ChronicleQueue cq = ChronicleQueue.singleBuilder()
-                .path("build/chronicle/bank/cmd.cq4")
-                .wireType(WireType.BINARY_LIGHT)
-                .build();
-        final ChronicleQueue eq = ChronicleQueue.singleBuilder()
-                .path("build/chronicle/bank/evt.cq4")
-                .wireType(WireType.BINARY_LIGHT)
-                .build();
 
         //when
         final BankApplication bankOne = new BankApplication();
         try (final ElaraRunner runner = bankOne.launch(
                 commands,
-                new ChronicleMessageLog<>(cq, FlyweightCommand::new),
-                new ChronicleMessageLog<>(eq, FlyweightEvent::new)
+                new ChronicleMessageLog(commandQueue()),
+                new ChronicleMessageLog(eventQueue())
         )) {
             injectSomeCommands(commands);
             while (!commands.isEmpty()) {
@@ -99,8 +89,8 @@ public class BankApplicationTest {
         final BankApplication bankTwo = new BankApplication();
         try (final ElaraRunner runner = bankTwo.launch(
                 commands,
-                new ChronicleMessageLog<>(cq, FlyweightCommand::new),
-                new ChronicleMessageLog<>(eq, FlyweightEvent::new)
+                new ChronicleMessageLog(commandQueue()),
+                new ChronicleMessageLog(eventQueue())
         )) {
             injectSomeCommands(commands);
             while (!commands.isEmpty()) {
@@ -112,6 +102,20 @@ public class BankApplicationTest {
 
         //then
         assertBankAccounts(bankTwo.bank());
+    }
+
+    private ChronicleQueue commandQueue() {
+        return ChronicleQueue.singleBuilder()
+                .path("build/chronicle/bank/cmd.cq4")
+                .wireType(WireType.BINARY_LIGHT)
+                .build();
+    }
+
+    private ChronicleQueue eventQueue() {
+        return ChronicleQueue.singleBuilder()
+                .path("build/chronicle/bank/evt.cq4")
+                .wireType(WireType.BINARY_LIGHT)
+                .build();
     }
 
     private Queue<BankCommand> initCommandQueue() {

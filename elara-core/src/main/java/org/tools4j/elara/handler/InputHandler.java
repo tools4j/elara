@@ -25,7 +25,6 @@ package org.tools4j.elara.handler;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.MessageLog;
@@ -37,13 +36,13 @@ public final class InputHandler implements Input.Handler {
 
     private final TimeSource timeSource;
     private final Input input;
-    private final MessageLog.Appender<? super Command> commandLogAppender;
+    private final MessageLog.Appender commandLogAppender;
     private final MutableDirectBuffer headerBuffer;
     private final FlyweightCommand flyweightCommand;
 
     public InputHandler(final TimeSource timeSource,
                         final Input input,
-                        final MessageLog.Appender<? super Command> commandLogAppender,
+                        final MessageLog.Appender commandLogAppender,
                         final MutableDirectBuffer headerBuffer,
                         final FlyweightCommand flyweightCommand) {
         this.timeSource = requireNonNull(timeSource);
@@ -55,9 +54,13 @@ public final class InputHandler implements Input.Handler {
 
     @Override
     public void onMessage(final long sequence, final int type, final DirectBuffer buffer, final int offset, final int length) {
-        commandLogAppender.append(flyweightCommand.init(
-                headerBuffer, 0, input.id(), sequence, type, timeSource.currentTime(),
-                buffer, offset, length));
-        flyweightCommand.reset();
+        flyweightCommand.init(headerBuffer, 0, input.id(), sequence, type, timeSource.currentTime(),
+                buffer, offset, length);
+        try (final MessageLog.AppendContext context = commandLogAppender.appending()) {
+            final int written = flyweightCommand.writeTo(context.buffer(), 0);
+            context.commit(written);
+        } finally {
+            flyweightCommand.reset();
+        }
     }
 }

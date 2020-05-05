@@ -37,7 +37,7 @@ package org.tools4j.elara.flyweight;
      +-------+-------+-------+-------+-------+-------+-------+-------+
      |                             Time                              |
      +-------+-------+-------+-------+-------+-------+-------+-------+
-     |    Version    |     Index     |         Payload Size          |
+     |Version| Flags |     Index     |         Payload Size          |
      +-------+-------+-------+-------+-------+-------+-------+-------+
      |                           Payload                             |
      |                             ...                               |
@@ -56,15 +56,16 @@ public enum FrameDescriptor {
     public static final int TIME_OFFSET = SEQUENCE_OFFSET + SEQUENCE_LENGTH;
     public static final int TIME_LENGTH = Long.BYTES;
     public static final int VERSION_OFFSET = TIME_OFFSET + TIME_LENGTH;
-    public static final int VERSION_LENGTH = Short.BYTES;
-    public static final int INDEX_OFFSET = VERSION_OFFSET + VERSION_LENGTH;
+    public static final int VERSION_LENGTH = Byte.BYTES;
+    public static final int FLAGS_OFFSET = VERSION_OFFSET + VERSION_LENGTH;
+    public static final int FLAGS_LENGTH = Byte.BYTES;
+    public static final int INDEX_OFFSET = FLAGS_OFFSET + FLAGS_LENGTH;
     public static final int INDEX_LENGTH = Short.BYTES;
     public static final int PAYLOAD_SIZE_OFFSET = INDEX_OFFSET + INDEX_LENGTH;
     public static final int PAYLOAD_SIZE_LENGTH = Integer.BYTES;
 
     public static final int HEADER_OFFSET = 0;
-    public static final int HEADER_LENGTH = INPUT_LENGTH + TYPE_LENGTH +
-            SEQUENCE_LENGTH + TIME_LENGTH + VERSION_LENGTH + INDEX_LENGTH + PAYLOAD_SIZE_LENGTH;
+    public static final int HEADER_LENGTH = PAYLOAD_SIZE_OFFSET + PAYLOAD_SIZE_LENGTH;
 
     public static final int PAYLOAD_OFFSET = HEADER_OFFSET + HEADER_LENGTH;
 }

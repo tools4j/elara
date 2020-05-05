@@ -27,11 +27,11 @@ import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventHandler;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.base.BaseState;
 
@@ -40,11 +40,11 @@ import static java.util.Objects.requireNonNull;
 /**
  * Event handler that appends, outputs and applies events in one go.
  */
-public class ApplyingEventHandler implements EventHandler, MessageLog.Handler<Event> {
+public class ApplyingEventHandler implements EventHandler {
 
     private final BaseState.Mutable baseState;
     private final CommandLoopback commandLoopback;
-    private final MessageLog.Appender<? super Event> eventLogAppender;
+    private final MessageLog.Appender eventLogAppender;
     private final Output output;
     private final EventApplier eventApplier;
     private final ExceptionHandler exceptionHandler;
@@ -52,7 +52,7 @@ public class ApplyingEventHandler implements EventHandler, MessageLog.Handler<Ev
 
     public ApplyingEventHandler(final BaseState.Mutable baseState,
                                 final CommandLoopback commandLoopback,
-                                final MessageLog.Appender<? super Event> eventLogAppender,
+                                final MessageLog.Appender eventLogAppender,
                                 final Output output,
                                 final EventApplier eventApplier,
                                 final ExceptionHandler exceptionHandler,
@@ -67,18 +67,16 @@ public class ApplyingEventHandler implements EventHandler, MessageLog.Handler<Ev
     }
 
     @Override
-    public void onMessage(final Event event) {
-        onEvent(event);
-    }
-
-    @Override
     public void onEvent(final Event event) {
         final Command.Id commandId = event.id().commandId();
         final long lastAppliedForInput = baseState.lastCommandAllEventsApplied(commandId.input());
         if (lastAppliedForInput < commandId.sequence()) {
             final boolean append = baseState.allEventsPolled();
             if (append) {
-                eventLogAppender.append(event);
+                try (final MessageLog.AppendContext context = eventLogAppender.appending()) {
+                    final int length = event.writeTo(context.buffer(), 0);
+                    context.commit(length);
+                }
             }
             applyEvent(event);
             updateBaseState(event);

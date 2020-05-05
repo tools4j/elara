@@ -21,30 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.log;
+package org.tools4j.elara.command;
 
-public interface PeekableMessageLog<M> extends MessageLog<M> {
+import org.tools4j.elara.log.MessageLog.Handler.Result;
 
-    @Override
-    PeekablePoller<M> poller();
-
-    @Override
-    PeekablePoller<M> poller(String id);
-
-    interface PeekablePoller<M> extends Poller<M> {
-        @Override
-        PeekablePoller<M> moveToStart();
-        @Override
-        PeekablePoller<M> moveToEnd();
-
-        int peekOrPoll(PeekPollHandler<? super M> handler);
-    }
-
-    @FunctionalInterface
-    interface PeekPollHandler<M> {
-        enum Result {
-            PEEK, POLL
-        }
-        Result onMessage(M message);
-    }
+@FunctionalInterface
+public interface CommandHandler {
+    Result onCommand(Command command);
 }

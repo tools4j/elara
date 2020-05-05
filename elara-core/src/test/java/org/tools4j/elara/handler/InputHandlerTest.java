@@ -35,6 +35,7 @@ import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.ArrayList;
@@ -64,10 +65,30 @@ public class InputHandlerTest {
     @BeforeEach
     public void init() {
         commandLog = new ArrayList<>();
-        inputHandler = new InputHandler(timeSource, input, command -> {
-            final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
-            command.writeTo(buffer, 0);
-            commandLog.add(new FlyweightCommand().init(buffer, 0));
+        inputHandler = new InputHandler(timeSource, input, () -> new MessageLog.AppendContext() {
+            MutableDirectBuffer buffer = new ExpandableArrayBuffer();
+            @Override
+            public MutableDirectBuffer buffer() {
+                return buffer;
+            }
+
+            @Override
+            public void abort() {
+                buffer = null;
+            }
+
+            @Override
+            public void commit(final int length) {
+                if (buffer != null) {
+                    commandLog.add(new FlyweightCommand().init(buffer, 0));
+                    buffer = null;
+                }
+            }
+
+            @Override
+            public boolean isClosed() {
+                return buffer == null;
+            }
         }, new ExpandableArrayBuffer(), new FlyweightCommand());
     }
 

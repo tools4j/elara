@@ -29,33 +29,29 @@ import net.openhft.chronicle.queue.ExcerptTailer;
 import net.openhft.chronicle.wire.DocumentContext;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
-import org.tools4j.elara.log.Flyweight;
 import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.log.PeekableMessageLog;
-import org.tools4j.elara.log.PeekableMessageLog.PeekPollHandler.Result;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.log.PeekableMessageLog.PeekPollHandler.Result.POLL;
+import static org.tools4j.elara.log.MessageLog.Handler;
+import static org.tools4j.elara.log.MessageLog.Handler.Result;
+import static org.tools4j.elara.log.MessageLog.Handler.Result.POLL;
+import static org.tools4j.elara.log.MessageLog.Poller;
 
-public class ChronicleLogPoller<M> implements PeekableMessageLog.PeekablePoller<M> {
+public class ChronicleLogPoller implements Poller {
 
     private final ExcerptTailer tailer;
-    private final Flyweight<? extends M> flyweight;
     private final MutableDirectBuffer buffer = new UnsafeBuffer(0, 0);
 
-    public ChronicleLogPoller(final ChronicleQueue queue, final Flyweight<? extends M> flyweight) {
-        this(queue.createTailer(), flyweight);
+    public ChronicleLogPoller(final ChronicleQueue queue) {
+        this(queue.createTailer());
     }
 
-    public ChronicleLogPoller(final String id,
-                              final ChronicleQueue queue,
-                              final Flyweight<? extends M> flyweight) {
-        this(queue.createTailer(id), flyweight);
+    public ChronicleLogPoller(final String id, final ChronicleQueue queue) {
+        this(queue.createTailer(id));
     }
 
-    public ChronicleLogPoller(final ExcerptTailer tailer, final Flyweight<? extends M> flyweight) {
+    public ChronicleLogPoller(final ExcerptTailer tailer) {
         this.tailer = requireNonNull(tailer);
-        this.flyweight = requireNonNull(flyweight);
     }
 
     @Override
@@ -69,13 +65,13 @@ public class ChronicleLogPoller<M> implements PeekableMessageLog.PeekablePoller<
     }
 
     @Override
-    public ChronicleLogPoller<M> moveToStart() {
+    public ChronicleLogPoller moveToStart() {
         tailer.toStart();
         return this;
     }
 
     @Override
-    public PeekableMessageLog.PeekablePoller<M> moveToEnd() {
+    public MessageLog.Poller moveToEnd() {
         tailer.toEnd();
         return this;
     }
@@ -95,26 +91,7 @@ public class ChronicleLogPoller<M> implements PeekableMessageLog.PeekablePoller<
     }
 
     @Override
-    public int poll(final MessageLog.Handler<? super M> handler) {
-        try (final DocumentContext context = tailer.readingDocument()) {
-            if (context.isData()) {
-                final Bytes<?> bytes = context.wire().bytes();
-                final int size = bytes.readInt();
-                final int offset = (int)bytes.readPosition();
-                final long addr = bytes.addressForRead(offset);
-                buffer.wrap(addr, size);
-                final M flyMessage = flyweight.init(buffer, 0);
-                handler.onMessage(flyMessage);
-                buffer.wrap(0, 0);
-                bytes.readPosition(offset + size);
-                return 1;
-            }
-            return 0;
-        }
-    }
-
-    @Override
-    public int peekOrPoll(final PeekableMessageLog.PeekPollHandler<? super M> handler) {
+    public int poll(final Handler handler) {
         try (final DocumentContext context = tailer.readingDocument()) {
             if (context.isData()) {
                 final Bytes<?> bytes = context.wire().bytes();
@@ -122,8 +99,7 @@ public class ChronicleLogPoller<M> implements PeekableMessageLog.PeekablePoller<
                 final int offset = (int) bytes.readPosition();
                 final long addr = bytes.addressForRead(offset);
                 buffer.wrap(addr, size);
-                final M flyMessage = flyweight.init(buffer, 0);
-                final Result result = handler.onMessage(flyMessage);
+                final Result result = handler.onMessage(buffer);
                 buffer.wrap(0, 0);
                 bytes.readPosition(offset + size);
                 if (result == POLL) {

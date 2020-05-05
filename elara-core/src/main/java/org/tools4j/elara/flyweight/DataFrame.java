@@ -24,7 +24,6 @@
 package org.tools4j.elara.flyweight;
 
 import org.agrona.DirectBuffer;
-import org.tools4j.elara.log.Writable;
 
 /**
  * A {@link Frame} with {@link #payload()}.

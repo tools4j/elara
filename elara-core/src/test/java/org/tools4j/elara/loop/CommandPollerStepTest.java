@@ -29,8 +29,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.tools4j.elara.command.Command;
-import org.tools4j.elara.log.PeekableMessageLog;
+import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.plugin.base.BaseState;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -49,9 +48,9 @@ public class CommandPollerStepTest {
     @Mock
     private BaseState baseState;
     @Mock
-    private PeekableMessageLog.PeekablePoller<? extends Command> commandPoller;
+    private MessageLog.Poller commandPoller;
     @Mock
-    private PeekableMessageLog.PeekPollHandler<? super Command> handler;
+    private MessageLog.Handler handler;
 
     //under test
     private CommandPollerStep step;
@@ -83,23 +82,21 @@ public class CommandPollerStepTest {
         final InOrder inOrder = inOrder(commandPoller);
 
         //when
-        when(commandPoller.peekOrPoll(any())).thenReturn(1);
+        when(commandPoller.poll(any())).thenReturn(1);
         final boolean performSome = step.perform();
 
         //then
         assertTrue(performSome, "performSome");
-        inOrder.verify(commandPoller, never()).poll(any());
-        inOrder.verify(commandPoller).peekOrPoll(handler);
+        inOrder.verify(commandPoller).poll(handler);
         inOrder.verifyNoMoreInteractions();
 
         //when
-        when(commandPoller.peekOrPoll(any())).thenReturn(0);
+        when(commandPoller.poll(any())).thenReturn(0);
         final boolean performNone = step.perform();
 
         //then
         assertFalse(performNone, "performNone");
-        inOrder.verify(commandPoller, never()).poll(any());
-        inOrder.verify(commandPoller).peekOrPoll(handler);
+        inOrder.verify(commandPoller).poll(handler);
         inOrder.verifyNoMoreInteractions();
     }
 }

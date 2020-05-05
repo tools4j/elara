@@ -28,13 +28,9 @@ import org.agrona.concurrent.IdleStrategy;
 import org.tools4j.elara.application.Application;
 import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.ExceptionHandler;
-import org.tools4j.elara.command.Command;
-import org.tools4j.elara.event.Event;
 import org.tools4j.elara.handler.InputHandlerFactory;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.log.InputTrackingAppender;
 import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.log.PeekableMessageLog;
 import org.tools4j.elara.loop.CommandPollerStep;
 import org.tools4j.elara.loop.DutyCycle;
 import org.tools4j.elara.loop.EventPollerStep;
@@ -57,8 +53,8 @@ final class DefaultContext implements Context {
 
     private final List<Input> inputs = new ArrayList<>();
     private Output output = Output.NOOP;
-    private PeekableMessageLog<Command> commandLog;
-    private MessageLog<Event> eventLog;
+    private MessageLog commandLog;
+    private MessageLog eventLog;
     private TimeSource timeSource;
     private ExceptionHandler exceptionHandler = ExceptionHandler.DEFAULT;
     private DuplicateHandler duplicateHandler = DuplicateHandler.DEFAULT;
@@ -97,7 +93,7 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public PeekableMessageLog<Command> commandLog() {
+    public MessageLog commandLog() {
         return commandLog;
     }
 
@@ -107,13 +103,13 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Context commandLog(final PeekableMessageLog<Command> commandLog) {
+    public Context commandLog(final MessageLog commandLog) {
         this.commandLog = requireNonNull(commandLog);
         return this;
     }
 
     @Override
-    public MessageLog<Event> eventLog() {
+    public MessageLog eventLog() {
         return eventLog;
     }
 
@@ -123,7 +119,7 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Context eventLog(final MessageLog<Event> eventLog) {
+    public Context eventLog(final MessageLog eventLog) {
         this.eventLog = requireNonNull(eventLog);
         return this;
     }
@@ -223,11 +219,12 @@ final class DefaultContext implements Context {
     }
 
     static InputHandlerFactory inputHandlerFactory(final Context context) {
-        final MessageLog.Appender<? super Command> commandAppender = new InputTrackingAppender(
-                context.commandLog().appender(),
-                context.duplicateHandler(),
-                context.commandLog().poller()
-        );
+//        final MessageLog.Appender commandAppender = new InputTrackingAppender(
+//                context.commandLog().appender(),
+//                context.duplicateHandler(),
+//                context.commandLog().poller()
+//        );
+        final MessageLog.Appender commandAppender = context.commandLog().appender();
         return new InputHandlerFactory(context.timeSource(), commandAppender);
     }
 

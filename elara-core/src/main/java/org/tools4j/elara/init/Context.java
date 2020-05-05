@@ -26,11 +26,8 @@ package org.tools4j.elara.init;
 import org.agrona.concurrent.IdleStrategy;
 import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.ExceptionHandler;
-import org.tools4j.elara.command.Command;
-import org.tools4j.elara.event.Event;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.log.PeekableMessageLog;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.time.TimeSource;
 
@@ -45,13 +42,13 @@ public interface Context {
     Output output();
     Context output(Output output);
 
-    PeekableMessageLog<Command> commandLog();
+    MessageLog commandLog();
     Context commandLog(String file);
-    Context commandLog(PeekableMessageLog<Command> commandLog);
+    Context commandLog(MessageLog commandLog);
 
-    MessageLog<Event> eventLog();
+    MessageLog eventLog();
     Context eventLog(String file);
-    Context eventLog(MessageLog<Event> eventLog);
+    Context eventLog(MessageLog eventLog);
 
     TimeSource timeSource();
     Context timeSource(TimeSource timeSource);

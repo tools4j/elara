@@ -29,14 +29,12 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.application.Application;
 import org.tools4j.elara.application.SimpleApplication;
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventRouter;
-import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.InMemoryLog;
+import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
 
@@ -56,8 +54,8 @@ public class SimpleStringApplication {
         return Elara.launch(Context.create()
                     .input(999, new StringInputPoller(inputQueue))
                     .output(this::publish)
-                    .commandLog(new InMemoryLog<>(FlyweightCommand::new))
-                    .eventLog(new InMemoryLog<>(FlyweightEvent::new)),
+                    .commandLog(new InMemoryLog())
+                    .eventLog(new InMemoryLog()),
                 application
         );
     }

@@ -23,19 +23,21 @@
  */
 package org.tools4j.elara.handler;
 
+import org.agrona.DirectBuffer;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
+import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FlyweightEventRouter;
-import org.tools4j.elara.log.PeekableMessageLog;
+import org.tools4j.elara.log.MessageLog.Handler;
 import org.tools4j.elara.plugin.base.BaseState;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.log.PeekableMessageLog.PeekPollHandler.Result.PEEK;
-import static org.tools4j.elara.log.PeekableMessageLog.PeekPollHandler.Result.POLL;
+import static org.tools4j.elara.log.MessageLog.Handler.Result.PEEK;
+import static org.tools4j.elara.log.MessageLog.Handler.Result.POLL;
 
-public class CommandHandler implements PeekableMessageLog.PeekPollHandler<Command> {
+public class ProcessingCommandHandler implements Handler {
 
     private final BaseState baseState;
     private final FlyweightEventRouter eventRouter;
@@ -43,11 +45,13 @@ public class CommandHandler implements PeekableMessageLog.PeekPollHandler<Comman
     private final ExceptionHandler exceptionHandler;
     private final DuplicateHandler duplicateHandler;
 
-    public CommandHandler(final BaseState baseState,
-                          final FlyweightEventRouter eventRouter,
-                          final CommandProcessor commandProcessor,
-                          final ExceptionHandler exceptionHandler,
-                          final DuplicateHandler duplicateHandler) {
+    private final FlyweightCommand flyweightCommand = new FlyweightCommand();
+
+    public ProcessingCommandHandler(final BaseState baseState,
+                                    final FlyweightEventRouter eventRouter,
+                                    final CommandProcessor commandProcessor,
+                                    final ExceptionHandler exceptionHandler,
+                                    final DuplicateHandler duplicateHandler) {
         this.baseState = requireNonNull(baseState);
         this.eventRouter = requireNonNull(eventRouter);
         this.commandProcessor = requireNonNull(commandProcessor);
@@ -56,7 +60,11 @@ public class CommandHandler implements PeekableMessageLog.PeekPollHandler<Comman
     }
 
     @Override
-    public Result onMessage(final Command command) {
+    public Result onMessage(final DirectBuffer message) {
+        return onCommand(flyweightCommand.init(message, 0));
+    }
+
+    private Result onCommand(final Command command) {
         final Command.Id cid = command.id();
         final long lastAppliedForInput = baseState.lastCommandAllEventsApplied(cid.input());
         if (lastAppliedForInput < cid.sequence()) {

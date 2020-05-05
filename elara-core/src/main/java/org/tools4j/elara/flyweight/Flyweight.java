@@ -21,17 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.log;
+package org.tools4j.elara.flyweight;
 
-import org.agrona.MutableDirectBuffer;
+import org.agrona.DirectBuffer;
 
-public interface Writable {
-    int write(BufferAcquirer bufferAcquirer);
-
-    int writeTo(MutableDirectBuffer dst, int dstOffset);
-
-    @FunctionalInterface
-    interface BufferAcquirer {
-        MutableDirectBuffer acquireBuffer(int length);
-    }
+@FunctionalInterface
+public interface Flyweight<F> {
+    F init(DirectBuffer event, int offset);
 }

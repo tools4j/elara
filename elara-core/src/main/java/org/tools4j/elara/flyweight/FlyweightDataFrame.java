@@ -26,7 +26,6 @@ package org.tools4j.elara.flyweight;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
-import org.tools4j.elara.log.Flyweight;
 
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
@@ -44,11 +43,12 @@ public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFr
                                    final int type,
                                    final long sequence,
                                    final long time,
+                                   final byte flags,
                                    final short index,
                                    final DirectBuffer payload,
                                    final int payloadOffset,
                                    final int payloadSize) {
-        this.header.init(input, type, sequence, time, index, payloadSize, header, headerOffset);
+        this.header.init(input, type, sequence, time, flags, index, payloadSize, header, headerOffset);
         return initPayload(payload, payloadOffset, payloadSize);
     }
 
@@ -126,6 +126,7 @@ public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFr
                 ", sequence=" + header().sequence() +
                 ", time=" + header().time() +
                 ", version=" + header().version() +
+                ", flags=" + Flags.toString(header().flags()) +
                 ", index=" + header().index() +
                 ", payload-size=" + header().payloadSize() +
                 '}' : "FlyweightDataFrame";

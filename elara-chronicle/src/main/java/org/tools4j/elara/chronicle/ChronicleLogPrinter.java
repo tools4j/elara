@@ -30,7 +30,7 @@ import org.tools4j.elara.flyweight.FlyweightDataFrame;
 import org.tools4j.elara.format.DataFrameFormatter;
 import org.tools4j.elara.format.MessagePrinter;
 import org.tools4j.elara.format.MessagePrinters;
-import org.tools4j.elara.log.Flyweight;
+import org.tools4j.elara.flyweight.Flyweight;
 import org.tools4j.elara.log.MessageLogPrinter;
 
 import java.io.OutputStream;
@@ -80,7 +80,7 @@ public class ChronicleLogPrinter implements AutoCloseable {
 
     public void print(final ChronicleQueue queue, final Flyweight<?> flyweight) {
         messageLogPrinter.print(
-                new ChronicleLogPoller<>(queue, flyweight)
+                new ChronicleLogPoller(queue), flyweight
         );
     }
 
@@ -88,7 +88,7 @@ public class ChronicleLogPrinter implements AutoCloseable {
                           final Flyweight<M> flyweight,
                           final MessagePrinter<? super M> printer) {
         messageLogPrinter.print(
-                new ChronicleLogPoller<>(queue, flyweight), msg -> true, printer
+                new ChronicleLogPoller(queue), flyweight, msg -> true, printer
         );
     }
 
@@ -97,7 +97,7 @@ public class ChronicleLogPrinter implements AutoCloseable {
                           final Predicate<? super M> filter,
                           final MessagePrinter<? super M> printer) {
         messageLogPrinter.print(
-                new ChronicleLogPoller<>(queue, flyweight), filter, printer
+                new ChronicleLogPoller(queue), flyweight, filter, printer
         );
     }
 

@@ -23,8 +23,8 @@
  */
 package org.tools4j.elara.loop;
 
-import org.tools4j.elara.command.Command;
-import org.tools4j.elara.log.PeekableMessageLog;
+import org.tools4j.elara.log.MessageLog.Handler;
+import org.tools4j.elara.log.MessageLog.Poller;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.nobark.loop.Step;
 
@@ -33,12 +33,12 @@ import static java.util.Objects.requireNonNull;
 public class CommandPollerStep implements Step {
 
     private final BaseState baseState;
-    private final PeekableMessageLog.PeekablePoller<? extends Command> commandPoller;
-    private final PeekableMessageLog.PeekPollHandler<? super Command> handler;
+    private final Poller commandPoller;
+    private final Handler handler;
 
     public CommandPollerStep(final BaseState baseState,
-                             final PeekableMessageLog.PeekablePoller<? extends Command> commandPoller,
-                             final PeekableMessageLog.PeekPollHandler<? super Command> handler) {
+                             final Poller commandPoller,
+                             final Handler handler) {
         this.baseState = requireNonNull(baseState);
         this.commandPoller = requireNonNull(commandPoller);
         this.handler = requireNonNull(handler);
@@ -47,7 +47,7 @@ public class CommandPollerStep implements Step {
     @Override
     public boolean perform() {
         if (baseState.allEventsPolled()) {
-            return commandPoller.peekOrPoll(handler) > 0;
+            return commandPoller.poll(handler) > 0;
         }
         //NOTE: only start playing new commands when state has been completely restored
         //      through replaying of events

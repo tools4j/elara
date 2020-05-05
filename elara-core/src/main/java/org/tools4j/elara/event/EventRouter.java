@@ -24,6 +24,7 @@
 package org.tools4j.elara.event;
 
 import org.agrona.DirectBuffer;
+import org.agrona.MutableDirectBuffer;
 
 public interface EventRouter {
     default void routeEvent(final DirectBuffer event, final int offset, final int length) {
@@ -32,7 +33,15 @@ public interface EventRouter {
 
     void routeEvent(int type, DirectBuffer event, int offset, int length);
 
+    RouteContext routingEvent(int type);
+
     StateImpact rollbackAfterProcessing(RollbackMode mode);
 
     short nextEventIndex();
+
+    interface RouteContext extends AutoCloseable {
+        MutableDirectBuffer payload();
+        @Override
+        void close();
+    }
 }

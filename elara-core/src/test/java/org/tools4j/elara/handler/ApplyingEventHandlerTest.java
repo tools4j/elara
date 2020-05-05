@@ -23,6 +23,8 @@
  */
 package org.tools4j.elara.handler;
 
+import org.agrona.ExpandableArrayBuffer;
+import org.agrona.concurrent.UnsafeBuffer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,19 +34,21 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.application.ExceptionHandler;
-import org.tools4j.elara.command.Command;
-import org.tools4j.elara.output.CommandLoopback;
-import org.tools4j.elara.output.DefaultCommandLoopback;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventType;
+import org.tools4j.elara.flyweight.Flags;
+import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.output.CommandLoopback;
+import org.tools4j.elara.output.DefaultCommandLoopback;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.time.TimeSource;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -60,11 +64,15 @@ public class ApplyingEventHandlerTest {
     @Mock
     private BaseState.Mutable baseState;
     @Mock
+    private MessageLog.Appender commandAppender;
+    @Mock
     private TimeSource timeSource;
     @Mock
     private SequenceGenerator adminSequenceGenerator;
     @Mock
-    private MessageLog.Appender<Event> eventLogAppender;
+    private MessageLog.Appender eventLogAppender;
+    @Mock
+    private MessageLog.AppendContext appendContext;
     @Mock
     private Output output;
     @Mock
@@ -73,12 +81,6 @@ public class ApplyingEventHandlerTest {
     private ExceptionHandler exceptionHandler;
     @Mock
     private DuplicateHandler duplicateHandler;
-    @Mock
-    private Command.Id commandId;
-    @Mock
-    private Event.Id eventId;
-    @Mock
-    private Event event;
 
     private CommandLoopback loopback;
 
@@ -87,11 +89,9 @@ public class ApplyingEventHandlerTest {
 
     @BeforeEach
     public void init() {
-        loopback =  new DefaultCommandLoopback(evt -> {}, timeSource, adminSequenceGenerator);
+        loopback =  new DefaultCommandLoopback(commandAppender, timeSource, adminSequenceGenerator);
         eventHandler = new ApplyingEventHandler(baseState, loopback, eventLogAppender, output, eventApplier,
                 exceptionHandler, duplicateHandler);
-        when(eventId.commandId()).thenReturn(commandId);
-        when(event.id()).thenReturn(eventId);
     }
 
     @Test
@@ -99,8 +99,8 @@ public class ApplyingEventHandlerTest {
         //given
         final int input = 1;
         final long seq = 22;
-        when(commandId.input()).thenReturn(input);
-        when(commandId.sequence()).thenReturn(seq);
+        final short index = 2;
+        final Event event = event(input, seq, index);
         final InOrder inOrder = inOrder(eventLogAppender, output, eventApplier, baseState, duplicateHandler);
 
         //when
@@ -108,7 +108,7 @@ public class ApplyingEventHandlerTest {
         eventHandler.onEvent(event);
 
         //then
-        inOrder.verify(eventLogAppender, never()).append(any());
+        inOrder.verify(eventLogAppender, never()).append(any(), anyInt(), anyInt());
         inOrder.verify(output, never()).publish(any(), anyBoolean(), any());
         inOrder.verify(eventApplier, never()).onEvent(any());
         inOrder.verify(baseState, never()).lastAppliedEvent(any());
@@ -120,7 +120,7 @@ public class ApplyingEventHandlerTest {
         eventHandler.onEvent(event);
 
         //then
-        inOrder.verify(eventLogAppender, never()).append(any());
+        inOrder.verify(eventLogAppender, never()).append(any(), anyInt(), anyInt());
         inOrder.verify(output, never()).publish(any(), anyBoolean(), any());
         inOrder.verify(eventApplier, never()).onEvent(any());
         inOrder.verify(baseState, never()).lastAppliedEvent(any());
@@ -133,8 +133,10 @@ public class ApplyingEventHandlerTest {
         //given
         final int input = 1;
         final long seq = 22;
-        when(commandId.input()).thenReturn(input);
-        when(commandId.sequence()).thenReturn(seq);
+        final short index = 2;
+        final Event event = event(input, seq, index);
+        when(eventLogAppender.appending()).thenReturn(appendContext);
+        when(appendContext.buffer()).thenAnswer(invocation -> new ExpandableArrayBuffer());
         when(baseState.allEventsPolled()).thenReturn(true);
         final InOrder inOrder = inOrder(eventLogAppender, output, eventApplier, baseState);
 
@@ -143,7 +145,7 @@ public class ApplyingEventHandlerTest {
         eventHandler.onEvent(event);
 
         //then
-        inOrder.verify(eventLogAppender).append(event);
+        inOrder.verify(eventLogAppender).appending();
         inOrder.verify(eventApplier).onEvent(same(event));
         inOrder.verify(baseState).lastAppliedEvent(event);
         inOrder.verify(output).publish(event, false, loopback);
@@ -154,7 +156,7 @@ public class ApplyingEventHandlerTest {
         eventHandler.onEvent(event);
 
         //then
-        inOrder.verify(eventLogAppender).append(event);
+        inOrder.verify(eventLogAppender).appending();
         inOrder.verify(eventApplier).onEvent(same(event));
         inOrder.verify(baseState).lastAppliedEvent(event);
         inOrder.verify(baseState, never()).allEventsAppliedFor(any());
@@ -167,22 +169,23 @@ public class ApplyingEventHandlerTest {
         //given
         final int input = 1;
         final long seq = 22;
-        when(commandId.input()).thenReturn(input);
-        when(commandId.sequence()).thenReturn(seq);
+        final short index = 2;
+        final Event commit = event(input, seq, index, EventType.COMMIT);
+        when(eventLogAppender.appending()).thenReturn(appendContext);
+        when(appendContext.buffer()).thenAnswer(invocation -> new ExpandableArrayBuffer());
         when(baseState.allEventsPolled()).thenReturn(true);
         final InOrder inOrder = inOrder(eventLogAppender, output, eventApplier, baseState);
 
         //when
-        when(event.type()).thenReturn(EventType.COMMIT);
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
-        eventHandler.onEvent(event);
+        eventHandler.onEvent(commit);
 
         //then
-        inOrder.verify(eventLogAppender).append(event);
-        inOrder.verify(eventApplier).onEvent(same(event));
-        inOrder.verify(baseState).lastAppliedEvent(event);
-        inOrder.verify(baseState).allEventsAppliedFor(commandId);
-        inOrder.verify(output).publish(event, false, loopback);
+        inOrder.verify(eventLogAppender).appending();
+        inOrder.verify(eventApplier).onEvent(same(commit));
+        inOrder.verify(baseState).lastAppliedEvent(commit);
+        inOrder.verify(baseState).allEventsAppliedFor(commit.id().commandId());
+        inOrder.verify(output).publish(commit, false, loopback);
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -191,8 +194,8 @@ public class ApplyingEventHandlerTest {
         //given
         final int input = 1;
         final long seq = 22;
-        when(commandId.input()).thenReturn(input);
-        when(commandId.sequence()).thenReturn(seq);
+        final short index = 2;
+        final Event event = event(input, seq, index);
         when(baseState.allEventsPolled()).thenReturn(false);
         final InOrder inOrder = inOrder(eventLogAppender, output, eventApplier, baseState);
 
@@ -201,7 +204,7 @@ public class ApplyingEventHandlerTest {
         eventHandler.onEvent(event);
 
         //then
-        inOrder.verify(eventLogAppender, never()).append(any());
+        inOrder.verify(eventLogAppender, never()).append(any(), anyInt(), anyInt());
         inOrder.verify(eventApplier).onEvent(same(event));
         inOrder.verify(baseState).lastAppliedEvent(event);
         inOrder.verify(output).publish(event, true, loopback);
@@ -213,9 +216,9 @@ public class ApplyingEventHandlerTest {
         //given
         final int input = 1;
         final long seq = 22;
+        final short index = 2;
+        final Event event = event(input, seq, index);
         final RuntimeException testException = new RuntimeException("test event applier exception");
-        when(commandId.input()).thenReturn(input);
-        when(commandId.sequence()).thenReturn(seq);
         final InOrder inOrder = inOrder(eventApplier, exceptionHandler);
 
         //when
@@ -234,9 +237,11 @@ public class ApplyingEventHandlerTest {
         //given
         final int input = 1;
         final long seq = 22;
+        final short index = 2;
+        final Event event = event(input, seq, index);
         final RuntimeException testException = new RuntimeException("test event output exception");
-        when(commandId.input()).thenReturn(input);
-        when(commandId.sequence()).thenReturn(seq);
+        when(eventLogAppender.appending()).thenReturn(appendContext);
+        when(appendContext.buffer()).thenAnswer(invocation -> new ExpandableArrayBuffer());
         when(baseState.allEventsPolled()).thenReturn(true);
         final InOrder inOrder = inOrder(output, eventApplier, exceptionHandler);
 
@@ -257,9 +262,9 @@ public class ApplyingEventHandlerTest {
         //given
         final int input = 1;
         final long seq = 22;
+        final short index = 2;
+        final Event event = event(input, seq, index);
         final RuntimeException testException = new RuntimeException("test skip event exception");
-        when(commandId.input()).thenReturn(input);
-        when(commandId.sequence()).thenReturn(seq);
         final InOrder inOrder = inOrder(eventApplier, duplicateHandler, exceptionHandler);
 
         //when
@@ -272,5 +277,15 @@ public class ApplyingEventHandlerTest {
         inOrder.verify(duplicateHandler).skipEventApplying(event);
         inOrder.verify(exceptionHandler).handleEventApplierException(event, testException);
         inOrder.verifyNoMoreInteractions();
+    }
+
+    private static Event event(final int input, final long seq, final short index) {
+        return event(input, seq, index, EventType.APPLICATION);
+    }
+    private static Event event(final int input, final long seq, final short index, final int type) {
+        return new FlyweightEvent()
+                .init(new ExpandableArrayBuffer(), 0, input, seq, index, type, 123L,
+                        Flags.NONE, new UnsafeBuffer(0, 0), 0, 0
+                );
     }
 }

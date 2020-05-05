@@ -28,7 +28,6 @@ import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.junit.jupiter.api.Test;
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.log.Writable;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
@@ -224,9 +223,9 @@ public class FlyweightCommandTest {
         void assertCommand(final Command command) {
             assertEquals(input, command.id().input(), "id.input");
             assertEquals(seq, command.id().sequence(), "id.sequence");
-            assertEquals(type, command.type(), "id.type");
-            assertEquals(time, command.time(), "id.time");
-            assertNotNull(command.payload(), "id.payload");
+            assertEquals(type, command.type(), "type");
+            assertEquals(time, command.time(), "time");
+            assertNotNull(command.payload(), "payload");
             assertEquals(payloadLength(), command.payload().capacity(), "payload.capacity");
             assertEquals(msg, command.payload().getStringAscii(0), "payload.msg");
         }

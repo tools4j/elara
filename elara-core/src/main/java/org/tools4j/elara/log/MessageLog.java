@@ -23,30 +23,59 @@
  */
 package org.tools4j.elara.log;
 
-public interface MessageLog<M> extends AutoCloseable {
-    Appender<M> appender();
-    Poller<M> poller();
-    Poller<M> poller(String id);
-    long size();
+import org.agrona.DirectBuffer;
+import org.agrona.MutableDirectBuffer;
+
+public interface MessageLog extends AutoCloseable {
+    Appender appender();
+    Poller poller();
+    Poller poller(String id);
     @Override
     void close();
 
     @FunctionalInterface
-    interface Appender<M> {
-        void append(M message);
+    interface Appender {
+        default void append(DirectBuffer buffer, int offset, int length) {
+            try (final AppendContext ctxt = appending()) {
+                ctxt.buffer().putBytes(0, buffer, offset, length);
+                ctxt.commit(length);
+            }
+        }
+        AppendContext appending();
     }
 
-    interface Poller<M> {
+    interface AppendContext extends AutoCloseable {
+        MutableDirectBuffer buffer();
+
+        void commit(int length);
+        void abort();
+        boolean isClosed();
+
+        @Override
+        default void close() {
+            if (!isClosed()) {
+                abort();
+            }
+        }
+    }
+
+    interface Poller {
         long entryId();
         boolean moveTo(long entryId);
         boolean moveToNext();//skip one
-        Poller<M> moveToStart();
-        Poller<M> moveToEnd();
-        int poll(Handler<? super M> handler);
+        Poller moveToStart();
+        Poller moveToEnd();
+        int poll(Handler handler);
     }
 
     @FunctionalInterface
-    interface Handler<M> {
-        void onMessage(M message);
+    interface Handler{
+        enum Result {
+            /** Mark message as peeked only so it is revisited when polling again */
+            PEEK,
+            /** Mark message as consumed and aim for the next one when polling again */
+            POLL
+        }
+        Result onMessage(DirectBuffer message);
     }
 }

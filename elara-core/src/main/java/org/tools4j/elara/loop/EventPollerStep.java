@@ -23,8 +23,11 @@
  */
 package org.tools4j.elara.loop;
 
-import org.tools4j.elara.event.Event;
+import org.agrona.DirectBuffer;
+import org.tools4j.elara.event.EventHandler;
+import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.log.MessageLog.Handler.Result;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.nobark.loop.Step;
 
@@ -33,20 +36,23 @@ import static java.util.Objects.requireNonNull;
 public class EventPollerStep implements Step {
 
     private final BaseState.Mutable baseState;
-    private final MessageLog.Poller<? extends Event> eventPoller;
-    private final MessageLog.Handler<? super Event> handler;
+    private final MessageLog.Poller eventPoller;
+    private final EventHandler eventHandler;
+
+    private final MessageLog.Handler pollerHandler = this::onEvent;
+    private final FlyweightEvent flyweightEvent = new FlyweightEvent();
 
     public EventPollerStep(final BaseState.Mutable baseState,
-                           final MessageLog.Poller<? extends Event> eventPoller,
-                           final MessageLog.Handler<? super Event> handler) {
+                           final MessageLog.Poller eventPoller,
+                           final EventHandler eventHandler) {
         this.baseState = requireNonNull(baseState);
         this.eventPoller = requireNonNull(eventPoller);
-        this.handler = requireNonNull(handler);
+        this.eventHandler = requireNonNull(eventHandler);
     }
 
     @Override
     public boolean perform() {
-        if (eventPoller.poll(handler) > 0) {
+        if (eventPoller.poll(pollerHandler) > 0) {
             return true;
         }
         if (!baseState.allEventsPolled()) {
@@ -56,4 +62,10 @@ public class EventPollerStep implements Step {
         }
         return false;
     }
+
+    private Result onEvent(final DirectBuffer event) {
+        eventHandler.onEvent(flyweightEvent.init(event, 0));
+        return Result.POLL;
+    }
+
 }

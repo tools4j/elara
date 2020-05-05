@@ -23,7 +23,9 @@
  */
 package org.tools4j.elara.log;
 
+import org.tools4j.elara.flyweight.Flyweight;
 import org.tools4j.elara.format.MessagePrinter;
+import org.tools4j.elara.log.MessageLog.Handler.Result;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -74,23 +76,28 @@ public class MessageLogPrinter implements AutoCloseable {
         }
     }
 
-    public <M> void print(final MessageLog.Poller<M> poller) {
-        print(poller, MessagePrinter.DEFAULT);
+    public <M> void print(final MessageLog.Poller poller, final Flyweight<M> flyweight) {
+        print(poller, flyweight, MessagePrinter.DEFAULT);
     }
 
-    public <M> void print(final MessageLog.Poller<M> poller, final MessagePrinter<? super M> printer) {
-        print(poller, msg -> true, printer);
+    public <M> void print(final MessageLog.Poller poller,
+                          final Flyweight<M> flyweight,
+                          final MessagePrinter<? super M> printer) {
+        print(poller, flyweight, msg -> true, printer);
     }
 
-    public <M> void print(final MessageLog.Poller<M> poller,
+    public <M> void print(final MessageLog.Poller poller,
+                          final Flyweight<M> flyweight,
                           final Predicate<? super M> filter,
                           final MessagePrinter<? super M> printer) {
         final long[] linePtr = {0};
-        final MessageLog.Handler<M> handler = message -> {
+        final MessageLog.Handler handler = message -> {
+            final M msg = flyweight.init(message, 0);
             final long line = linePtr[0]++;
-            if (filter.test(message)) {
-                printer.print(line, poller.entryId(), message, printWriter);
+            if (filter.test(msg)) {
+                printer.print(line, poller.entryId(), msg, printWriter);
             }
+            return Result.POLL;
         };
         while (poller.poll(handler) > 0);
         flush();

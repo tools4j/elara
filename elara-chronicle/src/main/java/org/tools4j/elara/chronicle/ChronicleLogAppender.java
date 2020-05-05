@@ -27,17 +27,18 @@ import net.openhft.chronicle.bytes.Bytes;
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.queue.ExcerptAppender;
 import net.openhft.chronicle.wire.DocumentContext;
+import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.log.Writable;
 
 import static java.util.Objects.requireNonNull;
 
-public class ChronicleLogAppender<M extends Writable> implements MessageLog.Appender<M> {
+public class ChronicleLogAppender implements MessageLog.Appender {
 
     private final ExcerptAppender appender;
-    private final BufferAcquirer bufferAcquirer = new BufferAcquirer();
+    private final UnsafeBuffer bytesWrapper = new UnsafeBuffer(0, 0);
+    private final AppendContext appendContext = new AppendContext();
 
     public ChronicleLogAppender(final ChronicleQueue queue) {
         this(queue.acquireAppender());
@@ -48,12 +49,19 @@ public class ChronicleLogAppender<M extends Writable> implements MessageLog.Appe
     }
 
     @Override
-    public void append(final M message) {
+    public void append(final DirectBuffer buffer, final int offset, final int length) {
         try (final DocumentContext context = appender.writingDocument()) {
             try {
-                bufferAcquirer.init(context.wire().bytes());
-                final int written = message.write(bufferAcquirer);
-                bufferAcquirer.finish(written);
+                final int totalLength = length + 4;
+                final Bytes<?> bytes = context.wire().bytes();
+                bytes.ensureCapacity(totalLength);
+                final long dstOffset = bytes.writePosition();
+                final long addr = bytes.addressForWrite(dstOffset);
+                bytesWrapper.wrap(addr, totalLength);
+                bytesWrapper.putInt(0, length);
+                bytesWrapper.putBytes(4, buffer, offset, length);
+                bytesWrapper.wrap(0, 0);
+                bytes.writePosition(bytes.writePosition() + totalLength);
             } catch (final Exception e) {
                 context.rollbackOnClose();
                 throw e;
@@ -61,35 +69,68 @@ public class ChronicleLogAppender<M extends Writable> implements MessageLog.Appe
         }
     }
 
-    private static class BufferAcquirer implements Writable.BufferAcquirer {
-        private Bytes<?> bytes;
-        private final MutableDirectBuffer buffer = new UnsafeBuffer(0, 0);
+    @Override
+    public MessageLog.AppendContext appending() {
+        return appendContext.init(appender.writingDocument());
+    }
 
-        BufferAcquirer init(final Bytes<?> bytes) {
-            this.bytes = requireNonNull(bytes);
+    private static class AppendContext implements MessageLog.AppendContext {
+        private final BytesDirectBuffer buffer = new BytesDirectBuffer();
+        private DocumentContext context;
+
+        AppendContext init(final DocumentContext context) {
+            if (this.context != null) {
+                abort();
+                throw new IllegalStateException("Aborted unclosed append context");
+            }
+            final Bytes<?> bytes = context.wire().bytes();
+            bytes.writeInt(0);//place holder for length
+            this.buffer.wrapForWriting(bytes);
+            this.context = context;
             return this;
         }
 
         @Override
-        public MutableDirectBuffer acquireBuffer(final int length) {
-            bytes.ensureCapacity(length + 4);
-            final int offset = (int) bytes.writePosition();
-            final long addr = bytes.addressForWrite(offset);
-            buffer.wrap(addr + 4, length);
+        public MutableDirectBuffer buffer() {
             return buffer;
         }
 
-        void finish(final int written) {
-            if (written < 0 || written > buffer.capacity()) {
-                throw new IllegalArgumentException("Invalid written length Writable.write(..). Expected in [0," +
-                        buffer.capacity() + "] but was " + written);
+        @Override
+        public void commit(final int length) {
+            if (context == null) {
+                throw new IllegalStateException("Append context is closed");
             }
-            buffer.wrap(buffer.addressOffset() - 4, 4);
-            buffer.putInt(0, written);
-            buffer.wrap(0, 0);
-            bytes.writePosition(bytes.writePosition() + written + 4);
-            bytes = null;
+            try (final DocumentContext dc = context) {
+                try {
+                    buffer.unwrap();
+                    final Bytes<?> bytes = context.wire().bytes();
+                    bytes.ensureCapacity(length);
+                    bytes.writePosition(bytes.writePosition() - 4);
+                    bytes.writeInt(length);
+                    bytes.writePosition(bytes.writePosition() + length);
+                } catch (final Exception e) {
+                    dc.rollbackOnClose();
+                    throw e;
+                } finally {
+                    context = null;
+                }
+            }
+        }
+
+        @Override
+        public void abort() {
+            if (context == null) {
+                throw new IllegalStateException("Append context is closed");
+            }
+            buffer.unwrap();
+            context.rollbackOnClose();
+            context.close();
+            context = null;
+        }
+
+        @Override
+        public boolean isClosed() {
+            return context == null;
         }
     }
-
 }

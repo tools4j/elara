@@ -28,7 +28,6 @@ import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.junit.jupiter.api.Test;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.log.Writable;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
@@ -98,7 +97,7 @@ public class FlyweightEventTest {
 
         //when
         event.init(new ExpandableArrayBuffer(), headerOffset, values.input, values.seq, values.index,
-                values.type, values.time, values.payload, payloadOffset, values.payloadLength()
+                values.type, values.time, values.flags, values.payload, payloadOffset, values.payloadLength()
         );
 
         //then
@@ -125,7 +124,7 @@ public class FlyweightEventTest {
         final Values values = new Values(0, "Hello world");
         final FlyweightEvent event = new FlyweightEvent().init(
                 new ExpandableArrayBuffer(), 0, values.input, values.seq, values.index,
-                values.type, values.time, values.payload, 0, values.payloadLength()
+                values.type, values.time, values.flags, values.payload, 0, values.payloadLength()
         );
 
         //when
@@ -149,7 +148,7 @@ public class FlyweightEventTest {
         final Values values = new Values(0, "Hello world");
         final FlyweightEvent event = new FlyweightEvent().init(
                 new ExpandableArrayBuffer(), 0, values.input, values.seq, values.index,
-                values.type, values.time, values.payload, 0, values.payloadLength()
+                values.type, values.time, values.flags, values.payload, 0, values.payloadLength()
         );
 
         //when
@@ -177,7 +176,7 @@ public class FlyweightEventTest {
         final Values values = new Values(payloadOffset, "Hello world");
         final FlyweightEvent event = new FlyweightEvent();
         event.init(new ExpandableArrayBuffer(), headerOffset, values.input, values.seq, values.index,
-                values.type, values.time, values.payload, payloadOffset, values.payloadLength()
+                values.type, values.time, values.flags, values.payload, payloadOffset, values.payloadLength()
         );
 
         //when
@@ -211,6 +210,7 @@ public class FlyweightEventTest {
         final short index = 7;
         final int type = 123;
         final long time = 998877665544L;
+        final byte flags = Flags.COMMIT | Flags.ROLLBACK;
         final String msg;
         final MutableDirectBuffer payload = new ExpandableArrayBuffer();
 
@@ -227,9 +227,10 @@ public class FlyweightEventTest {
             assertEquals(input, event.id().commandId().input(), "id..commandId.input");
             assertEquals(seq, event.id().commandId().sequence(), "id.commandId.sequence");
             assertEquals(index, event.id().index(), "id.index");
-            assertEquals(type, event.type(), "id.type");
-            assertEquals(time, event.time(), "id.time");
-            assertNotNull(event.payload(), "id.payload");
+            assertEquals(type, event.type(), "type");
+            assertEquals(time, event.time(), "time");
+            assertEquals(Flags.UNDEFINED_STRING, event.flags().toString(), "flags");
+            assertNotNull(event.payload(), "payload");
             assertEquals(payloadLength(), event.payload().capacity(), "payload.capacity");
             assertEquals(msg, event.payload().getStringAscii(0), "payload.msg");
         }

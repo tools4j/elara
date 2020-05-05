@@ -29,16 +29,13 @@ import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventRouter;
-import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.InMemoryLog;
 import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.log.PeekableMessageLog;
+import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.samples.bank.actor.Accountant;
@@ -93,21 +90,19 @@ public class BankApplication implements Application {
     }
 
     public ElaraRunner launch(final Queue<BankCommand> inputQueue) {
-        return launch(inputQueue,
-                new InMemoryLog<>(FlyweightCommand::new),
-                new InMemoryLog<>(FlyweightEvent::new));
+        return launch(inputQueue, new InMemoryLog(), new InMemoryLog());
     }
 
     public ElaraRunner launch(final Queue<BankCommand> inputQueue,
-                              final PeekableMessageLog<Command> commandLog,
-                              final MessageLog<Event> eventLog) {
+                              final MessageLog commandLog,
+                              final MessageLog eventLog) {
         return launch(Input.create(666, new CommandPoller(inputQueue)),
                 commandLog, eventLog);
     }
 
     public ElaraRunner launch(final Input input,
-                              final PeekableMessageLog<Command> commandLog,
-                              final MessageLog<Event> eventLog) {
+                              final MessageLog commandLog,
+                              final MessageLog eventLog) {
         return Elara.launch(
                 Context.create()
                         .input(input)
