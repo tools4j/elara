@@ -69,9 +69,4 @@ public interface Event extends Writable {
 
     @Override
     int writeTo(MutableDirectBuffer dst, int offset);
-
-    @Deprecated
-    default boolean isCommit() {
-        return EventType.isCommit(type());
-    }
 }

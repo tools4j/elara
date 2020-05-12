@@ -34,7 +34,7 @@ import org.tools4j.elara.application.SimpleApplication;
 import org.tools4j.elara.chronicle.ChronicleMessageLog;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.event.EventRouter;
+import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;

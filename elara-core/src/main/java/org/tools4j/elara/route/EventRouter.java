@@ -21,9 +21,41 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.event;
+package org.tools4j.elara.route;
 
-public enum RollbackMode {
-    REPLAY_COMMAND,
-    SKIP_COMMAND;
+import org.agrona.DirectBuffer;
+import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.event.EventType;
+
+public interface EventRouter {
+    default void routeEvent(final DirectBuffer event, final int offset, final int length) {
+        routeEvent(EventType.APPLICATION, event, offset, length);
+    }
+
+    default void routeEvent(final int type, final DirectBuffer event, final int offset, final int length) {
+        try (final RoutingContext context = routingEvent(type)) {
+            context.payload().putBytes(0, event, offset, length);
+            context.route(length);
+        }
+    }
+
+    RoutingContext routingEvent(int type);
+
+    StateImpact rollbackAfterProcessing(RollbackMode mode);
+
+    short nextEventIndex();
+
+    interface RoutingContext extends AutoCloseable {
+        int index();
+        MutableDirectBuffer payload();
+        void route(int payloadLength);
+        void abort();
+        boolean isClosed();
+        @Override
+        default void close() {
+            if (!isClosed()) {
+                abort();
+            }
+        }
+    }
 }

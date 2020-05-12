@@ -27,7 +27,6 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.event.EventType;
 
 public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.Id, Command.Id, Frame {
 
@@ -106,11 +105,6 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.I
     @Override
     public int index() {
         return header().index();
-    }
-
-    @Override
-    public boolean isCommit() {
-        return EventType.isCommit(type());
     }
 
     @Override

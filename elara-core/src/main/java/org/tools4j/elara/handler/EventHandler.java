@@ -28,9 +28,7 @@ import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.event.EventHandler;
 import org.tools4j.elara.event.EventType;
-import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.base.BaseState;
@@ -38,28 +36,25 @@ import org.tools4j.elara.plugin.base.BaseState;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Event handler that appends, outputs and applies events in one go.
+ * Event handler that appends and outputs outputs events.
  */
-public class ApplyingEventHandler implements EventHandler {
+public class EventHandler implements EventApplier {
 
     private final BaseState.Mutable baseState;
     private final CommandLoopback commandLoopback;
-    private final MessageLog.Appender eventLogAppender;
     private final Output output;
     private final EventApplier eventApplier;
     private final ExceptionHandler exceptionHandler;
     private final DuplicateHandler duplicateHandler;
 
-    public ApplyingEventHandler(final BaseState.Mutable baseState,
-                                final CommandLoopback commandLoopback,
-                                final MessageLog.Appender eventLogAppender,
-                                final Output output,
-                                final EventApplier eventApplier,
-                                final ExceptionHandler exceptionHandler,
-                                final DuplicateHandler duplicateHandler) {
+    public EventHandler(final BaseState.Mutable baseState,
+                        final CommandLoopback commandLoopback,
+                        final Output output,
+                        final EventApplier eventApplier,
+                        final ExceptionHandler exceptionHandler,
+                        final DuplicateHandler duplicateHandler) {
         this.baseState = requireNonNull(baseState);
         this.commandLoopback = requireNonNull(commandLoopback);
-        this.eventLogAppender = requireNonNull(eventLogAppender);
         this.output = requireNonNull(output);
         this.eventApplier = requireNonNull(eventApplier);
         this.exceptionHandler = requireNonNull(exceptionHandler);
@@ -71,16 +66,10 @@ public class ApplyingEventHandler implements EventHandler {
         final Command.Id commandId = event.id().commandId();
         final long lastAppliedForInput = baseState.lastCommandAllEventsApplied(commandId.input());
         if (lastAppliedForInput < commandId.sequence()) {
-            final boolean append = baseState.allEventsPolled();
-            if (append) {
-                try (final MessageLog.AppendContext context = eventLogAppender.appending()) {
-                    final int length = event.writeTo(context.buffer(), 0);
-                    context.commit(length);
-                }
-            }
+            final boolean replay = !baseState.allEventsPolled();
             applyEvent(event);
             updateBaseState(event);
-            publishEvent(event, !append);
+            publishEvent(event, replay);
         } else {
             skipEvent(event);
         }

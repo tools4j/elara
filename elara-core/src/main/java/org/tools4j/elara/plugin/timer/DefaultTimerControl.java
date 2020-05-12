@@ -25,7 +25,7 @@ package org.tools4j.elara.plugin.timer;
 
 import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.event.EventRouter;
+import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.plugin.Plugin;
 
 import java.util.function.Function;

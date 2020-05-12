@@ -30,12 +30,12 @@ import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.event.EventRouter;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.InMemoryLog;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.output.CommandLoopback;
+import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.samples.bank.actor.Accountant;
@@ -127,9 +127,7 @@ public class BankApplication implements Application {
     private void apply(final Event event) {
         System.out.println("applying: " + event + ", payload=" + payloadFor(event));
         accountant.onEvent(event);
-        if (event.isCommit()) {
-            printBankAccounts(bank);
-        }
+        printBankAccounts(bank);
     }
 
     private static void printBankAccounts(final Bank bank) {

@@ -30,7 +30,7 @@ import org.tools4j.elara.application.Application;
 import org.tools4j.elara.application.SimpleApplication;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.event.EventRouter;
+import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.InMemoryLog;
