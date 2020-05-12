@@ -24,7 +24,7 @@
 package org.tools4j.elara.command;
 
 import org.tools4j.elara.application.CommandProcessor;
-import org.tools4j.elara.event.EventRouter;
+import org.tools4j.elara.route.EventRouter;
 
 import static java.util.Objects.requireNonNull;
 

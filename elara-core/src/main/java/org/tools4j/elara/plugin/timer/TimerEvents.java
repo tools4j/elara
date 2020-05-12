@@ -27,7 +27,7 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.event.EventRouter;
+import org.tools4j.elara.route.EventRouter;
 
 import static org.tools4j.elara.plugin.timer.TimerEventDescriptor.TIMER_ID_OFFSET;
 import static org.tools4j.elara.plugin.timer.TimerEventDescriptor.TIMER_PAYLOAD_SIZE;

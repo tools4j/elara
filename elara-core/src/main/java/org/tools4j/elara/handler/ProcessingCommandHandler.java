@@ -29,7 +29,7 @@ import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.flyweight.FlyweightEventRouter;
+import org.tools4j.elara.route.FlyweightEventRouter;
 import org.tools4j.elara.log.MessageLog.Handler;
 import org.tools4j.elara.plugin.base.BaseState;
 

@@ -21,9 +21,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.event;
+package org.tools4j.elara.route;
 
-@FunctionalInterface
-public interface EventHandler {
-    void onEvent(Event event);
+/**
+ * State impact indicator returned by{@link EventRouter#rollbackAfterProcessing(RollbackMode)}.
+ */
+public enum StateImpact {
+    /**
+     * The application state is safe and not affected by the rollback.  This can be guaranteed only if no rolled-back
+     * events have been passed to the {@link org.tools4j.elara.application.EventApplier event applier} yet.
+     */
+    STATE_UNAFFECTED,
+    /**
+     * The application state is possibly corrupted since some of the events rolled back have already been passed to the
+     * {@link org.tools4j.elara.application.EventApplier event applier}.  The application state is safe only if either
+     * <ul>
+     *     <li>all events passed to the event applier did not modify application state, or</li>
+     *     <li>undo events were routed prior to the rollback to revert the application state to the original values</li>
+     * </ul>
+     */
+    STATE_CORRUPTION_POSSIBLE;
 }

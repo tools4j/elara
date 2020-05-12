@@ -21,27 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.event;
+package org.tools4j.elara.route;
 
-import org.agrona.DirectBuffer;
-import org.agrona.MutableDirectBuffer;
-
-public interface EventRouter {
-    default void routeEvent(final DirectBuffer event, final int offset, final int length) {
-        routeEvent(EventType.APPLICATION, event, offset, length);
-    }
-
-    void routeEvent(int type, DirectBuffer event, int offset, int length);
-
-    RouteContext routingEvent(int type);
-
-    StateImpact rollbackAfterProcessing(RollbackMode mode);
-
-    short nextEventIndex();
-
-    interface RouteContext extends AutoCloseable {
-        MutableDirectBuffer payload();
-        @Override
-        void close();
-    }
+public enum RollbackMode {
+    REPLAY_COMMAND,
+    SKIP_COMMAND;
 }

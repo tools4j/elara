@@ -24,8 +24,8 @@
 package org.tools4j.elara.loop;
 
 import org.agrona.DirectBuffer;
-import org.tools4j.elara.event.EventHandler;
 import org.tools4j.elara.flyweight.FlyweightEvent;
+import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.log.MessageLog.Handler.Result;
 import org.tools4j.elara.plugin.base.BaseState;

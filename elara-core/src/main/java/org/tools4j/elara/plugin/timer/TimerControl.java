@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.plugin.timer;
 
-import org.tools4j.elara.event.EventRouter;
+import org.tools4j.elara.route.EventRouter;
 
 public interface TimerControl {
     long startTimer(int type, long timeout, TimerState timerState, EventRouter eventRouter);

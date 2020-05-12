@@ -69,7 +69,7 @@ public interface MessageLog extends AutoCloseable {
     }
 
     @FunctionalInterface
-    interface Handler{
+    interface Handler {
         enum Result {
             /** Mark message as peeked only so it is revisited when polling again */
             PEEK,

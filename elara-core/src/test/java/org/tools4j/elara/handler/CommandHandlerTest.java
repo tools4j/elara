@@ -41,9 +41,9 @@ import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.flyweight.FlyweightEventRouter;
 import org.tools4j.elara.log.MessageLog.Handler.Result;
 import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.route.FlyweightEventRouter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -63,6 +63,8 @@ public class CommandHandlerTest {
     @Mock
     private BaseState baseState;
     @Mock
+    private FlyweightEventRouter eventRouter;
+    @Mock
     private CommandProcessor commandProcessor;
     @Mock
     private ExceptionHandler exceptionHandler;
@@ -74,8 +76,8 @@ public class CommandHandlerTest {
 
     @BeforeEach
     public void init() {
-        commandHandler = new ProcessingCommandHandler(baseState, new FlyweightEventRouter(evt -> {}),
-                commandProcessor, exceptionHandler, duplicateHandler);
+        commandHandler = new ProcessingCommandHandler(baseState, eventRouter, commandProcessor, exceptionHandler,
+                duplicateHandler);
     }
 
     @Test
@@ -115,6 +117,7 @@ public class CommandHandlerTest {
         final long seq = 22;
         final Command command = command(input, seq);
         when(baseState.processCommands()).thenReturn(true);
+        when(eventRouter.complete()).thenReturn(true);
         final InOrder inOrder = inOrder(commandProcessor, duplicateHandler);
         Result result;
 
@@ -168,6 +171,7 @@ public class CommandHandlerTest {
         final Command command = command(input, seq);
         final RuntimeException testException = new RuntimeException("test command processor exception");
         when(baseState.processCommands()).thenReturn(true);
+        when(eventRouter.complete()).thenReturn(true);
         final InOrder inOrder = inOrder(commandProcessor, exceptionHandler);
         Result result;
 

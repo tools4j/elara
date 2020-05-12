@@ -31,10 +31,13 @@ import org.junit.jupiter.api.Test;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventType;
-import org.tools4j.elara.event.RollbackMode;
+import org.tools4j.elara.log.InMemoryLog;
+import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.route.FlyweightEventRouter;
+import org.tools4j.elara.route.RollbackMode;
 
-import java.util.ArrayDeque;
-import java.util.Queue;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -46,7 +49,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class FlyweightEventRouterTest {
 
-    private Queue<Event> events;
+    private MessageLog messageLog;
+    private List<Event> routed;
     private FlyweightCommand command;
 
     //under test
@@ -54,12 +58,13 @@ public class FlyweightEventRouterTest {
 
     @BeforeEach
     public void init() {
-        events = new ArrayDeque<>();
+        routed = new ArrayList<>();
         command = new FlyweightCommand();
-        eventRouter = new FlyweightEventRouter(event -> {
+        messageLog = new InMemoryLog();
+        eventRouter = new FlyweightEventRouter(messageLog.appender(), event -> {
             final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
             event.writeTo(buffer, 0);
-            events.add(new FlyweightEvent().init(buffer, 0));
+            routed.add(new FlyweightEvent().init(buffer, 0));
         });
     }
 
@@ -83,8 +88,8 @@ public class FlyweightEventRouterTest {
         //then
         assertTrue(result, "result");
         assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[x]");
-        assertEquals(1, events.size(), "events.size");
-        assertEvent(command, events.poll(), EventType.COMMIT, 0, 0, "events[0]");
+        assertEquals(1, routed.size(), "events.size");
+        assertEvent(command, routed.get(0), EventType.COMMIT, 0, Flags.COMMIT, 0, "events[0]");
     }
 
     @Test
@@ -118,11 +123,10 @@ public class FlyweightEventRouterTest {
         //then
         assertTrue(result, "result");
         assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[x]");
-        assertEquals(3, events.size(), "events.size");
-        assertEvent(command, events.poll(), EventType.APPLICATION, 0, 0, "events[0]");
-        assertEvent(command, events.peek(), eventType, 1, payloadSize, "events[1]");
-        assertEquals(msg, events.poll().payload().getStringAscii(msgOffset), "events[1].payload.msg");
-        assertEvent(command, events.poll(), EventType.COMMIT, 2, 0, "events[2]");
+        assertEquals(2, routed.size(), "events.size");
+        assertEvent(command, routed.get(0), EventType.APPLICATION, 0, Flags.NONE, 0, "events[0]");
+        assertEvent(command, routed.get(1), eventType, 1, Flags.COMMIT, payloadSize, "events[1]");
+        assertEquals(msg, routed.get(1).payload().getStringAscii(msgOffset), "events[1].payload.msg");
     }
 
     @Test
@@ -142,8 +146,8 @@ public class FlyweightEventRouterTest {
         //then
         assertTrue(result, "result");
         assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[x]");
-        assertEquals(1, events.size(), "events.size");
-        assertEvent(command, events.poll(), EventType.ROLLBACK, 0, 0, "events[0]");
+        assertEquals(1, routed.size(), "events.size");
+        assertEvent(command, routed.get(0), EventType.ROLLBACK, 0, Flags.ROLLBACK, 0, "events[0]");
     }
 
     @Test
@@ -168,10 +172,10 @@ public class FlyweightEventRouterTest {
         //then
         assertFalse(result, "result");
         assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[x]");
-        assertEquals(3, events.size(), "events.size");
-        assertEvent(command, events.poll(), EventType.APPLICATION, 0, 0, "events[0]");
-        assertEvent(command, events.poll(), eventType, 1, payloadSize, "events[1]");
-        assertEvent(command, events.poll(), EventType.ROLLBACK, 2, 0, "events[0]");
+        assertEquals(3, routed.size(), "events.size");
+        assertEvent(command, routed.get(0), EventType.APPLICATION, 0, Flags.NONE, 0, "events[0]");
+        assertEvent(command, routed.get(1), eventType, 1, Flags.NONE, payloadSize, "events[1]");
+        assertEvent(command, routed.get(2), EventType.ROLLBACK, 2, Flags.ROLLBACK, 0, "events[2]");
 
     }
 
@@ -230,12 +234,13 @@ public class FlyweightEventRouterTest {
     }
 
     private void assertEvent(final Command command, final Event event,
-                             final int type, final int index, final int payloadSize,
+                             final int type, final int index, final byte flags, final int payloadSize,
                              final String evtName) {
         assertEquals(command.id().input(), event.id().commandId().input(), evtName + ".id.commandId.input");
         assertEquals(command.id().sequence(), event.id().commandId().sequence(), evtName + ".id.commandId.sequence");
         assertEquals(index, event.id().index(), evtName + ".id.index");
         assertEquals(type, event.type(), evtName + ".type");
+        assertEquals(Flags.NONE, event.flags().value(), evtName + ".flags");
         assertEquals(command.time(), event.time(), evtName + ".time");
         assertEquals(payloadSize, event.payload().capacity(), evtName + ".payload.capacity");
     }

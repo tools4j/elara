@@ -48,7 +48,6 @@ import org.tools4j.elara.time.TimeSource;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -56,10 +55,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit test for {@link ApplyingEventHandler}
+ * Unit test for {@link EventHandler}
  */
 @ExtendWith(MockitoExtension.class)
-public class ApplyingEventHandlerTest {
+public class EventHandlerTest {
 
     @Mock
     private BaseState.Mutable baseState;
@@ -69,10 +68,6 @@ public class ApplyingEventHandlerTest {
     private TimeSource timeSource;
     @Mock
     private SequenceGenerator adminSequenceGenerator;
-    @Mock
-    private MessageLog.Appender eventLogAppender;
-    @Mock
-    private MessageLog.AppendContext appendContext;
     @Mock
     private Output output;
     @Mock
@@ -85,13 +80,12 @@ public class ApplyingEventHandlerTest {
     private CommandLoopback loopback;
 
     //under test
-    private ApplyingEventHandler eventHandler;
+    private EventHandler eventHandler;
 
     @BeforeEach
     public void init() {
         loopback =  new DefaultCommandLoopback(commandAppender, timeSource, adminSequenceGenerator);
-        eventHandler = new ApplyingEventHandler(baseState, loopback, eventLogAppender, output, eventApplier,
-                exceptionHandler, duplicateHandler);
+        eventHandler = new EventHandler(baseState, loopback, output, eventApplier, exceptionHandler, duplicateHandler);
     }
 
     @Test
@@ -101,14 +95,13 @@ public class ApplyingEventHandlerTest {
         final long seq = 22;
         final short index = 2;
         final Event event = event(input, seq, index);
-        final InOrder inOrder = inOrder(eventLogAppender, output, eventApplier, baseState, duplicateHandler);
+        final InOrder inOrder = inOrder(output, eventApplier, baseState, duplicateHandler);
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq);
         eventHandler.onEvent(event);
 
         //then
-        inOrder.verify(eventLogAppender, never()).append(any(), anyInt(), anyInt());
         inOrder.verify(output, never()).publish(any(), anyBoolean(), any());
         inOrder.verify(eventApplier, never()).onEvent(any());
         inOrder.verify(baseState, never()).lastAppliedEvent(any());
@@ -120,7 +113,6 @@ public class ApplyingEventHandlerTest {
         eventHandler.onEvent(event);
 
         //then
-        inOrder.verify(eventLogAppender, never()).append(any(), anyInt(), anyInt());
         inOrder.verify(output, never()).publish(any(), anyBoolean(), any());
         inOrder.verify(eventApplier, never()).onEvent(any());
         inOrder.verify(baseState, never()).lastAppliedEvent(any());
@@ -135,17 +127,14 @@ public class ApplyingEventHandlerTest {
         final long seq = 22;
         final short index = 2;
         final Event event = event(input, seq, index);
-        when(eventLogAppender.appending()).thenReturn(appendContext);
-        when(appendContext.buffer()).thenAnswer(invocation -> new ExpandableArrayBuffer());
         when(baseState.allEventsPolled()).thenReturn(true);
-        final InOrder inOrder = inOrder(eventLogAppender, output, eventApplier, baseState);
+        final InOrder inOrder = inOrder(output, eventApplier, baseState);
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 2);
         eventHandler.onEvent(event);
 
         //then
-        inOrder.verify(eventLogAppender).appending();
         inOrder.verify(eventApplier).onEvent(same(event));
         inOrder.verify(baseState).lastAppliedEvent(event);
         inOrder.verify(output).publish(event, false, loopback);
@@ -156,7 +145,6 @@ public class ApplyingEventHandlerTest {
         eventHandler.onEvent(event);
 
         //then
-        inOrder.verify(eventLogAppender).appending();
         inOrder.verify(eventApplier).onEvent(same(event));
         inOrder.verify(baseState).lastAppliedEvent(event);
         inOrder.verify(baseState, never()).allEventsAppliedFor(any());
@@ -171,17 +159,14 @@ public class ApplyingEventHandlerTest {
         final long seq = 22;
         final short index = 2;
         final Event commit = event(input, seq, index, EventType.COMMIT);
-        when(eventLogAppender.appending()).thenReturn(appendContext);
-        when(appendContext.buffer()).thenAnswer(invocation -> new ExpandableArrayBuffer());
         when(baseState.allEventsPolled()).thenReturn(true);
-        final InOrder inOrder = inOrder(eventLogAppender, output, eventApplier, baseState);
+        final InOrder inOrder = inOrder(output, eventApplier, baseState);
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
         eventHandler.onEvent(commit);
 
         //then
-        inOrder.verify(eventLogAppender).appending();
         inOrder.verify(eventApplier).onEvent(same(commit));
         inOrder.verify(baseState).lastAppliedEvent(commit);
         inOrder.verify(baseState).allEventsAppliedFor(commit.id().commandId());
@@ -197,14 +182,13 @@ public class ApplyingEventHandlerTest {
         final short index = 2;
         final Event event = event(input, seq, index);
         when(baseState.allEventsPolled()).thenReturn(false);
-        final InOrder inOrder = inOrder(eventLogAppender, output, eventApplier, baseState);
+        final InOrder inOrder = inOrder(output, eventApplier, baseState);
 
         //when
         when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
         eventHandler.onEvent(event);
 
         //then
-        inOrder.verify(eventLogAppender, never()).append(any(), anyInt(), anyInt());
         inOrder.verify(eventApplier).onEvent(same(event));
         inOrder.verify(baseState).lastAppliedEvent(event);
         inOrder.verify(output).publish(event, true, loopback);
@@ -240,8 +224,6 @@ public class ApplyingEventHandlerTest {
         final short index = 2;
         final Event event = event(input, seq, index);
         final RuntimeException testException = new RuntimeException("test event output exception");
-        when(eventLogAppender.appending()).thenReturn(appendContext);
-        when(appendContext.buffer()).thenAnswer(invocation -> new ExpandableArrayBuffer());
         when(baseState.allEventsPolled()).thenReturn(true);
         final InOrder inOrder = inOrder(output, eventApplier, exceptionHandler);
 

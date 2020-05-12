@@ -24,7 +24,7 @@
 package org.tools4j.elara.application;
 
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.event.EventRouter;
+import org.tools4j.elara.route.EventRouter;
 
 @FunctionalInterface
 public interface CommandProcessor {

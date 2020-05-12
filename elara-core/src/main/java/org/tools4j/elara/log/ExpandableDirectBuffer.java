@@ -21,22 +21,53 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.chronicle;
+package org.tools4j.elara.log;
 
-import net.openhft.chronicle.bytes.Bytes;
 import org.agrona.AsciiEncoding;
 import org.agrona.BufferUtil;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.agrona.concurrent.UnsafeBuffer;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
-public class BytesDirectBuffer implements MutableDirectBuffer {
-    private final UnsafeBuffer ub = new UnsafeBuffer(0, 0);
-    private Bytes<?> bytes;
+/**
+ * A {@link DirectBuffer} that wraps another buffer and preserves the underlying buffer's extensibility.
+ */
+public class ExpandableDirectBuffer implements MutableDirectBuffer {
+
+    private MutableDirectBuffer buffer;
+    private int offset;
+
+    /**
+     * Create an unwrapped {@link ExpandableDirectBuffer}.
+     */
+    public ExpandableDirectBuffer() {
+        super();
+    }
+
+    /**
+     * @param buffer the buffer to wrap
+     * Create an {@link ExpandableDirectBuffer} wrapping the given buffer.
+     */
+    public ExpandableDirectBuffer(final MutableDirectBuffer buffer) {
+        this.buffer = buffer;
+        this.offset = 0;
+    }
+
+    /**
+     * @param buffer the buffer to wrap
+     * @param offset the offset at which this view begins
+     * Create an {@link ExpandableDirectBuffer} wrapping a section of the given buffer.
+     */
+    public ExpandableDirectBuffer(final MutableDirectBuffer buffer, final int offset) {
+        if (offset < 0) {
+            throw new IndexOutOfBoundsException("Negative offset: " + offset);
+        }
+        this.buffer = buffer;
+        this.offset = offset;
+    }
 
     @Override
     public void wrap(byte[] buffer) {
@@ -60,12 +91,34 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
 
     @Override
     public void wrap(DirectBuffer buffer) {
-        throw new UnsupportedOperationException();
+        if (this.buffer != buffer) {
+            if (buffer != null && !(buffer instanceof MutableDirectBuffer)) {
+                throw new IllegalArgumentException("Buffer must be a mutable buffer: " + buffer);
+            }
+            this.buffer = (MutableDirectBuffer)buffer;
+        }
+        this.offset = 0;
+    }
+
+    public void wrap(MutableDirectBuffer buffer, int offset) {
+        if (offset < 0) {
+            throw new IndexOutOfBoundsException("Negative offset: " + offset);
+        }
+        if (this.buffer != buffer) {
+            this.buffer = buffer;
+        }
+        this.offset = offset;
     }
 
     @Override
     public void wrap(DirectBuffer buffer, int offset, int length) {
-        throw new UnsupportedOperationException();
+        if (buffer != null && !(buffer instanceof MutableDirectBuffer)) {
+            throw new IllegalArgumentException("Buffer must be a mutable buffer: " + buffer);
+        }
+        if (length < 0) {
+            throw new IndexOutOfBoundsException("Negative length: " + length);
+        }
+        wrap((MutableDirectBuffer)buffer, length);
     }
 
     @Override
@@ -73,57 +126,48 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
         throw new UnsupportedOperationException();
     }
 
-    public void wrapForWriting(Bytes<?> bytes) {
-        final long offset = bytes.writePosition();
-        final long address = bytes.addressForWrite(offset);
-        final int capacity = (int)Math.min(Integer.MAX_VALUE, bytes.realWriteRemaining());
-        if (this.bytes != null) {
-            throw new IllegalStateException("already wrapped");
-        }
-        this.ub.wrap(address, capacity);
-        this.bytes = bytes;
+    public void unwrap() {
+        this.buffer = null;
+        this.offset = 0;
     }
 
-    public void unwrap() {
-        if (this.bytes != null) {
-            ub.wrap(0, 0);
-            bytes = null;
-        }
+    public MutableDirectBuffer buffer() {
+        return buffer;
+    }
+
+    public int offset() {
+        return offset;
     }
 
     @Override
     public long addressOffset() {
-        return ub.addressOffset();
+        return buffer == null ? null : buffer.addressOffset() + offset;
     }
 
     @Override
     public byte[] byteArray() {
-        return null;
+        return buffer == null ? null : buffer.byteArray();
     }
 
     @Override
     public ByteBuffer byteBuffer() {
-        return null;
-    }
-
-    public Bytes<?> bytes() {
-        return bytes;
+        return buffer == null ? null : buffer.byteBuffer();
     }
 
     @Override
     public void setMemory(int index, int length, byte value) {
         ensureCapacity(index, length);
-        ub.setMemory(index, length, value);
+        buffer.setMemory(index + offset, length, value);
     }
 
     @Override
     public int capacity() {
-        return ub.capacity();
+        return buffer.capacity() - offset;
     }
 
     @Override
     public boolean isExpandable() {
-        return true;
+        return buffer.isExpandable();
     }
 
     @Override
@@ -131,154 +175,154 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
         if (limit < 0) {
             throw new IndexOutOfBoundsException("limit cannot be negative: limit=" + limit);
         } else {
-            this.ensureCapacity(limit, 1);
+            this.ensureCapacity(limit + offset, 1);
         }
     }
 
     @Override
     public long getLong(int index, ByteOrder byteOrder) {
-        return ub.getLong(index, byteOrder);
+        return buffer.getLong(index + offset, byteOrder);
     }
 
     @Override
     public void putLong(int index, long value, ByteOrder byteOrder) {
         ensureCapacity(index, 8);
-        ub.putLong(index, value, byteOrder);
+        buffer.putLong(index + offset, value, byteOrder);
     }
 
     @Override
     public long getLong(int index) {
-        return ub.getLong(index);
+        return buffer.getLong(index + offset);
     }
 
     @Override
     public void putLong(int index, long value) {
         ensureCapacity(index, 8);
-        ub.putLong(index, value);
+        buffer.putLong(index + offset, value);
     }
 
     @Override
     public int getInt(int index, ByteOrder byteOrder) {
-        return ub.getInt(index, byteOrder);
+        return buffer.getInt(index + offset, byteOrder);
     }
 
     @Override
     public void putInt(int index, int value, ByteOrder byteOrder) {
         ensureCapacity(index, 4);
-        ub.putInt(index, value, byteOrder);
+        buffer.putInt(index + offset, value, byteOrder);
     }
 
     @Override
     public int getInt(int index) {
-        return ub.getInt(index);
+        return buffer.getInt(index + offset);
     }
 
     @Override
     public void putInt(int index, int value) {
         ensureCapacity(index, 4);
-        ub.putInt(index, value);
+        buffer.putInt(index + offset, value);
     }
 
     @Override
     public double getDouble(int index, ByteOrder byteOrder) {
-        return ub.getDouble(index, byteOrder);
+        return buffer.getDouble(index + offset, byteOrder);
     }
 
     @Override
     public void putDouble(int index, double value, ByteOrder byteOrder) {
         ensureCapacity(index, 8);
-        ub.putDouble(index, value, byteOrder);
+        buffer.putDouble(index + offset, value, byteOrder);
     }
 
     @Override
     public double getDouble(int index) {
-        return ub.getDouble(index);
+        return buffer.getDouble(index + offset);
     }
 
     @Override
     public void putDouble(int index, double value) {
         ensureCapacity(index, 8);
-        ub.putDouble(index, value);
+        buffer.putDouble(index + offset, value);
     }
 
     @Override
     public float getFloat(int index, ByteOrder byteOrder) {
-        return ub.getFloat(index, byteOrder);
+        return buffer.getFloat(index + offset, byteOrder);
     }
 
     @Override
     public void putFloat(int index, float value, ByteOrder byteOrder) {
         ensureCapacity(index, 4);
-        ub.putFloat(index, value, byteOrder);
+        buffer.putFloat(index + offset, value, byteOrder);
     }
 
     @Override
     public float getFloat(int index) {
-        return ub.getFloat(index);
+        return buffer.getFloat(index + offset);
     }
 
     @Override
     public void putFloat(int index, float value) {
         ensureCapacity(index, 4);
-        ub.putFloat(index, value);
+        buffer.putFloat(index + offset, value);
     }
 
     @Override
     public short getShort(int index, ByteOrder byteOrder) {
-        return ub.getShort(index, byteOrder);
+        return buffer.getShort(index + offset, byteOrder);
     }
 
     @Override
     public void putShort(int index, short value, ByteOrder byteOrder) {
         ensureCapacity(index, 2);
-        ub.putShort(index, value, byteOrder);
+        buffer.putShort(index + offset, value, byteOrder);
     }
 
     @Override
     public short getShort(int index) {
-        return ub.getShort(index);
+        return buffer.getShort(index + offset);
     }
 
     @Override
     public void putShort(int index, short value) {
         ensureCapacity(index, 2);
-        ub.putShort(index, value);
+        buffer.putShort(index + offset, value);
     }
 
     @Override
     public byte getByte(int index) {
-        return ub.getByte(index);
+        return buffer.getByte(index + offset);
     }
 
     @Override
     public void putByte(int index, byte value) {
         ensureCapacity(index, 1);
-        ub.putByte(index, value);
+        buffer.putByte(index + offset, value);
     }
 
     @Override
     public void getBytes(int index, byte[] dst) {
-        ub.getBytes(index, dst);
+        buffer.getBytes(index + offset, dst);
     }
 
     @Override
     public void getBytes(int index, byte[] dst, int offset, int length) {
-        ub.getBytes(index, dst, offset, length);
+        buffer.getBytes(index + offset, dst, offset, length);
     }
 
     @Override
     public void getBytes(int index, MutableDirectBuffer dstBuffer, int dstIndex, int length) {
-        ub.getBytes(index, dstBuffer, dstIndex, length);
+        buffer.getBytes(index + offset, dstBuffer, dstIndex, length);
     }
 
     @Override
     public void getBytes(int index, ByteBuffer dstBuffer, int length) {
-        ub.getBytes(index, dstBuffer, length);
+        buffer.getBytes(index + offset, dstBuffer, length);
     }
 
     @Override
     public void getBytes(int index, ByteBuffer dstBuffer, int dstOffset, int length) {
-        ub.getBytes(index, dstBuffer, dstOffset, length);
+        buffer.getBytes(index + offset, dstBuffer, dstOffset, length);
     }
 
     @Override
@@ -289,7 +333,7 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
     @Override
     public void putBytes(int index, byte[] src, int offset, int length) {
         ensureCapacity(index, length);
-        ub.putBytes(index, src, offset, length);
+        buffer.putBytes(index + offset, src, offset, length);
     }
 
     @Override
@@ -302,98 +346,98 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
     @Override
     public void putBytes(int index, ByteBuffer srcBuffer, int srcIndex, int length) {
         ensureCapacity(index, length);
-        ub.putBytes(index, srcBuffer, srcIndex, length);
+        buffer.putBytes(index + offset, srcBuffer, srcIndex, length);
     }
 
     public void putBytes(int index, DirectBuffer srcBuffer, int srcIndex, int length) {
         ensureCapacity(index, length);
-        ub.putBytes(index, srcBuffer, srcIndex, length);
+        buffer.putBytes(index + offset, srcBuffer, srcIndex, length);
     }
 
     public char getChar(int index, ByteOrder byteOrder) {
-        return ub.getChar(index, byteOrder);
+        return buffer.getChar(index + offset, byteOrder);
     }
 
     public void putChar(int index, char value, ByteOrder byteOrder) {
         ensureCapacity(index, 2);
-        ub.putChar(index, value, byteOrder);
+        buffer.putChar(index + offset, value, byteOrder);
     }
 
     public char getChar(int index) {
-        return ub.getChar(index);
+        return buffer.getChar(index + offset);
     }
 
     public void putChar(int index, char value) {
         ensureCapacity(index, 2);
-        ub.putChar(index, value);
+        buffer.putChar(index + offset, value);
     }
 
     public String getStringAscii(int index) {
-        return ub.getStringAscii(index);
+        return buffer.getStringAscii(index + offset);
     }
 
     public int getStringAscii(int index, Appendable appendable) {
-        return ub.getStringAscii(index, appendable);
+        return buffer.getStringAscii(index + offset, appendable);
     }
 
     public String getStringAscii(int index, ByteOrder byteOrder) {
-        return ub.getStringAscii(index, byteOrder);
+        return buffer.getStringAscii(index + offset, byteOrder);
     }
 
     public int getStringAscii(int index, Appendable appendable, ByteOrder byteOrder) {
-        return ub.getStringAscii(index, appendable, byteOrder);
+        return buffer.getStringAscii(index + offset, appendable, byteOrder);
     }
 
     public String getStringAscii(int index, int length) {
-        return ub.getStringAscii(index, length);
+        return buffer.getStringAscii(index + offset, length);
     }
 
     public int getStringAscii(int index, int length, Appendable appendable) {
-        return ub.getStringAscii(index, length, appendable);
+        return buffer.getStringAscii(index + offset, length, appendable);
     }
 
     public int putStringAscii(int index, String value) {
         final int length = value != null ? value.length() : 0;
         ensureCapacity(index, length + 4);
-        return ub.putStringAscii(index, value);
+        return buffer.putStringAscii(index + offset, value);
     }
 
     public int putStringAscii(int index, String value, ByteOrder byteOrder) {
         final int length = value != null ? value.length() : 0;
         ensureCapacity(index, length + 4);
-        return ub.putStringAscii(index, value, byteOrder);
+        return buffer.putStringAscii(index + offset, value, byteOrder);
     }
 
     public String getStringWithoutLengthAscii(int index, int length) {
-        return ub.getStringWithoutLengthAscii(index, length);
+        return buffer.getStringWithoutLengthAscii(index + offset, length);
     }
 
     public int getStringWithoutLengthAscii(int index, int length, Appendable appendable) {
-        return ub.getStringWithoutLengthAscii(index, length, appendable);
+        return buffer.getStringWithoutLengthAscii(index + offset, length, appendable);
     }
 
     public int putStringWithoutLengthAscii(int index, String value) {
         final int length = value != null ? value.length() : 0;
         ensureCapacity(index, length);
-        return ub.putStringWithoutLengthAscii(index, value);
+        return buffer.putStringWithoutLengthAscii(index + offset, value);
     }
 
     public int putStringWithoutLengthAscii(int index, String value, int valueOffset, int length) {
         final int len = value != null ? Math.min(value.length() - valueOffset, length) : 0;
         ensureCapacity(index, len);
-        return ub.putStringWithoutLengthAscii(index, value, valueOffset, length);
+        return buffer.putStringWithoutLengthAscii(index + offset, value, valueOffset, length);
     }
 
     public String getStringUtf8(int index) {
-        return ub.getStringUtf8(index);
+        return buffer.getStringUtf8(index + offset);
     }
 
     public String getStringUtf8(int index, ByteOrder byteOrder) {
-        return ub.getStringUtf8(index, byteOrder);
+        return buffer.getStringUtf8(index + offset, byteOrder);
     }
 
     public String getStringUtf8(int index, int length) {
-        return ub.getStringUtf8(index, length);
+        return buffer.getStringUtf8(index + offset, length);
     }
 
     public int putStringUtf8(int index, String value) {
@@ -410,8 +454,8 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
             throw new IllegalArgumentException("Encoded string larger than maximum size: " + maxEncodedLength);
         } else {
             ensureCapacity(index, 4 + bytes.length);
-            ub.putInt(index, bytes.length);
-            ub.putBytes(index + 4, bytes);
+            buffer.putInt(index + offset, bytes.length);
+            buffer.putBytes(index + offset + 4, bytes);
             return 4 + bytes.length;
         }
     }
@@ -426,41 +470,41 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
             if (BufferUtil.NATIVE_BYTE_ORDER != byteOrder) {
                 bits = Integer.reverseBytes(bits);
             }
-            ub.putInt(index, bits);
-            ub.putBytes(index + 4, bytes);
+            buffer.putInt(index + offset, bits);
+            buffer.putBytes(index + offset + 4, bytes);
             return 4 + bytes.length;
         }
     }
 
     public String getStringWithoutLengthUtf8(int index, int length) {
-        return ub.getStringWithoutLengthUtf8(index, length);
+        return buffer.getStringWithoutLengthUtf8(index + offset, length);
     }
 
     public int putStringWithoutLengthUtf8(int index, String value) {
         final byte[] bytes = value != null ? value.getBytes(StandardCharsets.UTF_8) : BufferUtil.NULL_BYTES;
         ensureCapacity(index, bytes.length);
-        ub.putBytes(index, bytes);
+        buffer.putBytes(index + offset, bytes);
         return bytes.length;
     }
 
     @Override
     public int parseNaturalIntAscii(int index, int length) {
-        return ub.parseNaturalIntAscii(index, length);
+        return buffer.parseNaturalIntAscii(index + offset, length);
     }
 
     @Override
     public long parseNaturalLongAscii(int index, int length) {
-        return ub.parseNaturalLongAscii(index, length);
+        return buffer.parseNaturalLongAscii(index + offset, length);
     }
 
     @Override
     public int parseIntAscii(int index, int length) {
-        return ub.parseIntAscii(index, length);
+        return buffer.parseIntAscii(index + offset, length);
     }
 
     @Override
     public long parseLongAscii(int index, int length) {
-        return ub.parseLongAscii(index, length);
+        return buffer.parseLongAscii(index + offset, length);
     }
 
     public int putIntAscii(int index, int value) {
@@ -475,7 +519,7 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
             int quotient = value;
             int length = 1;
             if (value < 0) {
-                ub.putByte(index, (byte)'-');
+                putByte(index, (byte)'-');
                 start = index + 1;
                 ++length;
                 quotient = -value;
@@ -488,7 +532,7 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
             while(i >= 0) {
                 int remainder = quotient % 10;
                 quotient /= 10;
-                ub.putByte(i + start, (byte)('0' + remainder));
+                buffer.putByte(i + offset + start, (byte)('0' + remainder));
                 --i;
             }
 
@@ -508,7 +552,7 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
             for(int quotient = value; i >= 0; --i) {
                 int remainder = quotient % 10;
                 quotient /= 10;
-                ub.putByte(i + index, (byte)('0' + remainder));
+                buffer.putByte(i + offset + index, (byte)('0' + remainder));
             }
 
             return length;
@@ -556,7 +600,7 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
             for(long quotient = value; i >= 0; --i) {
                 long remainder = quotient % 10L;
                 quotient /= 10L;
-                ub.putByte(i + index, (byte)((int)('0' + remainder)));
+                buffer.putByte(i + offset + index, (byte)((int)('0' + remainder)));
             }
 
             return length;
@@ -588,7 +632,7 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
             while(i >= 0) {
                 long remainder = quotient % 10L;
                 quotient /= 10L;
-                ub.putByte(i + start, (byte)((int)('0' + remainder)));
+                buffer.putByte(i + offset + start, (byte)((int)('0' + remainder)));
                 --i;
             }
 
@@ -597,39 +641,27 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
     }
 
     public void ensureCapacity(int index, int length) {
-        if (bytes == null) {
-            throw new IndexOutOfBoundsException("bytes is null hence capacity is 0");
+        if (buffer == null) {
+            throw new IndexOutOfBoundsException("no buffer wrapped hence capacity is 0");
         }
         if (index >= 0 && length >= 0) {
-            final long requiredCapacity = (long)index + (long)length;
+            final long requiredCapacity = (long)index + (long)offset + (long)length;
+            if (requiredCapacity <= buffer.capacity()) {
+                return;
+            }
             if (requiredCapacity > Integer.MAX_VALUE) {
                 throw new IllegalArgumentException("required capacity exceeds maximum: " + requiredCapacity + " > " +
                         Integer.MAX_VALUE);
             }
-            ensureCapacity0((int)requiredCapacity);
+            buffer.checkLimit((int)(requiredCapacity - 1));
         } else {
             throw new IndexOutOfBoundsException("negative value: index=" + index + " length=" + length);
         }
     }
 
-    public void ensureCapacity(int requiredCapacity) {
-        if (bytes == null) {
-            throw new IndexOutOfBoundsException("bytes is null hence capacity is 0");
-        }
-        if (requiredCapacity >= 0) {
-            ensureCapacity0(requiredCapacity);
-        } else {
-            throw new IndexOutOfBoundsException("negative capacity: requiredCapacity=" + requiredCapacity);
-        }
-    }
-
-    private void ensureCapacity0(int requiredCapacity) {
-        bytes.ensureCapacity(requiredCapacity);
-    }
-
     @Override
     public void boundsCheck(int index, int length) {
-        ub.boundsCheck(index, length);
+        buffer.boundsCheck(index, length);
     }
 
     @Override
@@ -642,7 +674,7 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
         if (this == obj) {
             return true;
         } else if (obj != null && this.getClass() == obj.getClass()) {
-            BytesDirectBuffer that = (BytesDirectBuffer)obj;
+            ExpandableDirectBuffer that = (ExpandableDirectBuffer)obj;
             return this.compareTo(that) == 0;
         } else {
             return false;
@@ -651,16 +683,16 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
 
     @Override
     public int hashCode() {
-        return ub.hashCode();
+        return buffer.hashCode();
     }
 
     @Override
     public int compareTo(DirectBuffer that) {
-        return ub.compareTo(that);
+        return buffer.compareTo(that);
     }
 
     @Override
     public String toString() {
-        return "BytesDirectBuffer{address=" + addressOffset() + ", capacity=" + capacity() + ", bytes=" + this.bytes + '}';
+        return "ExpandableDirectBuffer{buffer=" + buffer + ", offset=" + offset + '}';
     }
 }

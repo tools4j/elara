@@ -26,8 +26,8 @@ package org.tools4j.elara.init;
 import org.tools4j.elara.application.Application;
 import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.DefaultCommandLoopback;
-import org.tools4j.elara.flyweight.FlyweightEventRouter;
-import org.tools4j.elara.handler.ApplyingEventHandler;
+import org.tools4j.elara.route.FlyweightEventRouter;
+import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.handler.ProcessingCommandHandler;
 
 final class Singletons {
@@ -37,15 +37,14 @@ final class Singletons {
                 context.timeSource(),
                 plugins.adminSequenceGenerator
         );
-        eventHandler = new ApplyingEventHandler(
+        eventHandler = new EventHandler(
                 plugins.baseState, commandLoopback,
-                context.eventLog().appender(),
                 plugins.output,
                 plugins.eventApplier,
                 context.exceptionHandler(),
                 context.duplicateHandler()
         );
-        eventRouter = new FlyweightEventRouter(eventHandler);
+        eventRouter = new FlyweightEventRouter(context.eventLog().appender(), eventHandler);
         commandHandler = new ProcessingCommandHandler(
                 plugins.baseState, eventRouter,
                 plugins.commandProcessor,
@@ -57,6 +56,6 @@ final class Singletons {
     final CommandLoopback commandLoopback;
     final FlyweightEventRouter eventRouter;
     final ProcessingCommandHandler commandHandler;
-    final ApplyingEventHandler eventHandler;
+    final EventHandler eventHandler;
 
  }
