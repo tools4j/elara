@@ -23,13 +23,9 @@
  */
 package org.tools4j.elara.plugin.base;
 
-import org.agrona.collections.Long2LongHashMap;
 import org.agrona.collections.Long2ObjectHashMap;
-
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-
-import static org.tools4j.elara.time.TimeSource.BIG_BANG;
 
 public class DefaultBaseState implements BaseState.Mutable {
 
@@ -103,8 +99,7 @@ public class DefaultBaseState implements BaseState.Mutable {
     }
 
     @Override
-    public Mutable lastAppliedEvent(final Event event) {
-        final Event.Id eid = event.id();
+    public Mutable eventApplied(final Event event) {
         inputToAppliedEventState.computeIfAbsent(event.id().commandId().input(), k -> new AppliedEventState())
                 .update(event);
         return this;

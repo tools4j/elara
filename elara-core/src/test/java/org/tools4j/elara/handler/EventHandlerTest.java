@@ -104,7 +104,6 @@ public class EventHandlerTest {
         //then
         inOrder.verify(output, never()).publish(any(), anyBoolean(), any());
         inOrder.verify(eventApplier, never()).onEvent(any());
-        inOrder.verify(baseState, never()).lastAppliedEvent(any());
         inOrder.verify(duplicateHandler).skipEventApplying(event);
         inOrder.verifyNoMoreInteractions();
     }
@@ -125,7 +124,6 @@ public class EventHandlerTest {
 
         //then
         inOrder.verify(eventApplier).onEvent(same(event));
-        inOrder.verify(baseState).lastAppliedEvent(event);
         inOrder.verify(output).publish(event, false, loopback);
         inOrder.verifyNoMoreInteractions();
     }
@@ -146,7 +144,6 @@ public class EventHandlerTest {
 
         //then
         inOrder.verify(eventApplier).onEvent(same(event));
-        inOrder.verify(baseState).lastAppliedEvent(event);
         inOrder.verify(output).publish(event, true, loopback);
         inOrder.verifyNoMoreInteractions();
     }

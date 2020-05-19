@@ -219,11 +219,6 @@ final class DefaultContext implements Context {
     }
 
     static InputHandlerFactory inputHandlerFactory(final Context context) {
-//        final MessageLog.Appender commandAppender = new InputTrackingAppender(
-//                context.commandLog().appender(),
-//                context.duplicateHandler(),
-//                context.commandLog().poller()
-//        );
         final MessageLog.Appender commandAppender = context.commandLog().appender();
         return new InputHandlerFactory(context.timeSource(), commandAppender);
     }

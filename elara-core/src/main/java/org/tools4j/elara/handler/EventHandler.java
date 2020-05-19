@@ -26,7 +26,6 @@ package org.tools4j.elara.handler;
 import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.application.ExceptionHandler;
-import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.Output;
@@ -89,10 +88,7 @@ public class EventHandler implements EventApplier {
     }
 
     private void updateBaseState(final Event event) {
-        baseState.lastAppliedEvent(event);//TODO should we only call this if event.id.index == 0 ?
-        if (event.flags().isCommit()) {
-            baseState.allEventsAppliedFor(event.id().commandId());
-        }
+        baseState.eventApplied(event);
     }
 
     private void skipEvent(final Event event) {

@@ -46,6 +46,7 @@ import static org.tools4j.elara.route.StateImpact.STATE_UNAFFECTED;
 
 public class FlyweightEventRouter implements EventRouter {
 
+    private static final int MAX_EVENTS = Short.MAX_VALUE + 1;
     private final Appender appender;
     private final EventApplier eventApplier;
     private final RoutingContext routingContext = new RoutingContext();
@@ -70,6 +71,7 @@ public class FlyweightEventRouter implements EventRouter {
     public RoutingContext routingEvent(final int type) {
         checkEventType(type);
         checkNotRolledBack();
+        checkEventLimit();
         return routingEvent0(type);
     }
 
@@ -126,6 +128,12 @@ public class FlyweightEventRouter implements EventRouter {
     private void checkNotRolledBack() {
         if (rollbackMode != null) {
             throw new IllegalStateException("It is illegal to route events after setting rollback mode");
+        }
+    }
+
+    private void checkEventLimit() {
+        if ((0xffff & nextIndex) >= MAX_EVENTS) {
+            throw new IllegalStateException("Maximum number of events per command reached: " + MAX_EVENTS);
         }
     }
 

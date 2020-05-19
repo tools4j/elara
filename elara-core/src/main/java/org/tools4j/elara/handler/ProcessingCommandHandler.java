@@ -29,15 +29,15 @@ import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.route.FlyweightEventRouter;
 import org.tools4j.elara.log.MessageLog.Handler;
 import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.route.FlyweightEventRouter;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.log.MessageLog.Handler.Result.PEEK;
 import static org.tools4j.elara.log.MessageLog.Handler.Result.POLL;
 
-public class ProcessingCommandHandler implements Handler {
+public class ProcessingCommandHandler implements Handler, CommandHandler {
 
     private final BaseState baseState;
     private final FlyweightEventRouter eventRouter;
@@ -64,7 +64,8 @@ public class ProcessingCommandHandler implements Handler {
         return onCommand(flyweightCommand.init(message, 0));
     }
 
-    private Result onCommand(final Command command) {
+    @Override
+    public Result onCommand(final Command command) {
         if (baseState.allEventsAppliedFor(command.id())) {
             skipCommand(command);
             return POLL;
