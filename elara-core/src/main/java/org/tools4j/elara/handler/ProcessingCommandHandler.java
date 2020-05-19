@@ -65,16 +65,14 @@ public class ProcessingCommandHandler implements Handler {
     }
 
     private Result onCommand(final Command command) {
-        final Command.Id cid = command.id();
-        final long lastAppliedForInput = baseState.lastCommandAllEventsApplied(cid.input());
-        if (lastAppliedForInput < cid.sequence()) {
-            if (baseState.processCommands()) {
-                return processCommand(command);
-            }
-            return PEEK;
+        if (baseState.allEventsAppliedFor(command.id())) {
+            skipCommand(command);
+            return POLL;
         }
-        skipCommand(command);
-        return POLL;
+        if (baseState.processCommands()) {
+            return processCommand(command);
+        }
+        return PEEK;
     }
 
     private Result processCommand(final Command command) {

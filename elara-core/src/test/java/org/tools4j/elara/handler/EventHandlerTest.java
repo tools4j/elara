@@ -98,18 +98,7 @@ public class EventHandlerTest {
         final InOrder inOrder = inOrder(output, eventApplier, baseState, duplicateHandler);
 
         //when
-        when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq);
-        eventHandler.onEvent(event);
-
-        //then
-        inOrder.verify(output, never()).publish(any(), anyBoolean(), any());
-        inOrder.verify(eventApplier, never()).onEvent(any());
-        inOrder.verify(baseState, never()).lastAppliedEvent(any());
-        inOrder.verify(duplicateHandler).skipEventApplying(event);
-        inOrder.verifyNoMoreInteractions();
-
-        //when
-        when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq + 1);
+        when(baseState.eventApplied(event.id())).thenReturn(true);
         eventHandler.onEvent(event);
 
         //then
@@ -131,46 +120,13 @@ public class EventHandlerTest {
         final InOrder inOrder = inOrder(output, eventApplier, baseState);
 
         //when
-        when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 2);
+        when(baseState.eventApplied(event.id())).thenReturn(false);
         eventHandler.onEvent(event);
 
         //then
         inOrder.verify(eventApplier).onEvent(same(event));
         inOrder.verify(baseState).lastAppliedEvent(event);
         inOrder.verify(output).publish(event, false, loopback);
-        inOrder.verifyNoMoreInteractions();
-
-        //when
-        when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
-        eventHandler.onEvent(event);
-
-        //then
-        inOrder.verify(eventApplier).onEvent(same(event));
-        inOrder.verify(baseState).lastAppliedEvent(event);
-        inOrder.verify(baseState, never()).allEventsAppliedFor(any());
-        inOrder.verify(output).publish(event, false, loopback);
-        inOrder.verifyNoMoreInteractions();
-    }
-
-    @Test
-    public void allEventsAppliedWhenCommitEventIsApplied() {
-        //given
-        final int input = 1;
-        final long seq = 22;
-        final short index = 2;
-        final Event commit = event(input, seq, index, EventType.COMMIT);
-        when(baseState.allEventsPolled()).thenReturn(true);
-        final InOrder inOrder = inOrder(output, eventApplier, baseState);
-
-        //when
-        when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
-        eventHandler.onEvent(commit);
-
-        //then
-        inOrder.verify(eventApplier).onEvent(same(commit));
-        inOrder.verify(baseState).lastAppliedEvent(commit);
-        inOrder.verify(baseState).allEventsAppliedFor(commit.id().commandId());
-        inOrder.verify(output).publish(commit, false, loopback);
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -185,7 +141,7 @@ public class EventHandlerTest {
         final InOrder inOrder = inOrder(output, eventApplier, baseState);
 
         //when
-        when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
+        when(baseState.eventApplied(event.id())).thenReturn(false);
         eventHandler.onEvent(event);
 
         //then
@@ -206,7 +162,7 @@ public class EventHandlerTest {
         final InOrder inOrder = inOrder(eventApplier, exceptionHandler);
 
         //when
-        when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
+        when(baseState.eventApplied(event.id())).thenReturn(false);
         doThrow(testException).when(eventApplier).onEvent(any());
         eventHandler.onEvent(event);
 
@@ -228,7 +184,7 @@ public class EventHandlerTest {
         final InOrder inOrder = inOrder(output, eventApplier, exceptionHandler);
 
         //when
-        when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
+        when(baseState.eventApplied(event.id())).thenReturn(false);
         doThrow(testException).when(output).publish(any(), anyBoolean(), any());
         eventHandler.onEvent(event);
 
@@ -250,7 +206,7 @@ public class EventHandlerTest {
         final InOrder inOrder = inOrder(eventApplier, duplicateHandler, exceptionHandler);
 
         //when
-        when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq + 1);
+        when(baseState.eventApplied(event.id())).thenReturn(true);
         doThrow(testException).when(duplicateHandler).skipEventApplying(any());
         eventHandler.onEvent(event);
 
