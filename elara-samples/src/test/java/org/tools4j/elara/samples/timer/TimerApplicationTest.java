@@ -26,7 +26,6 @@ package org.tools4j.elara.samples.timer;
 import org.agrona.DirectBuffer;
 import org.junit.jupiter.api.Test;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.plugin.timer.TimerEvents;
 import org.tools4j.elara.run.ElaraRunner;
 
@@ -80,25 +79,21 @@ class TimerApplicationTest {
 
         //then
         final Consumer<List<Event>> asserter = evts -> {
-            assertEquals(16, evts.size(), "events.size");
+            assertEquals(8, evts.size(), "events.size");
             for (int i = 0; i < timeouts.length; i++) {
-                final int se = 2 * i;
-                final int sc = se + 1;
-                final int te = 2 * i + 8;
-                final int tc = te + 1;
+                final int se = i;
+                final int te = i + 4;
                 final Event started = evts.get(se);
                 final Event trigger = evts.get(te);
                 assertEquals(TimerEvents.TIMER_STARTED, started.type(), "events[" + se + "].type");
                 assertEquals(1000 + (i + 1), timerId(started), "events[" + se + "].timerId");
                 assertEquals(TIMER_TYPE_SINGLE, timerType(started), "events[" + se + "].timerType");
                 assertEquals(timeouts[i], timerTimeout(started), "events[" + se + "].timerTimeout");
-                assertEquals(EventType.COMMIT, evts.get(sc).type(), "events[" + sc + "].type");
 
                 assertEquals(TimerEvents.TIMER_EXPIRED, trigger.type(), "events[" + te + "].type");
                 assertEquals(1000 + (i + 1), timerId(trigger), "events[" + te + "].timerId");
                 assertEquals(TIMER_TYPE_SINGLE, timerType(trigger), "events[" + te + "].timerType");
                 assertEquals(timeouts[i], timerTimeout(trigger), "events[" + te + "].timerTimeout");
-                assertEquals(EventType.COMMIT, evts.get(tc).type(), "events[" + tc + "].type");
             }
         };
         asserter.accept(events);
@@ -153,25 +148,21 @@ class TimerApplicationTest {
 
         //then
         final Consumer<List<Event>> asserter = evts -> {
-            assertEquals(4* PERIODIC_REPETITIONS, evts.size(), "events.size");
+            assertEquals(2 * PERIODIC_REPETITIONS, evts.size(), "events.size");
             for (int i = 0; i < PERIODIC_REPETITIONS; i++) {
-                final int se = 4 * i;
-                final int sc = se + 1;
-                final int ee = sc + 1;
-                final int ec = ee + 1;
+                final int se = 2*i;
+                final int ee = se + 1;
                 final Event started = evts.get(se);
                 final Event expired = evts.get(ee);
                 assertEquals(TimerEvents.TIMER_STARTED, started.type(), "events[" + se + "].type");
                 assertEquals(timerId, timerId(started), "events[" + se + "].timerId");
                 assertEquals(TIMER_TYPE_PERIODIC, timerType(started), "events[" + se + "].timerType");
                 assertEquals(periodMillis, timerTimeout(started), "events[" + se + "].timerTimeout");
-                assertEquals(EventType.COMMIT, evts.get(sc).type(), "events[" + sc + "].type");
 
                 assertEquals(TimerEvents.TIMER_EXPIRED, expired.type(), "events[" + ee + "].type");
                 assertEquals(timerId, timerId(expired), "events[" + ee + "].timerId");
                 assertEquals(TIMER_TYPE_PERIODIC, timerType(expired), "events[" + ee + "].timerType");
                 assertEquals(periodMillis, timerTimeout(expired), "events[" + ee + "].timerTimeout");
-                assertEquals(EventType.COMMIT, evts.get(ec).type(), "events[" + ec + "].type");
             }
         };
         asserter.accept(events);
