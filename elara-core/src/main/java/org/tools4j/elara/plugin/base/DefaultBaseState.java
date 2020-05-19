@@ -24,16 +24,30 @@
 package org.tools4j.elara.plugin.base;
 
 import org.agrona.collections.Long2LongHashMap;
+import org.agrona.collections.Long2ObjectHashMap;
+
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.time.TimeSource;
+
+import static org.tools4j.elara.time.TimeSource.BIG_BANG;
 
 public class DefaultBaseState implements BaseState.Mutable {
 
-    private final Long2LongHashMap inputToLastCommandAllEventsApplied = new Long2LongHashMap(NO_COMMANDS);
+    private final Long2ObjectHashMap<AppliedEventState> inputToAppliedEventState = new Long2ObjectHashMap<>();
     private boolean processCommands;
     private boolean allEventsPolled;
-    private long lastAppliedEventTime = TimeSource.BIG_BANG;
+
+    private static final class AppliedEventState {
+        long sequence;
+        int index;
+        boolean isFinal;
+        void update(final Event event) {
+            final Event.Id id = event.id();
+            sequence = id.commandId().sequence();
+            index = id.index();
+            isFinal = event.flags().isFinal();
+        }
+    }
 
     public DefaultBaseState() {
         this(true);
@@ -66,27 +80,33 @@ public class DefaultBaseState implements BaseState.Mutable {
     }
 
     @Override
-    public long lastCommandAllEventsApplied(final int input) {
-        return inputToLastCommandAllEventsApplied.get(input);
+    public boolean allEventsAppliedFor(final Command.Id id) {
+        final AppliedEventState appliedEventState = inputToAppliedEventState.get(id.input());
+        if (appliedEventState != null) {
+            final long sequence = id.sequence();
+            return sequence < appliedEventState.sequence ||
+                    sequence == appliedEventState.sequence && appliedEventState.isFinal;
+        }
+        return false;
     }
 
     @Override
-    public Mutable allEventsAppliedFor(final Command.Id id) {
-        assert id.sequence() > inputToLastCommandAllEventsApplied.get(id.input());
-        inputToLastCommandAllEventsApplied.put(id.input(), id.sequence());
-        return this;
-    }
-
-    @Override
-    public long lastAppliedEventTime() {
-        return lastAppliedEventTime;
+    public boolean eventApplied(final Event.Id id) {
+        final Command.Id cid = id.commandId();
+        final AppliedEventState appliedEventState = inputToAppliedEventState.get(cid.input());
+        if (appliedEventState != null) {
+            final long sequence = cid.sequence();
+            return sequence < appliedEventState.sequence ||
+                    sequence == appliedEventState.sequence && id.index() <= appliedEventState.index;
+        }
+        return false;
     }
 
     @Override
     public Mutable lastAppliedEvent(final Event event) {
-        final long time = event.time();
-        assert lastAppliedEventTime <= time;
-        lastAppliedEventTime = time;
+        final Event.Id eid = event.id();
+        inputToAppliedEventState.computeIfAbsent(event.id().commandId().input(), k -> new AppliedEventState())
+                .update(event);
         return this;
     }
 }

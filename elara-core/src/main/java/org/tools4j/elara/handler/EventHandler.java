@@ -28,7 +28,6 @@ import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.base.BaseState;
@@ -63,15 +62,13 @@ public class EventHandler implements EventApplier {
 
     @Override
     public void onEvent(final Event event) {
-        final Command.Id commandId = event.id().commandId();
-        final long lastAppliedForInput = baseState.lastCommandAllEventsApplied(commandId.input());
-        if (lastAppliedForInput < commandId.sequence()) {
+        if (baseState.eventApplied(event.id())) {
+            skipEvent(event);
+        } else {
             final boolean replay = !baseState.allEventsPolled();
             applyEvent(event);
             updateBaseState(event);
             publishEvent(event, replay);
-        } else {
-            skipEvent(event);
         }
     }
 
@@ -92,8 +89,8 @@ public class EventHandler implements EventApplier {
     }
 
     private void updateBaseState(final Event event) {
-        baseState.lastAppliedEvent(event);
-        if (event.type() == EventType.COMMIT) {
+        baseState.lastAppliedEvent(event);//TODO should we only call this if event.id.index == 0 ?
+        if (event.flags().isCommit()) {
             baseState.allEventsAppliedFor(event.id().commandId());
         }
     }

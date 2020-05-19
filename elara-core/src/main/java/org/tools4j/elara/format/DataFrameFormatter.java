@@ -25,8 +25,12 @@ package org.tools4j.elara.format;
 
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.DataFrame;
+import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.Header;
 
+/**
+ * Formats value for {@link MessagePrinter} when printing lines containing {@link DataFrame} elements.
+ */
 public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
 
     DataFrameFormatter DEFAULT = new DataFrameFormatter() {};
@@ -46,6 +50,8 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
     String TIME = "{time}";
     /** Placeholder in format string for data frame header's version value */
     String VERSION = "{version}";
+    /** Placeholder in format string for data frame header's flags value */
+    String FLAGS = "{flags}";
     /** Placeholder in format string for data frame header's index value */
     String INDEX = "{index}";
     /** Placeholder in format string for data frame header's  payload-size value */
@@ -60,14 +66,21 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
         final Header header = frame.header();
         final int type = header.type();
         if (header.index() >= 0) {
-            if (type == EventType.COMMIT) return "C";
-            if (type == EventType.ROLLBACK) return "R";
+            switch (type) {
+                case EventType.APPLICATION:
+                    return "A";
+                case EventType.COMMIT:
+                    return "C";
+                case EventType.ROLLBACK:
+                    return "R";
+            }
         }
         return type;
     }
     default Object sequence(long line, long entryId, DataFrame frame) {return frame.header().sequence();}
     default Object time(long line, long entryId, DataFrame frame) {return frame.header().time();}
     default Object version(long line,long entryId,  DataFrame frame) {return frame.header().version();}
+    default Object flags(long line,long entryId,  DataFrame frame) {return Flags.toString(frame.header().flags());}
     default Object index(long line, long entryId, DataFrame frame) {return frame.header().index();}
     default Object payloadSize(long line, long entryId, DataFrame frame) {return frame.header().payloadSize();}
     default Object payload(long line, long entryId, DataFrame frame) {
@@ -88,6 +101,7 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
             case SEQUENCE: return sequence(entryId, entryId, frame);
             case TIME: return time(entryId, entryId, frame);
             case VERSION: return version(entryId, entryId, frame);
+            case FLAGS: return flags(entryId, entryId, frame);
             case INDEX: return index(entryId, entryId, frame);
             case PAYLOAD_SIZE: return payloadSize(entryId, entryId, frame);
             case PAYLOAD: return payload(entryId, entryId, frame);

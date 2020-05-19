@@ -28,16 +28,16 @@ import org.tools4j.elara.event.Event;
 
 public interface BaseState {
     long NO_COMMANDS = -1;
+    int NO_EVENT = -1;
 
     boolean processCommands();
     boolean allEventsPolled();
-    long lastCommandAllEventsApplied(int input);
-    long lastAppliedEventTime();
+    boolean allEventsAppliedFor(Command.Id id);
+    boolean eventApplied(Event.Id id);
 
     interface Mutable extends BaseState {
         Mutable processCommands(boolean newValue);
         Mutable allEventsPolled(boolean newValue);
-        Mutable allEventsAppliedFor(Command.Id id);
         Mutable lastAppliedEvent(Event event);
     }
 }

@@ -90,17 +90,7 @@ public class CommandHandlerTest {
         Result result;
 
         //when
-        when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq);
-        result = commandHandler.onMessage(toDirectBuffer(command));
-
-        //then
-        assertEquals(Result.POLL, result, "result");
-        inOrder.verify(commandProcessor, never()).onCommand(any(), any());
-        inOrder.verify(duplicateHandler).skipCommandProcessing(eqCommand(command));
-        inOrder.verifyNoMoreInteractions();
-
-        //when
-        when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq + 1);
+        when(baseState.allEventsAppliedFor(command.id())).thenReturn(true);
         result = commandHandler.onMessage(toDirectBuffer(command));
 
         //then
@@ -122,17 +112,7 @@ public class CommandHandlerTest {
         Result result;
 
         //when
-        when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 2);
-        result = commandHandler.onMessage(toDirectBuffer(command));
-
-        //then
-        assertEquals(Result.POLL, result, "result");
-        inOrder.verify(commandProcessor).onCommand(eqCommand(command), notNull());
-        inOrder.verify(duplicateHandler, never()).skipCommandProcessing(any());
-        inOrder.verifyNoMoreInteractions();
-
-        //when
-        when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
+        when(baseState.allEventsAppliedFor(command.id())).thenReturn(false);
         result = commandHandler.onMessage(toDirectBuffer(command));
 
         //then
@@ -153,7 +133,7 @@ public class CommandHandlerTest {
         Result result;
 
         //when
-        when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
+        when(baseState.allEventsAppliedFor(command.id())).thenReturn(false);
         result = commandHandler.onMessage(toDirectBuffer(command));
 
         //then
@@ -176,7 +156,7 @@ public class CommandHandlerTest {
         Result result;
 
         //when
-        when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq - 1);
+        when(baseState.allEventsAppliedFor(command.id())).thenReturn(false);
         doThrow(testException).when(commandProcessor).onCommand(any(), any());
         result = commandHandler.onMessage(toDirectBuffer(command));
 
@@ -198,7 +178,7 @@ public class CommandHandlerTest {
         Result result;
 
         //when
-        when(baseState.lastCommandAllEventsApplied(input)).thenReturn(seq);
+        when(baseState.allEventsAppliedFor(command.id())).thenReturn(true);
         doThrow(testException).when(duplicateHandler).skipCommandProcessing(any());
         result = commandHandler.onMessage(toDirectBuffer(command));
 
