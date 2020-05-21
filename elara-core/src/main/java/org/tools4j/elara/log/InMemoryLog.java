@@ -45,7 +45,7 @@ public class InMemoryLog implements MessageLog {
     private int size;
 
     public InMemoryLog() {
-        this(DEFAULT_INITIAL_QUEUE_CAPACITY, DEFAULT_INITIAL_BUFFER_CAPACITY, true, false);
+        this(DEFAULT_INITIAL_QUEUE_CAPACITY, DEFAULT_INITIAL_BUFFER_CAPACITY, false, false);
     }
 
     public InMemoryLog(final int initialQueueCapacity,

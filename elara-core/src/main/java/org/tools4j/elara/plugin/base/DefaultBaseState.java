@@ -31,7 +31,6 @@ public class DefaultBaseState implements BaseState.Mutable {
 
     private final Long2ObjectHashMap<AppliedEventState> inputToAppliedEventState = new Long2ObjectHashMap<>();
     private boolean processCommands;
-    private boolean allEventsPolled;
 
     private static final class AppliedEventState {
         long sequence;
@@ -61,17 +60,6 @@ public class DefaultBaseState implements BaseState.Mutable {
     @Override
     public Mutable processCommands(final boolean newValue) {
         this.processCommands = newValue;
-        return this;
-    }
-
-    @Override
-    public boolean allEventsPolled() {
-        return allEventsPolled;
-    }
-
-    @Override
-    public Mutable allEventsPolled(final boolean newValue) {
-        this.allEventsPolled = newValue;
         return this;
     }
 

@@ -33,23 +33,43 @@ import java.util.concurrent.ThreadFactory;
 
 import static java.util.Objects.requireNonNull;
 
-public class DutyCycle {
+public class DutyCycleStep implements Step {
 
-    private final Step[] steps;
+    private final SequencerStep sequencerStep;
+    private final CommandPollerStep commandPollerStep;
+    private final EventPollerStep eventPollerStep;
+    private final Step outputStep;
 
-    public DutyCycle(final SequencerStep sequencerStep,
-                     final CommandPollerStep commandPollerStep,
-                     final EventPollerStep eventPollerStep) {
-        this.steps = steps(sequencerStep, commandPollerStep, eventPollerStep);
+    public DutyCycleStep(final SequencerStep sequencerStep,
+                         final CommandPollerStep commandPollerStep,
+                         final EventPollerStep eventPollerStep,
+                         final Step outputStep) {
+        this.sequencerStep = requireNonNull(sequencerStep);
+        this.commandPollerStep = requireNonNull(commandPollerStep);
+        this.eventPollerStep = requireNonNull(eventPollerStep);
+        this.outputStep = requireNonNull(outputStep);
     }
 
-    private Step[] steps(final SequencerStep sequencerStep,
-                         final CommandPollerStep commandPollerStep,
-                         final EventPollerStep eventPollerStep) {
-        requireNonNull(sequencerStep);
-        requireNonNull(commandPollerStep);
-        requireNonNull(eventPollerStep);
-        return new Step[] {sequencerStep, commandPollerStep, eventPollerStep};
+
+    @Override
+    public boolean perform() {
+        if (eventPollerStep.perform()) {
+            outputStep.perform();
+            return true;
+        }
+        if (commandPollerStep.perform()) {
+            outputStep.perform();
+            return true;
+        }
+        //NOTES:
+        //   1. we don't poll inputs during replay since
+        //       (i) the command time would be difficult to define
+        //      (ii) sources depending on state would operate on incomplete state
+        //   2. we don't poll inputs when there are commands to poll since
+        //       (i) commands should be processed as fast as possible
+        //      (ii) command time more accurately reflects real time, even if app latency is now reflected as 'transfer' time
+        //     (iii) input back pressure is better than falling behind and the problem becomes visible to sender
+        return outputStep.perform() | sequencerStep.perform();
     }
 
     /**
@@ -63,6 +83,6 @@ public class DutyCycle {
     public StoppableThread start(final IdleStrategy idleStrategy,
                                  final ExceptionHandler exceptionHandler,
                                  final ThreadFactory threadFactory) {
-        return Loop.start(idleStrategy, exceptionHandler, threadFactory, steps);
+        return Loop.start(idleStrategy, exceptionHandler, threadFactory, this);
     }
 }

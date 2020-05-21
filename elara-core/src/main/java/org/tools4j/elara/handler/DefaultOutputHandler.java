@@ -21,18 +21,35 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.base;
+package org.tools4j.elara.handler;
 
-import org.tools4j.elara.command.Command;
+import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.output.CommandLoopback;
+import org.tools4j.elara.output.Output;
 
-public interface BaseState {
-    boolean processCommands();
-    boolean allEventsAppliedFor(Command.Id id);
-    boolean eventApplied(Event.Id id);
+import static java.util.Objects.requireNonNull;
 
-    interface Mutable extends BaseState {
-        Mutable processCommands(boolean newValue);
-        Mutable eventApplied(Event event);
+public class DefaultOutputHandler implements OutputHandler {
+
+    private final Output output;
+    private final CommandLoopback commandLoopback;
+    private final ExceptionHandler exceptionHandler;
+
+    public DefaultOutputHandler(final Output output,
+                                final CommandLoopback commandLoopback,
+                                final ExceptionHandler exceptionHandler) {
+        this.output = requireNonNull(output);
+        this.commandLoopback = requireNonNull(commandLoopback);
+        this.exceptionHandler = requireNonNull(exceptionHandler);
+    }
+
+    @Override
+    public void publish(final Event event, final boolean replay) {
+        try {
+            output.publish(event, replay, commandLoopback);
+        } catch (final Throwable t) {
+            exceptionHandler.handleEventOutputException(event, t);
+        }
     }
 }

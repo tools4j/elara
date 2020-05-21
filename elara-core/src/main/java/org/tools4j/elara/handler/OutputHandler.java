@@ -21,18 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.base;
+package org.tools4j.elara.handler;
 
-import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 
-public interface BaseState {
-    boolean processCommands();
-    boolean allEventsAppliedFor(Command.Id id);
-    boolean eventApplied(Event.Id id);
-
-    interface Mutable extends BaseState {
-        Mutable processCommands(boolean newValue);
-        Mutable eventApplied(Event event);
-    }
+public interface OutputHandler {
+    void publish(Event event, boolean replay);
 }

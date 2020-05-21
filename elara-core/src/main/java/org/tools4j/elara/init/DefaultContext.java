@@ -32,12 +32,14 @@ import org.tools4j.elara.handler.InputHandlerFactory;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.loop.CommandPollerStep;
-import org.tools4j.elara.loop.DutyCycle;
+import org.tools4j.elara.loop.DutyCycleStep;
 import org.tools4j.elara.loop.EventPollerStep;
+import org.tools4j.elara.loop.OutputStep;
 import org.tools4j.elara.loop.SequencerStep;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.Plugin;
 import org.tools4j.elara.time.TimeSource;
+import org.tools4j.nobark.loop.Step;
 import org.tools4j.nobark.run.ThreadLike;
 
 import java.util.ArrayList;
@@ -46,6 +48,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.loop.OutputStep.DEFAULT_POLLER_ID;
 
 final class DefaultContext implements Context {
 
@@ -208,13 +211,14 @@ final class DefaultContext implements Context {
         return this;
     }
 
-    static DutyCycle dutyCycle(final Context context,
-                               final Plugins plugins,
-                               final Singletons singletons) {
-        return new DutyCycle(
+    static DutyCycleStep dutyCycleStep(final Context context,
+                                       final Plugins plugins,
+                                       final Singletons singletons) {
+        return new DutyCycleStep(
                 sequencerStep(context, plugins),
-                commandPollerStep(context, plugins, singletons),
-                eventApplierStep(context, plugins, singletons)
+                commandPollerStep(context, singletons),
+                eventApplierStep(context, singletons),
+                outputStep(context, singletons)
         );
     }
 
@@ -224,23 +228,27 @@ final class DefaultContext implements Context {
     }
 
     static SequencerStep sequencerStep(final Context context, final Plugins plugins) {
-        return new SequencerStep(plugins.baseState, inputHandlerFactory(context), plugins.inputs);
+        return new SequencerStep(inputHandlerFactory(context), plugins.inputs);
     }
 
-    static CommandPollerStep commandPollerStep(final Context context,
-                                               final Plugins plugins,
-                                               final Singletons singletons) {
-        return new CommandPollerStep(plugins.baseState, context.commandLog().poller(), singletons.commandHandler);
+    static CommandPollerStep commandPollerStep(final Context context, final Singletons singletons) {
+        return new CommandPollerStep(context.commandLog().poller(), singletons.commandHandler);
     }
 
-    static EventPollerStep eventApplierStep(final Context context,
-                                            final Plugins plugins,
-                                            final Singletons singletons) {
-        return new EventPollerStep(
-                plugins.baseState,
-                context.eventLog().poller(),
-                singletons.eventHandler
-        );
+    static EventPollerStep eventApplierStep(final Context context, final Singletons singletons) {
+        return new EventPollerStep(context.eventLog().poller(), singletons.eventHandler);
+    }
+
+    static Step outputStep(final Context context, final Singletons singletons) {
+        if (context.output() == Output.NOOP) {
+            return Step.NO_OP;
+        }
+        try {
+            return new OutputStep(singletons.outputHandler, context.eventLog(), DEFAULT_POLLER_ID);
+        } catch (final UnsupportedOperationException e) {
+            //ignore, use non-tracking below
+        }
+        return new OutputStep(singletons.outputHandler, context.eventLog());
     }
 
     static org.tools4j.nobark.loop.IdleStrategy idleStrategy(final Context context) {
@@ -274,7 +282,7 @@ final class DefaultContext implements Context {
         context.validateAndPopulateDefaults();
         final Plugins plugins = new Plugins(context, application, pluginBuilders);
         final Singletons singletons = new Singletons(context, plugins);
-        return dutyCycle(context, plugins, singletons).start(
+        return dutyCycleStep(context, plugins, singletons).start(
                 idleStrategy(context),
                 context.exceptionHandler(),
                 context.threadFactory()

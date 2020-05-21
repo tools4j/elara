@@ -24,11 +24,13 @@
 package org.tools4j.elara.init;
 
 import org.tools4j.elara.application.Application;
+import org.tools4j.elara.handler.DefaultOutputHandler;
+import org.tools4j.elara.handler.EventHandler;
+import org.tools4j.elara.handler.OutputHandler;
+import org.tools4j.elara.handler.ProcessingCommandHandler;
 import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.DefaultCommandLoopback;
 import org.tools4j.elara.route.FlyweightEventRouter;
-import org.tools4j.elara.handler.EventHandler;
-import org.tools4j.elara.handler.ProcessingCommandHandler;
 
 final class Singletons {
     <A extends Application> Singletons(final Context context, final Plugins plugins) {
@@ -38,8 +40,7 @@ final class Singletons {
                 plugins.adminSequenceGenerator
         );
         eventHandler = new EventHandler(
-                plugins.baseState, commandLoopback,
-                plugins.output,
+                plugins.baseState,
                 plugins.eventApplier,
                 context.exceptionHandler(),
                 context.duplicateHandler()
@@ -51,11 +52,13 @@ final class Singletons {
                 context.exceptionHandler(),
                 context.duplicateHandler()
         );
+        outputHandler = new DefaultOutputHandler(context.output(), commandLoopback, context.exceptionHandler());
     }
 
     final CommandLoopback commandLoopback;
     final FlyweightEventRouter eventRouter;
     final ProcessingCommandHandler commandHandler;
     final EventHandler eventHandler;
+    final OutputHandler outputHandler;
 
  }

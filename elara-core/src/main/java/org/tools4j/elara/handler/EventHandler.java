@@ -27,8 +27,6 @@ import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.output.CommandLoopback;
-import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.base.BaseState;
 
 import static java.util.Objects.requireNonNull;
@@ -39,21 +37,15 @@ import static java.util.Objects.requireNonNull;
 public class EventHandler implements EventApplier {
 
     private final BaseState.Mutable baseState;
-    private final CommandLoopback commandLoopback;
-    private final Output output;
     private final EventApplier eventApplier;
     private final ExceptionHandler exceptionHandler;
     private final DuplicateHandler duplicateHandler;
 
     public EventHandler(final BaseState.Mutable baseState,
-                        final CommandLoopback commandLoopback,
-                        final Output output,
                         final EventApplier eventApplier,
                         final ExceptionHandler exceptionHandler,
                         final DuplicateHandler duplicateHandler) {
         this.baseState = requireNonNull(baseState);
-        this.commandLoopback = requireNonNull(commandLoopback);
-        this.output = requireNonNull(output);
         this.eventApplier = requireNonNull(eventApplier);
         this.exceptionHandler = requireNonNull(exceptionHandler);
         this.duplicateHandler = requireNonNull(duplicateHandler);
@@ -64,18 +56,8 @@ public class EventHandler implements EventApplier {
         if (baseState.eventApplied(event.id())) {
             skipEvent(event);
         } else {
-            final boolean replay = !baseState.allEventsPolled();
             applyEvent(event);
-            updateBaseState(event);
-            publishEvent(event, replay);
-        }
-    }
-
-    private void publishEvent(final Event event, final boolean replay) {
-        try {
-            output.publish(event, replay, commandLoopback);
-        } catch (final Throwable t) {
-            exceptionHandler.handleEventOutputException(event, t);
+            baseState.eventApplied(event);
         }
     }
 
@@ -85,10 +67,6 @@ public class EventHandler implements EventApplier {
         } catch (final Throwable t) {
             exceptionHandler.handleEventApplierException(event, t);
         }
-    }
-
-    private void updateBaseState(final Event event) {
-        baseState.eventApplied(event);
     }
 
     private void skipEvent(final Event event) {

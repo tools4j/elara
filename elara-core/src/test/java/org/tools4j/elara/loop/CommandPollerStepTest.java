@@ -30,13 +30,11 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.plugin.base.BaseState;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 /**
@@ -45,8 +43,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class CommandPollerStepTest {
 
-    @Mock
-    private BaseState baseState;
     @Mock
     private MessageLog.Poller commandPoller;
     @Mock
@@ -57,28 +53,12 @@ public class CommandPollerStepTest {
 
     @BeforeEach
     public void init() {
-        step = new CommandPollerStep(baseState, commandPoller, handler);
-    }
-
-    @Test
-    public void dontPollIfNotAllEventsPolled() {
-        //given
-        when(baseState.allEventsPolled()).thenReturn(false);
-        final InOrder inOrder = inOrder(commandPoller);
-
-        //when
-        final boolean result = step.perform();
-
-        //then
-        assertFalse(result, "performed");
-        inOrder.verify(commandPoller, never()).poll(any());
-        inOrder.verifyNoMoreInteractions();
+        step = new CommandPollerStep(commandPoller, handler);
     }
 
     @Test
     public void pollIfAllEventsPolled() {
         //given
-        when(baseState.allEventsPolled()).thenReturn(true);
         final InOrder inOrder = inOrder(commandPoller);
 
         //when

@@ -31,15 +31,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.plugin.base.BaseState;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 /**
@@ -48,8 +45,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class EventPollerStepTest {
 
-    @Mock
-    private BaseState.Mutable baseState;
     @Mock
     private MessageLog.Poller eventPoller;
     @Mock
@@ -60,7 +55,7 @@ public class EventPollerStepTest {
 
     @BeforeEach
     public void init() {
-        step = new EventPollerStep(baseState, eventPoller, handler);
+        step = new EventPollerStep(eventPoller, handler);
     }
 
     @Test
@@ -99,57 +94,17 @@ public class EventPollerStepTest {
         performed = step.perform();
 
         //then
-        assertTrue(performed, "performed");
+        assertFalse(performed, "performed");
         inOrder.verify(eventPoller).poll(notNull());
         inOrder.verifyNoMoreInteractions();
 
         //when
-        performed = step.perform();
-
-        //then
-        assertTrue(performed, "performed");
-        inOrder.verify(eventPoller).poll(notNull());
-        inOrder.verifyNoMoreInteractions();
-    }
-
-    @Test
-    public void allEventsPolledIfNothingToPoll() {
-        //given
-        when(baseState.allEventsPolled()).thenReturn(false);
-        final InOrder inOrder = inOrder(baseState, eventPoller);
-        boolean performed;
-
-        //when
-        when(eventPoller.poll(any())).thenReturn(1);
-        performed = step.perform();
-
-        //then
-        assertTrue(performed, "performed");
-        inOrder.verify(eventPoller).poll(notNull());
-        inOrder.verify(baseState, never()).allEventsPolled();
-        inOrder.verify(baseState, never()).allEventsPolled(anyBoolean());
-        inOrder.verifyNoMoreInteractions();
-
-        //when
-        when(eventPoller.poll(any())).thenReturn(0);
-        performed = step.perform();
-
-        //then
-        assertTrue(performed, "performed");
-        inOrder.verify(baseState).allEventsPolled();
-        inOrder.verify(baseState).allEventsPolled(true);
-        inOrder.verifyNoMoreInteractions();
-
-        //when
-        when(eventPoller.poll(any())).thenReturn(0);
-        when(baseState.allEventsPolled()).thenReturn(true);
         performed = step.perform();
 
         //then
         assertFalse(performed, "performed");
         inOrder.verify(eventPoller).poll(notNull());
-        inOrder.verify(baseState).allEventsPolled();
-        inOrder.verify(baseState, never()).allEventsPolled(anyBoolean());
         inOrder.verifyNoMoreInteractions();
     }
+
 }

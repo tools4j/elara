@@ -25,32 +25,22 @@ package org.tools4j.elara.loop;
 
 import org.tools4j.elara.log.MessageLog.Handler;
 import org.tools4j.elara.log.MessageLog.Poller;
-import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
 
 public class CommandPollerStep implements Step {
 
-    private final BaseState baseState;
     private final Poller commandPoller;
     private final Handler handler;
 
-    public CommandPollerStep(final BaseState baseState,
-                             final Poller commandPoller,
-                             final Handler handler) {
-        this.baseState = requireNonNull(baseState);
+    public CommandPollerStep(final Poller commandPoller, final Handler handler) {
         this.commandPoller = requireNonNull(commandPoller);
         this.handler = requireNonNull(handler);
     }
 
     @Override
     public boolean perform() {
-        if (baseState.allEventsPolled()) {
-            return commandPoller.poll(handler) > 0;
-        }
-        //NOTE: only start playing new commands when state has been completely restored
-        //      through replaying of events
-        return false;
+        return commandPoller.poll(handler) > 0;
     }
 }
