@@ -48,6 +48,11 @@ public class TimerEventApplier implements EventApplier {
                         timerId(event), timerType(event), timerRepetition(event), event.time(), timerTimeout(event)
                 );
                 break;
+            case TimerEvents.TIMER_FIRED: {
+                final int index = timerState.indexById(timerId(event));
+                timerState.repetition(index, timerState.repetition(index) + 1);
+                break;
+            }
             case TimerEvents.TIMER_EXPIRED://fall through
             case TimerEvents.TIMER_STOPPED:
                 timerState.removeById(timerId(event));

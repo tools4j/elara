@@ -29,6 +29,7 @@ import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.plugin.timer.TimerEvents.REPETITION_SINGLE;
 import static org.tools4j.elara.plugin.timer.TimerEvents.timerExpired;
 import static org.tools4j.elara.plugin.timer.TimerEvents.timerFired;
 
@@ -46,7 +47,7 @@ public class TimerCommandProcessor implements CommandProcessor {
             final long timerId = TimerCommands.timerId(command);
             if (timerState.hasTimer(timerId)) {
                 final int repetition = TimerCommands.timerRepetition(command);
-                if (repetition == 0) {
+                if (repetition == REPETITION_SINGLE) {
                     try (final RoutingContext context = router.routingEvent(TimerEvents.TIMER_EXPIRED)) {
                         final int length = timerExpired(context.buffer(), 0, command);
                         context.route(length);

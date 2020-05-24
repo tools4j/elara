@@ -56,13 +56,23 @@ public enum TimerEvents {
     /** Event type for event indicating that a timer has been stopped.*/
     public static final int TIMER_STOPPED = -13;
 
+    /** Repetition value for a simple timer without repetitions */
+    public static final int REPETITION_SINGLE = -1;
+
     public static int timerStarted(final MutableDirectBuffer buffer,
                                    final int offset,
                                    final long timerId,
                                    final int timerType,
-                                   final int repetition,
                                    final long timeout) {
-        return timerEvent(buffer, offset, timerId, timerType, repetition, timeout);
+        return timerEvent(buffer, offset, timerId, timerType, REPETITION_SINGLE, timeout);
+    }
+
+    public static int periodicStarted(final MutableDirectBuffer buffer,
+                                      final int offset,
+                                      final long timerId,
+                                      final int timerType,
+                                      final long timeout) {
+        return timerEvent(buffer, offset, timerId, timerType, 0, timeout);
     }
 
     public static int timerStopped(final MutableDirectBuffer buffer,
@@ -128,6 +138,21 @@ public enum TimerEvents {
                 return true;
             default:
                 return false;
+        }
+    }
+
+    public static String timerEventName(final Event event) {
+        switch (event.type()) {
+            case TIMER_EXPIRED:
+                return "TIMER_EXPIRED";
+            case TIMER_FIRED:
+                return "TIMER_FIRED";
+            case TIMER_STARTED:
+                return "TIMER_STARTED";
+            case TIMER_STOPPED:
+                return "TIMER_STOPPED";
+            default:
+                throw new IllegalArgumentException("Not a timer event: " + event);
         }
     }
 }

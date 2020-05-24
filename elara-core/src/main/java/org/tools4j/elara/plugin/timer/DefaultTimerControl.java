@@ -30,8 +30,8 @@ import org.tools4j.elara.route.EventRouter.RoutingContext;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.plugin.timer.PeriodicTimers.PERIODIC_REPETITION;
-import static org.tools4j.elara.plugin.timer.PeriodicTimers.SINGLE_REPETITION;
+import static org.tools4j.elara.plugin.timer.TimerEvents.periodicStarted;
+import static org.tools4j.elara.plugin.timer.TimerEvents.timerStarted;
 import static org.tools4j.elara.plugin.timer.TimerEvents.timerStopped;
 
 /**
@@ -51,7 +51,7 @@ public class DefaultTimerControl implements TimerControl {
     public long startTimer(final int type, final long timeout, final EventRouter eventRouter) {
         final long id = nextTimerId(eventRouter);
         try (final RoutingContext context = eventRouter.routingEvent(TimerEvents.TIMER_STARTED)) {
-            final int length = timerStopped( context.buffer(), 0, id, type, SINGLE_REPETITION, timeout);
+            final int length = timerStarted( context.buffer(), 0, id, type, timeout);
             context.route(length);
         }
         return id;
@@ -61,7 +61,7 @@ public class DefaultTimerControl implements TimerControl {
     public long startPeriodic(final int type, final long timeout, final EventRouter eventRouter) {
         final long id = nextTimerId(eventRouter);
         try (final RoutingContext context = eventRouter.routingEvent(TimerEvents.TIMER_STARTED)) {
-            final int length = timerStopped( context.buffer(), 0, id, type, PERIODIC_REPETITION, timeout);
+            final int length = periodicStarted( context.buffer(), 0, id, type, timeout);
             context.route(length);
         }
         return id;

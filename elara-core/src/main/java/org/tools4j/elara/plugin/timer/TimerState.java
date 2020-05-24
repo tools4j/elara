@@ -35,7 +35,12 @@ public interface TimerState {
     long timeout(int index);
 
     default long deadline(final int index) {
-        return time(index) + timeout(index);
+        return time(index) + timeout(index) * nextRepetition(index);
+    }
+
+    default int nextRepetition(final int index) {
+        final int repetition = repetition(index);
+        return repetition == TimerEvents.REPETITION_SINGLE ? 1 : repetition + 1;
     }
 
     default boolean hasTimer(final long id) {
