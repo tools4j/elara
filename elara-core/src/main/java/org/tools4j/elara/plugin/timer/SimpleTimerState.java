@@ -36,6 +36,7 @@ public class SimpleTimerState implements TimerState.Mutable {
     private final Long2LongHashMap idToIndex;
     private final LongArrayList ids;
     private final IntArrayList types;
+    private final IntArrayList repetitions;
     private final LongArrayList times;
     private final LongArrayList timeouts;
 
@@ -47,6 +48,7 @@ public class SimpleTimerState implements TimerState.Mutable {
         this.idToIndex = new Long2LongHashMap(2 * initialCapacity, DEFAULT_LOAD_FACTOR, -1);
         this.ids = new LongArrayList(initialCapacity, 0);
         this.types = new IntArrayList(initialCapacity, 0);
+        this.repetitions = new IntArrayList(initialCapacity, 0);
         this.times = new LongArrayList(initialCapacity, 0);
         this.timeouts = new LongArrayList(initialCapacity, 0);
     }
@@ -72,6 +74,11 @@ public class SimpleTimerState implements TimerState.Mutable {
     }
 
     @Override
+    public int repetition(final int index) {
+        return repetitions.getInt(index);
+    }
+
+    @Override
     public long time(final int index) {
         return times.getLong(index);
     }
@@ -91,6 +98,7 @@ public class SimpleTimerState implements TimerState.Mutable {
         final long id = ids.fastUnorderedRemove(index);
         idToIndex.remove(id);
         types.fastUnorderedRemove(index);
+        repetitions.fastUnorderedRemove(index);
         times.fastUnorderedRemove(index);
         timeouts.fastUnorderedRemove(index);
         if (index < ids.size()) {
@@ -99,15 +107,21 @@ public class SimpleTimerState implements TimerState.Mutable {
     }
 
     @Override
-    public boolean add(final long id, final int type, final long time, final long timeout) {
+    public boolean add(final long id, final int type, final int repetition, final long time, final long timeout) {
         if (!hasTimer(id) && timeout >= 0) {
             idToIndex.put(id, ids.size());
             ids.addLong(id);
             types.addInt(type);
+            repetitions.addInt(repetition);
             times.addLong(time);
             timeouts.addLong(timeout);
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void repetition(final int index, final int repetition) {
+        repetitions.setInt(index, repetition);
     }
 }

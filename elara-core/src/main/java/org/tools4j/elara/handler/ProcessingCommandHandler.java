@@ -31,7 +31,7 @@ import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.log.MessageLog.Handler;
 import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.elara.route.FlyweightEventRouter;
+import org.tools4j.elara.route.DefaultEventRouter;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.log.MessageLog.Handler.Result.PEEK;
@@ -40,7 +40,7 @@ import static org.tools4j.elara.log.MessageLog.Handler.Result.POLL;
 public class ProcessingCommandHandler implements Handler, CommandHandler {
 
     private final BaseState baseState;
-    private final FlyweightEventRouter eventRouter;
+    private final DefaultEventRouter eventRouter;
     private final CommandProcessor commandProcessor;
     private final ExceptionHandler exceptionHandler;
     private final DuplicateHandler duplicateHandler;
@@ -48,7 +48,7 @@ public class ProcessingCommandHandler implements Handler, CommandHandler {
     private final FlyweightCommand flyweightCommand = new FlyweightCommand();
 
     public ProcessingCommandHandler(final BaseState baseState,
-                                    final FlyweightEventRouter eventRouter,
+                                    final DefaultEventRouter eventRouter,
                                     final CommandProcessor commandProcessor,
                                     final ExceptionHandler exceptionHandler,
                                     final DuplicateHandler duplicateHandler) {

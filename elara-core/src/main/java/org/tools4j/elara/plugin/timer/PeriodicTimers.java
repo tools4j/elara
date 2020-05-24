@@ -23,16 +23,8 @@
  */
 package org.tools4j.elara.plugin.timer;
 
-public enum TimerCommandDescriptor {
+public enum PeriodicTimers {
     ;
-
-    public static final int TIMER_ID_OFFSET = 0;
-    public static final int TIMER_ID_LENGTH = Long.BYTES;
-    public static final int TIMER_TYPE_OFFSET = TIMER_ID_OFFSET + TIMER_ID_LENGTH;
-    public static final int TIMER_TYPE_LENGTH = Integer.BYTES;
-    public static final int TIMER_TIMEOUT_OFFSET = TIMER_TYPE_OFFSET + TIMER_TYPE_LENGTH;
-    public static final int TIMER_TIMEOUT_LENGTH = Long.BYTES;
-
-    public static final int TIMER_PAYLOAD_SIZE = TIMER_ID_LENGTH + TIMER_TYPE_LENGTH +
-            TIMER_TIMEOUT_LENGTH;
+    public static final int SINGLE_REPETITION = 1;
+    public static final int PERIODIC_REPETITION = -1;
 }

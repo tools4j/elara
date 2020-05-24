@@ -21,14 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.output;
+package org.tools4j.elara.input;
 
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FlyweightHeader;
-import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.log.ExpandableDirectBuffer;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.log.MessageLog.AppendContext;
@@ -40,42 +38,40 @@ import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
 
-public class DefaultCommandLoopback implements CommandLoopback.Default {
+public final class DefaultReceiver implements Receiver.Default {
 
-    private final MessageLog.Appender commandLogAppender;
     private final TimeSource timeSource;
-    private final SequenceGenerator adminSequenceGenerator;
+    private final Input input;
+    private final MessageLog.Appender commandLogAppender;
+    private final ReceivingContext receivingContext = new ReceivingContext();
 
-    private final EnqueuingContext enqueuingContext = new EnqueuingContext();
-
-    public DefaultCommandLoopback(final MessageLog.Appender commandLogAppender,
-                                  final TimeSource timeSource,
-                                  final SequenceGenerator adminSequenceGenerator) {
-        this.commandLogAppender = requireNonNull(commandLogAppender);
+    public DefaultReceiver(final TimeSource timeSource,
+                           final Input input,
+                           final MessageLog.Appender commandLogAppender) {
         this.timeSource = requireNonNull(timeSource);
-        this.adminSequenceGenerator = requireNonNull(adminSequenceGenerator);
+        this.input = requireNonNull(input);
+        this.commandLogAppender = requireNonNull(commandLogAppender);
     }
 
     @Override
-    public EnqueuingContext enqueuingCommand(final int type) {
-        return enqueuingContext.init(type, commandLogAppender.appending());
+    public ReceivingContext receivingMessage(final long sequence, final int type) {
+        return receivingContext.init(sequence, type, commandLogAppender.appending());
     }
 
-    private final class EnqueuingContext implements CommandLoopback.EnqueuingContext {
+    private final class ReceivingContext implements Receiver.ReceivingContext {
 
         final ExpandableDirectBuffer buffer = new ExpandableDirectBuffer();
         AppendContext context;
 
-        EnqueuingContext init(final int type, final AppendContext context) {
+        ReceivingContext init(final long sequence, final int type, final AppendContext context) {
             if (this.context != null) {
                 abort();
-                throw new IllegalStateException("Enqueuing context not closed");
+                throw new IllegalStateException("Receiving context not closed");
             }
             this.context = requireNonNull(context);
             this.buffer.wrap(context.buffer(), PAYLOAD_OFFSET);
             FlyweightHeader.writeTo(
-                    Input.LOOPBACK_ID, type, adminSequenceGenerator.nextSequence(), timeSource.currentTime(),
-                    Flags.NONE, FlyweightCommand.INDEX, 0,
+                    input.id(), type, sequence, timeSource.currentTime(), Flags.NONE, FlyweightCommand.INDEX, 0,
                     context.buffer(), HEADER_OFFSET
             );
             return this;
@@ -85,7 +81,7 @@ public class DefaultCommandLoopback implements CommandLoopback.Default {
             if (context != null) {
                 return;
             }
-            throw new IllegalStateException("Enqueuing context is closed");
+            throw new IllegalStateException("Receiving context is closed");
         }
 
         @Override
@@ -95,7 +91,7 @@ public class DefaultCommandLoopback implements CommandLoopback.Default {
         }
 
         @Override
-        public void enqueue(final int length) {
+        public void receive(final int length) {
             ensureNotClosed();
             buffer.unwrap();
             context.buffer().putInt(PAYLOAD_SIZE_OFFSET, length);

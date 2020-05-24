@@ -21,28 +21,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.route;
+package org.tools4j.elara.input;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.event.EventType;
+import org.tools4j.elara.command.CommandType;
 
-public interface EventRouter {
+public interface Receiver {
+    ReceivingContext receivingMessage(long sequence);
+    ReceivingContext receivingMessage(long sequence, int type);
+    void receiveMessage(long sequence, DirectBuffer buffer, int offset, int length);
+    void receiveMessage(long sequence, int type, DirectBuffer buffer, int offset, int length);
 
-    RoutingContext routingEvent();
-    RoutingContext routingEvent(int type);
-
-    void routeEvent(DirectBuffer event, int offset, int length);
-    void routeEvent(int type, DirectBuffer event, int offset, int length);
-
-    short nextEventIndex();
-
-    StateImpact rollbackAfterProcessing(RollbackMode mode);
-
-    interface RoutingContext extends AutoCloseable {
-        int index();
+    interface ReceivingContext extends AutoCloseable {
         MutableDirectBuffer buffer();
-        void route(int length);
+        void receive(int messageLength);
         void abort();
         boolean isClosed();
 
@@ -54,22 +47,22 @@ public interface EventRouter {
         }
     }
 
-    interface Default extends EventRouter {
+    interface Default extends Receiver {
         @Override
-        default RoutingContext routingEvent() {
-            return routingEvent(EventType.APPLICATION);
+        default ReceivingContext receivingMessage(final long sequence) {
+            return receivingMessage(sequence, CommandType.APPLICATION);
         }
 
         @Override
-        default void routeEvent(final DirectBuffer event, final int offset, final int length) {
-            routeEvent(EventType.APPLICATION, event, offset, length);
+        default void receiveMessage(final long sequence, final DirectBuffer buffer, final int offset, final int length) {
+            receiveMessage(sequence, CommandType.APPLICATION, buffer, offset, length);
         }
 
         @Override
-        default void routeEvent(final int type, final DirectBuffer event, final int offset, final int length) {
-            try (final RoutingContext context = routingEvent(type)) {
-                context.buffer().putBytes(0, event, offset, length);
-                context.route(length);
+        default void receiveMessage(final long sequence, final int type, final DirectBuffer buffer, final int offset, final int length) {
+            try (final ReceivingContext context = receivingMessage(sequence, type)) {
+                context.buffer().putBytes(0, buffer, offset, length);
+                context.receive(length);
             }
         }
     }

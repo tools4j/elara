@@ -30,6 +30,7 @@ public interface TimerState {
     int indexById(long id);
     long id(int index);
     int type(int index);
+    int repetition(int index);
     long time(int index);
     long timeout(int index);
 
@@ -56,8 +57,9 @@ public interface TimerState {
     }
 
     interface Mutable extends TimerState {
-        boolean add(long id, int type, long time, long timeout);
+        boolean add(long id, int type, int repetition, long time, long timeout);
         void remove(int index);
+        void repetition(int index, int repetition);
 
         default boolean removeById(final long id) {
             final int index = indexById(id);

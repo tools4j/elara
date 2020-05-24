@@ -26,6 +26,8 @@ package org.tools4j.elara.plugin.timer;
 import org.tools4j.elara.route.EventRouter;
 
 public interface TimerControl {
-    long startTimer(int type, long timeout, TimerState timerState, EventRouter eventRouter);
-    boolean stopTimer(long id, TimerState timerState, EventRouter eventRouter);
+    long nextTimerId(EventRouter eventRouter);
+    long startTimer(int type, long timeout, EventRouter eventRouter);
+    long startPeriodic(int type, long timeout, EventRouter eventRouter);
+    boolean stopTimer(long id, EventRouter eventRouter);
 }

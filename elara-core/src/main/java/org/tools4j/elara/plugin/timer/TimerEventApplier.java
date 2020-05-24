@@ -28,6 +28,7 @@ import org.tools4j.elara.event.Event;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.timer.TimerEvents.timerId;
+import static org.tools4j.elara.plugin.timer.TimerEvents.timerRepetition;
 import static org.tools4j.elara.plugin.timer.TimerEvents.timerTimeout;
 import static org.tools4j.elara.plugin.timer.TimerEvents.timerType;
 
@@ -43,7 +44,9 @@ public class TimerEventApplier implements EventApplier {
     public void onEvent(final Event event) {
         switch (event.type()) {
             case TimerEvents.TIMER_STARTED:
-                timerState.add(timerId(event), timerType(event), event.time(), timerTimeout(event));
+                timerState.add(
+                        timerId(event), timerType(event), timerRepetition(event), event.time(), timerTimeout(event)
+                );
                 break;
             case TimerEvents.TIMER_EXPIRED://fall through
             case TimerEvents.TIMER_STOPPED:

@@ -24,6 +24,7 @@
 package org.tools4j.elara.loop;
 
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.input.Receiver;
 import org.tools4j.nobark.loop.Step;
 
 import java.util.function.Function;
@@ -31,14 +32,14 @@ import java.util.function.Function;
 public final class SequencerStep implements Step {
 
     private final Input.Poller[] inputPollers;
-    private final Input.Handler[] handlers;
+    private final Receiver[] receivers;
 
     private int roundRobinIndex = 0;
 
-    public SequencerStep(final Function<? super Input, ? extends Input.Handler> handlerFactory,
+    public SequencerStep(final Function<? super Input, ? extends Receiver> receiverFactory,
                          final Input... inputs) {
         this.inputPollers = initPollersFor(inputs);
-        this.handlers = initHandlersFor(handlerFactory, inputs);
+        this.receivers = initReceiversFor(receiverFactory, inputs);
     }
 
     @Override
@@ -46,7 +47,7 @@ public final class SequencerStep implements Step {
         final int count = inputPollers.length;
         for (int i = 0; i < count; i++) {
             final int index = getAndIncrementRoundRobinIndex(count);
-            if (inputPollers[index].poll(handlers[index]) > 0) {
+            if (inputPollers[index].poll(receivers[index]) > 0) {
                 return true;
             }
         }
@@ -70,12 +71,12 @@ public final class SequencerStep implements Step {
         return pollers;
     }
 
-    private Input.Handler[] initHandlersFor(final Function<? super Input, ? extends Input.Handler> handlerFactory,
-                                            final Input... inputs) {
-        final Input.Handler[] handlers = new Input.Handler[inputs.length];
+    private Receiver[] initReceiversFor(final Function<? super Input, ? extends Receiver> receiverFactory,
+                                        final Input... inputs) {
+        final Receiver[] receivers = new Receiver[inputs.length];
         for (int i = 0; i < inputs.length; i++) {
-            handlers[i] = handlerFactory.apply(inputs[i]);
+            receivers[i] = receiverFactory.apply(inputs[i]);
         }
-        return handlers;
+        return receivers;
     }
 }

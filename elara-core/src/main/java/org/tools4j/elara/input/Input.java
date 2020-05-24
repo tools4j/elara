@@ -23,9 +23,6 @@
  */
 package org.tools4j.elara.input;
 
-import org.agrona.DirectBuffer;
-import org.tools4j.elara.event.EventType;
-
 public interface Input {
     int LOOPBACK_ID = -1;
     Input[] EMPTY_INPUTS = new Input[0];
@@ -35,15 +32,7 @@ public interface Input {
 
     @FunctionalInterface
     interface Poller {
-        int poll(Handler handler);
-    }
-
-    @FunctionalInterface
-    interface Handler {
-        default void onMessage(final long sequence, final DirectBuffer buffer, final int offset, final int length) {
-            onMessage(sequence, EventType.APPLICATION, buffer, offset, length);
-        }
-        void onMessage(long sequence, int type, DirectBuffer buffer, int offset, int length);
+        int poll(Receiver receiver);
     }
 
     static Input create(final int id, final Poller poller) {

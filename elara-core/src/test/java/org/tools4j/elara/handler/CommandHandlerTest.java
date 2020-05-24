@@ -43,7 +43,7 @@ import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.log.MessageLog.Handler.Result;
 import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.elara.route.FlyweightEventRouter;
+import org.tools4j.elara.route.DefaultEventRouter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -63,7 +63,7 @@ public class CommandHandlerTest {
     @Mock
     private BaseState baseState;
     @Mock
-    private FlyweightEventRouter eventRouter;
+    private DefaultEventRouter eventRouter;
     @Mock
     private CommandProcessor commandProcessor;
     @Mock

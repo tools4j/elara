@@ -30,6 +30,7 @@ import org.tools4j.elara.application.Application;
 import org.tools4j.elara.application.SimpleApplication;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
@@ -89,12 +90,12 @@ public class SimpleStringApplication {
         }
 
         @Override
-        public int poll(final Input.Handler handler) {
+        public int poll(final Receiver receiver) {
             final String msg = strings.poll();
             if (msg != null) {
                 final MutableDirectBuffer buffer = new ExpandableArrayBuffer(msg.length() + 4);
                 final int length = buffer.putStringAscii(0, msg);
-                handler.onMessage(++seq, TYPE_STRING, buffer, 0, length);
+                receiver.receiveMessage(++seq, TYPE_STRING, buffer, 0, length);
                 return 1;
             }
             return 0;

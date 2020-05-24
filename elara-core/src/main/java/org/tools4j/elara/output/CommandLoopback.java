@@ -24,12 +24,47 @@
 package org.tools4j.elara.output;
 
 import org.agrona.DirectBuffer;
+import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.CommandType;
 
 public interface CommandLoopback {
-    default void enqueueCommand(DirectBuffer command, int offset, int length) {
-        enqueueCommand(CommandType.APPLICATION, command, offset, length);
+    EnqueuingContext enqueuingCommand();
+    EnqueuingContext enqueuingCommand(int type);
+
+    void enqueueCommand(DirectBuffer command, int offset, int length);
+    void enqueueCommand(int type, DirectBuffer command, int offset, int length);
+
+    interface EnqueuingContext extends AutoCloseable {
+        MutableDirectBuffer buffer();
+        void enqueue(int length);
+        void abort();
+        boolean isClosed();
+
+        @Override
+        default void close() {
+            if (!isClosed()) {
+                abort();
+            }
+        }
     }
 
-    void enqueueCommand(int type, DirectBuffer command, int offset, int length);
+    interface Default extends CommandLoopback {
+        @Override
+        default EnqueuingContext enqueuingCommand() {
+            return enqueuingCommand(CommandType.APPLICATION);
+        }
+
+        @Override
+        default void enqueueCommand(final DirectBuffer command, final int offset, final int length) {
+            enqueueCommand(CommandType.APPLICATION, command, offset, length);
+        }
+
+        @Override
+        default void enqueueCommand(final int type, final DirectBuffer command, final int offset, final int length) {
+            try (final EnqueuingContext context = enqueuingCommand(type)) {
+                context.buffer().putBytes(0, command, offset, length);
+                context.enqueue(length);
+            }
+        }
+    }
 }

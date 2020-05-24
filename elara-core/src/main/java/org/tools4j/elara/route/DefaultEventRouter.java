@@ -44,7 +44,7 @@ import static org.tools4j.elara.route.RollbackMode.REPLAY_COMMAND;
 import static org.tools4j.elara.route.StateImpact.STATE_CORRUPTION_POSSIBLE;
 import static org.tools4j.elara.route.StateImpact.STATE_UNAFFECTED;
 
-public class FlyweightEventRouter implements EventRouter {
+public class DefaultEventRouter implements EventRouter.Default {
 
     private static final int MAX_EVENTS = Short.MAX_VALUE + 1;
     private final Appender appender;
@@ -55,12 +55,12 @@ public class FlyweightEventRouter implements EventRouter {
     private RollbackMode rollbackMode;
     private short nextIndex = 0;
 
-    public FlyweightEventRouter(final Appender appender, final EventApplier eventApplier) {
+    public DefaultEventRouter(final Appender appender, final EventApplier eventApplier) {
         this.appender = requireNonNull(appender);
         this.eventApplier = requireNonNull(eventApplier);
     }
 
-    public FlyweightEventRouter start(final Command command) {
+    public DefaultEventRouter start(final Command command) {
         this.command = requireNonNull(command);
         this.nextIndex = 0;
         this.rollbackMode = null;
@@ -182,16 +182,16 @@ public class FlyweightEventRouter implements EventRouter {
         }
 
         @Override
-        public MutableDirectBuffer payload() {
+        public MutableDirectBuffer buffer() {
             ensureNotClosed();
             return buffer;
         }
 
         @Override
-        public void route(final int payloadLength) {
+        public void route(final int length) {
             ensureNotClosed();
             buffer.unwrap();
-            context.buffer().putInt(PAYLOAD_SIZE_OFFSET, payloadLength);
+            context.buffer().putInt(PAYLOAD_SIZE_OFFSET, length);
             flyweightEvent.init(context.buffer(), 0);
             eventApplier.onEvent(flyweightEvent);
             flyweightEvent.reset();

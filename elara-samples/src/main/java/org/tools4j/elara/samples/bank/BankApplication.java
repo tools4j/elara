@@ -32,6 +32,7 @@ import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.log.InMemoryLog;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.output.CommandLoopback;
@@ -166,12 +167,12 @@ public class BankApplication implements Application {
         }
 
         @Override
-        public int poll(final Input.Handler handler) {
+        public int poll(final Receiver receiver) {
             final BankCommand cmd = commands.poll();
             if (cmd != null) {
                 final int type = cmd.type().value;
                 final DirectBuffer encoded = cmd.encode();
-                handler.onMessage(++seq, type, encoded, 0, encoded.capacity());
+                receiver.receiveMessage(++seq, type, encoded, 0, encoded.capacity());
                 return 1;
             }
             return 0;

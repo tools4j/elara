@@ -27,6 +27,7 @@ import org.tools4j.elara.plugin.Plugin;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 final class DefaultPluginConfigurer<A> implements PluginConfigurer<A> {
@@ -36,6 +37,11 @@ final class DefaultPluginConfigurer<A> implements PluginConfigurer<A> {
     @Override
     public PluginConfigurer<A> plugin(final Plugin<?> plugin) {
         return plugin(plugin.builder());
+    }
+
+    @Override
+    public <P> PluginConfigurer<A> plugin(final Plugin<P> plugin, final BiConsumer<? super A, ? super P> applicationInitializer) {
+        return plugin(plugin.builder(plugin.defaultPluginState(), applicationInitializer));
     }
 
     @Override

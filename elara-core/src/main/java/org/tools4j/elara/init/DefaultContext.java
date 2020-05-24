@@ -28,7 +28,7 @@ import org.agrona.concurrent.IdleStrategy;
 import org.tools4j.elara.application.Application;
 import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.ExceptionHandler;
-import org.tools4j.elara.handler.InputHandlerFactory;
+import org.tools4j.elara.input.ReceiverFactory;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.loop.CommandPollerStep;
@@ -222,13 +222,13 @@ final class DefaultContext implements Context {
         );
     }
 
-    static InputHandlerFactory inputHandlerFactory(final Context context) {
+    static ReceiverFactory receiverFactory(final Context context) {
         final MessageLog.Appender commandAppender = context.commandLog().appender();
-        return new InputHandlerFactory(context.timeSource(), commandAppender);
+        return new ReceiverFactory(context.timeSource(), commandAppender);
     }
 
     static SequencerStep sequencerStep(final Context context, final Plugins plugins) {
-        return new SequencerStep(inputHandlerFactory(context), plugins.inputs);
+        return new SequencerStep(receiverFactory(context), plugins.inputs);
     }
 
     static CommandPollerStep commandPollerStep(final Context context, final Singletons singletons) {

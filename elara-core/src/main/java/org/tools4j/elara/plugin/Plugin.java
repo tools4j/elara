@@ -31,14 +31,28 @@ import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.time.TimeSource;
 
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
 public interface Plugin<P> {
 
+    P defaultPluginState();
     Context create(P pluginState);
-    <A> Builder<A> builder();
+
+    default <A> Builder<A> builder() {
+        return application -> create(defaultPluginState());
+    }
+
+    default <A> Builder<A> builder(final P pluginState, final BiConsumer<? super A, ? super P> applicationInitializer) {
+        requireNonNull(pluginState);
+        requireNonNull(applicationInitializer);
+        return application -> {
+            applicationInitializer.accept(application, pluginState);
+            return create(pluginState);
+        };
+    }
 
     default <A> Builder<A> builder(final Function<? super A, ? extends P> stateProvider) {
         requireNonNull(stateProvider);

@@ -26,10 +26,11 @@ package org.tools4j.elara.plugin.timer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 
-import static org.tools4j.elara.plugin.timer.TimerCommandDescriptor.TIMER_ID_OFFSET;
-import static org.tools4j.elara.plugin.timer.TimerCommandDescriptor.TIMER_PAYLOAD_SIZE;
-import static org.tools4j.elara.plugin.timer.TimerCommandDescriptor.TIMER_TIMEOUT_OFFSET;
-import static org.tools4j.elara.plugin.timer.TimerCommandDescriptor.TIMER_TYPE_OFFSET;
+import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.PAYLOAD_SIZE;
+import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_ID_OFFSET;
+import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_REPETITION_OFFSET;
+import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_TIMEOUT_OFFSET;
+import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_TYPE_OFFSET;
 
 /**
  * Timer commands issued through {@link TimerTrigger} either when outputting an event through the
@@ -44,11 +45,13 @@ public enum TimerCommands {
                                    final int offset,
                                    final long timerId,
                                    final int timerType,
+                                   final int repetition,
                                    final long timeout) {
         buffer.putLong(offset + TIMER_ID_OFFSET, timerId);
         buffer.putInt(offset + TIMER_TYPE_OFFSET, timerType);
+        buffer.putInt(offset + TIMER_REPETITION_OFFSET, repetition);
         buffer.putLong(offset + TIMER_TIMEOUT_OFFSET, timeout);
-        return TIMER_PAYLOAD_SIZE;
+        return PAYLOAD_SIZE;
     }
 
     public static long timerId(final Command command) {
@@ -56,6 +59,9 @@ public enum TimerCommands {
     }
     public static int timerType(final Command command) {
         return command.payload().getInt(TIMER_TYPE_OFFSET);
+    }
+    public static int timerRepetition(final Command command) {
+        return command.payload().getInt(TIMER_REPETITION_OFFSET);
     }
     public static long timerTimeout(final Command command) {
         return command.payload().getLong(TIMER_TIMEOUT_OFFSET);

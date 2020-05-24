@@ -26,8 +26,11 @@ package org.tools4j.elara.plugin.timer;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.route.EventRouter;
+import org.tools4j.elara.route.EventRouter.RoutingContext;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.plugin.timer.TimerEvents.timerExpired;
+import static org.tools4j.elara.plugin.timer.TimerEvents.timerFired;
 
 public class TimerCommandProcessor implements CommandProcessor {
 
@@ -42,7 +45,18 @@ public class TimerCommandProcessor implements CommandProcessor {
         if (command.type() == TimerCommands.TRIGGER_TIMER) {
             final long timerId = TimerCommands.timerId(command);
             if (timerState.hasTimer(timerId)) {
-                TimerEvents.timerExpired(command, router);
+                final int repetition = TimerCommands.timerRepetition(command);
+                if (repetition == 0) {
+                    try (final RoutingContext context = router.routingEvent(TimerEvents.TIMER_EXPIRED)) {
+                        final int length = timerExpired(context.buffer(), 0, command);
+                        context.route(length);
+                    }
+                } else {
+                    try (final RoutingContext context = router.routingEvent(TimerEvents.TIMER_FIRED)) {
+                        final int length = timerFired(context.buffer(), 0, command);
+                        context.route(length);
+                    }
+                }
             }
         }
     }

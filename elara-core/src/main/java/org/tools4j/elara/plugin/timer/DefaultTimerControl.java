@@ -23,14 +23,16 @@
  */
 package org.tools4j.elara.plugin.timer;
 
-import org.agrona.ExpandableDirectByteBuffer;
-import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.plugin.Plugin;
+import org.tools4j.elara.route.EventRouter;
+import org.tools4j.elara.route.EventRouter.RoutingContext;
 
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.plugin.timer.PeriodicTimers.PERIODIC_REPETITION;
+import static org.tools4j.elara.plugin.timer.PeriodicTimers.SINGLE_REPETITION;
+import static org.tools4j.elara.plugin.timer.TimerEvents.timerStopped;
 
 /**
  * Controller to simplify routing of timer start and stop events.  Requires application access to timer state which can
@@ -39,34 +41,48 @@ import static java.util.Objects.requireNonNull;
  */
 public class DefaultTimerControl implements TimerControl {
 
-    private final MutableDirectBuffer buffer;
+    private final TimerState timerState;
 
-    public DefaultTimerControl() {
-        this(new ExpandableDirectByteBuffer(TimerEventDescriptor.TIMER_PAYLOAD_SIZE));
-    }
-
-    public DefaultTimerControl(final MutableDirectBuffer buffer) {
-        this.buffer = requireNonNull(buffer);
+    public DefaultTimerControl(final TimerState timerState) {
+        this.timerState = requireNonNull(timerState);
     }
 
     @Override
-    public long startTimer(final int type, final long timeout, final TimerState timerState, final EventRouter eventRouter) {
-        final long id = nextTimerId(timerState, eventRouter);
-        TimerEvents.timerStarted(buffer, 0, id, type, timeout, eventRouter);
+    public long startTimer(final int type, final long timeout, final EventRouter eventRouter) {
+        final long id = nextTimerId(eventRouter);
+        try (final RoutingContext context = eventRouter.routingEvent(TimerEvents.TIMER_STARTED)) {
+            final int length = timerStopped( context.buffer(), 0, id, type, SINGLE_REPETITION, timeout);
+            context.route(length);
+        }
         return id;
     }
 
     @Override
-    public boolean stopTimer(final long id, final TimerState timerState, final EventRouter eventRouter) {
+    public long startPeriodic(final int type, final long timeout, final EventRouter eventRouter) {
+        final long id = nextTimerId(eventRouter);
+        try (final RoutingContext context = eventRouter.routingEvent(TimerEvents.TIMER_STARTED)) {
+            final int length = timerStopped( context.buffer(), 0, id, type, PERIODIC_REPETITION, timeout);
+            context.route(length);
+        }
+        return id;
+    }
+
+    @Override
+    public boolean stopTimer(final long id, final EventRouter eventRouter) {
         final int index = timerState.indexById(id);
         if (index >= 0) {
-            TimerEvents.timerStopped(buffer, 0, id, timerState.type(index), timerState.timeout(index), eventRouter);
+            try (final RoutingContext context = eventRouter.routingEvent(TimerEvents.TIMER_STOPPED)) {
+                final int length = timerStopped( context.buffer(), 0, id, timerState.type(index),
+                        timerState.repetition(index), timerState.timeout(index));
+                context.route(length);
+            }
             return true;
         }
         return false;
     }
 
-    public static long nextTimerId(final TimerState timerState, final EventRouter eventRouter) {
+    @Override
+    public long nextTimerId(final EventRouter eventRouter) {
         final long maxId = maxTimerId(timerState);
         return Math.max(0, maxId) + 1 + eventRouter.nextEventIndex();
     }

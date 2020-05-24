@@ -29,6 +29,7 @@ import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.Plugin;
+import org.tools4j.elara.plugin.base.BaseState.Mutable;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.function.Function;
@@ -42,14 +43,14 @@ import static java.util.Objects.requireNonNull;
 public final class BasePlugin implements Plugin<BaseState.Mutable> {
 
     @Override
-    public BaseContext create(final BaseState.Mutable baseState) {
-        requireNonNull(baseState);
-        return () -> baseState;
+    public Mutable defaultPluginState() {
+        return BaseContext.createDefaultBaseStae();
     }
 
     @Override
-    public <A> Builder<A> builder() {
-        return application -> create(BaseContext.createDefaultBaseStae());
+    public BaseContext create(final BaseState.Mutable baseState) {
+        requireNonNull(baseState);
+        return () -> baseState;
     }
 
     @Override

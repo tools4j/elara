@@ -30,6 +30,7 @@ import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.plugin.timer.TimerState.Mutable;
 import org.tools4j.elara.time.TimeSource;
 
 /**
@@ -40,8 +41,8 @@ public final class TimerPlugin implements Plugin<TimerState.Mutable> {
     public static final int INPUT_ID = -10;
 
     @Override
-    public <A> Builder<A> builder() {
-        return application -> create(new SimpleTimerState());
+    public Mutable defaultPluginState() {
+        return new SimpleTimerState();
     }
 
     @Override

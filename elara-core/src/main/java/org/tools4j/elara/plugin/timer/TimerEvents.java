@@ -27,12 +27,12 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.route.EventRouter;
 
-import static org.tools4j.elara.plugin.timer.TimerEventDescriptor.TIMER_ID_OFFSET;
-import static org.tools4j.elara.plugin.timer.TimerEventDescriptor.TIMER_PAYLOAD_SIZE;
-import static org.tools4j.elara.plugin.timer.TimerEventDescriptor.TIMER_TIMEOUT_OFFSET;
-import static org.tools4j.elara.plugin.timer.TimerEventDescriptor.TIMER_TYPE_OFFSET;
+import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.PAYLOAD_SIZE;
+import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_ID_OFFSET;
+import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_REPETITION_OFFSET;
+import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_TIMEOUT_OFFSET;
+import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_TYPE_OFFSET;
 
 /**
  * Timer events applying the timer state change through {@link TimerEventApplier}.
@@ -40,50 +40,70 @@ import static org.tools4j.elara.plugin.timer.TimerEventDescriptor.TIMER_TYPE_OFF
 public enum TimerEvents {
     ;
 
-    /** Event type for event indicating a timer has expired, usually triggered by a {@link TimerCommands#TRIGGER_TIMER TRIGGER_TIMER} command.*/
-    public static final int TIMER_EXPIRED = -10;
+    /**
+     * Event type for event indicating a timer has fired;  the timer has remaining repetitions and will fire again.
+     * This event is usually triggered by a {@link TimerCommands#TRIGGER_TIMER TRIGGER_TIMER} command.
+     */
+    public static final int TIMER_FIRED = -10;
+    /**
+     * Event type for event indicating a timer has fired and expired;  it is single fire event of a one-off timer or the
+     * last fire event of a periodic timer.
+     * This event is usually triggered by a {@link TimerCommands#TRIGGER_TIMER TRIGGER_TIMER} command.
+     */
+    public static final int TIMER_EXPIRED = -11;
     /** Event type for event indicating that a timer has been started.*/
-    public static final int TIMER_STARTED = -11;
+    public static final int TIMER_STARTED = -12;
     /** Event type for event indicating that a timer has been stopped.*/
-    public static final int TIMER_STOPPED = -12;
+    public static final int TIMER_STOPPED = -13;
 
-    public static void timerStarted(final MutableDirectBuffer payloadBuffer,
-                                    final int offset,
-                                    final long timerId,
-                                    final int timerType,
-                                    final long timeout,
-                                    final EventRouter eventRouter) {
-        timerEvent(payloadBuffer, offset, TIMER_STARTED, timerId, timerType, timeout, eventRouter);
+    public static int timerStarted(final MutableDirectBuffer buffer,
+                                   final int offset,
+                                   final long timerId,
+                                   final int timerType,
+                                   final int repetition,
+                                   final long timeout) {
+        return timerEvent(buffer, offset, timerId, timerType, repetition, timeout);
     }
 
-    public static void timerStopped(final MutableDirectBuffer payloadBuffer,
-                                    final int offset,
-                                    final long timerId,
-                                    final int timerType,
-                                    final long timeout,
-                                    final EventRouter eventRouter) {
-        timerEvent(payloadBuffer, offset, TIMER_STOPPED, timerId, timerType, timeout, eventRouter);
+    public static int timerStopped(final MutableDirectBuffer buffer,
+                                   final int offset,
+                                   final long timerId,
+                                   final int timerType,
+                                   final int repetition,
+                                   final long timeout) {
+        return timerEvent(buffer, offset, timerId, timerType, repetition, timeout);
     }
 
-    public static void timerExpired(final Command command, final EventRouter eventRouter) {
+    public static int timerFired(final MutableDirectBuffer buffer, final int offset, final Command command) {
+        return timerTriggered(buffer, offset, command);
+    }
+
+    public static int timerExpired(final MutableDirectBuffer buffer, final int offset, final Command command) {
+        return timerTriggered(buffer, offset, command);
+    }
+
+    private static int timerTriggered(final MutableDirectBuffer buffer,
+                                      final int offset,
+                                      final Command command) {
         if (command.type() != TimerCommands.TRIGGER_TIMER) {
             throw new IllegalArgumentException("Expected " + TimerCommands.TRIGGER_TIMER + " command but found " + command.type());
         }
         final DirectBuffer payload = command.payload();
-        eventRouter.routeEvent(TIMER_EXPIRED, payload, 0, payload.capacity());
+        buffer.putBytes(offset, payload, 0, payload.capacity());
+        return payload.capacity();
     }
 
-    private static void timerEvent(final MutableDirectBuffer payloadBuffer,
+    private static int timerEvent(final MutableDirectBuffer buffer,
                                    final int offset,
-                                   final int eventType,
                                    final long timerId,
                                    final int timerType,
-                                   final long timeout,
-                                   final EventRouter eventRouter) {
-        payloadBuffer.putLong(offset + TIMER_ID_OFFSET, timerId);
-        payloadBuffer.putInt(offset + TIMER_TYPE_OFFSET, timerType);
-        payloadBuffer.putLong(offset + TIMER_TIMEOUT_OFFSET, timeout);
-        eventRouter.routeEvent(eventType, payloadBuffer, offset, TIMER_PAYLOAD_SIZE);
+                                   final int repetition,
+                                   final long timeout) {
+        buffer.putLong(offset + TIMER_ID_OFFSET, timerId);
+        buffer.putInt(offset + TIMER_TYPE_OFFSET, timerType);
+        buffer.putInt(offset + TIMER_REPETITION_OFFSET, repetition);
+        buffer.putLong(offset + TIMER_TIMEOUT_OFFSET, timeout);
+        return PAYLOAD_SIZE;
     }
 
     public static long timerId(final Event event) {
@@ -92,6 +112,9 @@ public enum TimerEvents {
     public static int timerType(final Event event) {
         return event.payload().getInt(TIMER_TYPE_OFFSET);
     }
+    public static int timerRepetition(final Event event) {
+        return event.payload().getInt(TIMER_REPETITION_OFFSET);
+    }
     public static long timerTimeout(final Event event) {
         return event.payload().getLong(TIMER_TIMEOUT_OFFSET);
     }
@@ -99,6 +122,7 @@ public enum TimerEvents {
     public static boolean isTimerEvent(final Event event) {
         switch (event.type()) {
             case TIMER_EXPIRED://fallthrough
+            case TIMER_FIRED://fallthrough
             case TIMER_STARTED://fallthrough
             case TIMER_STOPPED://fallthrough
                 return true;

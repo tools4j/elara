@@ -26,12 +26,15 @@ package org.tools4j.elara.init;
 import org.tools4j.elara.plugin.Plugin;
 
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public interface PluginConfigurer<A> {
     PluginConfigurer<A> plugin(Plugin<?> plugin);
 
     PluginConfigurer<A> plugin(Plugin.Builder<? super A> plugin);
+
+    <P> PluginConfigurer<A> plugin(Plugin<P> plugin, BiConsumer<? super A, ? super P> applicationInitializer);
 
     <P> PluginConfigurer<A> plugin(Plugin<P> plugin, Function<? super A, ? extends P> pluginStateProvider);
 

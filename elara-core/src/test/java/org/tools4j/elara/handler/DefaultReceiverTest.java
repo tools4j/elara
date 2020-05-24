@@ -34,6 +34,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.FlyweightCommand;
+import org.tools4j.elara.input.DefaultReceiver;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.time.TimeSource;
@@ -47,10 +48,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit test for {@link InputHandler}
+ * Unit test for {@link DefaultReceiver}
  */
 @ExtendWith(MockitoExtension.class)
-public class InputHandlerTest {
+public class DefaultReceiverTest {
 
     @Mock
     private TimeSource timeSource;
@@ -60,12 +61,12 @@ public class InputHandlerTest {
     private List<Command> commandLog;
 
     //under test
-    private InputHandler inputHandler;
+    private DefaultReceiver defaultReceiver;
 
     @BeforeEach
     public void init() {
         commandLog = new ArrayList<>();
-        inputHandler = new InputHandler(timeSource, input, () -> new MessageLog.AppendContext() {
+        defaultReceiver = new DefaultReceiver(timeSource, input, () -> new MessageLog.AppendContext() {
             MutableDirectBuffer buffer = new ExpandableArrayBuffer();
             @Override
             public MutableDirectBuffer buffer() {
@@ -89,7 +90,7 @@ public class InputHandlerTest {
             public boolean isClosed() {
                 return buffer == null;
             }
-        }, new ExpandableArrayBuffer(), new FlyweightCommand());
+        });
     }
 
     @Test
@@ -106,7 +107,7 @@ public class InputHandlerTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        inputHandler.onMessage(seq, message, offset, length);
+        defaultReceiver.receiveMessage(seq, message, offset, length);
 
         //then
         assertEquals(1, commandLog.size(), "commandLog.size");
@@ -128,7 +129,7 @@ public class InputHandlerTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        inputHandler.onMessage(seq, type, message, offset, length);
+        defaultReceiver.receiveMessage(seq, type, message, offset, length);
 
         //then
         assertCommand(inputId, seq, commandTime, type, text, commandLog.get(0));

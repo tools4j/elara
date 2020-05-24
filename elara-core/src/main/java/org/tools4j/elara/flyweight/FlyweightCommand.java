@@ -29,7 +29,7 @@ import org.tools4j.elara.command.Command;
 
 public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, Command.Id, Frame {
 
-    private static final short INDEX_NEG = Short.MIN_VALUE;
+    public static final short INDEX = Short.MIN_VALUE;
     private final FlyweightDataFrame frame = new FlyweightDataFrame();
 
     public FlyweightCommand init(final MutableDirectBuffer header,
@@ -41,7 +41,7 @@ public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, C
                                  final DirectBuffer payload,
                                  final int payloadOffset,
                                  final int payloadSize) {
-        frame.init(header, headerOffset, input, type, sequence, time, Flags.NONE, INDEX_NEG, payload, payloadOffset, payloadSize);
+        frame.init(header, headerOffset, input, type, sequence, time, Flags.NONE, INDEX, payload, payloadOffset, payloadSize);
         return this;
     }
 
