@@ -33,7 +33,6 @@ import org.tools4j.elara.flyweight.FlyweightHeader;
 import org.tools4j.elara.log.ExpandableDirectBuffer;
 import org.tools4j.elara.log.MessageLog.AppendContext;
 import org.tools4j.elara.log.MessageLog.Appender;
-import org.tools4j.elara.plugin.base.BaseState;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.flyweight.FrameDescriptor.FLAGS_OFFSET;
@@ -50,7 +49,6 @@ public class DefaultEventRouter implements EventRouter.Default {
 
     private static final int MAX_EVENTS = Short.MAX_VALUE + 1;
 
-    private final BaseState baseState;
     private final Appender appender;
     private final EventApplier eventApplier;
     private final RoutingContext routingContext = new RoutingContext();
@@ -59,8 +57,7 @@ public class DefaultEventRouter implements EventRouter.Default {
     private SkipMode skipMode = NONE;
     private short nextIndex = 0;
 
-    public DefaultEventRouter(final BaseState baseState, final Appender appender, final EventApplier eventApplier) {
-        this.baseState = requireNonNull(baseState);
+    public DefaultEventRouter(final Appender appender, final EventApplier eventApplier) {
         this.appender = requireNonNull(appender);
         this.eventApplier = requireNonNull(eventApplier);
     }
@@ -143,11 +140,6 @@ public class DefaultEventRouter implements EventRouter.Default {
     @Override
     public short nextEventIndex() {
         return nextIndex;
-    }
-
-    @Override
-    public long lastAppliedCommandSequenceForSameInput() {
-        return baseState.lastProcessedCommandSequenceForInput(command.id().input());
     }
 
     private static void checkEventType(final int eventType) {

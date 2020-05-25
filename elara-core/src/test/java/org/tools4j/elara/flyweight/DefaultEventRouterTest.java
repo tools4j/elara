@@ -28,15 +28,11 @@ import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.log.InMemoryLog;
 import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.route.DefaultEventRouter;
 import org.tools4j.elara.route.SkipMode;
 
@@ -45,16 +41,11 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.when;
 
 /**
  * Unit test for {@link DefaultEventRouter}
  */
-@ExtendWith(MockitoExtension.class)
 public class DefaultEventRouterTest {
-
-    @Mock
-    private BaseState baseState;
 
     private MessageLog messageLog;
     private List<Event> routed;
@@ -68,7 +59,7 @@ public class DefaultEventRouterTest {
         routed = new ArrayList<>();
         command = new FlyweightCommand();
         messageLog = new InMemoryLog();
-        eventRouter = new DefaultEventRouter(baseState, messageLog.appender(), event -> {
+        eventRouter = new DefaultEventRouter(messageLog.appender(), event -> {
             final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
             event.writeTo(buffer, 0);
             routed.add(new FlyweightEvent().init(buffer, 0));
@@ -200,24 +191,6 @@ public class DefaultEventRouterTest {
         assertEquals(2, routed.size(), "events.size");
         assertEvent(command, routed.get(0), EventType.APPLICATION, 0, Flags.NONE, 0, "events[0]");
         assertEvent(command, routed.get(1), eventType, 1, Flags.COMMIT, payloadSize, "events[1]");
-    }
-
-    @Test
-    public void lastAppliedCommandSequenceForSameInput() {
-        //given
-        final int input = 11;
-        final long lastSeq = 21;
-        final long sequence = 22;
-        final int type = 33;
-        final long time = 44;
-        when(baseState.lastProcessedCommandSequenceForInput(input)).thenReturn(lastSeq);
-
-        //when
-        startWithCommand(input, sequence, type, time);
-        final long lastAppliedCommandSequenceForSameInput = eventRouter.lastAppliedCommandSequenceForSameInput();
-
-        //when
-        assertEquals(lastSeq, lastAppliedCommandSequenceForSameInput, "lastAppliedCommandSequenceForSameInput");
     }
 
     private void startWithCommand(final int input,

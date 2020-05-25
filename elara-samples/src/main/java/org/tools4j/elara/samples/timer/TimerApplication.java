@@ -120,7 +120,7 @@ public class TimerApplication {
 
     private void process(final Command command, final EventRouter router) {
         System.out.println("-----------------------------------------------------------");
-        System.out.println("processing: " + command + ", payload=" + payloadFor(command.type(), command.payload()));
+//        System.out.println("processing: " + command + ", payload=" + payloadFor(command.type(), command.payload()));
         if (command.isApplication()) {
             System.out.println("...COMMAND: new timer: " + command + ", payload=" + payloadFor(command.type(), command.payload()) + ", time=" + formatTime(command.time()));
             final int timerType = command.payload().getInt(0);
@@ -153,7 +153,7 @@ public class TimerApplication {
     }
 
     private void apply(final Event event) {
-        System.out.println("applied: " + event + ", payload=" + payloadFor(event.type(), event.payload()));
+//        System.out.println("applied: " + event + ", payload=" + payloadFor(event.type(), event.payload()));
         if (TimerEvents.isTimerEvent(event)) {
             final String name = TimerEvents.timerEventName(event);
             final long timerId = TimerEvents.timerId(event);

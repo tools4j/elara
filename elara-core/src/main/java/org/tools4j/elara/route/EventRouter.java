@@ -40,7 +40,6 @@ public interface EventRouter {
     SkipMode skipMode();
     SkipMode skipCommand(boolean allowConflation);
     SkipMode skipFurtherCommandEvents();
-    long lastAppliedCommandSequenceForSameInput();
 
     interface RoutingContext extends AutoCloseable {
         int index();

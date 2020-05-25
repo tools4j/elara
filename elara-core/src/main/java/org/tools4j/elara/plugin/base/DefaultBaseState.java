@@ -27,29 +27,20 @@ import org.agrona.collections.Long2ObjectHashMap;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 
-import static org.tools4j.elara.input.Receiver.NULL_SEQUENCE;
-
 public class DefaultBaseState implements BaseState.Mutable {
 
     private final Long2ObjectHashMap<AppliedEventState> inputToAppliedEventState = new Long2ObjectHashMap<>();
     private boolean processCommands;
 
     private static final class AppliedEventState {
-        long lastProcessedSequence = NULL_SEQUENCE;
         long sequence;
         int index;
         boolean isCommit;
         void update(final Event event) {
             final Event.Id id = event.id();
-            final long seq = id.commandId().sequence();
-            isCommit = event.flags().isCommit();
-            if (isCommit) {
-                lastProcessedSequence = seq;
-            } else if (seq > sequence) {
-                lastProcessedSequence = sequence;
-            }
-            sequence = seq;
+            sequence = id.commandId().sequence();
             index = id.index();
+            isCommit = event.flags().isCommit();
         }
     }
 
@@ -70,12 +61,6 @@ public class DefaultBaseState implements BaseState.Mutable {
     public Mutable processCommands(final boolean newValue) {
         this.processCommands = newValue;
         return this;
-    }
-
-    @Override
-    public long lastProcessedCommandSequenceForInput(final int input) {
-        final AppliedEventState appliedEventState = inputToAppliedEventState.get(input);
-        return appliedEventState == null ? NULL_SEQUENCE : appliedEventState.lastProcessedSequence;
     }
 
     @Override
