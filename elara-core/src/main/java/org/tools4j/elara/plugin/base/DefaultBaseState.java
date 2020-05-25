@@ -27,20 +27,29 @@ import org.agrona.collections.Long2ObjectHashMap;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 
+import static org.tools4j.elara.input.Receiver.NULL_SEQUENCE;
+
 public class DefaultBaseState implements BaseState.Mutable {
 
     private final Long2ObjectHashMap<AppliedEventState> inputToAppliedEventState = new Long2ObjectHashMap<>();
     private boolean processCommands;
 
     private static final class AppliedEventState {
+        long lastProcessedSequence = NULL_SEQUENCE;
         long sequence;
         int index;
-        boolean isFinal;
+        boolean isCommit;
         void update(final Event event) {
             final Event.Id id = event.id();
-            sequence = id.commandId().sequence();
+            final long seq = id.commandId().sequence();
+            isCommit = event.flags().isCommit();
+            if (isCommit) {
+                lastProcessedSequence = seq;
+            } else if (seq > sequence) {
+                lastProcessedSequence = sequence;
+            }
+            sequence = seq;
             index = id.index();
-            isFinal = event.flags().isFinal();
         }
     }
 
@@ -64,12 +73,18 @@ public class DefaultBaseState implements BaseState.Mutable {
     }
 
     @Override
+    public long lastProcessedCommandSequenceForInput(final int input) {
+        final AppliedEventState appliedEventState = inputToAppliedEventState.get(input);
+        return appliedEventState == null ? NULL_SEQUENCE : appliedEventState.lastProcessedSequence;
+    }
+
+    @Override
     public boolean allEventsAppliedFor(final Command.Id id) {
         final AppliedEventState appliedEventState = inputToAppliedEventState.get(id.input());
         if (appliedEventState != null) {
             final long sequence = id.sequence();
             return sequence < appliedEventState.sequence ||
-                    sequence == appliedEventState.sequence && appliedEventState.isFinal;
+                    sequence == appliedEventState.sequence && appliedEventState.isCommit;
         }
         return false;
     }

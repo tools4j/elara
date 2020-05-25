@@ -71,22 +71,20 @@ public class ProcessingCommandHandler implements Handler, CommandHandler {
             return POLL;
         }
         if (baseState.processCommands()) {
-            return processCommand(command);
+            processCommand(command);
+            return POLL;
         }
         return PEEK;
     }
 
-    private Result processCommand(final Command command) {
+    private void processCommand(final Command command) {
         eventRouter.start(command);
         try {
             commandProcessor.onCommand(command, eventRouter);
         } catch (final Throwable t) {
             exceptionHandler.handleCommandProcessorException(command, t);
         }
-        if (eventRouter.complete()) {
-            return POLL;
-        }
-        return PEEK;
+        eventRouter.complete();
     }
 
     private void skipCommand(final Command command) {

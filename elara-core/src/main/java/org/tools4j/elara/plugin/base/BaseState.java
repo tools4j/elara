@@ -28,6 +28,7 @@ import org.tools4j.elara.event.Event;
 
 public interface BaseState {
     boolean processCommands();
+    long lastProcessedCommandSequenceForInput(int input);
     boolean allEventsAppliedFor(Command.Id id);
     boolean eventApplied(Event.Id id);
 

@@ -120,7 +120,7 @@ public class TimerApplication {
 
     private void process(final Command command, final EventRouter router) {
         System.out.println("-----------------------------------------------------------");
-//        System.out.println("processing: " + command + ", payload=" + payloadFor(command.type(), command.payload()));
+        System.out.println("processing: " + command + ", payload=" + payloadFor(command.type(), command.payload()));
         if (command.isApplication()) {
             System.out.println("...COMMAND: new timer: " + command + ", payload=" + payloadFor(command.type(), command.payload()) + ", time=" + formatTime(command.time()));
             final int timerType = command.payload().getInt(0);
@@ -141,11 +141,13 @@ public class TimerApplication {
             final int repetition = TimerCommands.timerRepetition(command);
             final long timeout = TimerCommands.timerTimeout(command);
             System.out.println("...COMMAND: trigger timer: timerId=" + timerId + ", timerType=" + timerType + ", repetition=" + repetition + ", timeout=" + timeout + ", time=" + formatTime(command.time()));
-            if (TimerCommands.timerRepetition(command) == PERIODIC_REPETITIONS) {
+            if (TimerCommands.timerRepetition(command) >= PERIODIC_REPETITIONS) {
                 try (final RoutingContext context = router.routingEvent(TimerEvents.TIMER_STOPPED)) {
                     final int length = TimerEvents.timerStopped(context.buffer(), 0, timerId, timerType, repetition, timeout);
                     context.route(length);
                 }
+                //optional, as the fire event would fail anyway due to timer already stopped
+                router.skipFurtherCommandEvents();//suppresses the fire event caused by this trigger
             }
         }
     }

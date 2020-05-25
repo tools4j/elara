@@ -33,6 +33,7 @@ import org.tools4j.elara.flyweight.FlyweightHeader;
 import org.tools4j.elara.log.ExpandableDirectBuffer;
 import org.tools4j.elara.log.MessageLog.AppendContext;
 import org.tools4j.elara.log.MessageLog.Appender;
+import org.tools4j.elara.plugin.base.BaseState;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.flyweight.FrameDescriptor.FLAGS_OFFSET;
@@ -40,22 +41,26 @@ import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
-import static org.tools4j.elara.route.RollbackMode.REPLAY_COMMAND;
-import static org.tools4j.elara.route.StateImpact.STATE_CORRUPTION_POSSIBLE;
-import static org.tools4j.elara.route.StateImpact.STATE_UNAFFECTED;
+import static org.tools4j.elara.route.SkipMode.CONFLATED;
+import static org.tools4j.elara.route.SkipMode.CONSUMED;
+import static org.tools4j.elara.route.SkipMode.NONE;
+import static org.tools4j.elara.route.SkipMode.SKIPPED;
 
 public class DefaultEventRouter implements EventRouter.Default {
 
     private static final int MAX_EVENTS = Short.MAX_VALUE + 1;
+
+    private final BaseState baseState;
     private final Appender appender;
     private final EventApplier eventApplier;
     private final RoutingContext routingContext = new RoutingContext();
 
     private Command command;
-    private RollbackMode rollbackMode;
+    private SkipMode skipMode = NONE;
     private short nextIndex = 0;
 
-    public DefaultEventRouter(final Appender appender, final EventApplier eventApplier) {
+    public DefaultEventRouter(final BaseState baseState, final Appender appender, final EventApplier eventApplier) {
+        this.baseState = requireNonNull(baseState);
         this.appender = requireNonNull(appender);
         this.eventApplier = requireNonNull(eventApplier);
     }
@@ -63,14 +68,13 @@ public class DefaultEventRouter implements EventRouter.Default {
     public DefaultEventRouter start(final Command command) {
         this.command = requireNonNull(command);
         this.nextIndex = 0;
-        this.rollbackMode = null;
+        this.skipMode = NONE;
         return this;
     }
 
     @Override
     public RoutingContext routingEvent(final int type) {
         checkEventType(type);
-        checkNotRolledBack();
         checkEventLimit();
         return routingEvent0(type);
     }
@@ -82,36 +86,58 @@ public class DefaultEventRouter implements EventRouter.Default {
         return routingContext.init(type, appender.appending());
     }
 
-    public boolean complete() {
-        final RollbackMode mode = rollbackMode;
-        if (mode == null) {
+    public void complete() {
+        if (skipMode == NONE) {
             if (nextIndex == 0 || !routingContext.isCommitPending()) {
-                try (final EventRouter.RoutingContext context = routingEvent0(EventType.COMMIT)) {
-                    context.route(0);
-                }
+                routeCommitEvent();
             }
             routingContext.commit(Flags.COMMIT);
-        } else {
-            if (routingContext.isCommitPending()) {
-                routingContext.abort();
-            }
-            if (nextIndex > 0 || mode != REPLAY_COMMAND) {
-                try (final EventRouter.RoutingContext context = routingEvent0(EventType.ROLLBACK)) {
-                    context.route(0);
-                }
-                routingContext.commit(Flags.ROLLBACK);
-            }
         }
         this.command = null;
-        this.rollbackMode = null;
+        this.skipMode = NONE;
         this.nextIndex = 0;
-        return mode != REPLAY_COMMAND;
+    }
+
+    private void routeCommitEvent() {
+        try (final EventRouter.RoutingContext context = routingEvent0(EventType.COMMIT)) {
+            context.route(0);
+        }
     }
 
     @Override
-    public StateImpact rollbackAfterProcessing(final RollbackMode mode) {
-        this.rollbackMode = requireNonNull(mode);
-        return nextIndex == 0 ? STATE_UNAFFECTED : STATE_CORRUPTION_POSSIBLE;
+    public SkipMode skipCommand(final boolean allowConflation) {
+        return skip(allowConflation, false);
+    }
+
+    @Override
+    public SkipMode skipFurtherCommandEvents() {
+        return skip(false, true);
+    }
+
+    private SkipMode skip(final boolean allowConflation, final boolean commitPendingEvents) {
+        if (skipMode != NONE) {
+            return skipMode;
+        }
+        if (routingContext.isCommitPending()) {
+            if (commitPendingEvents) {
+                routingContext.commit(Flags.COMMIT);
+            } else {
+                routingContext.abort();
+            }
+        }
+        if (nextIndex == 0 && !allowConflation) {
+            routeCommitEvent();
+            routingContext.commit(Flags.COMMIT);
+            skipMode = SKIPPED;
+        } else {
+            skipMode = nextIndex == 0 ? CONFLATED : CONSUMED;
+        }
+        return skipMode;
+    }
+
+    @Override
+    public SkipMode skipMode() {
+        return skipMode;
     }
 
     @Override
@@ -119,15 +145,14 @@ public class DefaultEventRouter implements EventRouter.Default {
         return nextIndex;
     }
 
-    private static void checkEventType(final int eventType) {
-        if (eventType == EventType.COMMIT || eventType == EventType.ROLLBACK) {
-            throw new IllegalArgumentException("Illegal event type: " + eventType);
-        }
+    @Override
+    public long lastAppliedCommandSequenceForSameInput() {
+        return baseState.lastProcessedCommandSequenceForInput(command.id().input());
     }
 
-    private void checkNotRolledBack() {
-        if (rollbackMode != null) {
-            throw new IllegalStateException("It is illegal to route events after setting rollback mode");
+    private static void checkEventType(final int eventType) {
+        if (eventType == EventType.COMMIT) {
+            throw new IllegalArgumentException("Illegal event type: " + eventType);
         }
     }
 
@@ -189,6 +214,10 @@ public class DefaultEventRouter implements EventRouter.Default {
 
         @Override
         public void route(final int length) {
+            if (skipMode != NONE) {
+                abort();
+                return;
+            }
             ensureNotClosed();
             buffer.unwrap();
             context.buffer().putInt(PAYLOAD_SIZE_OFFSET, length);

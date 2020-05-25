@@ -135,7 +135,7 @@ public class FlyweightHeaderTest {
         final int type = 123;
         final long seq = 998877;
         final long time = 998877665544L;
-        final byte flags = Flags.COMMIT | Flags.ROLLBACK;
+        final byte flags = Flags.COMMIT;
         final short index = 7;
         final int payloadSize = 22;
 

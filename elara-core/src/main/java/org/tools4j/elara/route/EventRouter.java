@@ -37,7 +37,10 @@ public interface EventRouter {
 
     short nextEventIndex();
 
-    StateImpact rollbackAfterProcessing(RollbackMode mode);
+    SkipMode skipMode();
+    SkipMode skipCommand(boolean allowConflation);
+    SkipMode skipFurtherCommandEvents();
+    long lastAppliedCommandSequenceForSameInput();
 
     interface RoutingContext extends AutoCloseable {
         int index();

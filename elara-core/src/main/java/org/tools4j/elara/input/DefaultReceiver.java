@@ -64,6 +64,9 @@ public final class DefaultReceiver implements Receiver.Default {
         AppendContext context;
 
         ReceivingContext init(final long sequence, final int type, final AppendContext context) {
+            if (sequence == NULL_SEQUENCE) {
+                throw new IllegalArgumentException("Sequence value cannot be " + NULL_SEQUENCE);
+            }
             if (this.context != null) {
                 abort();
                 throw new IllegalStateException("Receiving context not closed");

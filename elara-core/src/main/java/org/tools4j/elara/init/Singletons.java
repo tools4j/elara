@@ -45,7 +45,7 @@ final class Singletons {
                 context.exceptionHandler(),
                 context.duplicateHandler()
         );
-        eventRouter = new DefaultEventRouter(context.eventLog().appender(), eventHandler);
+        eventRouter = new DefaultEventRouter(plugins.baseState, context.eventLog().appender(), eventHandler);
         commandHandler = new ProcessingCommandHandler(
                 plugins.baseState, eventRouter,
                 plugins.commandProcessor,

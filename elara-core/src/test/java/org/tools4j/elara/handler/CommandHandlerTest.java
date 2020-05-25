@@ -107,7 +107,6 @@ public class CommandHandlerTest {
         final long seq = 22;
         final Command command = command(input, seq);
         when(baseState.processCommands()).thenReturn(true);
-        when(eventRouter.complete()).thenReturn(true);
         final InOrder inOrder = inOrder(commandProcessor, duplicateHandler);
         Result result;
 
@@ -151,7 +150,6 @@ public class CommandHandlerTest {
         final Command command = command(input, seq);
         final RuntimeException testException = new RuntimeException("test command processor exception");
         when(baseState.processCommands()).thenReturn(true);
-        when(eventRouter.complete()).thenReturn(true);
         final InOrder inOrder = inOrder(commandProcessor, exceptionHandler);
         Result result;
 

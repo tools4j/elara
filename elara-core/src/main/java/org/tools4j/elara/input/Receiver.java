@@ -28,6 +28,9 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.CommandType;
 
 public interface Receiver {
+    /** Reserved value that cannot be used as sequence value */
+    long NULL_SEQUENCE = Long.MIN_VALUE;
+
     ReceivingContext receivingMessage(long sequence);
     ReceivingContext receivingMessage(long sequence, int type);
     void receiveMessage(long sequence, DirectBuffer buffer, int offset, int length);

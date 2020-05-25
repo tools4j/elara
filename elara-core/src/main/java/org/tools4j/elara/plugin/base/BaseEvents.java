@@ -44,15 +44,6 @@ public enum BaseEvents {
                 EventType.COMMIT);
     }
 
-    public static FlyweightEvent rollback(final FlyweightEvent flyweightEvent,
-                                          final MutableDirectBuffer headerBuffer,
-                                          final int offset,
-                                          final Command command,
-                                          final short index) {
-        return empty(flyweightEvent, headerBuffer, offset, command, index,
-                EventType.ROLLBACK);
-    }
-
     public static FlyweightEvent empty(final FlyweightEvent flyweightEvent,
                                        final MutableDirectBuffer headerBuffer,
                                        final int offset,

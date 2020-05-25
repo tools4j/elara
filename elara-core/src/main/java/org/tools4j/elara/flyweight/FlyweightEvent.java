@@ -148,26 +148,6 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.I
         }
 
         @Override
-        public boolean isRollback() {
-            return org.tools4j.elara.flyweight.Flags.isRollback(value());
-        }
-
-        @Override
-        public boolean isUndefined() {
-            return org.tools4j.elara.flyweight.Flags.isUndefined(value());
-        }
-
-        @Override
-        public boolean isFinal() {
-            return org.tools4j.elara.flyweight.Flags.isFinal(value());
-        }
-
-        @Override
-        public boolean isNonFinal() {
-            return org.tools4j.elara.flyweight.Flags.isNonFinal(value());
-        }
-
-        @Override
         public byte value() {
             return header().flags();
         }

@@ -28,26 +28,33 @@ import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.log.InMemoryLog;
 import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.route.DefaultEventRouter;
-import org.tools4j.elara.route.RollbackMode;
+import org.tools4j.elara.route.SkipMode;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit test for {@link DefaultEventRouter}
  */
-public class FlyweightEventRouterTest {
+@ExtendWith(MockitoExtension.class)
+public class DefaultEventRouterTest {
+
+    @Mock
+    private BaseState baseState;
 
     private MessageLog messageLog;
     private List<Event> routed;
@@ -61,7 +68,7 @@ public class FlyweightEventRouterTest {
         routed = new ArrayList<>();
         command = new FlyweightCommand();
         messageLog = new InMemoryLog();
-        eventRouter = new DefaultEventRouter(messageLog.appender(), event -> {
+        eventRouter = new DefaultEventRouter(baseState, messageLog.appender(), event -> {
             final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
             event.writeTo(buffer, 0);
             routed.add(new FlyweightEvent().init(buffer, 0));
@@ -83,10 +90,9 @@ public class FlyweightEventRouterTest {
         assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[0]");
 
         //when
-        final boolean result = eventRouter.complete();
+        eventRouter.complete();
 
         //then
-        assertTrue(result, "result");
         assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[x]");
         assertEquals(1, routed.size(), "events.size");
         assertEvent(command, routed.get(0), EventType.COMMIT, 0, Flags.COMMIT, 0, "events[0]");
@@ -118,10 +124,9 @@ public class FlyweightEventRouterTest {
         assertEquals(2, eventRouter.nextEventIndex(), "commitIndex[2]");
 
         //when
-        final boolean result = eventRouter.complete();
+        eventRouter.complete();
 
         //then
-        assertTrue(result, "result");
         assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[x]");
         assertEquals(2, routed.size(), "events.size");
         assertEvent(command, routed.get(0), EventType.APPLICATION, 0, Flags.NONE, 0, "events[0]");
@@ -130,7 +135,7 @@ public class FlyweightEventRouterTest {
     }
 
     @Test
-    public void rollbackNoEventsSkip() {
+    public void skipCommand() {
         //given
         final int input = 11;
         final long sequence = 22;
@@ -140,18 +145,38 @@ public class FlyweightEventRouterTest {
         startWithCommand(input, sequence, type, time);
 
         //when
-        eventRouter.rollbackAfterProcessing(RollbackMode.SKIP_COMMAND);
-        final boolean result = eventRouter.complete();
+        final SkipMode skipMode = eventRouter.skipCommand(false);
+        eventRouter.complete();
 
         //then
-        assertTrue(result, "result");
+        assertEquals(SkipMode.SKIPPED, skipMode, "skipMode");
         assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[x]");
         assertEquals(1, routed.size(), "events.size");
-        assertEvent(command, routed.get(0), EventType.ROLLBACK, 0, Flags.ROLLBACK, 0, "events[0]");
+        assertEvent(command, routed.get(0), EventType.COMMIT, 0, Flags.COMMIT, 0, "events[0]");
     }
 
     @Test
-    public void rollbackSomeEventsReplay() {
+    public void skipCommandWithConflation() {
+        //given
+        final int input = 11;
+        final long sequence = 22;
+        final int type = 33;
+        final long time = 44;
+
+        startWithCommand(input, sequence, type, time);
+
+        //when
+        final SkipMode skipMode = eventRouter.skipCommand(true);
+        eventRouter.complete();
+
+        //then
+        assertEquals(SkipMode.CONFLATED, skipMode, "skipMode");
+        assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[x]");
+        assertEquals(0, routed.size(), "events.size");
+    }
+
+    @Test
+    public void skipCommandWithEvents() {
         //given
         final int input = 11;
         final long sequence = 22;
@@ -166,17 +191,33 @@ public class FlyweightEventRouterTest {
         final int payloadSize = routeEvent(eventType, msgOffset, msg);
 
         //when
-        eventRouter.rollbackAfterProcessing(RollbackMode.REPLAY_COMMAND);
-        final boolean result = eventRouter.complete();
+        final SkipMode skipMode = eventRouter.skipCommand(false);
+        eventRouter.complete();
 
         //then
-        assertFalse(result, "result");
+        assertEquals(SkipMode.CONSUMED, skipMode, "skipMode");
         assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[x]");
-        assertEquals(3, routed.size(), "events.size");
+        assertEquals(2, routed.size(), "events.size");
         assertEvent(command, routed.get(0), EventType.APPLICATION, 0, Flags.NONE, 0, "events[0]");
-        assertEvent(command, routed.get(1), eventType, 1, Flags.NONE, payloadSize, "events[1]");
-        assertEvent(command, routed.get(2), EventType.ROLLBACK, 2, Flags.ROLLBACK, 0, "events[2]");
+        assertEvent(command, routed.get(1), eventType, 1, Flags.COMMIT, payloadSize, "events[1]");
+    }
 
+    @Test
+    public void lastAppliedCommandSequenceForSameInput() {
+        //given
+        final int input = 11;
+        final long lastSeq = 21;
+        final long sequence = 22;
+        final int type = 33;
+        final long time = 44;
+        when(baseState.lastProcessedCommandSequenceForInput(input)).thenReturn(lastSeq);
+
+        //when
+        startWithCommand(input, sequence, type, time);
+        final long lastAppliedCommandSequenceForSameInput = eventRouter.lastAppliedCommandSequenceForSameInput();
+
+        //when
+        assertEquals(lastSeq, lastAppliedCommandSequenceForSameInput, "lastAppliedCommandSequenceForSameInput");
     }
 
     private void startWithCommand(final int input,
@@ -214,22 +255,6 @@ public class FlyweightEventRouterTest {
         //when
         assertThrows(IllegalArgumentException.class,
                 () -> eventRouter.routeEvent(EventType.COMMIT, zeroPayload, 0, 0)
-        );
-    }
-
-    @Test
-    public void rollbackEventNotAllowed() {
-        //given
-        final int input = 11;
-        final long sequence = 22;
-        final int type = 33;
-        final long time = 44;
-        final DirectBuffer zeroPayload = new ExpandableArrayBuffer(0);
-        startWithCommand(input, sequence, type, time);
-
-        //when
-        assertThrows(IllegalArgumentException.class,
-                () -> eventRouter.routeEvent(EventType.ROLLBACK, zeroPayload, 0, 0)
         );
     }
 

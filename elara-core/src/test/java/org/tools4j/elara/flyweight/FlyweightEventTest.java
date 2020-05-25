@@ -192,7 +192,7 @@ public class FlyweightEventTest {
         final short index = 7;
         final int type = 123;
         final long time = 998877665544L;
-        final byte flags = Flags.COMMIT | Flags.ROLLBACK;
+        final byte flags = Flags.COMMIT;
         final String msg;
         final MutableDirectBuffer payload = new ExpandableArrayBuffer();
 
@@ -211,7 +211,7 @@ public class FlyweightEventTest {
             assertEquals(index, event.id().index(), "id.index");
             assertEquals(type, event.type(), "type");
             assertEquals(time, event.time(), "time");
-            assertEquals(Flags.UNDEFINED_STRING, event.flags().toString(), "flags");
+            assertEquals(Flags.COMMIT_STRING, event.flags().toString(), "flags");
             assertNotNull(event.payload(), "payload");
             assertEquals(payloadLength(), event.payload().capacity(), "payload.capacity");
             assertEquals(msg, event.payload().getStringAscii(0), "payload.msg");
