@@ -146,8 +146,6 @@ public class TimerApplication {
                     final int length = TimerEvents.timerStopped(context.buffer(), 0, timerId, timerType, repetition, timeout);
                     context.route(length);
                 }
-                //optional, as the fire event would fail anyway due to timer already stopped
-                router.skipFurtherCommandEvents();//suppresses the fire event caused by this trigger
             }
         }
     }

@@ -37,6 +37,12 @@ public interface Event extends Writable {
     interface Flags {
         /** @return true if this is the last event of the command and all events are hereby committed */
         boolean isCommit();
+        /** @return true if this is the last event of the command and all events are hereby rolled back */
+        boolean isRollback();
+        /** @return true if commit or rollback is true */
+        boolean isFinal();
+        /** @return true if neither commit nor rollback nor undefined */
+        boolean isNonFinal();
         /** @return flags as raw bits value */
         byte value();
     }

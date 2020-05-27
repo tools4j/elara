@@ -27,7 +27,6 @@ import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
-import org.tools4j.elara.route.SkipMode;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.timer.TimerEvents.REPETITION_SINGLE;
@@ -45,9 +44,6 @@ public class TimerCommandProcessor implements CommandProcessor {
     @Override
     public void onCommand(final Command command, final EventRouter router) {
         if (command.type() == TimerCommands.TRIGGER_TIMER) {
-            if (router.skipMode() != SkipMode.NONE) {
-                return;
-            }
             final long timerId = TimerCommands.timerId(command);
             if (timerState.hasTimer(timerId)) {
                 final int repetition = TimerCommands.timerRepetition(command);

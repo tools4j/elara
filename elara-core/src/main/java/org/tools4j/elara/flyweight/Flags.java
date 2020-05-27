@@ -27,12 +27,29 @@ public enum Flags {
     ;
     public static final byte NONE = 0;
     public static final byte COMMIT = 1;
+    public static final byte ROLLBACK = 2;
 
     public static final String NONE_STRING = "-";
     public static final String COMMIT_STRING = "C";
+    public static final String ROLLBACK_STRING = "R";
+    public static final String UNDEFINED_STRING = "U";
+
+    private static final int FINAL_MASK = COMMIT | ROLLBACK;
 
     public static boolean isCommit(final byte flags) {
-        return (COMMIT & flags) != 0;
+        return (flags & COMMIT) != 0;
+    }
+
+    public static boolean isRollback(final byte flags) {
+        return (flags & ROLLBACK) != 0;
+    }
+
+    public static boolean isFinal(final byte flags) {
+        return (flags & FINAL_MASK) != 0;
+    }
+
+    public static boolean isNonFinal(final byte flags) {
+        return (flags & FINAL_MASK) == 0;
     }
 
     public static String toString(final byte flags) {
@@ -41,8 +58,10 @@ public enum Flags {
                 return NONE_STRING;
             case COMMIT:
                 return COMMIT_STRING;
+            case ROLLBACK:
+                return ROLLBACK_STRING;
             default:
-                return isCommit(flags) ? COMMIT_STRING : NONE_STRING;
+                return Integer.toHexString(flags & 0xff);
         }
     }
 }

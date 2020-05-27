@@ -34,13 +34,15 @@ import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.log.InMemoryLog;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.route.DefaultEventRouter;
-import org.tools4j.elara.route.SkipMode;
+import org.tools4j.elara.route.EventRouter.RoutingContext;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit test for {@link DefaultEventRouter}
@@ -136,18 +138,17 @@ public class DefaultEventRouterTest {
         startWithCommand(input, sequence, type, time);
 
         //when
-        final SkipMode skipMode = eventRouter.skipCommand(false);
+        final boolean skipped = eventRouter.skipCommand();
         eventRouter.complete();
 
         //then
-        assertEquals(SkipMode.SKIPPED, skipMode, "skipMode");
+        assertTrue(skipped, "skipped");
         assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[x]");
-        assertEquals(1, routed.size(), "events.size");
-        assertEvent(command, routed.get(0), EventType.COMMIT, 0, Flags.COMMIT, 0, "events[0]");
+        assertEquals(0, routed.size(), "events.size");
     }
 
     @Test
-    public void skipCommandWithConflation() {
+    public void skipCommandDuringEventRouting() {
         //given
         final int input = 11;
         final long sequence = 22;
@@ -157,17 +158,21 @@ public class DefaultEventRouterTest {
         startWithCommand(input, sequence, type, time);
 
         //when
-        final SkipMode skipMode = eventRouter.skipCommand(true);
+        final boolean skipped;
+        try (final RoutingContext routingContext = eventRouter.routingEvent()) {
+            routingContext.buffer().putStringAscii(0, "Hello world");
+            skipped = eventRouter.skipCommand();
+        }
         eventRouter.complete();
 
         //then
-        assertEquals(SkipMode.CONFLATED, skipMode, "skipMode");
+        assertTrue(skipped, "skipped");
         assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[x]");
         assertEquals(0, routed.size(), "events.size");
     }
 
     @Test
-    public void skipCommandWithEvents() {
+    public void skipCommandNotPossible() {
         //given
         final int input = 11;
         final long sequence = 22;
@@ -182,15 +187,31 @@ public class DefaultEventRouterTest {
         final int payloadSize = routeEvent(eventType, msgOffset, msg);
 
         //when
-        final SkipMode skipMode = eventRouter.skipCommand(false);
+        final boolean skipped = eventRouter.skipCommand();
         eventRouter.complete();
 
         //then
-        assertEquals(SkipMode.CONSUMED, skipMode, "skipMode");
+        assertFalse(skipped, "skipped");
         assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[x]");
         assertEquals(2, routed.size(), "events.size");
         assertEvent(command, routed.get(0), EventType.APPLICATION, 0, Flags.NONE, 0, "events[0]");
         assertEvent(command, routed.get(1), eventType, 1, Flags.COMMIT, payloadSize, "events[1]");
+    }
+
+    @Test
+    public void skipCommandPreventsEventRouting() {
+        //given
+        final int input = 11;
+        final long sequence = 22;
+        final int type = 33;
+        final long time = 44;
+
+        startWithCommand(input, sequence, type, time);
+        final boolean skipped = eventRouter.skipCommand();
+        assertTrue(skipped, "skipped");
+
+        //when + then
+        assertThrows(IllegalStateException.class, this::routeEmptyApplicationEvent);
     }
 
     private void startWithCommand(final int input,
@@ -228,6 +249,22 @@ public class DefaultEventRouterTest {
         //when
         assertThrows(IllegalArgumentException.class,
                 () -> eventRouter.routeEvent(EventType.COMMIT, zeroPayload, 0, 0)
+        );
+    }
+
+    @Test
+    public void rollbackEventNotAllowed() {
+        //given
+        final int input = 11;
+        final long sequence = 22;
+        final int type = 33;
+        final long time = 44;
+        final DirectBuffer zeroPayload = new ExpandableArrayBuffer(0);
+        startWithCommand(input, sequence, type, time);
+
+        //when
+        assertThrows(IllegalArgumentException.class,
+                () -> eventRouter.routeEvent(EventType.ROLLBACK, zeroPayload, 0, 0)
         );
     }
 

@@ -35,12 +35,12 @@ public class DefaultBaseState implements BaseState.Mutable {
     private static final class AppliedEventState {
         long sequence;
         int index;
-        boolean isCommit;
+        boolean isFinal;
         void update(final Event event) {
             final Event.Id id = event.id();
             sequence = id.commandId().sequence();
             index = id.index();
-            isCommit = event.flags().isCommit();
+            isFinal = event.flags().isFinal();
         }
     }
 
@@ -69,7 +69,7 @@ public class DefaultBaseState implements BaseState.Mutable {
         if (appliedEventState != null) {
             final long sequence = id.sequence();
             return sequence < appliedEventState.sequence ||
-                    sequence == appliedEventState.sequence && appliedEventState.isCommit;
+                    sequence == appliedEventState.sequence && appliedEventState.isFinal;
         }
         return false;
     }

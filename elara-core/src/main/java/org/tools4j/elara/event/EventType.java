@@ -29,6 +29,8 @@ public enum EventType {
     public static final int APPLICATION = 0;
     /** Final event marking the completion of processing a command. */
     public static final int COMMIT = -1;
+    /** Final event marking the rollback of processing a command. */
+    public static final int ROLLBACK = -2;
 
     public static boolean isAdmin(final int value) {
         return value < 0;

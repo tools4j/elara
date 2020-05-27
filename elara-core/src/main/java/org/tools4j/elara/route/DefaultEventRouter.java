@@ -40,10 +40,6 @@ import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
-import static org.tools4j.elara.route.SkipMode.CONFLATED;
-import static org.tools4j.elara.route.SkipMode.CONSUMED;
-import static org.tools4j.elara.route.SkipMode.NONE;
-import static org.tools4j.elara.route.SkipMode.SKIPPED;
 
 public class DefaultEventRouter implements EventRouter.Default {
 
@@ -54,8 +50,8 @@ public class DefaultEventRouter implements EventRouter.Default {
     private final RoutingContext routingContext = new RoutingContext();
 
     private Command command;
-    private SkipMode skipMode = NONE;
-    private short nextIndex = 0;
+    private short nextIndex;
+    private boolean skipped;
 
     public DefaultEventRouter(final Appender appender, final EventApplier eventApplier) {
         this.appender = requireNonNull(appender);
@@ -65,13 +61,14 @@ public class DefaultEventRouter implements EventRouter.Default {
     public DefaultEventRouter start(final Command command) {
         this.command = requireNonNull(command);
         this.nextIndex = 0;
-        this.skipMode = NONE;
+        this.skipped = false;
         return this;
     }
 
     @Override
     public RoutingContext routingEvent(final int type) {
         checkEventType(type);
+        checkNotSkipped();
         checkEventLimit();
         return routingEvent0(type);
     }
@@ -84,14 +81,15 @@ public class DefaultEventRouter implements EventRouter.Default {
     }
 
     public void complete() {
-        if (skipMode == NONE) {
+        if (!skipped) {
+            //we need a commit event if (a) there was no event, or (b) if routing of the last event was aborted
             if (nextIndex == 0 || !routingContext.isCommitPending()) {
                 routeCommitEvent();
             }
             routingContext.commit(Flags.COMMIT);
         }
         this.command = null;
-        this.skipMode = NONE;
+        this.skipped = false;
         this.nextIndex = 0;
     }
 
@@ -102,39 +100,23 @@ public class DefaultEventRouter implements EventRouter.Default {
     }
 
     @Override
-    public SkipMode skipCommand(final boolean allowConflation) {
-        return skip(allowConflation, false);
-    }
-
-    @Override
-    public SkipMode skipFurtherCommandEvents() {
-        return skip(false, true);
-    }
-
-    private SkipMode skip(final boolean allowConflation, final boolean commitPendingEvents) {
-        if (skipMode != NONE) {
-            return skipMode;
+    public boolean skipCommand() {
+        if (skipped) {
+            return true;
+        }
+        if (nextIndex > 0) {
+            return false;
         }
         if (routingContext.isCommitPending()) {
-            if (commitPendingEvents) {
-                routingContext.commit(Flags.COMMIT);
-            } else {
-                routingContext.abort();
-            }
+            routingContext.abort();
         }
-        if (nextIndex == 0 && !allowConflation) {
-            routeCommitEvent();
-            routingContext.commit(Flags.COMMIT);
-            skipMode = SKIPPED;
-        } else {
-            skipMode = nextIndex == 0 ? CONFLATED : CONSUMED;
-        }
-        return skipMode;
+        skipped = true;
+        return skipped;
     }
 
     @Override
-    public SkipMode skipMode() {
-        return skipMode;
+    public boolean isSkipped() {
+        return skipped;
     }
 
     @Override
@@ -143,8 +125,14 @@ public class DefaultEventRouter implements EventRouter.Default {
     }
 
     private static void checkEventType(final int eventType) {
-        if (eventType == EventType.COMMIT) {
+        if (eventType == EventType.COMMIT || eventType == EventType.ROLLBACK) {
             throw new IllegalArgumentException("Illegal event type: " + eventType);
+        }
+    }
+
+    private void checkNotSkipped() {
+        if (skipped) {
+            throw new IllegalStateException("Command has been skipped and event routing is not possible");
         }
     }
 
@@ -206,9 +194,8 @@ public class DefaultEventRouter implements EventRouter.Default {
 
         @Override
         public void route(final int length) {
-            if (skipMode != NONE) {
-                abort();
-                return;
+            if (length < 0) {
+                throw new IllegalArgumentException("Length cannot be negative: " + length);
             }
             ensureNotClosed();
             buffer.unwrap();

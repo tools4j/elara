@@ -99,6 +99,10 @@ public class CommittedEventPoller implements Poller {
                 eventPoller.moveTo(entryId);
                 return true;
             }
+            if (aheadState.isRollback()) {
+                //event with this entryId exists but it was rolled back
+                break;
+            }
         }
         aheadState.lastEventFlags = lastEventFlags;
         aheadPoller.moveTo(curHeadId);
@@ -112,6 +116,10 @@ public class CommittedEventPoller implements Poller {
         }
         if (aheadState.isCommit()) {
             return eventPoller.poll(handler);
+        }
+        if (aheadState.isRollback()) {
+            eventPoller.moveTo(aheadPoller.entryId());
+            aheadState.reset();
         }
         return aheadPoller.poll(aheadState);
     }
@@ -134,6 +142,9 @@ public class CommittedEventPoller implements Poller {
         }
         boolean isCommit() {
             return Flags.isCommit(lastEventFlags);
+        }
+        boolean isRollback() {
+            return Flags.isRollback(lastEventFlags);
         }
     }
 }

@@ -71,6 +71,8 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
                     return "A";
                 case EventType.COMMIT:
                     return "C";
+                case EventType.ROLLBACK:
+                    return "R";
             }
         }
         return type;
