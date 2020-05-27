@@ -36,10 +36,10 @@ import org.tools4j.nobark.loop.Step;
 import static java.util.Objects.requireNonNull;
 
 /**
- * An event poller that works with two underlying pollers to ensure only committed events
- * are passed to the event handler.  The lookahead poller reads ahead until either a commit or
- * abort event is found; the event poller then invokes the handler for the corresponding events
- * or skips them if they were aborted.
+ * Step that invokes output handler with committed events and replay flag during replay.  A tracking poller is used to
+ * store the index of the last event passed to the handler.  A second poller is used to also pass replayed events to the
+ * output handler.  Using a {@link CommittedEventPoller} as tracking poller guarantees that only committed events are
+ * passed to the handler.
  */
 public class OutputStep implements Step {
 
