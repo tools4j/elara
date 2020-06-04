@@ -28,14 +28,11 @@ import org.tools4j.elara.plugin.timer.TimerPlugin;
 
 public enum Plugins {
     ;
-    private static final BasePlugin BASE_PLUGIN = new BasePlugin();
-    private static final TimerPlugin TIMER_PLUGIN = new TimerPlugin();
-
     public static BasePlugin basePlugin() {
-        return BASE_PLUGIN;
+        return BasePlugin.INSTANCE;
     }
 
     public static TimerPlugin timerPlugin() {
-        return TIMER_PLUGIN;
+        return TimerPlugin.INSTANCE;
     }
 }

@@ -37,7 +37,8 @@ import static java.util.Objects.requireNonNull;
  * Default plugin to initialise {@link BaseState}.  Another plugin can be used to initialise the base state if it
  * returns an implementation of {@link BaseContext}.
  */
-public final class BasePlugin implements Plugin<BaseState.Mutable> {
+public enum BasePlugin implements Plugin<BaseState.Mutable> {
+    INSTANCE;
 
     @Override
     public Mutable defaultPluginState() {

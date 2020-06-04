@@ -35,7 +35,8 @@ import org.tools4j.elara.time.TimeSource;
 /**
  * Simple timer plugin to support timers using {@link TimerCommands} and {@link TimerEvents}.
  */
-public final class TimerPlugin implements Plugin<TimerState.Mutable> {
+public enum TimerPlugin implements Plugin<TimerState.Mutable> {
+    INSTANCE;
 
     public static final int INPUT_ID = -10;
 
