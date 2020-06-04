@@ -21,9 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.application;
+package org.tools4j.elara.plugin.api;
 
-public interface Application {
-    CommandProcessor commandProcessor();
-    EventApplier eventApplier();
+import org.tools4j.elara.application.CommandProcessor;
+import org.tools4j.elara.application.EventApplier;
+import org.tools4j.elara.input.Input;
+import org.tools4j.elara.output.Output;
+import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.time.TimeSource;
+
+public interface Plugin<P> {
+
+    P defaultPluginState();
+    Context context(P pluginState);
+
+    interface Context {
+        Input[] inputs(BaseState baseState, TimeSource timeSource);
+        Output output(BaseState baseState);
+        CommandProcessor commandProcessor(BaseState baseState);
+        EventApplier eventApplier(BaseState.Mutable baseState);
+    }
+
 }

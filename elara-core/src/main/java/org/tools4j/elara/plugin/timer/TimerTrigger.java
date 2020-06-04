@@ -26,6 +26,7 @@ package org.tools4j.elara.plugin.timer;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver.ReceivingContext;
 import org.tools4j.elara.input.SequenceGenerator;
+import org.tools4j.elara.input.SimpleSequenceGenerator;
 import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.time.TimeSource;
@@ -60,9 +61,9 @@ public final class TimerTrigger {
         };
     }
 
-    public Input asInput(final int id, final TimeSource timeSource, final SequenceGenerator sequenceGenerator) {
+    public Input asInput(final int id, final TimeSource timeSource) {
         requireNonNull(timeSource);
-        requireNonNull(sequenceGenerator);
+        final SequenceGenerator sequenceGenerator = new SimpleSequenceGenerator();
         return Input.create(id, receiver -> {
             final long time = timeSource.currentTime();
             if (time >= nextTriggerTime) {

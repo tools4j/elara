@@ -43,9 +43,7 @@ public interface DuplicateHandler {
      *
      * @param command the skipped command
      */
-    default void skipCommandProcessing(final Command command) {
-        //default is no-op;  apps may want to log something
-    }
+    void skipCommandProcessing(Command command);
 
     /**
      * Event applying is skipped because it has already been applied.
@@ -61,20 +59,9 @@ public interface DuplicateHandler {
         //default is no-op;  apps may want to log something
     }
 
-    /**
-     * A command is dropped and not appended to the command log because it is already stored there.
-     * <p>
-     * This can happen when upstream applications re-send messages and those messages are identified as duplicates by
-     * the sequencer.  Duplicates are identified via unique (input-id/sequence) pair of the command.  Duplicate
-     * detection utilises the constraint that sequences must be monotonically increasing per input.
-     *
-     * @param command the dropped command
-     */
-    void dropCommandReceived(final Command command);
-
     /** Default handler printing only dropped commands to system output */
     DuplicateHandler DEFAULT = command -> {
-        System.out.println("Dropping duplicate command: " + command);
+        System.out.println("Skipping command: " + command);
     };
 
     /** No-op handler silently ignoring all duplicates.*/

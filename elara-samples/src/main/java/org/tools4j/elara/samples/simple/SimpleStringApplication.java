@@ -26,16 +26,14 @@ package org.tools4j.elara.samples.simple;
 import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.application.Application;
-import org.tools4j.elara.application.SimpleApplication;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.input.Receiver;
-import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.log.InMemoryLog;
 import org.tools4j.elara.output.CommandLoopback;
+import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
 
@@ -47,17 +45,14 @@ public class SimpleStringApplication {
 
     private static int TYPE_STRING = 1;
 
-    private final Application application = new SimpleApplication(
-            "simple-string-app", this::process, this::apply
-    );
-
     public ElaraRunner launch(final Queue<String> inputQueue) {
         return Elara.launch(Context.create()
-                    .input(999, new StringInputPoller(inputQueue))
-                    .output(this::publish)
-                    .commandLog(new InMemoryLog())
-                    .eventLog(new InMemoryLog()),
-                application
+                .commandProcessor(this::process)
+                .eventApplier(this::apply)
+                .input(999, new StringInputPoller(inputQueue))
+                .output(this::publish)
+                .commandLog(new InMemoryLog())
+                .eventLog(new InMemoryLog())
         );
     }
 

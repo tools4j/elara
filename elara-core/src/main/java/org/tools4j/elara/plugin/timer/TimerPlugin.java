@@ -26,9 +26,8 @@ package org.tools4j.elara.plugin.timer;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.output.Output;
-import org.tools4j.elara.plugin.Plugin;
+import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.timer.TimerState.Mutable;
 import org.tools4j.elara.time.TimeSource;
@@ -46,13 +45,13 @@ public final class TimerPlugin implements Plugin<TimerState.Mutable> {
     }
 
     @Override
-    public Context create(final TimerState.Mutable timerState) {
+    public Context context(final TimerState.Mutable timerState) {
         return new Context() {
             final TimerTrigger timerTrigger = new TimerTrigger(timerState);
             @Override
-            public Input[] inputs(final BaseState baseState, final TimeSource timeSource, final SequenceGenerator adminSequenceGenerator) {
+            public Input[] inputs(final BaseState baseState, final TimeSource timeSource) {
                 return new Input[] {
-                        timerTrigger.asInput(INPUT_ID, timeSource, adminSequenceGenerator)
+                        timerTrigger.asInput(INPUT_ID, timeSource)
                 };
             }
 

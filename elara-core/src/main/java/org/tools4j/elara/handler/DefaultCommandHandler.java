@@ -23,13 +23,11 @@
  */
 package org.tools4j.elara.handler;
 
-import org.agrona.DirectBuffer;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.log.MessageLog.Handler;
+import org.tools4j.elara.log.MessageLog.Handler.Result;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.route.DefaultEventRouter;
 
@@ -37,7 +35,7 @@ import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.log.MessageLog.Handler.Result.PEEK;
 import static org.tools4j.elara.log.MessageLog.Handler.Result.POLL;
 
-public class ProcessingCommandHandler implements Handler, CommandHandler {
+public class DefaultCommandHandler implements CommandHandler {
 
     private final BaseState baseState;
     private final DefaultEventRouter eventRouter;
@@ -45,23 +43,16 @@ public class ProcessingCommandHandler implements Handler, CommandHandler {
     private final ExceptionHandler exceptionHandler;
     private final DuplicateHandler duplicateHandler;
 
-    private final FlyweightCommand flyweightCommand = new FlyweightCommand();
-
-    public ProcessingCommandHandler(final BaseState baseState,
-                                    final DefaultEventRouter eventRouter,
-                                    final CommandProcessor commandProcessor,
-                                    final ExceptionHandler exceptionHandler,
-                                    final DuplicateHandler duplicateHandler) {
+    public DefaultCommandHandler(final BaseState baseState,
+                                 final DefaultEventRouter eventRouter,
+                                 final CommandProcessor commandProcessor,
+                                 final ExceptionHandler exceptionHandler,
+                                 final DuplicateHandler duplicateHandler) {
         this.baseState = requireNonNull(baseState);
         this.eventRouter = requireNonNull(eventRouter);
         this.commandProcessor = requireNonNull(commandProcessor);
         this.exceptionHandler = requireNonNull(exceptionHandler);
         this.duplicateHandler = requireNonNull(duplicateHandler);
-    }
-
-    @Override
-    public Result onMessage(final DirectBuffer message) {
-        return onCommand(flyweightCommand.init(message, 0));
     }
 
     @Override

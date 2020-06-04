@@ -21,42 +21,45 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.application;
+package org.tools4j.elara.factory;
+
+import org.tools4j.elara.init.Context;
+import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.plugin.base.BasePlugin;
+import org.tools4j.elara.plugin.base.BaseState;
 
 import static java.util.Objects.requireNonNull;
 
-public class SimpleApplication implements Application {
+public class DefaultPluginFactory implements PluginFactory {
 
-    private final String name;
-    private final CommandProcessor commandProcessor;
-    private final EventApplier eventApplier;
+    private static final Plugin.Context[] EMPTY_PLUGIN_CONTEXTS = {};
 
-    public SimpleApplication(final String name,
-                             final CommandProcessor commandProcessor,
-                             final EventApplier eventApplier) {
-        this.name = requireNonNull(name);
-        this.commandProcessor = requireNonNull(commandProcessor);
-        this.eventApplier = requireNonNull(eventApplier);
+    private final ElaraFactory elaraFactory;
+
+    public DefaultPluginFactory(final ElaraFactory elaraFactory) {
+        this.elaraFactory = requireNonNull(elaraFactory);
     }
 
-    public static <R,W> Application create(final String name,
-                                           final CommandProcessor commandProcessor,
-                                           final EventApplier eventApplier) {
-        return new SimpleApplication(name, commandProcessor, eventApplier);
+    protected ElaraFactory elaraFactory() {
+        return elaraFactory;
     }
 
-    @Override
-    public CommandProcessor commandProcessor() {
-        return commandProcessor;
+    protected Context context() {
+        return elaraFactory.context();
     }
 
     @Override
-    public EventApplier eventApplier() {
-        return eventApplier;
+    public Plugin.Context[] plugins() {
+        return context().plugins().pluginContexts().toArray(EMPTY_PLUGIN_CONTEXTS);
     }
 
     @Override
-    public String toString() {
-        return name;
+    public BaseState.Mutable baseState() {
+        for (final Plugin.Context plugin : plugins()) {
+            if (plugin instanceof BasePlugin.BaseContext) {
+                return ((BasePlugin.BaseContext)plugin).baseState();
+            }
+        }
+        return BasePlugin.BaseContext.createDefaultBaseState();
     }
 }

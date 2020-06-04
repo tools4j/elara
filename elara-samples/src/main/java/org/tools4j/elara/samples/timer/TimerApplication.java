@@ -28,8 +28,7 @@ import net.openhft.chronicle.wire.WireType;
 import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.application.Application;
-import org.tools4j.elara.application.SimpleApplication;
+import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.chronicle.ChronicleMessageLog;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
@@ -38,9 +37,9 @@ import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.log.InMemoryLog;
+import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.plugin.timer.TimerCommands;
 import org.tools4j.elara.plugin.timer.TimerEvents;
-import org.tools4j.elara.plugin.timer.TimerPlugin;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.run.Elara;
@@ -64,11 +63,12 @@ public class TimerApplication {
     public ElaraRunner inMemory(final Queue<DirectBuffer> commandQueue,
                                 final Consumer<? super Event> eventConsumer) {
         return Elara.launch(Context.create()
-                    .input(666, new CommandPoller(commandQueue))
-                    .commandLog(new InMemoryLog())
-                    .eventLog(new InMemoryLog()),
-                application(eventConsumer),
-                new TimerPlugin()
+                .commandProcessor(this::process)
+                .eventApplier(eventApplier(eventConsumer))
+                .input(666, new CommandPoller(commandQueue))
+                .commandLog(new InMemoryLog())
+                .eventLog(new InMemoryLog())
+                .plugins().register(Plugins.timerPlugin())
         );
     }
 
@@ -84,20 +84,21 @@ public class TimerApplication {
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         return Elara.launch(Context.create()
-                    .input(666, new CommandPoller(commandQueue))
-                    .commandLog(new ChronicleMessageLog(cq))
-                    .eventLog(new ChronicleMessageLog(eq)),
-                application(eventConsumer),
-                new TimerPlugin()
+                .commandProcessor(this::process)
+                .eventApplier(eventApplier(eventConsumer))
+                .input(666, new CommandPoller(commandQueue))
+                .commandLog(new ChronicleMessageLog(cq))
+                .eventLog(new ChronicleMessageLog(eq))
+                .plugins().register(Plugins.timerPlugin())
         );
     }
 
-    private Application application(final Consumer<? super Event> eventConsumer) {
+    private EventApplier eventApplier(final Consumer<? super Event> eventConsumer) {
         requireNonNull(eventConsumer);
-        return new SimpleApplication("timer-app", this::process, event -> {
-            this.apply(event);
+        return event -> {
+            apply(event);
             eventConsumer.accept(cloneEvent(event));
-        });
+        };
     }
 
     public static DirectBuffer startTimer(final long timerId, final long timeoutMillis) {

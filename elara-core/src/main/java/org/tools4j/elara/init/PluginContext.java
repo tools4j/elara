@@ -23,41 +23,24 @@
  */
 package org.tools4j.elara.init;
 
-import org.tools4j.elara.plugin.Plugin;
+import org.tools4j.elara.plugin.api.Plugin;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
-final class DefaultPluginConfigurer<A> implements PluginConfigurer<A> {
+public interface PluginContext {
+    Context register(Plugin<?> plugin);
 
-    private final List<Plugin.Builder<? super A>> plugins = new ArrayList<>();
+    <P> Context register(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider);
 
-    @Override
-    public PluginConfigurer<A> plugin(final Plugin<?> plugin) {
-        return plugin(plugin.builder());
-    }
+    <P> Context register(Plugin<P> plugin, Consumer<? super P> pluginStateAware);
 
-    @Override
-    public <P> PluginConfigurer<A> plugin(final Plugin<P> plugin, final BiConsumer<? super A, ? super P> applicationInitializer) {
-        return plugin(plugin.builder(plugin.defaultPluginState(), applicationInitializer));
-    }
+    <P> P pluginState(Plugin<P> plugin);
 
-    @Override
-    public <P> PluginConfigurer<A> plugin(final Plugin<P> plugin, final Function<? super A, ? extends P> pluginStateProvider) {
-        return plugin(plugin.builder(pluginStateProvider));
-    }
+    <P> P pluginState(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider);
 
-    @Override
-    public PluginConfigurer<A> plugin(final Plugin.Builder<? super A> plugin) {
-        plugins.add(plugin);
-        return this;
-    }
+    <P> P pluginStateOrNull(Plugin<P> plugin);
 
-    @Override
-    public List<Plugin.Builder<? super A>> plugins() {
-        return plugins;
-    }
-
+    List<Plugin.Context> pluginContexts();
 }

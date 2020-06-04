@@ -26,13 +26,10 @@ package org.tools4j.elara.plugin.base;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.output.Output;
-import org.tools4j.elara.plugin.Plugin;
+import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState.Mutable;
 import org.tools4j.elara.time.TimeSource;
-
-import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
@@ -44,19 +41,13 @@ public final class BasePlugin implements Plugin<BaseState.Mutable> {
 
     @Override
     public Mutable defaultPluginState() {
-        return BaseContext.createDefaultBaseStae();
+        return BaseContext.createDefaultBaseState();
     }
 
     @Override
-    public BaseContext create(final BaseState.Mutable baseState) {
+    public BaseContext context(final BaseState.Mutable baseState) {
         requireNonNull(baseState);
         return () -> baseState;
-    }
-
-    @Override
-    public <A> Builder<A> builder(final Function<? super A, ? extends BaseState.Mutable> stateProvider) {
-        requireNonNull(stateProvider);
-        return application -> create(stateProvider.apply(application));
     }
 
     /**
@@ -66,14 +57,14 @@ public final class BasePlugin implements Plugin<BaseState.Mutable> {
      */
     @FunctionalInterface
     public interface BaseContext extends Context {
-        static BaseState.Mutable createDefaultBaseStae() {
+        static BaseState.Mutable createDefaultBaseState() {
             return new DefaultBaseState();
         }
 
         BaseState.Mutable baseState();
 
         @Override
-        default Input[] inputs(final BaseState baseState, final TimeSource timeSource, final SequenceGenerator adminSequenceGenerator) {
+        default Input[] inputs(final BaseState baseState, final TimeSource timeSource) {
             return Input.EMPTY_INPUTS;
         }
 

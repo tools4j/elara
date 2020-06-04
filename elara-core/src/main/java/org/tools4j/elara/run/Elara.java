@@ -23,46 +23,55 @@
  */
 package org.tools4j.elara.run;
 
-import org.tools4j.elara.application.Application;
+import org.agrona.concurrent.IdleStrategy;
+import org.tools4j.elara.factory.ElaraFactory;
 import org.tools4j.elara.init.Context;
-import org.tools4j.elara.init.Launcher;
-import org.tools4j.elara.init.PluginConfigurer;
-import org.tools4j.elara.plugin.Plugin;
+import org.tools4j.nobark.loop.Loop;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import static java.util.Objects.requireNonNull;
 
-public enum  Elara {
+/**
+ * Starts an elara application.
+ */
+public enum Elara {
     ;
 
-    public static ElaraRunner launch(final Application application) {
-        return launch(Context.create(), application);
+    public static ElaraRunner launch(final Context context) {
+        return launch(ElaraFactory.create(context));
     }
 
-    public static ElaraRunner launch(final Context context, final Application application) {
-        return launch(context, application, Collections.emptyList());
+    public static ElaraRunner launch(final ElaraFactory elaraFactory) {
+        final Context context = elaraFactory.context();
+        return new ElaraRunner(Loop.start(
+                nobarkIdleStrategy(context.idleStrategy()),
+                context.exceptionHandler(),
+                context.threadFactory(),
+                elaraFactory.dutyCycleStep()
+        ));
     }
 
-    public static <A extends Application> ElaraRunner launch(final Context context,
-                                                            final A application,
-                                                            final Plugin<?>... plugins) {
-        final List<Plugin.Builder<? super A>> builders = new ArrayList<>(plugins.length);
-        for (final Plugin<?> plugin : plugins) {
-            builders.add(plugin.builder());
-        }
-        return launch(context, application, builders);
-    }
+    private static org.tools4j.nobark.loop.IdleStrategy nobarkIdleStrategy(final IdleStrategy idleStrategy) {
+        requireNonNull(idleStrategy);
+        return new org.tools4j.nobark.loop.IdleStrategy() {
+            @Override
+            public void idle() {
+                idleStrategy.idle();
+            }
 
-    public static <A extends Application> ElaraRunner launch(final Context context,
-                                                            final A application,
-                                                            final PluginConfigurer<A> plugins) {
-        return launch(context, application, plugins.plugins());
-    }
+            @Override
+            public void reset() {
+                idleStrategy.reset();
+            }
 
-    public static <A extends Application> ElaraRunner launch(final Context context,
-                                                            final A application,
-                                                            final List<Plugin.Builder<? super A>> pluginBuilders) {
-        return Launcher.start(context, application, pluginBuilders);
+            @Override
+            public void idle(final boolean workDone) {
+                idleStrategy.idle(workDone ? 1 : 0);
+            }
+
+            @Override
+            public String toString() {
+                return idleStrategy.toString();
+            }
+        };
     }
 }

@@ -25,22 +25,14 @@ package org.tools4j.elara.init;
 
 import org.agrona.concurrent.BackoffIdleStrategy;
 import org.agrona.concurrent.IdleStrategy;
-import org.tools4j.elara.application.Application;
+import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.DuplicateHandler;
+import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.application.ExceptionHandler;
-import org.tools4j.elara.input.ReceiverFactory;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.loop.CommandPollerStep;
-import org.tools4j.elara.loop.DutyCycleStep;
-import org.tools4j.elara.loop.EventPollerStep;
-import org.tools4j.elara.loop.OutputStep;
-import org.tools4j.elara.loop.SequencerStep;
 import org.tools4j.elara.output.Output;
-import org.tools4j.elara.plugin.Plugin;
 import org.tools4j.elara.time.TimeSource;
-import org.tools4j.nobark.loop.Step;
-import org.tools4j.nobark.run.ThreadLike;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,12 +40,13 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.loop.OutputStep.DEFAULT_POLLER_ID;
 
 final class DefaultContext implements Context {
 
-    private static final String DEFAULT_THREAD_NAME = "duty-cycle";
+    private static final String DEFAULT_THREAD_NAME = "elara";
 
+    private CommandProcessor commandProcessor;
+    private EventApplier eventApplier;
     private final List<Input> inputs = new ArrayList<>();
     private Output output = Output.NOOP;
     private MessageLog commandLog;
@@ -64,6 +57,29 @@ final class DefaultContext implements Context {
     private IdleStrategy idleStrategy = new BackoffIdleStrategy(
             100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100));
     private ThreadFactory threadFactory;
+    private final PluginContext plugins = new DefaultPluginContext(this);
+
+    @Override
+    public CommandProcessor commandProcessor() {
+        return commandProcessor;
+    }
+
+    @Override
+    public Context commandProcessor(final CommandProcessor commandProcessor) {
+        this.commandProcessor = requireNonNull(commandProcessor);
+        return this;
+    }
+
+    @Override
+    public EventApplier eventApplier() {
+        return eventApplier;
+    }
+
+    @Override
+    public Context eventApplier(final EventApplier eventApplier) {
+        this.eventApplier = requireNonNull(eventApplier);
+        return this;
+    }
 
     @Override
     public List<Input> inputs() {
@@ -188,6 +204,11 @@ final class DefaultContext implements Context {
     }
 
     @Override
+    public PluginContext plugins() {
+        return plugins;
+    }
+
+    @Override
     public Context validateAndPopulateDefaults() {
         for (int i = 0; i < inputs.size(); i++) {
             for (int j = i + 1; j < inputs.size(); j++) {
@@ -195,6 +216,12 @@ final class DefaultContext implements Context {
                     throw new IllegalStateException("Duplicate input id: " + inputs.get(i).id());
                 }
             }
+        }
+        if (commandProcessor == null) {
+            throw new IllegalStateException("Command processor must be set");
+        }
+        if (eventApplier == null) {
+            throw new IllegalStateException("Event applier must be set");
         }
         if (commandLog == null) {
             throw new IllegalStateException("Command log must be set");
@@ -209,84 +236,6 @@ final class DefaultContext implements Context {
             threadFactory(DEFAULT_THREAD_NAME);
         }
         return this;
-    }
-
-    static DutyCycleStep dutyCycleStep(final Context context,
-                                       final Plugins plugins,
-                                       final Singletons singletons) {
-        return new DutyCycleStep(
-                sequencerStep(context, plugins),
-                commandPollerStep(context, singletons),
-                eventApplierStep(context, singletons),
-                outputStep(context, singletons)
-        );
-    }
-
-    static ReceiverFactory receiverFactory(final Context context) {
-        final MessageLog.Appender commandAppender = context.commandLog().appender();
-        return new ReceiverFactory(context.timeSource(), commandAppender);
-    }
-
-    static SequencerStep sequencerStep(final Context context, final Plugins plugins) {
-        return new SequencerStep(receiverFactory(context), plugins.inputs);
-    }
-
-    static CommandPollerStep commandPollerStep(final Context context, final Singletons singletons) {
-        return new CommandPollerStep(context.commandLog().poller(), singletons.commandHandler);
-    }
-
-    static EventPollerStep eventApplierStep(final Context context, final Singletons singletons) {
-        return new EventPollerStep(context.eventLog().poller(), singletons.eventHandler);
-    }
-
-    static Step outputStep(final Context context, final Singletons singletons) {
-        if (context.output() == Output.NOOP) {
-            return Step.NO_OP;
-        }
-        try {
-            return new OutputStep(singletons.outputHandler, context.eventLog(), DEFAULT_POLLER_ID);
-        } catch (final UnsupportedOperationException e) {
-            //ignore, use non-tracking below
-        }
-        return new OutputStep(singletons.outputHandler, context.eventLog());
-    }
-
-    static org.tools4j.nobark.loop.IdleStrategy idleStrategy(final Context context) {
-        final IdleStrategy idleStrategy = requireNonNull(context.idleStrategy());
-        return new org.tools4j.nobark.loop.IdleStrategy() {
-            @Override
-            public void idle() {
-                idleStrategy.idle();
-            }
-
-            @Override
-            public void reset() {
-                idleStrategy.reset();
-            }
-
-            @Override
-            public void idle(final boolean workDone) {
-                idleStrategy.idle(workDone ? 1 : 0);
-            }
-
-            @Override
-            public String toString() {
-                return idleStrategy.toString();
-            }
-        };
-    }
-
-    static <A extends Application> ThreadLike start(final Context context,
-                                                    final A application,
-                                                    final List<Plugin.Builder<? super A>> pluginBuilders) {
-        context.validateAndPopulateDefaults();
-        final Plugins plugins = new Plugins(context, application, pluginBuilders);
-        final Singletons singletons = new Singletons(context, plugins);
-        return dutyCycleStep(context, plugins, singletons).start(
-                idleStrategy(context),
-                context.exceptionHandler(),
-                context.threadFactory()
-        );
     }
 
 }

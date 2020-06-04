@@ -24,7 +24,9 @@
 package org.tools4j.elara.init;
 
 import org.agrona.concurrent.IdleStrategy;
+import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.DuplicateHandler;
+import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.MessageLog;
@@ -35,6 +37,12 @@ import java.util.List;
 import java.util.concurrent.ThreadFactory;
 
 public interface Context {
+    CommandProcessor commandProcessor();
+    Context commandProcessor(CommandProcessor commandProcessor);
+
+    EventApplier eventApplier();
+    Context eventApplier(EventApplier eventApplier);
+
     List<Input> inputs();
     Context input(Input input);
     Context input(int id, Input.Poller poller);
@@ -65,6 +73,8 @@ public interface Context {
     ThreadFactory threadFactory();
     Context threadFactory(String threadName);
     Context threadFactory(ThreadFactory threadFactory);
+
+    PluginContext plugins();
 
     Context validateAndPopulateDefaults();
 

@@ -21,34 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.init;
+package org.tools4j.elara.factory;
 
-import org.tools4j.elara.plugin.Plugin;
+import org.tools4j.elara.application.CommandProcessor;
+import org.tools4j.elara.handler.CommandHandler;
+import org.tools4j.nobark.loop.Step;
 
-import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-
-public interface PluginConfigurer<A> {
-    PluginConfigurer<A> plugin(Plugin<?> plugin);
-
-    PluginConfigurer<A> plugin(Plugin.Builder<? super A> plugin);
-
-    <P> PluginConfigurer<A> plugin(Plugin<P> plugin, BiConsumer<? super A, ? super P> applicationInitializer);
-
-    <P> PluginConfigurer<A> plugin(Plugin<P> plugin, Function<? super A, ? extends P> pluginStateProvider);
-
-    List<Plugin.Builder<? super A>> plugins();
-
-    static <A> PluginConfigurer<A> create() {
-        return new DefaultPluginConfigurer<>();
-    }
-
-    static <A> PluginConfigurer<A> create(final A application) {
-        return create();
-    }
-
-    static <A> PluginConfigurer<A> create(final Class<A> applicationType) {
-        return create();
-    }
+public interface ProcessorFactory {
+    CommandProcessor commandProcessor();
+    CommandHandler commandHandler();
+    Step commandPollerStep();
 }

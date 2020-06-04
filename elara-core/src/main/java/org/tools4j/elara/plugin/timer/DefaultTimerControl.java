@@ -23,11 +23,11 @@
  */
 package org.tools4j.elara.plugin.timer;
 
-import org.tools4j.elara.plugin.Plugin;
+import org.tools4j.elara.init.Context;
+import org.tools4j.elara.init.PluginContext;
+import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
-
-import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.timer.TimerEvents.periodicStarted;
@@ -35,13 +35,20 @@ import static org.tools4j.elara.plugin.timer.TimerEvents.timerStarted;
 import static org.tools4j.elara.plugin.timer.TimerEvents.timerStopped;
 
 /**
- * Controller to simplify routing of timer start and stop events.  Requires application access to timer state which can
- * be acquired by registering the plugin via {@link org.tools4j.elara.init.PluginConfigurer#plugin(Plugin, Function)}
- * and providing the timer state from the application state.
+ * Controller to simplify routing of timer start and stop events.  Requires application access to timer state which is
+ * available through {@link Context#plugins()}.
  */
 public class DefaultTimerControl implements TimerControl {
 
     private final TimerState timerState;
+
+    public DefaultTimerControl(final Context context) {
+        this(context.plugins());
+    }
+
+    public DefaultTimerControl(final PluginContext pluginContext) {
+        this(pluginContext.pluginState(Plugins.timerPlugin()));
+    }
 
     public DefaultTimerControl(final TimerState timerState) {
         this.timerState = requireNonNull(timerState);

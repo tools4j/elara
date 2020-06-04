@@ -23,17 +23,13 @@
  */
 package org.tools4j.elara.handler;
 
-import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
-import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.DuplicateHandler;
@@ -47,15 +43,15 @@ import org.tools4j.elara.route.DefaultEventRouter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
-import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit test for {@link ProcessingCommandHandler}
+ * Unit test for {@link DefaultCommandHandler}
  */
 @ExtendWith(MockitoExtension.class)
 public class CommandHandlerTest {
@@ -72,11 +68,11 @@ public class CommandHandlerTest {
     private DuplicateHandler duplicateHandler;
 
     //under test
-    private ProcessingCommandHandler commandHandler;
+    private DefaultCommandHandler commandHandler;
 
     @BeforeEach
     public void init() {
-        commandHandler = new ProcessingCommandHandler(baseState, eventRouter, commandProcessor, exceptionHandler,
+        commandHandler = new DefaultCommandHandler(baseState, eventRouter, commandProcessor, exceptionHandler,
                 duplicateHandler);
     }
 
@@ -91,12 +87,12 @@ public class CommandHandlerTest {
 
         //when
         when(baseState.allEventsAppliedFor(notNull())).thenReturn(true);
-        result = commandHandler.onMessage(toDirectBuffer(command));
+        result = commandHandler.onCommand(command);
 
         //then
         assertEquals(Result.POLL, result, "result");
         inOrder.verify(commandProcessor, never()).onCommand(any(), any());
-        inOrder.verify(duplicateHandler).skipCommandProcessing(eqCommand(command));
+        inOrder.verify(duplicateHandler).skipCommandProcessing(command);
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -112,11 +108,11 @@ public class CommandHandlerTest {
 
         //when
         when(baseState.allEventsAppliedFor(notNull())).thenReturn(false);
-        result = commandHandler.onMessage(toDirectBuffer(command));
+        result = commandHandler.onCommand(command);
 
         //then
         assertEquals(Result.POLL, result, "result");
-        inOrder.verify(commandProcessor).onCommand(eqCommand(command), notNull());
+        inOrder.verify(commandProcessor).onCommand(eq(command), notNull());
         inOrder.verify(duplicateHandler, never()).skipCommandProcessing(any());
         inOrder.verifyNoMoreInteractions();
     }
@@ -133,7 +129,7 @@ public class CommandHandlerTest {
 
         //when
         when(baseState.allEventsAppliedFor(notNull())).thenReturn(false);
-        result = commandHandler.onMessage(toDirectBuffer(command));
+        result = commandHandler.onCommand(command);
 
         //then
         assertEquals(Result.PEEK, result, "result");
@@ -156,12 +152,12 @@ public class CommandHandlerTest {
         //when
         when(baseState.allEventsAppliedFor(notNull())).thenReturn(false);
         doThrow(testException).when(commandProcessor).onCommand(any(), any());
-        result = commandHandler.onMessage(toDirectBuffer(command));
+        result = commandHandler.onCommand(command);
 
         //then
         assertEquals(Result.POLL, result, "result");
-        inOrder.verify(commandProcessor).onCommand(eqCommand(command), notNull());
-        inOrder.verify(exceptionHandler).handleCommandProcessorException(eqCommand(command), same(testException));
+        inOrder.verify(commandProcessor).onCommand(eq(command), notNull());
+        inOrder.verify(exceptionHandler).handleCommandProcessorException(command, testException);
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -178,30 +174,14 @@ public class CommandHandlerTest {
         //when
         when(baseState.allEventsAppliedFor(notNull())).thenReturn(true);
         doThrow(testException).when(duplicateHandler).skipCommandProcessing(any());
-        result = commandHandler.onMessage(toDirectBuffer(command));
+        result = commandHandler.onCommand(command);
 
         //then
         assertEquals(Result.POLL, result, "result");
         inOrder.verify(commandProcessor, never()).onCommand(any(), any());
-        inOrder.verify(duplicateHandler).skipCommandProcessing(eqCommand(command));
-        inOrder.verify(exceptionHandler).handleCommandProcessorException(eqCommand(command), same(testException));
+        inOrder.verify(duplicateHandler).skipCommandProcessing(command);
+        inOrder.verify(exceptionHandler).handleCommandProcessorException(command, testException);
         inOrder.verifyNoMoreInteractions();
-    }
-
-    private static Command eqCommand(final Command command) {
-        final String exp ="eq[command=" + command + "]";
-        final DirectBuffer raw = toDirectBuffer(command);
-        return Mockito.argThat(new ArgumentMatcher<Command>() {
-            @Override
-            public boolean matches(final Command argument) {
-                return 0 == raw.compareTo(toDirectBuffer(argument));
-            }
-
-            @Override
-            public String toString() {
-                return exp;
-            }
-        });
     }
 
     private static Command command(final int input, final long seq) {
@@ -209,11 +189,5 @@ public class CommandHandlerTest {
                 .init(new ExpandableArrayBuffer(), 0, input, seq, EventType.APPLICATION, 123L,
                         new UnsafeBuffer(0, 0), 0, 0
                 );
-    }
-
-    private static DirectBuffer toDirectBuffer(final Command command) {
-        final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
-        command.writeTo(buffer, 0);
-        return buffer;
     }
 }

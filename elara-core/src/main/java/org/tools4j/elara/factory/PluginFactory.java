@@ -21,23 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.init;
+package org.tools4j.elara.factory;
 
-import org.tools4j.elara.application.Application;
-import org.tools4j.elara.plugin.Plugin;
-import org.tools4j.elara.run.Elara;
-import org.tools4j.elara.run.ElaraRunner;
+import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.plugin.base.BaseState;
 
-import java.util.List;
-
-/**
- * Launcher used by {@link Elara} to launch an application.
- */
-public enum Launcher {
-    ;
-    public static <A extends Application> ElaraRunner start(final Context context,
-                                                            final A application,
-                                                            final List<Plugin.Builder<? super A>> pluginBuilders) {
-        return new ElaraRunner(DefaultContext.start(context, application, pluginBuilders));
-    }
+public interface PluginFactory {
+    BaseState.Mutable baseState();
+    Plugin.Context[] plugins();
 }

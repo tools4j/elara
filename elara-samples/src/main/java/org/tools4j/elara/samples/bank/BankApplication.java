@@ -24,7 +24,6 @@
 package org.tools4j.elara.samples.bank;
 
 import org.agrona.DirectBuffer;
-import org.tools4j.elara.application.Application;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
@@ -50,7 +49,7 @@ import java.util.Queue;
 
 import static java.util.Objects.requireNonNull;
 
-public class BankApplication implements Application {
+public class BankApplication {
 
     private final Bank.Mutable bank = new Bank.Default();
     private final Teller teller = new Teller(bank);
@@ -58,36 +57,13 @@ public class BankApplication implements Application {
 
     private final CommandProcessor commandProcessor = this::process;
     private final EventApplier eventApplier = this::apply;
-    private final DuplicateHandler duplicateHandler = new DuplicateHandler() {
-        @Override
-        public void skipCommandProcessing(final Command command) {
-            System.out.println("-----------------------------------------------------------");
-            System.out.println("skipping: " + command + ", payload=" + payloadFor(command));
-        }
-
-        @Override
-        public void skipEventApplying(final Event event) {
-            //System.out.println("skipping: " + event + ", payload=" + payloadFor(event));
-        }
-
-        @Override
-        public void dropCommandReceived(final Command command) {
-            System.out.println("dropping: " + command + ", payload=" + payloadFor(command));
-        }
+    private final DuplicateHandler duplicateHandler = command -> {
+        System.out.println("-----------------------------------------------------------");
+        System.out.println("skipping: " + command + ", payload=" + payloadFor(command));
     };
 
     public Bank bank() {
         return bank;
-    }
-
-    @Override
-    public CommandProcessor commandProcessor() {
-        return commandProcessor;
-    }
-
-    @Override
-    public EventApplier eventApplier() {
-        return eventApplier;
     }
 
     public ElaraRunner launch(final Queue<BankCommand> inputQueue) {
@@ -106,12 +82,13 @@ public class BankApplication implements Application {
                               final MessageLog eventLog) {
         return Elara.launch(
                 Context.create()
+                        .commandProcessor(commandProcessor)
+                        .eventApplier(eventApplier)
                         .input(input)
                         .output(this::publish)
                         .commandLog(commandLog)
                         .eventLog(eventLog)
-                        .duplicateHandler(duplicateHandler),
-                this
+                        .duplicateHandler(duplicateHandler)
         );
     }
 
