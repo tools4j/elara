@@ -39,7 +39,7 @@ public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFr
 
     public FlyweightDataFrame init(final MutableDirectBuffer header,
                                    final int headerOffset,
-                                   final int input,
+                                   final int source,
                                    final int type,
                                    final long sequence,
                                    final long time,
@@ -48,7 +48,7 @@ public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFr
                                    final DirectBuffer payload,
                                    final int payloadOffset,
                                    final int payloadSize) {
-        this.header.init(input, type, sequence, time, flags, index, payloadSize, header, headerOffset);
+        this.header.init(source, type, sequence, time, flags, index, payloadSize, header, headerOffset);
         return initPayload(payload, payloadOffset, payloadSize);
     }
 
@@ -112,7 +112,7 @@ public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFr
     @Override
     public String toString() {
         return valid() ? "FlyweightDataFrame{" +
-                "input=" + header().input() +
+                "source=" + header().source() +
                 ", type=" + header().type() +
                 ", sequence=" + header().sequence() +
                 ", time=" + header().time() +

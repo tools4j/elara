@@ -79,9 +79,9 @@ public class CommandHandlerTest {
     @Test
     public void commandSkippedIfAllEventsApplied() {
         //given
-        final int input = 1;
+        final int source = 1;
         final long seq = 22;
-        final Command command = command(input, seq);
+        final Command command = command(source, seq);
         final InOrder inOrder = inOrder(commandProcessor, duplicateHandler);
         Result result;
 
@@ -99,9 +99,9 @@ public class CommandHandlerTest {
     @Test
     public void commandProcessedIfNotAllEventsApplied() {
         //given
-        final int input = 1;
+        final int source = 1;
         final long seq = 22;
-        final Command command = command(input, seq);
+        final Command command = command(source, seq);
         when(baseState.processCommands()).thenReturn(true);
         final InOrder inOrder = inOrder(commandProcessor, duplicateHandler);
         Result result;
@@ -120,9 +120,9 @@ public class CommandHandlerTest {
     @Test
     public void commandPeekedIfCommandProcessingIsDisabled() {
         //given
-        final int input = 1;
+        final int source = 1;
         final long seq = 22;
-        final Command command = command(input, seq);
+        final Command command = command(source, seq);
         when(baseState.processCommands()).thenReturn(false);
         final InOrder inOrder = inOrder(commandProcessor, duplicateHandler);
         Result result;
@@ -141,9 +141,9 @@ public class CommandHandlerTest {
     @Test
     public void commandProcessorExceptionInvokesErrorHandler() {
         //given
-        final int input = 1;
+        final int source = 1;
         final long seq = 22;
-        final Command command = command(input, seq);
+        final Command command = command(source, seq);
         final RuntimeException testException = new RuntimeException("test command processor exception");
         when(baseState.processCommands()).thenReturn(true);
         final InOrder inOrder = inOrder(commandProcessor, exceptionHandler);
@@ -164,9 +164,9 @@ public class CommandHandlerTest {
     @Test
     public void commandSkipExceptionInvokesErrorHandler() {
         //given
-        final int input = 1;
+        final int source = 1;
         final long seq = 22;
-        final Command command = command(input, seq);
+        final Command command = command(source, seq);
         final RuntimeException testException = new RuntimeException("test skip command exception");
         final InOrder inOrder = inOrder(commandProcessor, duplicateHandler, exceptionHandler);
         Result result;
@@ -184,9 +184,9 @@ public class CommandHandlerTest {
         inOrder.verifyNoMoreInteractions();
     }
 
-    private static Command command(final int input, final long seq) {
+    private static Command command(final int source, final long seq) {
         return new FlyweightCommand()
-                .init(new ExpandableArrayBuffer(), 0, input, seq, EventType.APPLICATION, 123L,
+                .init(new ExpandableArrayBuffer(), 0, source, seq, EventType.APPLICATION, 123L,
                         new UnsafeBuffer(0, 0), 0, 0
                 );
     }

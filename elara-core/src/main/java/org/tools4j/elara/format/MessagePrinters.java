@@ -35,12 +35,12 @@ public enum MessagePrinters {
     ;
 
     public static final String GENERAL_FORMAT   = "{line}: {message}{nl}";
-    public static final String PIPE_FORMAT      = "{line}: in={input}|tp={type}}|sq={sequence}|tm={time}}|vs={version}|ix={index}|sz={payload-size}{nl}";
-    public static final String SHORT_FORMAT     = "{line}: in={input}, tp={type}, sq={sequence}, tm={time}, vs={version}, ix={index}, sz={payload-size}{nl}";
-    public static final String LONG_FORMAT      = "{line}: input={input}, type={type}, sequence={sequence}, time={time}, version={version}, index={index}, size={payload-size}{nl}";
-    public static final String COMMAND_FORMAT   = "{line}: {input}:{sequence} | type={type}, payload={payload} at {time}{version}{nl}";
-    public static final String EVENT_FORMAT_CMD = "{line}: {input}:{sequence}.{index} | type={type}, payload={payload} at {time}{version}{nl}";
-    public static final String EVENT_FORMAT_EVT = "{line}: {in-spc}.{seq-spc}.{index} | type={type}, payload={payload}{nl}";
+    public static final String PIPE_FORMAT      = "{line}: in={source}|tp={type}}|sq={sequence}|tm={time}}|vs={version}|ix={index}|sz={payload-size}{nl}";
+    public static final String SHORT_FORMAT     = "{line}: in={source}, tp={type}, sq={sequence}, tm={time}, vs={version}, ix={index}, sz={payload-size}{nl}";
+    public static final String LONG_FORMAT      = "{line}: source={source}, type={type}, sequence={sequence}, time={time}, version={version}, index={index}, size={payload-size}{nl}";
+    public static final String COMMAND_FORMAT   = "{line}: cmd={source}:{sequence} | type={type}, payload={payload} at {time}{version}{nl}";
+    public static final String EVENT_FORMAT_CMD = "{line}: evt={source}:{sequence}.{index} | type={type}, payload={payload} at {time}{version}{nl}";
+    public static final String EVENT_FORMAT_EVT = "{line}: evt={in-spc}.{seq-spc}.{index} | type={type}, payload={payload}{nl}";
 
     public static final MessagePrinter<Object> GENERAL = parameterized(GENERAL_FORMAT, ValueFormatter.DEFAULT);
     public static final MessagePrinter<DataFrame> PIPE = parameterized(PIPE_FORMAT, DEFAULT);
@@ -60,12 +60,12 @@ public enum MessagePrinters {
     public static final MessagePrinter<DataFrame> EVENT = event(DEFAULT);
     public static MessagePrinter<DataFrame> event(final DataFrameFormatter formatter) {
         requireNonNull(formatter);
-        final DataFrameFormatter inputSeqSpacer = new DataFrameFormatter() {
+        final DataFrameFormatter sourceSeqSpacer = new DataFrameFormatter() {
             @Override
             public Object value(final String placeholder, final long line, final long entryId, final DataFrame frame) {
                 switch (placeholder) {
                     case "{in-spc}":
-                        return String.valueOf(formatter.input(line, entryId, frame)).replaceAll(".", ".");
+                        return String.valueOf(formatter.source(line, entryId, frame)).replaceAll(".", ".");
                     case "{seq-spc}":
                         return String.valueOf(formatter.sequence(line, entryId, frame)).replaceAll(".", ".");
                     default:
@@ -79,9 +79,9 @@ public enum MessagePrinters {
                     if (frame.header().index() == 0) return 1;
                     return 2;
                 },
-                parameterized(EVENT_FORMAT_CMD.replace(VERSION, " (V {version})"), inputSeqSpacer),
-                parameterized(EVENT_FORMAT_CMD, inputSeqSpacer),
-                parameterized(EVENT_FORMAT_EVT, inputSeqSpacer)
+                parameterized(EVENT_FORMAT_CMD.replace(VERSION, " (V {version})"), sourceSeqSpacer),
+                parameterized(EVENT_FORMAT_CMD, sourceSeqSpacer),
+                parameterized(EVENT_FORMAT_EVT, sourceSeqSpacer)
         );
     }
 

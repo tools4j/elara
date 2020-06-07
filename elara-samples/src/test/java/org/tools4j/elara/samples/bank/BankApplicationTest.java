@@ -65,9 +65,10 @@ public class BankApplicationTest {
     @Test
     public void chronicleQueue() {
         //given
-        final Queue<BankCommand> commands = initCommandQueue();
+        Queue<BankCommand> commands;
 
         //when
+        commands = initCommandQueue();
         final BankApplication bankOne = new BankApplication();
         try (final ElaraRunner runner = bankOne.launch(
                 commands,
@@ -86,6 +87,7 @@ public class BankApplicationTest {
         assertBankAccounts(bankOne.bank());
 
         //when
+        commands = initCommandQueue();
         final BankApplication bankTwo = new BankApplication();
         try (final ElaraRunner runner = bankTwo.launch(
                 commands,

@@ -28,10 +28,11 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.CommandType;
 
 public interface Receiver {
-    ReceivingContext receivingMessage(long sequence);
-    ReceivingContext receivingMessage(long sequence, int type);
-    void receiveMessage(long sequence, DirectBuffer buffer, int offset, int length);
-    void receiveMessage(long sequence, int type, DirectBuffer buffer, int offset, int length);
+    int LOOPBACK_SOURCE = -1;
+    ReceivingContext receivingMessage(int source, long sequence);
+    ReceivingContext receivingMessage(int source, long sequence, int type);
+    void receiveMessage(int source, long sequence, DirectBuffer buffer, int offset, int length);
+    void receiveMessage(int source, long sequence, int type, DirectBuffer buffer, int offset, int length);
 
     interface ReceivingContext extends AutoCloseable {
         MutableDirectBuffer buffer();
@@ -49,18 +50,18 @@ public interface Receiver {
 
     interface Default extends Receiver {
         @Override
-        default ReceivingContext receivingMessage(final long sequence) {
-            return receivingMessage(sequence, CommandType.APPLICATION);
+        default ReceivingContext receivingMessage(final int source, final long sequence) {
+            return receivingMessage(source, sequence, CommandType.APPLICATION);
         }
 
         @Override
-        default void receiveMessage(final long sequence, final DirectBuffer buffer, final int offset, final int length) {
-            receiveMessage(sequence, CommandType.APPLICATION, buffer, offset, length);
+        default void receiveMessage(final int source, final long sequence, final DirectBuffer buffer, final int offset, final int length) {
+            receiveMessage(source, sequence, CommandType.APPLICATION, buffer, offset, length);
         }
 
         @Override
-        default void receiveMessage(final long sequence, final int type, final DirectBuffer buffer, final int offset, final int length) {
-            try (final ReceivingContext context = receivingMessage(sequence, type)) {
+        default void receiveMessage(final int source, final long sequence, final int type, final DirectBuffer buffer, final int offset, final int length) {
+            try (final ReceivingContext context = receivingMessage(source, sequence, type)) {
                 context.buffer().putBytes(0, buffer, offset, length);
                 context.receive(length);
             }

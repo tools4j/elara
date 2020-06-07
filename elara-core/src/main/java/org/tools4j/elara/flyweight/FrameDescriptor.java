@@ -31,7 +31,7 @@ package org.tools4j.elara.flyweight;
      0         1         2         3         4         5         6
      0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-     |             Input             |             Type              |
+     |            Source             |             Type              |
      +-------+-------+-------+-------+-------+-------+-------+-------+
      |                           Sequence                            |
      +-------+-------+-------+-------+-------+-------+-------+-------+
@@ -47,9 +47,9 @@ package org.tools4j.elara.flyweight;
 public enum FrameDescriptor {
     ;
 
-    public static final int INPUT_OFFSET = 0;
-    public static final int INPUT_LENGTH = Integer.BYTES;
-    public static final int TYPE_OFFSET = INPUT_OFFSET + INPUT_LENGTH;
+    public static final int SOURCE_OFFSET = 0;
+    public static final int SOURCE_LENGTH = Integer.BYTES;
+    public static final int TYPE_OFFSET = SOURCE_OFFSET + SOURCE_LENGTH;
     public static final int TYPE_LENGTH = Integer.BYTES;
     public static final int SEQUENCE_OFFSET = TYPE_OFFSET + TYPE_LENGTH;
     public static final int SEQUENCE_LENGTH = Long.BYTES;

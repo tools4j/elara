@@ -27,7 +27,6 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FlyweightHeader;
-import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.log.ExpandableDirectBuffer;
 import org.tools4j.elara.log.MessageLog;
@@ -39,6 +38,7 @@ import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
+import static org.tools4j.elara.input.Receiver.LOOPBACK_SOURCE;
 
 public class DefaultCommandLoopback implements CommandLoopback.Default {
 
@@ -74,7 +74,7 @@ public class DefaultCommandLoopback implements CommandLoopback.Default {
             this.context = requireNonNull(context);
             this.buffer.wrap(context.buffer(), PAYLOAD_OFFSET);
             FlyweightHeader.writeTo(
-                    Input.LOOPBACK_ID, type, adminSequenceGenerator.nextSequence(), timeSource.currentTime(),
+                    LOOPBACK_SOURCE, type, adminSequenceGenerator.nextSequence(), timeSource.currentTime(),
                     Flags.NONE, FlyweightCommand.INDEX, 0,
                     context.buffer(), HEADER_OFFSET
             );

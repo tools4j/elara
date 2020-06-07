@@ -34,14 +34,14 @@ public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, C
 
     public FlyweightCommand init(final MutableDirectBuffer header,
                                  final int headerOffset,
-                                 final int input,
+                                 final int source,
                                  final long sequence,
                                  final int type,
                                  final long time,
                                  final DirectBuffer payload,
                                  final int payloadOffset,
                                  final int payloadSize) {
-        frame.init(header, headerOffset, input, type, sequence, time, Flags.NONE, INDEX, payload, payloadOffset, payloadSize);
+        frame.init(header, headerOffset, source, type, sequence, time, Flags.NONE, INDEX, payload, payloadOffset, payloadSize);
         return this;
     }
 
@@ -80,8 +80,8 @@ public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, C
     }
 
     @Override
-    public int input() {
-        return header().input();
+    public int source() {
+        return header().source();
     }
 
     @Override
@@ -112,7 +112,7 @@ public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, C
     @Override
     public String toString() {
         return valid() ? "FlyweightCommand{" +
-                "input=" + input() +
+                "source=" + source() +
                 ", type=" + type() +
                 ", sequence=" + sequence() +
                 ", time=" + time() +

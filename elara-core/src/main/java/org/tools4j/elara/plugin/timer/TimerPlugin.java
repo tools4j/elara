@@ -32,13 +32,21 @@ import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.timer.TimerState.Mutable;
 import org.tools4j.elara.time.TimeSource;
 
+import java.util.Objects;
+
 /**
  * Simple timer plugin to support timers using {@link TimerCommands} and {@link TimerEvents}.
  */
-public enum TimerPlugin implements Plugin<TimerState.Mutable> {
-    INSTANCE;
+public class TimerPlugin implements Plugin<TimerState.Mutable> {
 
-    public static final int INPUT_ID = -10;
+    public static final int DEFAULT_COMMAND_SOURCE = -10;
+    public static final TimerPlugin DEFAULT = new TimerPlugin(DEFAULT_COMMAND_SOURCE);
+
+    private final int commandSource;
+
+    public TimerPlugin(final int commandSource) {
+        this.commandSource = commandSource;
+    }
 
     @Override
     public Mutable defaultPluginState() {
@@ -52,7 +60,7 @@ public enum TimerPlugin implements Plugin<TimerState.Mutable> {
             @Override
             public Input[] inputs(final BaseState baseState, final TimeSource timeSource) {
                 return new Input[] {
-                        timerTrigger.asInput(INPUT_ID, timeSource)
+                        timerTrigger.asInput(commandSource, timeSource)
                 };
             }
 
@@ -73,4 +81,16 @@ public enum TimerPlugin implements Plugin<TimerState.Mutable> {
         };
     }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final TimerPlugin that = (TimerPlugin) o;
+        return commandSource == that.commandSource;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(commandSource);
+    }
 }

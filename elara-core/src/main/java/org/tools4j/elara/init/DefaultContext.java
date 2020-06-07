@@ -88,16 +88,8 @@ final class DefaultContext implements Context {
 
     @Override
     public Context input(final Input input) {
-        if (input.id() == Input.LOOPBACK_ID) {
-            throw new IllegalStateException("Input id " + Input.LOOPBACK_ID + " is reserved for command loopback");
-        }
         inputs.add(input);
         return this;
-    }
-
-    @Override
-    public Context input(final int id, final Input.Poller poller) {
-        return input(Input.create(id, poller));
     }
 
     @Override
@@ -210,13 +202,6 @@ final class DefaultContext implements Context {
 
     @Override
     public Context validateAndPopulateDefaults() {
-        for (int i = 0; i < inputs.size(); i++) {
-            for (int j = i + 1; j < inputs.size(); j++) {
-                if (inputs.get(i).id() == inputs.get(j).id()) {
-                    throw new IllegalStateException("Duplicate input id: " + inputs.get(i).id());
-                }
-            }
-        }
         if (commandProcessor == null) {
             throw new IllegalStateException("Command processor must be set");
         }

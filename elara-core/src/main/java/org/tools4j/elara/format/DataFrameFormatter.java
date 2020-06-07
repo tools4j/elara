@@ -40,8 +40,8 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
     /** Placeholder in format string for data frame's header */
     String HEADER = "{header}";
 
-    /** Placeholder in format string for data frame header's input value */
-    String INPUT = "{input}";
+    /** Placeholder in format string for data frame header's source value */
+    String SOURCE = "{source}";
     /** Placeholder in format string for data frame header's type value */
     String TYPE = "{type}";
     /** Placeholder in format string for data frame header's sequence value */
@@ -61,7 +61,7 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
 
     default Object line(long line, long entryId, DataFrame frame) {return line;}
     default Object entryId(long line, long entryId, DataFrame frame) {return entryId;}
-    default Object input(long line, long entryId, DataFrame frame) {return frame.header().input();}
+    default Object source(long line, long entryId, DataFrame frame) {return frame.header().source();}
     default Object type(long line, long entryId, DataFrame frame) {
         final Header header = frame.header();
         final int type = header.type();
@@ -96,7 +96,7 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
             case HEADER: return frame.header();
             case LINE: return line(line, entryId, frame);
             case ENTRY_ID: return entryId(line, entryId, frame);
-            case INPUT: return input(entryId, entryId, frame);
+            case SOURCE: return source(entryId, entryId, frame);
             case TYPE: return type(entryId, entryId, frame);
             case SEQUENCE: return sequence(entryId, entryId, frame);
             case TIME: return time(entryId, entryId, frame);

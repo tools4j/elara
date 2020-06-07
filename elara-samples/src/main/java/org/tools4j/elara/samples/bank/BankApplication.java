@@ -51,6 +51,7 @@ import static java.util.Objects.requireNonNull;
 
 public class BankApplication {
 
+    private static final int SOURCE = 666;
     private final Bank.Mutable bank = new Bank.Default();
     private final Teller teller = new Teller(bank);
     private final Accountant accountant = new Accountant(bank);
@@ -73,8 +74,7 @@ public class BankApplication {
     public ElaraRunner launch(final Queue<BankCommand> inputQueue,
                               final MessageLog commandLog,
                               final MessageLog eventLog) {
-        return launch(Input.create(666, new CommandPoller(inputQueue)),
-                commandLog, eventLog);
+        return launch(() -> new CommandPoller(inputQueue), commandLog, eventLog);
     }
 
     public ElaraRunner launch(final Input input,
@@ -149,7 +149,7 @@ public class BankApplication {
             if (cmd != null) {
                 final int type = cmd.type().value;
                 final DirectBuffer encoded = cmd.encode();
-                receiver.receiveMessage(++seq, type, encoded, 0, encoded.capacity());
+                receiver.receiveMessage(SOURCE, ++seq, type, encoded, 0, encoded.capacity());
                 return 1;
             }
             return 0;

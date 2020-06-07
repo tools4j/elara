@@ -61,16 +61,16 @@ public final class TimerTrigger {
         };
     }
 
-    public Input asInput(final int id, final TimeSource timeSource) {
+    public Input asInput(final int commandSource, final TimeSource timeSource) {
         requireNonNull(timeSource);
         final SequenceGenerator sequenceGenerator = new SimpleSequenceGenerator();
-        return Input.create(id, receiver -> {
+        return () -> receiver -> {
             final long time = timeSource.currentTime();
             if (time >= nextTriggerTime) {
                 final int next = timerState.indexOfNextDeadline();
                 if (next >= 0 && timerState.deadline(next) <= time) {
                     final long seq = sequenceGenerator.nextSequence();
-                    try (final ReceivingContext context = receiver.receivingMessage(seq, TRIGGER_TIMER)) {
+                    try (final ReceivingContext context = receiver.receivingMessage(commandSource, seq, TRIGGER_TIMER)) {
                         final int length = triggerTimer(context.buffer(), 0, timerState.id(next),
                                 timerState.type(next), timerState.repetition(next), timerState.timeout(next));
                         context.receive(length);
@@ -80,6 +80,6 @@ public final class TimerTrigger {
                 return 1;
             }
             return 0;
-        });
+        };
     }
 }

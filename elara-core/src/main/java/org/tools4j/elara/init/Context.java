@@ -45,7 +45,6 @@ public interface Context {
 
     List<Input> inputs();
     Context input(Input input);
-    Context input(int id, Input.Poller poller);
 
     Output output();
     Context output(Output output);

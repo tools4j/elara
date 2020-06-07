@@ -112,7 +112,7 @@ public interface EventRouter {
      * The application state after processing the current command will be exactly the same as before the command. Note
      * that the command will not be be marked as processed and is normally also not replayed.  Replaying of the command
      * may occur however if the application is restarted or leadership is passed to another node and commands are
-     * replayed from the command log.  However replaying occurs only if no subsequent command from the same input has
+     * replayed from the command log.  However replaying occurs only if no subsequent command from the same source has
      * yet been marked as processed.
      *
      * @return true if this command is skipped

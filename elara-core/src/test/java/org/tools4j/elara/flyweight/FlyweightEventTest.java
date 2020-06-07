@@ -52,7 +52,7 @@ public class FlyweightEventTest {
         assertFalse(event.valid(), "event.valid");
 
         try {
-            event.input();
+            event.source();
         } catch (final IndexOutOfBoundsException e) {
             //expected
         }
@@ -73,7 +73,7 @@ public class FlyweightEventTest {
         final FlyweightEvent event = new FlyweightEvent().init(buffer, 0);
 
         //when + then
-        assertEquals(0, event.id().commandId().input(), "id.commandId.input");
+        assertEquals(0, event.id().commandId().source(), "id.commandId.source");
         assertEquals(0, event.id().commandId().sequence(), "id.commandId,sequence");
         assertEquals(0, event.id().index(), "id.index");
         assertEquals(0, event.type(), "id.type");
@@ -92,7 +92,7 @@ public class FlyweightEventTest {
         final FlyweightEvent event = new FlyweightEvent();
 
         //when
-        event.init(new ExpandableArrayBuffer(), headerOffset, values.input, values.seq, values.index,
+        event.init(new ExpandableArrayBuffer(), headerOffset, values.source, values.seq, values.index,
                 values.type, values.time, values.flags, values.payload, payloadOffset, values.payloadLength()
         );
 
@@ -119,7 +119,7 @@ public class FlyweightEventTest {
         //given
         final Values values = new Values(0, "Hello world");
         final FlyweightEvent event = new FlyweightEvent().init(
-                new ExpandableArrayBuffer(), 0, values.input, values.seq, values.index,
+                new ExpandableArrayBuffer(), 0, values.source, values.seq, values.index,
                 values.type, values.time, values.flags, values.payload, 0, values.payloadLength()
         );
 
@@ -143,7 +143,7 @@ public class FlyweightEventTest {
         //given
         final Values values = new Values(0, "Hello world");
         final FlyweightEvent event = new FlyweightEvent().init(
-                new ExpandableArrayBuffer(), 0, values.input, values.seq, values.index,
+                new ExpandableArrayBuffer(), 0, values.source, values.seq, values.index,
                 values.type, values.time, values.flags, values.payload, 0, values.payloadLength()
         );
 
@@ -171,7 +171,7 @@ public class FlyweightEventTest {
         final int payloadOffset = 13;
         final Values values = new Values(payloadOffset, "Hello world");
         final FlyweightEvent event = new FlyweightEvent();
-        event.init(new ExpandableArrayBuffer(), headerOffset, values.input, values.seq, values.index,
+        event.init(new ExpandableArrayBuffer(), headerOffset, values.source, values.seq, values.index,
                 values.type, values.time, values.flags, values.payload, payloadOffset, values.payloadLength()
         );
 
@@ -187,7 +187,7 @@ public class FlyweightEventTest {
     }
 
     private static class Values {
-        final int input = 77;
+        final int source = 77;
         final long seq = 998877;
         final short index = 7;
         final int type = 123;
@@ -206,7 +206,7 @@ public class FlyweightEventTest {
         }
 
         void assertEvent(final Event event) {
-            assertEquals(input, event.id().commandId().input(), "id..commandId.input");
+            assertEquals(source, event.id().commandId().source(), "id..commandId.source");
             assertEquals(seq, event.id().commandId().sequence(), "id.commandId.sequence");
             assertEquals(index, event.id().index(), "id.index");
             assertEquals(type, event.type(), "type");

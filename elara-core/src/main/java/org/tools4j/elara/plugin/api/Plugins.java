@@ -33,6 +33,9 @@ public enum Plugins {
     }
 
     public static TimerPlugin timerPlugin() {
-        return TimerPlugin.INSTANCE;
+        return TimerPlugin.DEFAULT;
+    }
+    public static TimerPlugin timerPlugin(final int commandSource) {
+        return new TimerPlugin(commandSource);
     }
 }

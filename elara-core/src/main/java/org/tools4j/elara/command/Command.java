@@ -29,7 +29,7 @@ import org.tools4j.elara.flyweight.Writable;
 
 public interface Command extends Writable {
     interface Id {
-        int input();
+        int source();
         long sequence();
     }
 

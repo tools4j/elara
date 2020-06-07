@@ -26,11 +26,11 @@ package org.tools4j.elara.input;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.time.TimeSource;
 
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
-public final class ReceiverFactory implements Function<Input, Receiver> {
+public final class ReceiverFactory implements Supplier<Receiver> {
 
     private final TimeSource timeSource;
     private final MessageLog.Appender commandLogAppender;
@@ -41,7 +41,7 @@ public final class ReceiverFactory implements Function<Input, Receiver> {
     }
 
     @Override
-    public Receiver apply(final Input input) {
-        return new DefaultReceiver(timeSource, input, commandLogAppender);
+    public Receiver get() {
+        return new DefaultReceiver(timeSource, commandLogAppender);
     }
 }

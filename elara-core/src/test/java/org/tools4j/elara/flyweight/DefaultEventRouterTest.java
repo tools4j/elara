@@ -71,13 +71,13 @@ public class DefaultEventRouterTest {
     @Test
     public void noEvents() {
         //given
-        final int input = 11;
+        final int source = 11;
         final long sequence = 22;
         final int type = 33;
         final long time = 44;
 
         //when
-        startWithCommand(input, sequence, type, time);
+        startWithCommand(source, sequence, type, time);
 
         //then
         assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[0]");
@@ -94,7 +94,7 @@ public class DefaultEventRouterTest {
     @Test
     public void someEvents() {
         //given
-        final int input = 11;
+        final int source = 11;
         final long sequence = 22;
         final int type = 33;
         final long time = 44;
@@ -102,7 +102,7 @@ public class DefaultEventRouterTest {
         final int msgOffset = 2;
         final String msg = "Hello world";
 
-        startWithCommand(input, sequence, type, time);
+        startWithCommand(source, sequence, type, time);
 
         //when
         routeEmptyApplicationEvent();
@@ -130,12 +130,12 @@ public class DefaultEventRouterTest {
     @Test
     public void skipCommand() {
         //given
-        final int input = 11;
+        final int source = 11;
         final long sequence = 22;
         final int type = 33;
         final long time = 44;
 
-        startWithCommand(input, sequence, type, time);
+        startWithCommand(source, sequence, type, time);
 
         //when
         final boolean skipped = eventRouter.skipCommand();
@@ -150,12 +150,12 @@ public class DefaultEventRouterTest {
     @Test
     public void skipCommandDuringEventRouting() {
         //given
-        final int input = 11;
+        final int source = 11;
         final long sequence = 22;
         final int type = 33;
         final long time = 44;
 
-        startWithCommand(input, sequence, type, time);
+        startWithCommand(source, sequence, type, time);
 
         //when
         final boolean skipped;
@@ -174,7 +174,7 @@ public class DefaultEventRouterTest {
     @Test
     public void skipCommandNotPossible() {
         //given
-        final int input = 11;
+        final int source = 11;
         final long sequence = 22;
         final int type = 33;
         final long time = 44;
@@ -182,7 +182,7 @@ public class DefaultEventRouterTest {
         final int msgOffset = 2;
         final String msg = "Hello world";
 
-        startWithCommand(input, sequence, type, time);
+        startWithCommand(source, sequence, type, time);
         routeEmptyApplicationEvent();
         final int payloadSize = routeEvent(eventType, msgOffset, msg);
 
@@ -201,12 +201,12 @@ public class DefaultEventRouterTest {
     @Test
     public void skipCommandPreventsEventRouting() {
         //given
-        final int input = 11;
+        final int source = 11;
         final long sequence = 22;
         final int type = 33;
         final long time = 44;
 
-        startWithCommand(input, sequence, type, time);
+        startWithCommand(source, sequence, type, time);
         final boolean skipped = eventRouter.skipCommand();
         assertTrue(skipped, "skipped");
 
@@ -214,11 +214,11 @@ public class DefaultEventRouterTest {
         assertThrows(IllegalStateException.class, this::routeEmptyApplicationEvent);
     }
 
-    private void startWithCommand(final int input,
+    private void startWithCommand(final int source,
                                   final long sequence,
                                   final int type,
                                   final long time) {
-        command.init(new ExpandableArrayBuffer(), 0, input, sequence, type, time,
+        command.init(new ExpandableArrayBuffer(), 0, source, sequence, type, time,
                 new ExpandableArrayBuffer(12), 2, 10);
         eventRouter.start(command);
     }
@@ -239,12 +239,12 @@ public class DefaultEventRouterTest {
     @Test
     public void commitEventNotAllowed() {
         //given
-        final int input = 11;
+        final int source = 11;
         final long sequence = 22;
         final int type = 33;
         final long time = 44;
         final DirectBuffer zeroPayload = new ExpandableArrayBuffer(0);
-        startWithCommand(input, sequence, type, time);
+        startWithCommand(source, sequence, type, time);
 
         //when
         assertThrows(IllegalArgumentException.class,
@@ -255,12 +255,12 @@ public class DefaultEventRouterTest {
     @Test
     public void rollbackEventNotAllowed() {
         //given
-        final int input = 11;
+        final int source = 11;
         final long sequence = 22;
         final int type = 33;
         final long time = 44;
         final DirectBuffer zeroPayload = new ExpandableArrayBuffer(0);
-        startWithCommand(input, sequence, type, time);
+        startWithCommand(source, sequence, type, time);
 
         //when
         assertThrows(IllegalArgumentException.class,
@@ -271,7 +271,7 @@ public class DefaultEventRouterTest {
     private void assertEvent(final Command command, final Event event,
                              final int type, final int index, final byte flags, final int payloadSize,
                              final String evtName) {
-        assertEquals(command.id().input(), event.id().commandId().input(), evtName + ".id.commandId.input");
+        assertEquals(command.id().source(), event.id().commandId().source(), evtName + ".id.commandId.source");
         assertEquals(command.id().sequence(), event.id().commandId().sequence(), evtName + ".id.commandId.sequence");
         assertEquals(index, event.id().index(), evtName + ".id.index");
         assertEquals(type, event.type(), evtName + ".type");

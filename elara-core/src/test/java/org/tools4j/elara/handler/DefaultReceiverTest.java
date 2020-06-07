@@ -35,7 +35,6 @@ import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.input.DefaultReceiver;
-import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.time.TimeSource;
 
@@ -55,8 +54,6 @@ public class DefaultReceiverTest {
 
     @Mock
     private TimeSource timeSource;
-    @Mock
-    private Input input;
 
     private List<Command> commandLog;
 
@@ -66,7 +63,7 @@ public class DefaultReceiverTest {
     @BeforeEach
     public void init() {
         commandLog = new ArrayList<>();
-        defaultReceiver = new DefaultReceiver(timeSource, input, () -> new MessageLog.AppendContext() {
+        defaultReceiver = new DefaultReceiver(timeSource, () -> new MessageLog.AppendContext() {
             MutableDirectBuffer buffer = new ExpandableArrayBuffer();
             @Override
             public MutableDirectBuffer buffer() {
@@ -97,9 +94,8 @@ public class DefaultReceiverTest {
     public void shouldAppendDefaultTypeCommand() {
         //given
         final long commandTime = 9988776600001L;
-        final int inputId = 1;
+        final int source = 1;
         final long seq = 22;
-        when(input.id()).thenReturn(inputId);
         final String text = "Hello world!!!";
         final int offset = 77;
         final DirectBuffer message = message(text, offset);
@@ -107,21 +103,20 @@ public class DefaultReceiverTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        defaultReceiver.receiveMessage(seq, message, offset, length);
+        defaultReceiver.receiveMessage(source, seq, message, offset, length);
 
         //then
         assertEquals(1, commandLog.size(), "commandLog.size");
-        assertCommand(inputId, seq, commandTime, EventType.APPLICATION, text, commandLog.get(0));
+        assertCommand(source, seq, commandTime, EventType.APPLICATION, text, commandLog.get(0));
     }
 
     @Test
     public void shouldAppendCommandWithType() {
         //given
         final long commandTime = 9988776600001L;
-        final int inputId = 1;
+        final int source = 1;
         final long seq = 22;
         final int type = 12345;
-        when(input.id()).thenReturn(inputId);
         final String text = "Hello world!!!";
         final int offset = 77;
         final DirectBuffer message = message(text, offset);
@@ -129,20 +124,20 @@ public class DefaultReceiverTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        defaultReceiver.receiveMessage(seq, type, message, offset, length);
+        defaultReceiver.receiveMessage(source, seq, type, message, offset, length);
 
         //then
-        assertCommand(inputId, seq, commandTime, type, text, commandLog.get(0));
+        assertCommand(source, seq, commandTime, type, text, commandLog.get(0));
     }
 
-    private void assertCommand(final int inputId,
+    private void assertCommand(final int source,
                                final long seq,
                                final long commandTime,
                                final int tpye,
                                final String text,
                                final Command command) {
         final int payloadSize = Integer.BYTES + text.length();
-        assertEquals(inputId, command.id().input(), "command.id.input");
+        assertEquals(source, command.id().source(), "command.id.source");
         assertEquals(seq, command.id().sequence(), "command.id.sequence");
         assertEquals(commandTime, command.time(), "command.time");
         assertFalse(command.isAdmin(), "command.isAdmin");

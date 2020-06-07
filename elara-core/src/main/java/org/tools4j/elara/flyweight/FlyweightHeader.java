@@ -31,9 +31,9 @@ import static org.tools4j.elara.flyweight.FrameDescriptor.FLAGS_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.INDEX_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.INPUT_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.SEQUENCE_OFFSET;
+import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.TIME_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.TYPE_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.VERSION_OFFSET;
@@ -42,7 +42,7 @@ public class FlyweightHeader implements Flyweight<FlyweightHeader>, Header, Fram
 
     private final MutableDirectBuffer header = new UnsafeBuffer(0, 0);
 
-    public FlyweightHeader init(final int input,
+    public FlyweightHeader init(final int source,
                                 final int type,
                                 final long sequence,
                                 final long time,
@@ -51,12 +51,12 @@ public class FlyweightHeader implements Flyweight<FlyweightHeader>, Header, Fram
                                 final int payloadLSize,
                                 final MutableDirectBuffer dst,
                                 final int dstOffset) {
-        writeTo(input, type, sequence, time, flags, index, payloadLSize, dst, dstOffset);
+        writeTo(source, type, sequence, time, flags, index, payloadLSize, dst, dstOffset);
         return initSilent(dst, dstOffset);
     }
 
     public FlyweightHeader init(final Header header, final MutableDirectBuffer dst, final int dstOffset) {
-        return init(header.input(), header.type(), header.sequence(), header.time(), header.flags(), header.index(),
+        return init(header.source(), header.type(), header.sequence(), header.time(), header.flags(), header.index(),
                 header.payloadSize(), dst, dstOffset);
     }
 
@@ -86,8 +86,8 @@ public class FlyweightHeader implements Flyweight<FlyweightHeader>, Header, Fram
     }
 
     @Override
-    public int input() {
-        return header.getInt(INPUT_OFFSET);
+    public int source() {
+        return header.getInt(SOURCE_OFFSET);
     }
 
     @Override
@@ -131,7 +131,7 @@ public class FlyweightHeader implements Flyweight<FlyweightHeader>, Header, Fram
         return HEADER_LENGTH;
     }
 
-    public static int writeTo(final int input,
+    public static int writeTo(final int source,
                               final int type,
                               final long sequence,
                               final long time,
@@ -140,7 +140,7 @@ public class FlyweightHeader implements Flyweight<FlyweightHeader>, Header, Fram
                               final int payloadLSize,
                               final MutableDirectBuffer dst,
                               final int dstOffset) {
-        dst.putInt(dstOffset + INPUT_OFFSET, input);
+        dst.putInt(dstOffset + SOURCE_OFFSET, source);
         dst.putInt(dstOffset + TYPE_OFFSET, type);
         dst.putLong(dstOffset + SEQUENCE_OFFSET, sequence);
         dst.putLong(dstOffset + TIME_OFFSET, time);
@@ -154,7 +154,7 @@ public class FlyweightHeader implements Flyweight<FlyweightHeader>, Header, Fram
     @Override
     public String toString() {
         return valid() ? "FlyweightHeader{" +
-                "input=" + input() +
+                "source=" + source() +
                 ", type=" + type() +
                 ", sequence=" + sequence() +
                 ", time=" + time() +

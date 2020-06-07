@@ -41,21 +41,17 @@ import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
 public final class DefaultReceiver implements Receiver.Default {
 
     private final TimeSource timeSource;
-    private final Input input;
     private final MessageLog.Appender commandLogAppender;
     private final ReceivingContext receivingContext = new ReceivingContext();
 
-    public DefaultReceiver(final TimeSource timeSource,
-                           final Input input,
-                           final MessageLog.Appender commandLogAppender) {
+    public DefaultReceiver(final TimeSource timeSource, final MessageLog.Appender commandLogAppender) {
         this.timeSource = requireNonNull(timeSource);
-        this.input = requireNonNull(input);
         this.commandLogAppender = requireNonNull(commandLogAppender);
     }
 
     @Override
-    public ReceivingContext receivingMessage(final long sequence, final int type) {
-        return receivingContext.init(sequence, type, commandLogAppender.appending());
+    public ReceivingContext receivingMessage(final int source, final long sequence, final int type) {
+        return receivingContext.init(source, sequence, type, commandLogAppender.appending());
     }
 
     private final class ReceivingContext implements Receiver.ReceivingContext {
@@ -63,7 +59,7 @@ public final class DefaultReceiver implements Receiver.Default {
         final ExpandableDirectBuffer buffer = new ExpandableDirectBuffer();
         AppendContext context;
 
-        ReceivingContext init(final long sequence, final int type, final AppendContext context) {
+        ReceivingContext init(final int source, final long sequence, final int type, final AppendContext context) {
             if (this.context != null) {
                 abort();
                 throw new IllegalStateException("Receiving context not closed");
@@ -71,7 +67,7 @@ public final class DefaultReceiver implements Receiver.Default {
             this.context = requireNonNull(context);
             this.buffer.wrap(context.buffer(), PAYLOAD_OFFSET);
             FlyweightHeader.writeTo(
-                    input.id(), type, sequence, timeSource.currentTime(), Flags.NONE, FlyweightCommand.INDEX, 0,
+                    source, type, sequence, timeSource.currentTime(), Flags.NONE, FlyweightCommand.INDEX, 0,
                     context.buffer(), HEADER_OFFSET
             );
             return this;

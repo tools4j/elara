@@ -30,7 +30,7 @@ import org.agrona.MutableDirectBuffer;
  */
 public interface Header extends Writable {
 
-    int input();
+    int source();
 
     int type();
 

@@ -23,19 +23,14 @@
  */
 package org.tools4j.elara.input;
 
+@FunctionalInterface
 public interface Input {
-    int LOOPBACK_ID = -1;
     Input[] EMPTY_INPUTS = new Input[0];
-    int id();
 
     Poller poller();
 
     @FunctionalInterface
     interface Poller {
         int poll(Receiver receiver);
-    }
-
-    static Input create(final int id, final Poller poller) {
-        return new DefaultInput(id, poller);
     }
 }

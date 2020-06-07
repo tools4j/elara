@@ -35,7 +35,7 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.I
 
     public FlyweightEvent init(final MutableDirectBuffer header,
                                final int headerOffset,
-                               final int input,
+                               final int source,
                                final long sequence,
                                final short index,
                                final int type,
@@ -44,7 +44,7 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.I
                                final DirectBuffer payload,
                                final int payloadOffset,
                                final int payloadSize) {
-        frame.init(header, headerOffset, input, type, sequence, time, flags, index, payload, payloadOffset, payloadSize);
+        frame.init(header, headerOffset, source, type, sequence, time, flags, index, payload, payloadOffset, payloadSize);
         return this;
     }
 
@@ -93,8 +93,8 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.I
     }
 
     @Override
-    public int input() {
-        return header().input();
+    public int source() {
+        return header().source();
     }
 
     @Override
@@ -130,7 +130,7 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.I
     @Override
     public String toString() {
         return valid() ? "FlyweightEvent{" +
-                "input=" + input() +
+                "source=" + source() +
                 ", type=" + type() +
                 ", sequence=" + sequence() +
                 ", time=" + time() +

@@ -73,10 +73,10 @@ public class EventHandlerTest {
     @Test
     public void eventSkippedIfCommandEventsApplied() {
         //given
-        final int input = 1;
+        final int source = 1;
         final long seq = 22;
         final short index = 2;
-        final Event event = event(input, seq, index);
+        final Event event = event(source, seq, index);
         final InOrder inOrder = inOrder(eventApplier, baseState, duplicateHandler);
 
         //when
@@ -92,10 +92,10 @@ public class EventHandlerTest {
     @Test
     public void eventAppliedIfCommandEventsNotYetApplied() {
         //given
-        final int input = 1;
+        final int source = 1;
         final long seq = 22;
         final short index = 2;
-        final Event event = event(input, seq, index);
+        final Event event = event(source, seq, index);
         final InOrder inOrder = inOrder(eventApplier, baseState);
 
         //when
@@ -111,10 +111,10 @@ public class EventHandlerTest {
     @Test
     public void eventApplierExceptionInvokesErrorHandler() {
         //given
-        final int input = 1;
+        final int source = 1;
         final long seq = 22;
         final short index = 2;
-        final Event event = event(input, seq, index);
+        final Event event = event(source, seq, index);
         final RuntimeException testException = new RuntimeException("test event applier exception");
         final InOrder inOrder = inOrder(eventApplier, exceptionHandler);
 
@@ -132,10 +132,10 @@ public class EventHandlerTest {
     @Test
     public void eventSkipExceptionInvokesErrorHandler() {
         //given
-        final int input = 1;
+        final int source = 1;
         final long seq = 22;
         final short index = 2;
-        final Event event = event(input, seq, index);
+        final Event event = event(source, seq, index);
         final RuntimeException testException = new RuntimeException("test skip event exception");
         final InOrder inOrder = inOrder(eventApplier, duplicateHandler, exceptionHandler);
 
@@ -151,12 +151,12 @@ public class EventHandlerTest {
         inOrder.verifyNoMoreInteractions();
     }
 
-    private static Event event(final int input, final long seq, final short index) {
-        return event(input, seq, index, EventType.APPLICATION);
+    private static Event event(final int source, final long seq, final short index) {
+        return event(source, seq, index, EventType.APPLICATION);
     }
-    private static Event event(final int input, final long seq, final short index, final int type) {
+    private static Event event(final int source, final long seq, final short index, final int type) {
         return new FlyweightEvent()
-                .init(new ExpandableArrayBuffer(), 0, input, seq, index, type, 123L,
+                .init(new ExpandableArrayBuffer(), 0, source, seq, index, type, 123L,
                         Flags.NONE, new UnsafeBuffer(0, 0), 0, 0
                 );
     }

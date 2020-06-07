@@ -59,7 +59,7 @@ public enum BaseEvents {
                                        final Command command,
                                        final short index,
                                        final int type) {
-        return flyweightEvent.init(headerBuffer, offset, command.id().input(), command.id().sequence(), index,
+        return flyweightEvent.init(headerBuffer, offset, command.id().source(), command.id().sequence(), index,
                 type, command.time(), Flags.NONE, EMPTY_BUFFER, 0, 0);
     }
 }

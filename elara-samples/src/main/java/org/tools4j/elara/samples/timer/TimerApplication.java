@@ -55,9 +55,10 @@ import static java.util.Objects.requireNonNull;
 
 public class TimerApplication {
 
+    private static final int SOURCE = 777;
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss:SSS");
-    public static int TIMER_TYPE_SINGLE = 1;
-    public static int TIMER_TYPE_PERIODIC = 2;
+    public static final int TIMER_TYPE_SINGLE = 1;
+    public static final int TIMER_TYPE_PERIODIC = 2;
     public static final int PERIODIC_REPETITIONS = 5;
 
     public ElaraRunner inMemory(final Queue<DirectBuffer> commandQueue,
@@ -65,7 +66,7 @@ public class TimerApplication {
         return Elara.launch(Context.create()
                 .commandProcessor(this::process)
                 .eventApplier(eventApplier(eventConsumer))
-                .input(666, new CommandPoller(commandQueue))
+                .input(() -> new CommandPoller(commandQueue))
                 .commandLog(new InMemoryLog())
                 .eventLog(new InMemoryLog())
                 .plugins().register(Plugins.timerPlugin())
@@ -86,7 +87,7 @@ public class TimerApplication {
         return Elara.launch(Context.create()
                 .commandProcessor(this::process)
                 .eventApplier(eventApplier(eventConsumer))
-                .input(666, new CommandPoller(commandQueue))
+                .input(() -> new CommandPoller(commandQueue))
                 .commandLog(new ChronicleMessageLog(cq))
                 .eventLog(new ChronicleMessageLog(eq))
                 .plugins().register(Plugins.timerPlugin())
@@ -195,7 +196,7 @@ public class TimerApplication {
         public int poll(final Receiver receiver) {
             final DirectBuffer command = commands.poll();
             if (command != null) {
-                receiver.receiveMessage(++seq, command, 0, command.capacity());
+                receiver.receiveMessage(SOURCE, ++seq, command, 0, command.capacity());
                 return 1;
             }
             return 0;

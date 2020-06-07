@@ -43,13 +43,14 @@ import static java.util.Objects.requireNonNull;
 
 public class SimpleStringApplication {
 
-    private static int TYPE_STRING = 1;
+    private static final int SOURCE = 999;
+    private static final int TYPE_STRING = 1;
 
     public ElaraRunner launch(final Queue<String> inputQueue) {
         return Elara.launch(Context.create()
                 .commandProcessor(this::process)
                 .eventApplier(this::apply)
-                .input(999, new StringInputPoller(inputQueue))
+                .input(() -> new StringInputPoller(inputQueue))
                 .output(this::publish)
                 .commandLog(new InMemoryLog())
                 .eventLog(new InMemoryLog())
@@ -90,7 +91,7 @@ public class SimpleStringApplication {
             if (msg != null) {
                 final MutableDirectBuffer buffer = new ExpandableArrayBuffer(msg.length() + 4);
                 final int length = buffer.putStringAscii(0, msg);
-                receiver.receiveMessage(++seq, TYPE_STRING, buffer, 0, length);
+                receiver.receiveMessage(SOURCE, ++seq, TYPE_STRING, buffer, 0, length);
                 return 1;
             }
             return 0;

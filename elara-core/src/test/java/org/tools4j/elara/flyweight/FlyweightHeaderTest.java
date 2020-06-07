@@ -45,7 +45,7 @@ public class FlyweightHeaderTest {
         //when + then
         assertFalse(header.valid(), "header.valid");
         try {
-            header.input();
+            header.source();
         } catch (final IndexOutOfBoundsException e) {
             //expected
         }
@@ -66,7 +66,7 @@ public class FlyweightHeaderTest {
         final FlyweightHeader header = new FlyweightHeader().init(buffer, 0);
 
         //when + then
-        assertEquals(0, header.input(), "header.input");
+        assertEquals(0, header.source(), "header.source");
         assertEquals(0, header.type(), "header.type");
         assertEquals(0, header.sequence(), "header.sequence");
         assertEquals(0, header.time(), "header.time");
@@ -84,7 +84,7 @@ public class FlyweightHeaderTest {
         final FlyweightHeader header = new FlyweightHeader();
 
         //when
-        header.init(values.input, values.type, values.seq, values.time, values.flags, values.index,
+        header.init(values.source, values.type, values.seq, values.time, values.flags, values.index,
                 values.payloadSize, new ExpandableArrayBuffer(), headerOffset);
 
         //then
@@ -116,7 +116,7 @@ public class FlyweightHeaderTest {
         final int headerOffset = 23;
         final Values values = new Values();
         final FlyweightHeader header = new FlyweightHeader();
-        header.init(values.input, values.type, values.seq, values.time, values.flags, values.index,
+        header.init(values.source, values.type, values.seq, values.time, values.flags, values.index,
                 values.payloadSize, new ExpandableArrayBuffer(), headerOffset);
 
         //when
@@ -131,7 +131,7 @@ public class FlyweightHeaderTest {
     }
 
     private static class Values {
-        final int input = 77;
+        final int source = 77;
         final int type = 123;
         final long seq = 998877;
         final long time = 998877665544L;
@@ -140,7 +140,7 @@ public class FlyweightHeaderTest {
         final int payloadSize = 22;
 
         void assertHeader(final Header header) {
-            assertEquals(input, header.input(), "header.input");
+            assertEquals(source, header.source(), "header.source");
             assertEquals(type, header.type(), "header.type");
             assertEquals(seq, header.sequence(), "header.sequence");
             assertEquals(time, header.time(), "header.time");
