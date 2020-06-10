@@ -24,7 +24,6 @@
 package org.tools4j.elara.plugin.timer;
 
 import org.tools4j.elara.init.Context;
-import org.tools4j.elara.init.PluginContext;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
@@ -40,18 +39,21 @@ import static org.tools4j.elara.plugin.timer.TimerEvents.timerStopped;
  */
 public class DefaultTimerControl implements TimerControl {
 
-    private final TimerState timerState;
+    private TimerState timerState;
 
     public DefaultTimerControl(final Context context) {
-        this(context.plugins());
+        context.plugin(Plugins.timerPlugin(), this::initTimerState);
     }
 
-    public DefaultTimerControl(final PluginContext pluginContext) {
-        this(pluginContext.pluginState(Plugins.timerPlugin()));
-    }
-
-    public DefaultTimerControl(final TimerState timerState) {
+    private void initTimerState(final TimerState timerState) {
         this.timerState = requireNonNull(timerState);
+    }
+
+    public TimerState timerState() {
+        if (timerState == null) {
+            throw new IllegalStateException("timer state is not initialised");
+        }
+        return timerState;
     }
 
     @Override
@@ -76,6 +78,7 @@ public class DefaultTimerControl implements TimerControl {
 
     @Override
     public boolean stopTimer(final long id, final EventRouter eventRouter) {
+        final TimerState timerState = timerState();
         final int index = timerState.indexById(id);
         if (index >= 0) {
             try (final RoutingContext context = eventRouter.routingEvent(TimerEvents.TIMER_STOPPED)) {
@@ -90,7 +93,7 @@ public class DefaultTimerControl implements TimerControl {
 
     @Override
     public long nextTimerId(final EventRouter eventRouter) {
-        final long maxId = maxTimerId(timerState);
+        final long maxId = maxTimerId(timerState());
         return Math.max(0, maxId) + 1 + eventRouter.nextEventIndex();
     }
 

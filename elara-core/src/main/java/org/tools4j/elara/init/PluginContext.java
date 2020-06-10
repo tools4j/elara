@@ -23,24 +23,102 @@
  */
 package org.tools4j.elara.init;
 
-import org.tools4j.elara.plugin.api.Plugin;
-
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
-public interface PluginContext {
-    Context register(Plugin<?> plugin);
+import org.agrona.collections.Object2ObjectHashMap;
 
-    <P> Context register(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider);
+import org.tools4j.elara.plugin.api.Plugin;
 
-    <P> Context register(Plugin<P> plugin, Consumer<? super P> pluginStateAware);
+import static java.util.Objects.requireNonNull;
 
-    <P> P pluginState(Plugin<P> plugin);
+final class PluginContext {
 
-    <P> P pluginState(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider);
+    private static final Consumer<Object> STATE_UNAWARE = state -> {};
+    private static final PluginBuilder<?> DEFAULT_BUILDER = PluginContext::build;
 
-    <P> P pluginStateOrNull(Plugin<P> plugin);
+    private final Map<Plugin<?>, PluginBuilder<?>> pluginBuilders = new Object2ObjectHashMap<>();
+    private final Map<Plugin<?>, Consumer<?>> pluginStateAwares = new Object2ObjectHashMap<>();
 
-    List<Plugin.Context> pluginContexts();
+    private interface PluginBuilder<P> {
+        Plugin.Context build(Plugin<P> plugin, Consumer<? super P> pluginStateAware);
+    }
+
+    void register(final Plugin<?> plugin) {
+        register(plugin, STATE_UNAWARE);
+    }
+
+    <P> void register(final Plugin<P> plugin, final Supplier<? extends P> pluginStateProvider) {
+        register(plugin, pluginStateProvider, STATE_UNAWARE);
+    }
+
+    <P> void register(final Plugin<P> plugin, final Consumer<? super P> pluginStateAware) {
+        register(plugin, defaultBuilder(), pluginStateAware);
+    }
+
+    <P> void register(final Plugin<P> plugin,
+                      final Supplier<? extends P> pluginStateProvider,
+                      final Consumer<? super P> pluginStateAware) {
+        register(plugin, builder(plugin, pluginStateProvider), pluginStateAware);
+    }
+
+    private <P> void register(final Plugin<P> plugin,
+                              final PluginBuilder<P> builder,
+                              final Consumer<? super P> pluginStateAware) {
+        final PluginBuilder<?> curBuilder = pluginBuilders.get(plugin);
+        if (curBuilder == null || curBuilder == DEFAULT_BUILDER) {
+            pluginBuilders.put(plugin, builder);
+        } else {
+            if (builder != curBuilder) {
+                throw new IllegalStateException("plugin " + plugin + " is already registered with a different state provider");
+            }
+        }
+        if (pluginStateAware != STATE_UNAWARE) {
+            @SuppressWarnings("unchecked")//safe because we know what we added can consume <P>
+            final Consumer<P> consumer = (Consumer<P>)pluginStateAwares.getOrDefault(plugin, STATE_UNAWARE);
+            pluginStateAwares.put(plugin, consumer.andThen(pluginStateAware));
+        }
+    }
+
+    private static <P> Plugin.Context build(final Plugin<P> plugin, final Consumer<? super P> pluginStateAware) {
+        final P pluginState = plugin.defaultPluginState();
+        pluginStateAware.accept(pluginState);
+        return plugin.context(pluginState);
+    }
+
+    private static <P> PluginBuilder<P> defaultBuilder() {
+        PluginBuilder<P> builder = PluginContext::build;
+        //assert builder == DEFAULT_BUILDER;
+        builder = PluginContext::build;
+        return builder;
+    }
+
+    private static <P> PluginBuilder<P> builder(final Plugin<P> plugin, final Supplier<? extends P> pluginStateProvider) {
+        requireNonNull(plugin);
+        requireNonNull(pluginStateProvider);
+        return (p,a) -> {
+            assert p == plugin;
+            final P pluginState = pluginStateProvider.get();
+            a.accept(pluginState);
+            return plugin.context(pluginState);
+        };
+    }
+
+    private <P> Plugin.Context context(final Plugin<P> plugin, final PluginBuilder<?> builder) {
+        @SuppressWarnings("unchecked")//safe because register method taking a builder enforces this
+        final PluginBuilder<P> pluginBuilder = (PluginBuilder<P>)builder;
+        @SuppressWarnings("unchecked")//safe because register method taking a consumer enforces this
+        final Consumer<? super P> pluginStateAware = (Consumer<? super P>)pluginStateAwares.getOrDefault(plugin, STATE_UNAWARE);
+        return pluginBuilder.build(plugin, pluginStateAware);
+    }
+
+
+    List<Plugin.Context> pluginContexts() {
+        return pluginBuilders.entrySet().stream()
+                .map(e -> context(e.getKey(), e.getValue()))
+                .collect(Collectors.toList());
+    }
 }

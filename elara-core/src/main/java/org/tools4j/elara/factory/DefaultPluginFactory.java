@@ -50,7 +50,7 @@ public class DefaultPluginFactory implements PluginFactory {
 
     @Override
     public Plugin.Context[] plugins() {
-        return context().plugins().pluginContexts().toArray(EMPTY_PLUGIN_CONTEXTS);
+        return context().plugins().toArray(EMPTY_PLUGIN_CONTEXTS);
     }
 
     @Override

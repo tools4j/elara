@@ -26,6 +26,13 @@ package org.tools4j.elara.factory;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.loop.DutyCycleStep;
 
+/**
+ * Main elara factory to create and wire elara objects, in particular the {@link #dutyCycleStep()} run by the elara
+ * thread.  The elara factory contains pointers to sub-factories that are creating the other elara objects wired into
+ * the duty cycle step.
+ *
+ * @see org.tools4j.elara.run.Elara
+ */
 public interface ElaraFactory {
 
     Context context();
@@ -38,6 +45,11 @@ public interface ElaraFactory {
 
     DutyCycleStep dutyCycleStep();
 
+    /**
+     * Creates a new elara factory for the provided context.
+     * @param context the context with the settings for the application to create
+     * @return a new factory to create and wire elara objects
+     */
     static ElaraFactory create(final Context context) {
         return new DefaultElaraFactory(context);
     }

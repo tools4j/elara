@@ -23,8 +23,16 @@
  */
 package org.tools4j.elara.init;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
 import org.agrona.concurrent.BackoffIdleStrategy;
 import org.agrona.concurrent.IdleStrategy;
+
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
@@ -32,12 +40,8 @@ import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.output.Output;
+import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.time.TimeSource;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
@@ -57,7 +61,7 @@ final class DefaultContext implements Context {
     private IdleStrategy idleStrategy = new BackoffIdleStrategy(
             100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100));
     private ThreadFactory threadFactory;
-    private final PluginContext plugins = new DefaultPluginContext(this);
+    private final PluginContext plugins = new PluginContext();
 
     @Override
     public CommandProcessor commandProcessor() {
@@ -196,8 +200,32 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public PluginContext plugins() {
-        return plugins;
+    public Context plugin(final Plugin<?> plugin) {
+        plugins.register(plugin);
+        return this;
+    }
+
+    @Override
+    public <P> Context plugin(final Plugin<P> plugin, final Supplier<? extends P> pluginStateProvider) {
+        plugins.register(plugin, pluginStateProvider);
+        return this;
+    }
+
+    @Override
+    public <P> Context plugin(final Plugin<P> plugin, final Consumer<? super P> pluginStateAware) {
+        plugins.register(plugin, pluginStateAware);
+        return this;
+    }
+
+    @Override
+    public <P> Context plugin(final Plugin<P> plugin, final Supplier<? extends P> pluginStateProvider, final Consumer<? super P> pluginStateAware) {
+        plugins.register(plugin, pluginStateProvider, pluginStateAware);
+        return this;
+    }
+
+    @Override
+    public List<Plugin.Context> plugins() {
+        return plugins.pluginContexts();
     }
 
     @Override
