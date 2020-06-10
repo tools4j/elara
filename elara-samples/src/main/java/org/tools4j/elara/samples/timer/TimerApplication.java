@@ -69,7 +69,7 @@ public class TimerApplication {
                 .input(() -> new CommandPoller(commandQueue))
                 .commandLog(new InMemoryLog())
                 .eventLog(new InMemoryLog())
-                .plugins().register(Plugins.timerPlugin())
+                .plugin(Plugins.timerPlugin())
         );
     }
 
@@ -90,7 +90,7 @@ public class TimerApplication {
                 .input(() -> new CommandPoller(commandQueue))
                 .commandLog(new ChronicleMessageLog(cq))
                 .eventLog(new ChronicleMessageLog(eq))
-                .plugins().register(Plugins.timerPlugin())
+                .plugin(Plugins.timerPlugin())
         );
     }
 
