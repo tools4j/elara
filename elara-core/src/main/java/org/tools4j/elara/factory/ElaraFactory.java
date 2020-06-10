@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.factory;
 
-import org.tools4j.elara.init.Context;
+import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.loop.DutyCycleStep;
 
 /**
@@ -35,7 +35,7 @@ import org.tools4j.elara.loop.DutyCycleStep;
  */
 public interface ElaraFactory {
 
-    Context context();
+    Configuration configuration();
 
     InputFactory inputFactory();
     ProcessorFactory processorFactory();
@@ -46,11 +46,11 @@ public interface ElaraFactory {
     DutyCycleStep dutyCycleStep();
 
     /**
-     * Creates a new elara factory for the provided context.
-     * @param context the context with the settings for the application to create
+     * Creates a new elara factory for the provided configuration.
+     * @param configuration the configuration for the application to create
      * @return a new factory to create and wire elara objects
      */
-    static ElaraFactory create(final Context context) {
-        return new DefaultElaraFactory(context);
+    static ElaraFactory create(final Configuration configuration) {
+        return new DefaultElaraFactory(configuration);
     }
 }

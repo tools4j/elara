@@ -23,12 +23,11 @@
  */
 package org.tools4j.elara.factory;
 
-import org.tools4j.elara.init.Context;
+import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.ReceiverFactory;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.loop.SequencerStep;
-import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.time.TimeSource;
 import org.tools4j.nobark.loop.Step;
@@ -52,19 +51,19 @@ public class DefaultInputFactory implements InputFactory {
         return elaraFactory;
     }
 
-    protected Context context() {
-        return elaraFactory.context();
+    protected Configuration configuration() {
+        return elaraFactory.configuration();
     }
 
     @Override
     public TimeSource timeSource() {
-        return context().timeSource();
+        return configuration().timeSource();
     }
 
     @Override
     public Input[] inputs() {
-        final List<Input> inputs = context().inputs();
-        final Plugin.Context[] plugins = elaraFactory().pluginFactory().plugins();
+        final List<Input> inputs = configuration().inputs();
+        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = elaraFactory().pluginFactory().plugins();
         if (plugins.length == 0) {
             return inputs.toArray(EMPTY_INPUTS);
         }
@@ -72,16 +71,16 @@ public class DefaultInputFactory implements InputFactory {
         final TimeSource timeSource = timeSource();
         final List<Input> allInputs = new ArrayList<>(inputs.size() + 3 * plugins.length);
         allInputs.addAll(inputs);
-        for (final Plugin.Context plugin : plugins) {
-            allInputs.addAll(Arrays.asList(plugin.inputs(baseState, timeSource)));
+        for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
+            allInputs.addAll(Arrays.asList(plugin.inputs(baseState)));
         }
         return allInputs.toArray(EMPTY_INPUTS);
     }
 
     @Override
     public ReceiverFactory receiverFactory() {
-        final MessageLog.Appender commandAppender = context().commandLog().appender();
-        return new ReceiverFactory(context().timeSource(), commandAppender);
+        final MessageLog.Appender commandAppender = configuration().commandLog().appender();
+        return new ReceiverFactory(configuration().timeSource(), commandAppender);
     }
 
     @Override

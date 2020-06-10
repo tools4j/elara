@@ -23,28 +23,27 @@
  */
 package org.tools4j.elara.init;
 
+import org.agrona.collections.Object2ObjectHashMap;
+import org.tools4j.elara.plugin.api.Plugin;
+
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import org.agrona.collections.Object2ObjectHashMap;
-
-import org.tools4j.elara.plugin.api.Plugin;
-
 import static java.util.Objects.requireNonNull;
 
 final class PluginContext {
 
     private static final Consumer<Object> STATE_UNAWARE = state -> {};
-    private static final PluginBuilder<?> DEFAULT_BUILDER = PluginContext::build;
+    private static final PluginBuilder<?> DEFAULT_BUILDER = defaultBuilder();
 
     private final Map<Plugin<?>, PluginBuilder<?>> pluginBuilders = new Object2ObjectHashMap<>();
     private final Map<Plugin<?>, Consumer<?>> pluginStateAwares = new Object2ObjectHashMap<>();
 
     private interface PluginBuilder<P> {
-        Plugin.Context build(Plugin<P> plugin, Consumer<? super P> pluginStateAware);
+        Plugin.Configuration build(Plugin<P> plugin, Configuration appConfig, Consumer<? super P> pluginStateAware);
     }
 
     void register(final Plugin<?> plugin) {
@@ -83,42 +82,46 @@ final class PluginContext {
         }
     }
 
-    private static <P> Plugin.Context build(final Plugin<P> plugin, final Consumer<? super P> pluginStateAware) {
+    private static <P> Plugin.Configuration build(final Plugin<P> plugin,
+                                                  final Configuration appConfig,
+                                                  final Consumer<? super P> pluginStateAware) {
         final P pluginState = plugin.defaultPluginState();
         pluginStateAware.accept(pluginState);
-        return plugin.context(pluginState);
+        return plugin.configuration(appConfig, pluginState);
     }
 
     private static <P> PluginBuilder<P> defaultBuilder() {
-        PluginBuilder<P> builder = PluginContext::build;
-        //assert builder == DEFAULT_BUILDER;
-        builder = PluginContext::build;
+        final PluginBuilder<P> builder = PluginContext::build;
+        assert builder == DEFAULT_BUILDER || DEFAULT_BUILDER == null;
         return builder;
     }
 
     private static <P> PluginBuilder<P> builder(final Plugin<P> plugin, final Supplier<? extends P> pluginStateProvider) {
         requireNonNull(plugin);
         requireNonNull(pluginStateProvider);
-        return (p,a) -> {
+        return (p,c,a) -> {
             assert p == plugin;
             final P pluginState = pluginStateProvider.get();
             a.accept(pluginState);
-            return plugin.context(pluginState);
+            return plugin.configuration(c, pluginState);
         };
     }
 
-    private <P> Plugin.Context context(final Plugin<P> plugin, final PluginBuilder<?> builder) {
+    private <P> Plugin.Configuration configuration(final Plugin<P> plugin,
+                                                   final Configuration appConfig,
+                                                   final PluginBuilder<?> builder) {
         @SuppressWarnings("unchecked")//safe because register method taking a builder enforces this
         final PluginBuilder<P> pluginBuilder = (PluginBuilder<P>)builder;
         @SuppressWarnings("unchecked")//safe because register method taking a consumer enforces this
         final Consumer<? super P> pluginStateAware = (Consumer<? super P>)pluginStateAwares.getOrDefault(plugin, STATE_UNAWARE);
-        return pluginBuilder.build(plugin, pluginStateAware);
+        return pluginBuilder.build(plugin, appConfig, pluginStateAware);
     }
 
 
-    List<Plugin.Context> pluginContexts() {
+    List<Plugin.Configuration> configurations(final Configuration appConfig) {
+        requireNonNull(appConfig);
         return pluginBuilders.entrySet().stream()
-                .map(e -> context(e.getKey(), e.getValue()))
+                .map(e -> configuration(e.getKey(), appConfig, e.getValue()))
                 .collect(Collectors.toList());
     }
 }

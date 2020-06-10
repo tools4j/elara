@@ -21,26 +21,33 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.api;
+package org.tools4j.elara.init;
 
+import org.agrona.concurrent.IdleStrategy;
 import org.tools4j.elara.application.CommandProcessor;
+import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
+import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.output.Output;
-import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.time.TimeSource;
 
-public interface Plugin<P> {
+import java.util.List;
+import java.util.concurrent.ThreadFactory;
 
-    Plugin<?>[] EMPTY_PLUGINS = {};
-
-    P defaultPluginState();
-    Configuration configuration(org.tools4j.elara.init.Configuration appConfig, P pluginState);
-
-    interface Configuration {
-        Plugin<?>[] dependencies();
-        Input[] inputs(BaseState baseState);
-        Output output(BaseState baseState);
-        CommandProcessor commandProcessor(BaseState baseState);
-        EventApplier eventApplier(BaseState.Mutable baseState);
-    }
+public interface Configuration {
+    CommandProcessor commandProcessor();
+    EventApplier eventApplier();
+    List<Input> inputs();
+    Output output();
+    MessageLog commandLog();
+    MessageLog eventLog();
+    TimeSource timeSource();
+    ExceptionHandler exceptionHandler();
+    DuplicateHandler duplicateHandler();
+    IdleStrategy idleStrategy();
+    ThreadFactory threadFactory();
+    List<Plugin.Configuration> plugins();
 }

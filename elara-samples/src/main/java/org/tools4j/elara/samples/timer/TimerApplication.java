@@ -33,6 +33,7 @@ import org.tools4j.elara.chronicle.ChronicleMessageLog;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.flyweight.FlyweightEvent;
+import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver;

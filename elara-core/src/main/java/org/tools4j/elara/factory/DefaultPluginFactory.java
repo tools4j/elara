@@ -23,8 +23,7 @@
  */
 package org.tools4j.elara.factory;
 
-import org.tools4j.elara.init.Context;
-import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.plugin.base.BasePlugin;
 import org.tools4j.elara.plugin.base.BaseState;
 
@@ -32,7 +31,7 @@ import static java.util.Objects.requireNonNull;
 
 public class DefaultPluginFactory implements PluginFactory {
 
-    private static final Plugin.Context[] EMPTY_PLUGIN_CONTEXTS = {};
+    private static final org.tools4j.elara.plugin.api.Plugin.Configuration[] EMPTY_PLUGIN_CONTEXTS = {};
 
     private final ElaraFactory elaraFactory;
 
@@ -44,18 +43,18 @@ public class DefaultPluginFactory implements PluginFactory {
         return elaraFactory;
     }
 
-    protected Context context() {
-        return elaraFactory.context();
+    protected Configuration configuration() {
+        return elaraFactory.configuration();
     }
 
     @Override
-    public Plugin.Context[] plugins() {
-        return context().plugins().toArray(EMPTY_PLUGIN_CONTEXTS);
+    public org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins() {
+        return configuration().plugins().toArray(EMPTY_PLUGIN_CONTEXTS);
     }
 
     @Override
     public BaseState.Mutable baseState() {
-        for (final Plugin.Context plugin : plugins()) {
+        for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins()) {
             if (plugin instanceof BasePlugin.BaseContext) {
                 return ((BasePlugin.BaseContext)plugin).baseState();
             }

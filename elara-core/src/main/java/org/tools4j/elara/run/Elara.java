@@ -25,6 +25,7 @@ package org.tools4j.elara.run;
 
 import org.agrona.concurrent.IdleStrategy;
 import org.tools4j.elara.factory.ElaraFactory;
+import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.init.Context;
 import org.tools4j.nobark.loop.Loop;
 
@@ -37,11 +38,15 @@ public enum Elara {
     ;
 
     public static ElaraRunner launch(final Context context) {
-        return launch(ElaraFactory.create(context));
+        return launch(ElaraFactory.create(context.validateAndPopulateDefaults()));
+    }
+
+    public static ElaraRunner launch(final Configuration configuration) {
+        return launch(ElaraFactory.create(configuration));
     }
 
     public static ElaraRunner launch(final ElaraFactory elaraFactory) {
-        final Context context = elaraFactory.context();
+        final Configuration context = elaraFactory.configuration();
         return new ElaraRunner(Loop.start(
                 nobarkIdleStrategy(context.idleStrategy()),
                 context.exceptionHandler(),

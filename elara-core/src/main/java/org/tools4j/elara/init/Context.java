@@ -23,13 +23,7 @@
  */
 package org.tools4j.elara.init;
 
-import java.util.List;
-import java.util.concurrent.ThreadFactory;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-
 import org.agrona.concurrent.IdleStrategy;
-
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
@@ -40,40 +34,23 @@ import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.time.TimeSource;
 
-public interface Context {
-    CommandProcessor commandProcessor();
+import java.util.concurrent.ThreadFactory;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+public interface Context extends Configuration {
     Context commandProcessor(CommandProcessor commandProcessor);
-
-    EventApplier eventApplier();
     Context eventApplier(EventApplier eventApplier);
-
-    List<Input> inputs();
     Context input(Input input);
-
-    Output output();
     Context output(Output output);
-
-    MessageLog commandLog();
     Context commandLog(String file);
     Context commandLog(MessageLog commandLog);
-
-    MessageLog eventLog();
     Context eventLog(String file);
     Context eventLog(MessageLog eventLog);
-
-    TimeSource timeSource();
     Context timeSource(TimeSource timeSource);
-
-    ExceptionHandler exceptionHandler();
     Context exceptionHandler(ExceptionHandler exceptionHandler);
-
-    DuplicateHandler duplicateHandler();
     Context duplicateHandler(DuplicateHandler duplicateHandler);
-
-    IdleStrategy idleStrategy();
     Context idleStrategy(IdleStrategy idleStrategy);
-
-    ThreadFactory threadFactory();
     Context threadFactory(String threadName);
     Context threadFactory(ThreadFactory threadFactory);
 
@@ -81,7 +58,6 @@ public interface Context {
     <P> Context plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider);
     <P> Context plugin(Plugin<P> plugin, Consumer<? super P> pluginStateAware);
     <P> Context plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider, Consumer<? super P> pluginStateAware);
-    List<Plugin.Context> plugins();
 
     Context validateAndPopulateDefaults();
 

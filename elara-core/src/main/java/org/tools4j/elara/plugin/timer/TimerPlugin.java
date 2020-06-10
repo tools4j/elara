@@ -30,9 +30,10 @@ import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.timer.TimerState.Mutable;
-import org.tools4j.elara.time.TimeSource;
 
 import java.util.Objects;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Simple timer plugin to support timers using {@link TimerCommands} and {@link TimerEvents}.
@@ -54,13 +55,21 @@ public class TimerPlugin implements Plugin<TimerState.Mutable> {
     }
 
     @Override
-    public Context context(final TimerState.Mutable timerState) {
-        return new Context() {
+    public Configuration configuration(final org.tools4j.elara.init.Configuration applicationContext, final Mutable timerState) {
+        requireNonNull(applicationContext);
+        requireNonNull(timerState);
+        return new Configuration() {
             final TimerTrigger timerTrigger = new TimerTrigger(timerState);
+
             @Override
-            public Input[] inputs(final BaseState baseState, final TimeSource timeSource) {
+            public Plugin<?>[] dependencies() {
+                return EMPTY_PLUGINS;
+            }
+
+            @Override
+            public Input[] inputs(final BaseState baseState) {
                 return new Input[] {
-                        timerTrigger.asInput(commandSource, timeSource)
+                        timerTrigger.asInput(commandSource, applicationContext.timeSource())
                 };
             }
 

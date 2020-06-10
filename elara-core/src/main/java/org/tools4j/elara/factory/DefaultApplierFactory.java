@@ -26,9 +26,8 @@ package org.tools4j.elara.factory;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.event.CompositeEventApplier;
 import org.tools4j.elara.handler.EventHandler;
-import org.tools4j.elara.init.Context;
+import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.loop.EventPollerStep;
-import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.nobark.loop.Step;
 
@@ -48,21 +47,21 @@ public class DefaultApplierFactory implements ApplierFactory {
         return elaraFactory;
     }
 
-    protected Context context() {
-        return elaraFactory.context();
+    protected Configuration configuration() {
+        return elaraFactory.configuration();
     }
 
     @Override
     public EventApplier eventApplier() {
-        final EventApplier eventApplier = context().eventApplier();
-        final Plugin.Context[] plugins = elaraFactory().pluginFactory().plugins();
+        final EventApplier eventApplier = configuration().eventApplier();
+        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = elaraFactory().pluginFactory().plugins();
         if (plugins.length == 0) {
             return eventApplier;
         }
         final BaseState.Mutable baseState = elaraFactory().pluginFactory().baseState();
         final EventApplier[] appliers = new EventApplier[plugins.length + 1];
         int count = 0;
-        for (final Plugin.Context plugin : plugins) {
+        for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
             appliers[count] = plugin.eventApplier(baseState);
             if (appliers[count] != EventApplier.NOOP) {
                 count++;
@@ -82,13 +81,13 @@ public class DefaultApplierFactory implements ApplierFactory {
         return new EventHandler(
                 elaraFactory().pluginFactory().baseState(),
                 eventApplier(),
-                context().exceptionHandler(),
-                context().duplicateHandler()
+                configuration().exceptionHandler(),
+                configuration().duplicateHandler()
         );
     }
 
     @Override
     public Step eventApplierStep() {
-        return new EventPollerStep(context().eventLog().poller(), eventHandler());
+        return new EventPollerStep(configuration().eventLog().poller(), eventHandler());
     }
 }

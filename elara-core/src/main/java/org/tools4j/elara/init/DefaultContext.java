@@ -23,16 +23,8 @@
  */
 package org.tools4j.elara.init;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-
 import org.agrona.concurrent.BackoffIdleStrategy;
 import org.agrona.concurrent.IdleStrategy;
-
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
@@ -42,6 +34,13 @@ import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.time.TimeSource;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -224,8 +223,8 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public List<Plugin.Context> plugins() {
-        return plugins.pluginContexts();
+    public List<Plugin.Configuration> plugins() {
+        return plugins.configurations(this);
     }
 
     @Override

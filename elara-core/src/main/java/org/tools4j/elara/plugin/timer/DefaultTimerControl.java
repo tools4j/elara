@@ -23,6 +23,7 @@
  */
 package org.tools4j.elara.plugin.timer;
 
+import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.route.EventRouter;
@@ -35,7 +36,7 @@ import static org.tools4j.elara.plugin.timer.TimerEvents.timerStopped;
 
 /**
  * Controller to simplify routing of timer start and stop events.  Requires application access to timer state which is
- * available through {@link Context#plugins()}.
+ * available through {@link Configuration#plugins()}.
  */
 public class DefaultTimerControl implements TimerControl {
 

@@ -29,14 +29,13 @@ import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.handler.OutputHandler;
-import org.tools4j.elara.init.Context;
+import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.ReceiverFactory;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.loop.DutyCycleStep;
 import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.Output;
-import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState.Mutable;
 import org.tools4j.elara.time.TimeSource;
 import org.tools4j.nobark.loop.Step;
@@ -44,11 +43,12 @@ import org.tools4j.nobark.loop.Step;
 import java.util.Map;
 import java.util.function.Function;
 
+import static java.util.Objects.requireNonNull;
 import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
 
 public class DefaultElaraFactory implements ElaraFactory {
 
-    private final Context context;
+    private final Configuration configuration;
     private final InputFactory inputFactory;
     private final ProcessorFactory processorFactory;
     private final ApplierFactory applierFactory;
@@ -56,18 +56,18 @@ public class DefaultElaraFactory implements ElaraFactory {
     private final PluginFactory pluginFactory;
     private final Singletons singletons = new Singletons();
 
-    public DefaultElaraFactory(final Context context) {
-        this(context, DefaultInputFactory::new, DefaultProcessorFactory::new, DefaultApplierFactory::new,
+    public DefaultElaraFactory(final Configuration configuration) {
+        this(configuration, DefaultInputFactory::new, DefaultProcessorFactory::new, DefaultApplierFactory::new,
                 DefaultOutputFactory::new, DefaultPluginFactory::new);
     }
 
-    public DefaultElaraFactory(final Context context,
+    public DefaultElaraFactory(final Configuration configuration,
                                final Function<? super ElaraFactory, ? extends InputFactory> inputFactorySupplier,
                                final Function<? super ElaraFactory, ? extends ProcessorFactory> processorFactorySupplier,
                                final Function<? super ElaraFactory, ? extends ApplierFactory> applierFactorySupplier,
                                final Function<? super ElaraFactory, ? extends OutputFactory> outputFactorySupplier,
                                final Function<? super ElaraFactory, ? extends PluginFactory> pluginFactorySupplier) {
-        this.context = context.validateAndPopulateDefaults();
+        this.configuration = requireNonNull(configuration);
         this.inputFactory = inputFactorySupplier.apply(this);
         this.processorFactory = processorFactorySupplier.apply(this);
         this.applierFactory = applierFactorySupplier.apply(this);
@@ -76,8 +76,8 @@ public class DefaultElaraFactory implements ElaraFactory {
     }
 
     @Override
-    public Context context() {
-        return context;
+    public Configuration configuration() {
+        return configuration;
     }
 
     @Override
@@ -222,8 +222,8 @@ public class DefaultElaraFactory implements ElaraFactory {
         }
 
         @Override
-        public Plugin.Context[] plugins() {
-            return singletons.getOrCreate(Plugin.Context[].class, pluginFactory, PluginFactory::plugins);
+        public org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins() {
+            return singletons.getOrCreate(org.tools4j.elara.plugin.api.Plugin.Configuration[].class, pluginFactory, PluginFactory::plugins);
         }
     }
 }

@@ -28,9 +28,8 @@ import org.tools4j.elara.command.CompositeCommandProcessor;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.DefaultCommandHandler;
 import org.tools4j.elara.handler.PollerCommandHandler;
-import org.tools4j.elara.init.Context;
+import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.loop.CommandPollerStep;
-import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.route.DefaultEventRouter;
 import org.tools4j.nobark.loop.Step;
@@ -51,21 +50,21 @@ public class DefaultProcessorFactory implements ProcessorFactory {
         return elaraFactory;
     }
 
-    protected Context context() {
-        return elaraFactory.context();
+    protected Configuration configuration() {
+        return elaraFactory.configuration();
     }
 
     @Override
     public CommandProcessor commandProcessor() {
-        final CommandProcessor commandProcessor = context().commandProcessor();
-        final Plugin.Context[] plugins = elaraFactory().pluginFactory().plugins();
+        final CommandProcessor commandProcessor = configuration().commandProcessor();
+        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = elaraFactory().pluginFactory().plugins();
         if (plugins.length == 0) {
             return commandProcessor;
         }
         final BaseState baseState = elaraFactory().pluginFactory().baseState();
         final CommandProcessor[] processors = new CommandProcessor[plugins.length + 1];
         int count = 1;
-        for (final Plugin.Context plugin : plugins) {
+        for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
             processors[count] = plugin.commandProcessor(baseState);
             if (processors[count] != CommandProcessor.NOOP) {
                 count++;
@@ -84,16 +83,16 @@ public class DefaultProcessorFactory implements ProcessorFactory {
     public CommandHandler commandHandler() {
         return new DefaultCommandHandler(
                 elaraFactory().pluginFactory().baseState(),
-                new DefaultEventRouter(context().eventLog().appender(), elaraFactory().applierFactory().eventHandler()),
+                new DefaultEventRouter(configuration().eventLog().appender(), elaraFactory().applierFactory().eventHandler()),
                 commandProcessor(),
-                context().exceptionHandler(),
-                context().duplicateHandler()
+                configuration().exceptionHandler(),
+                configuration().duplicateHandler()
         );
     }
 
     @Override
     public Step commandPollerStep() {
-        return new CommandPollerStep(context().commandLog().poller(), new PollerCommandHandler(commandHandler()));
+        return new CommandPollerStep(configuration().commandLog().poller(), new PollerCommandHandler(commandHandler()));
     }
 
 

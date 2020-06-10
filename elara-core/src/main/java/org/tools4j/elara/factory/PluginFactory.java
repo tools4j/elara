@@ -23,10 +23,10 @@
  */
 package org.tools4j.elara.factory;
 
-import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.plugin.api.Plugin.Configuration;
 import org.tools4j.elara.plugin.base.BaseState;
 
 public interface PluginFactory {
     BaseState.Mutable baseState();
-    Plugin.Context[] plugins();
+    Configuration[] plugins();
 }

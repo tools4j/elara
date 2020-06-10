@@ -29,7 +29,6 @@ import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState.Mutable;
-import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
 
@@ -46,7 +45,8 @@ public enum BasePlugin implements Plugin<BaseState.Mutable> {
     }
 
     @Override
-    public BaseContext context(final BaseState.Mutable baseState) {
+    public BaseContext configuration(final org.tools4j.elara.init.Configuration applicationContext, final Mutable baseState) {
+        requireNonNull(applicationContext);
         requireNonNull(baseState);
         return () -> baseState;
     }
@@ -57,7 +57,7 @@ public enum BasePlugin implements Plugin<BaseState.Mutable> {
      * state.
      */
     @FunctionalInterface
-    public interface BaseContext extends Context {
+    public interface BaseContext extends Configuration {
         static BaseState.Mutable createDefaultBaseState() {
             return new DefaultBaseState();
         }
@@ -65,7 +65,12 @@ public enum BasePlugin implements Plugin<BaseState.Mutable> {
         BaseState.Mutable baseState();
 
         @Override
-        default Input[] inputs(final BaseState baseState, final TimeSource timeSource) {
+        default Plugin<?>[] dependencies() {
+            return EMPTY_PLUGINS;
+        }
+
+        @Override
+        default Input[] inputs(final BaseState baseState) {
             return Input.EMPTY_INPUTS;
         }
 
