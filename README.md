@@ -4,7 +4,9 @@
 ## elara
 The tools4j elara project provides an efficient, zero garbage framework to implement event sourcing applications.  
 
-  The event store is pluggable; a default implementation is available for [chronicle queue](https://github.com/OpenHFT/Chronicle-Queue).
+The event store is pluggable; a default implementation is available for [chronicle queue](https://github.com/OpenHFT/Chronicle-Queue).
+  
+Elara makes uses [direct buffers]() as defined by the [agora](https://github.com/real-logic/agrona) library.  For this reason elara applications are perfectly suited to integrate with [SBE](https://github.com/real-logic/simple-binary-encoding) and [aeron](https://github.com/real-logic/aeron) UDP/IPC messaging.
   
 ### Introduction 
 There are excellent introduction to event sourcing.  Some of our favorite links are
@@ -13,14 +15,14 @@ There are excellent introduction to event sourcing.  Some of our favorite links 
 * https://martinfowler.com/eaaDev/EventSourcing.html
 
 In elara we are using the following terminology:
-* *Command:* an input message; can be a state modifying command or a query
-* *Event:* result of processing a command; instruction how to modify state or what output to generate
-* *Command Log:* persisted log that stores sequentially all incoming commands
-* *Event Log:* persisted event log that stores sequentially all routed events
-* *Input:* a source of input commands, such as a message subscription
-* *Output:* a publisher to communicate selected events to other applications
-* *Command Processor:* handles command messages and has read-only access to application state; routes events
-* *Event Applier:* trigger by events (routed or replayed); modifies the application state according to the event instruction
+* **Command:** an input message; can be a state modifying command or a query
+* **Event:** result of processing a command; instruction how to modify state or what output to generate
+* **Command Log:** persisted log that stores sequentially all incoming commands
+* **Event Log:** persisted event log that stores sequentially all routed events
+* **Input:** a source of input commands, such as a message subscription
+* **Output:** a publisher to communicate selected events to other applications
+* **Command Processor:** handles command messages and has read-only access to application state; routes events
+* **Event Applier:** triggered by events (routed or replayed); modifies the application state according to the event instruction
 
 ### Samples
 
