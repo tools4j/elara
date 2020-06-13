@@ -27,7 +27,7 @@ import org.agrona.concurrent.IdleStrategy;
 import org.tools4j.elara.factory.ElaraFactory;
 import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.init.Context;
-import org.tools4j.nobark.loop.Loop;
+import org.tools4j.elara.loop.ElaraLoop;
 
 import static java.util.Objects.requireNonNull;
 
@@ -46,12 +46,12 @@ public enum Elara {
     }
 
     public static ElaraRunner launch(final ElaraFactory elaraFactory) {
-        final Configuration context = elaraFactory.configuration();
-        return new ElaraRunner(Loop.start(
-                nobarkIdleStrategy(context.idleStrategy()),
-                context.exceptionHandler(),
-                context.threadFactory(),
-                elaraFactory.dutyCycleStep()
+        final Configuration configuration = elaraFactory.configuration();
+        return new ElaraRunner(ElaraLoop.start(
+                nobarkIdleStrategy(configuration.idleStrategy()),
+                configuration.exceptionHandler(),
+                configuration.threadFactory(),
+                elaraFactory.singletons()
         ));
     }
 

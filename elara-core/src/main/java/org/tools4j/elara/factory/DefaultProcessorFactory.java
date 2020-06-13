@@ -40,28 +40,22 @@ import static java.util.Objects.requireNonNull;
 
 public class DefaultProcessorFactory implements ProcessorFactory {
 
-    private final ElaraFactory elaraFactory;
+    private final Configuration configuration;
+    private final Singletons singletons;
 
-    public DefaultProcessorFactory(final ElaraFactory elaraFactory) {
-        this.elaraFactory = requireNonNull(elaraFactory);
-    }
-
-    protected ElaraFactory elaraFactory() {
-        return elaraFactory;
-    }
-
-    protected Configuration configuration() {
-        return elaraFactory.configuration();
+    public DefaultProcessorFactory(final Configuration configuration, final Singletons singletons) {
+        this.configuration = requireNonNull(configuration);
+        this.singletons = requireNonNull(singletons);
     }
 
     @Override
     public CommandProcessor commandProcessor() {
-        final CommandProcessor commandProcessor = configuration().commandProcessor();
-        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = elaraFactory().pluginFactory().plugins();
+        final CommandProcessor commandProcessor = configuration.commandProcessor();
+        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = singletons.plugins();
         if (plugins.length == 0) {
             return commandProcessor;
         }
-        final BaseState baseState = elaraFactory().pluginFactory().baseState();
+        final BaseState baseState = singletons.baseState();
         final CommandProcessor[] processors = new CommandProcessor[plugins.length + 1];
         int count = 1;
         for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
@@ -82,17 +76,20 @@ public class DefaultProcessorFactory implements ProcessorFactory {
     @Override
     public CommandHandler commandHandler() {
         return new DefaultCommandHandler(
-                elaraFactory().pluginFactory().baseState(),
-                new DefaultEventRouter(configuration().eventLog().appender(), elaraFactory().applierFactory().eventHandler()),
-                commandProcessor(),
-                configuration().exceptionHandler(),
-                configuration().duplicateHandler()
+                singletons.baseState(),
+                new DefaultEventRouter(configuration.eventLog().appender(), singletons.eventHandler()),
+                singletons.commandProcessor(),
+                configuration.exceptionHandler(),
+                configuration.duplicateHandler()
         );
     }
 
     @Override
     public Step commandPollerStep() {
-        return new CommandPollerStep(configuration().commandLog().poller(), new PollerCommandHandler(commandHandler()));
+        return new CommandPollerStep(
+                configuration.commandLog().poller(),
+                new PollerCommandHandler(singletons.commandHandler())
+        );
     }
 
 

@@ -23,47 +23,31 @@
  */
 package org.tools4j.elara.plugin.api;
 
-import org.tools4j.elara.application.CommandProcessor;
-import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.input.Input;
-import org.tools4j.elara.output.Output;
-import org.tools4j.elara.plugin.base.BaseState;
-
-import java.util.function.Consumer;
-
 /**
- * API implemented by an elara plugin.
- * @param <P> the plugin state type
+ * Type ranges for command and event types used by {@link SystemPlugin system plugins}.
  */
-public interface Plugin<P> {
+public enum TypeRange {
+    BASE(-1, -9),
+    TIMER(-10, -19),
+    BOOT(-20, -29),
+    LIVENESS(-30, -39),
+    HEARTBEAT(-40, -49);
 
-    Input[] NO_INPUTS = {};
-    Plugin.Dependency<?>[] NO_DEPENDENCIES = {};
-    Consumer<Object> STATE_UNAWARE = state -> {};
+    public static final int MAX_RESERVED_TYPE = -1;
+    public static final int MIN_RESERVED_TYPE = -1000;
 
-    P defaultPluginState();
-    Configuration configuration(org.tools4j.elara.init.Configuration appConfig, P pluginState);
+    private final int maxType;
+    private final int minType;
 
-    default Dependency<?>[] dependencies() {
-        return NO_DEPENDENCIES;
+    TypeRange(final int maxType, final int minType) {
+        assert maxType >= minType;
+        assert minType >= MIN_RESERVED_TYPE;
+        assert maxType <= MAX_RESERVED_TYPE;
+        this.maxType = maxType;
+        this.minType = minType;
     }
 
-    interface Configuration {
-        Input[] inputs(BaseState baseState);
-        Output output(BaseState baseState);
-        CommandProcessor commandProcessor(BaseState baseState);
-        EventApplier eventApplier(BaseState.Mutable baseState);
-    }
-
-    @FunctionalInterface
-    interface Dependency<P> {
-        Plugin<P> plugin();
-        default Consumer<? super P> pluginStateAware() {
-            return STATE_UNAWARE;
-        }
-    }
-
-    enum NullState {
-        NULL;
+    public boolean isInRange(final int type) {
+        return maxType >= type && type >= minType;
     }
 }

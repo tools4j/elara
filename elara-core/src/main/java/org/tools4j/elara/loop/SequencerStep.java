@@ -27,18 +27,18 @@ import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver;
 import org.tools4j.nobark.loop.Step;
 
-import java.util.function.Supplier;
+import static java.util.Objects.requireNonNull;
 
 public final class SequencerStep implements Step {
 
+    private final Receiver receiver;
     private final Input.Poller[] inputPollers;
-    private final Receiver[] receivers;
 
     private int roundRobinIndex = 0;
 
-    public SequencerStep(final Supplier<? extends Receiver> receiverFactory, final Input... inputs) {
+    public SequencerStep(final Receiver receiver, final Input... inputs) {
+        this.receiver = requireNonNull(receiver);
         this.inputPollers = initPollersFor(inputs);
-        this.receivers = initReceiversFor(inputs.length, receiverFactory);
     }
 
     @Override
@@ -46,7 +46,7 @@ public final class SequencerStep implements Step {
         final int count = inputPollers.length;
         for (int i = 0; i < count; i++) {
             final int index = getAndIncrementRoundRobinIndex(count);
-            if (inputPollers[index].poll(receivers[index]) > 0) {
+            if (inputPollers[index].poll(receiver) > 0) {
                 return true;
             }
         }
@@ -68,13 +68,5 @@ public final class SequencerStep implements Step {
             pollers[i] = inputs[i].poller();
         }
         return pollers;
-    }
-
-    private Receiver[] initReceiversFor(final int n, final Supplier<? extends Receiver> receiverFactory) {
-        final Receiver[] receivers = new Receiver[n];
-        for (int i = 0; i < n; i++) {
-            receivers[i] = receiverFactory.get();
-        }
-        return receivers;
     }
 }

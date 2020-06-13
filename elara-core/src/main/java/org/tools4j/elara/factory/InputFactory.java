@@ -24,13 +24,11 @@
 package org.tools4j.elara.factory;
 
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.ReceiverFactory;
-import org.tools4j.elara.time.TimeSource;
+import org.tools4j.elara.input.Receiver;
 import org.tools4j.nobark.loop.Step;
 
 public interface InputFactory {
-    TimeSource timeSource();
-    ReceiverFactory receiverFactory();
+    Receiver receiver();
     Input[] inputs();
     Step sequencerStep();
 }

@@ -40,6 +40,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * Sample test runnnig {@link BankApplication}.
+ */
 public class BankApplicationTest {
 
     @Test
@@ -87,6 +90,7 @@ public class BankApplicationTest {
         assertBankAccounts(bankOne.bank());
 
         //when
+        sleep(20);
         commands = initCommandQueue();
         final BankApplication bankTwo = new BankApplication();
         try (final ElaraRunner runner = bankTwo.launch(
@@ -109,14 +113,16 @@ public class BankApplicationTest {
     private ChronicleQueue commandQueue() {
         return ChronicleQueue.singleBuilder()
                 .path("build/chronicle/bank/cmd.cq4")
-                .wireType(WireType.BINARY_LIGHT)
+                //.wireType(WireType.BINARY_LIGHT)
+                .wireType(WireType.FIELDLESS_BINARY)
                 .build();
     }
 
     private ChronicleQueue eventQueue() {
         return ChronicleQueue.singleBuilder()
                 .path("build/chronicle/bank/evt.cq4")
-                .wireType(WireType.BINARY_LIGHT)
+                .wireType(WireType.FIELDLESS_BINARY)
+//                .wireType(WireType.BINARY_LIGHT)
                 .build();
     }
 

@@ -23,6 +23,8 @@
  */
 package org.tools4j.elara.event;
 
+import org.tools4j.elara.plugin.api.TypeRange;
+
 public enum EventType {
     ;
     /** Default application event type if no other positive type value is provided. */
@@ -32,6 +34,11 @@ public enum EventType {
     /** Final event marking the rollback of processing a command. */
     public static final int ROLLBACK = -2;
 
+    /** Max event type that is reserved for elara and elara plugins*/
+    public static final int RESERVED_MAX = TypeRange.MAX_RESERVED_TYPE;
+    /** Min event type that is reserved for elara and elara plugins*/
+    public static final int RESERVED_MIN = TypeRange.MIN_RESERVED_TYPE;
+
     public static boolean isAdmin(final int value) {
         return value < 0;
     }
@@ -39,4 +46,5 @@ public enum EventType {
     public static boolean isApplication(final int value) {
         return value >= 0;
     }
+
 }

@@ -25,7 +25,15 @@ package org.tools4j.elara.input;
 
 public class SimpleSequenceGenerator implements SequenceGenerator {
 
-    private long sequence = 0;
+    private long sequence;
+
+    public SimpleSequenceGenerator() {
+        this(0);
+    }
+
+    public SimpleSequenceGenerator(final long initialSequence) {
+        this.sequence = initialSequence;
+    }
 
     @Override
     public long nextSequence() {

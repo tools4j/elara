@@ -88,6 +88,15 @@ public interface EventRouter {
      */
     void routeEvent(int type, DirectBuffer buffer, int offset, int length);
 
+    /***
+     * Routes an event of the specified event {@code type} that carries no payload data.
+     *
+     * @param type the event type, typically non-negative for application events (plugins use negative event types)
+     * @throws IllegalArgumentException if type is {@link EventType#COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
+     * @throws IllegalStateException if this command has been {@link #isSkipped() skipped}
+     */
+    void routeEventWithoutPayload(int type);
+
     /**
      * Returns the zero based index of the next event to be routed.  If routing has started via {@link #routingEvent()}
      * then the index refers to the event currently being encoded.
@@ -193,6 +202,13 @@ public interface EventRouter {
             try (final RoutingContext context = routingEvent(type)) {
                 context.buffer().putBytes(0, buffer, offset, length);
                 context.route(length);
+            }
+        }
+
+        @Override
+        default void routeEventWithoutPayload(final int type) {
+            try (final RoutingContext context = routingEvent(type)) {
+                context.route(0);
             }
         }
     }

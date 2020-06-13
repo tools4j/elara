@@ -61,10 +61,10 @@ public class ChronicleLogAppender implements MessageLog.Appender {
                 bytesWrapper.putInt(0, length);
                 bytesWrapper.putBytes(4, buffer, offset, length);
                 bytesWrapper.wrap(0, 0);
-                bytes.writePosition(bytes.writePosition() + totalLength);
-            } catch (final Exception e) {
+                bytes.writeSkip(totalLength);
+            } catch (final Throwable t) {
                 context.rollbackOnClose();
-                throw e;
+                throw t;
             }
         }
     }
@@ -97,35 +97,45 @@ public class ChronicleLogAppender implements MessageLog.Appender {
 
         @Override
         public void commit(final int length) {
-            if (context == null) {
-                throw new IllegalStateException("Append context is closed");
+            if (length < 0) {
+                throw new IllegalArgumentException("Length cannot be negative: " + length);
             }
-            try (final DocumentContext dc = context) {
-                try {
-                    buffer.unwrap();
-                    final Bytes<?> bytes = context.wire().bytes();
-                    bytes.ensureCapacity(length);
-                    bytes.writePosition(bytes.writePosition() - 4);
-                    bytes.writeInt(length);
-                    bytes.writePosition(bytes.writePosition() + length);
-                } catch (final Exception e) {
-                    dc.rollbackOnClose();
-                    throw e;
-                } finally {
-                    context = null;
+            try (final DocumentContext dc = unclosedContext()) {
+                buffer.unwrap();
+                if (length > 0) {
+                    try {
+                        final Bytes<?> bytes = dc.wire().bytes();
+                        bytes.ensureCapacity(length);
+                        bytes.writeSkip(-4);
+                        bytes.writeInt(length);
+                        bytes.writeSkip(length);
+                    } catch (final Throwable t) {
+                        dc.rollbackOnClose();
+                        throw t;
+                    }
                 }
+            } finally {
+                context = null;
             }
+        }
+
+        private DocumentContext unclosedContext() {
+            if (context != null) {
+                return context;
+            }
+            throw new IllegalStateException("Append context is closed");
         }
 
         @Override
         public void abort() {
-            if (context == null) {
-                throw new IllegalStateException("Append context is closed");
+            if (context != null) {
+                try (final DocumentContext dc = context) {
+                    buffer.unwrap();
+                    dc.rollbackOnClose();
+                } finally {
+                    context = null;
+                }
             }
-            buffer.unwrap();
-            context.rollbackOnClose();
-            context.close();
-            context = null;
         }
 
         @Override

@@ -37,7 +37,9 @@ import org.tools4j.elara.log.MessageLog.Poller;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -55,10 +57,10 @@ class ChronicleMessageLogTest {
 
         //when + then
         final DirectBuffer[] messages = append(messageLog);
-        poll(messageLog.poller(), messages);
-        poll(messageLog.poller(), messages);
-        poll(messageLog.poller("remember-position"), messages);
-        poll(messageLog.poller("remember-position"));
+        pollAndAssert(messageLog.poller(), messages);
+        pollAndAssert(messageLog.poller(), messages);
+        pollAndAssert(messageLog.poller("remember-position"), messages);
+        pollAndAssert(messageLog.poller("remember-position"));
     }
 
     @Test
@@ -68,8 +70,36 @@ class ChronicleMessageLogTest {
 
         //when + then
         final DirectBuffer[] messages = appending(messageLog);
-        poll(messageLog.poller(), messages);
-        poll(messageLog.poller(), messages);
+        pollAndAssert(messageLog.poller(), messages);
+        pollAndAssert(messageLog.poller(), messages);
+    }
+
+    @Test
+    public void appendingFromMultipleThreads(final TestInfo testInfo) throws InterruptedException {
+        //given
+        final int nThreads = 5;
+        final ChronicleMessageLog messageLog = chronicleMessageLog(testInfo);
+        ConcurrentLinkedQueue<DirectBuffer> messageQueue = new ConcurrentLinkedQueue<>();
+
+        //when
+        final Thread[] appenders = new Thread[nThreads];
+        for (int i = 0; i < nThreads; i++) {
+            final Runnable r = () -> {
+                messageQueue.addAll(Arrays.asList(appending(messageLog)));
+                sleep(20);//given other threads chance for interleaved appending
+                messageQueue.addAll(Arrays.asList(appending(messageLog)));
+            };
+            appenders[i] = new Thread(null, r, "appender-" + i);
+            appenders[i].start();
+        }
+        for (int i = 0; i < nThreads; i++) {
+            appenders[i].join(5000);
+        }
+
+        //then
+        final DirectBuffer[] messages = messageQueue.toArray(new DirectBuffer[0]);
+        poll(messageLog.poller(), false, messages);
+        poll(messageLog.poller(), false, messages);
     }
 
     @Test
@@ -79,7 +109,7 @@ class ChronicleMessageLogTest {
 
         //when + then
         final DirectBuffer[] messages = appendingWithAbort(messageLog);
-        poll(messageLog.poller(), messages);
+        pollAndAssert(messageLog.poller(), messages);
     }
 
     private DirectBuffer[] append(final ChronicleMessageLog messageLog) {
@@ -153,7 +183,13 @@ class ChronicleMessageLogTest {
         return committed.toArray(new DirectBuffer[0]);
     }
 
+    private void pollAndAssert(final Poller poller,
+                               final DirectBuffer... messages) {
+        poll(poller, true, messages);
+    }
+
     private void poll(final Poller poller,
+                      final boolean assertMessage,
                       final DirectBuffer... messages) {
         //given
         final MessageCaptor messageCaptor = new MessageCaptor();
@@ -164,7 +200,9 @@ class ChronicleMessageLogTest {
 
             //then
             assertEquals(1, p, "polled");
-            assertEquals(0, messages[i].compareTo(messageCaptor.get()), "messages[" + i + "] compared");
+            if (assertMessage) {
+                assertEquals(0, messages[i].compareTo(messageCaptor.get()), "messages[" + i + "] compared");
+            }
         }
 
         //when
@@ -220,6 +258,14 @@ class ChronicleMessageLogTest {
             buffer = new ExpandableArrayBuffer(message.capacity());
             buffer.putBytes(0, message, 0, message.capacity());
             return POLL;
+        }
+    }
+
+    private static void sleep(final long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (final InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 }

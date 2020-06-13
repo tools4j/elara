@@ -25,8 +25,6 @@ package org.tools4j.elara.input;
 
 @FunctionalInterface
 public interface Input {
-    Input[] EMPTY_INPUTS = new Input[0];
-
     Poller poller();
 
     @FunctionalInterface

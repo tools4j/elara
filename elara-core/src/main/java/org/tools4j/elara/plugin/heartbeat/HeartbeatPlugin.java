@@ -21,49 +21,53 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.api;
+package org.tools4j.elara.plugin.heartbeat;
 
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
+import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.plugin.api.Plugin.NullState;
 import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.plugin.base.BaseState.Mutable;
 
-import java.util.function.Consumer;
+import static java.util.Objects.requireNonNull;
 
 /**
- * API implemented by an elara plugin.
- * @param <P> the plugin state type
+ * A plugin that issues heartbeat commands and optionally events that can be reacted upon.
  */
-public interface Plugin<P> {
+public class HeartbeatPlugin implements Plugin<NullState> {
 
-    Input[] NO_INPUTS = {};
-    Plugin.Dependency<?>[] NO_DEPENDENCIES = {};
-    Consumer<Object> STATE_UNAWARE = state -> {};
-
-    P defaultPluginState();
-    Configuration configuration(org.tools4j.elara.init.Configuration appConfig, P pluginState);
-
-    default Dependency<?>[] dependencies() {
-        return NO_DEPENDENCIES;
+    @Override
+    public NullState defaultPluginState() {
+        return NullState.NULL;
     }
 
-    interface Configuration {
-        Input[] inputs(BaseState baseState);
-        Output output(BaseState baseState);
-        CommandProcessor commandProcessor(BaseState baseState);
-        EventApplier eventApplier(BaseState.Mutable baseState);
-    }
+    @Override
+    public Configuration configuration(final org.tools4j.elara.init.Configuration appConfig, final NullState pluginState) {
+        requireNonNull(appConfig);
+        requireNonNull(pluginState);
+        return new Configuration() {
+            @Override
+            public Input[] inputs(final BaseState baseState) {
+                return new Input[0];
+            }
 
-    @FunctionalInterface
-    interface Dependency<P> {
-        Plugin<P> plugin();
-        default Consumer<? super P> pluginStateAware() {
-            return STATE_UNAWARE;
-        }
-    }
+            @Override
+            public Output output(final BaseState baseState) {
+                return Output.NOOP;
+            }
 
-    enum NullState {
-        NULL;
+            @Override
+            public CommandProcessor commandProcessor(final BaseState baseState) {
+                return null;
+            }
+
+            @Override
+            public EventApplier eventApplier(final Mutable baseState) {
+                return EventApplier.NOOP;
+            }
+        };
     }
 }

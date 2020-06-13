@@ -21,27 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.input;
+package org.tools4j.elara.factory;
 
-import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.time.TimeSource;
+import org.tools4j.elara.init.Configuration;
 
-import java.util.function.Supplier;
-
-import static java.util.Objects.requireNonNull;
-
-public final class ReceiverFactory implements Supplier<Receiver> {
-
-    private final TimeSource timeSource;
-    private final MessageLog.Appender commandLogAppender;
-
-    public ReceiverFactory(final TimeSource timeSource, final MessageLog.Appender commandLogAppender) {
-        this.commandLogAppender = requireNonNull(commandLogAppender);
-        this.timeSource = requireNonNull(timeSource);
-    }
-
-    @Override
-    public Receiver get() {
-        return new DefaultReceiver(timeSource, commandLogAppender);
+/**
+ * Proxy over all factories that delegates to the underlying factories for object creation once and then returns a
+ * single cached instance per factory and object type.
+ */
+public interface Singletons extends InputFactory, ProcessorFactory, ApplierFactory, OutputFactory, PluginFactory, RunnerFactory {
+    @FunctionalInterface
+    interface FactorySupplier<T> {
+        T supply(Configuration configuration, Singletons singletons);
     }
 }

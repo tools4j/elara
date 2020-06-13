@@ -164,31 +164,33 @@ public class DefaultEventRouter implements EventRouter.Default {
         }
 
         void commit(final byte flags) {
-            ensureNotClosed();
-            if (flags != Flags.NONE) {
-                context.buffer().putByte(FLAGS_OFFSET, flags);
+            try (final AppendContext ac = unclosedContext()) {
+                if (flags != Flags.NONE) {
+                    ac.buffer().putByte(FLAGS_OFFSET, flags);
+                }
+                final int payloadLength = ac.buffer().getInt(PAYLOAD_SIZE_OFFSET);
+                ac.commit(HEADER_LENGTH + payloadLength);
+            } finally {
+                context = null;
             }
-            final int payloadLength = context.buffer().getInt(PAYLOAD_SIZE_OFFSET);
-            context.commit(HEADER_LENGTH + payloadLength);
-            context = null;
         }
 
-        void ensureNotClosed() {
+        AppendContext unclosedContext() {
             if (context != null) {
-                return;
+                return context;
             }
             throw new IllegalStateException("Routing context is closed");
         }
 
         @Override
         public int index() {
-            ensureNotClosed();
+            unclosedContext();
             return nextIndex;
         }
 
         @Override
         public MutableDirectBuffer buffer() {
-            ensureNotClosed();
+            unclosedContext();
             return buffer;
         }
 
@@ -197,10 +199,12 @@ public class DefaultEventRouter implements EventRouter.Default {
             if (length < 0) {
                 throw new IllegalArgumentException("Length cannot be negative: " + length);
             }
-            ensureNotClosed();
+            final AppendContext ac = unclosedContext();
             buffer.unwrap();
-            context.buffer().putInt(PAYLOAD_SIZE_OFFSET, length);
-            flyweightEvent.init(context.buffer(), 0);
+            if (length > 0) {
+                ac.buffer().putInt(PAYLOAD_SIZE_OFFSET, length);
+            }
+            flyweightEvent.init(ac.buffer(), 0);
             eventApplier.onEvent(flyweightEvent);
             flyweightEvent.reset();
             ++nextIndex;
@@ -211,8 +215,11 @@ public class DefaultEventRouter implements EventRouter.Default {
             if (context != null) {
                 buffer.unwrap();
                 flyweightEvent.reset();
-                context.abort();
-                context = null;
+                try {
+                    context.abort();
+                } finally {
+                    context = null;
+                }
             }
         }
 

@@ -24,12 +24,12 @@
 package org.tools4j.elara.factory;
 
 import org.tools4j.elara.init.Configuration;
+import org.tools4j.elara.input.DefaultReceiver;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.ReceiverFactory;
+import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.loop.SequencerStep;
 import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.elara.time.TimeSource;
 import org.tools4j.nobark.loop.Step;
 
 import java.util.ArrayList;
@@ -37,55 +37,43 @@ import java.util.Arrays;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.input.Input.EMPTY_INPUTS;
+import static org.tools4j.elara.plugin.api.Plugin.NO_INPUTS;
 
 public class DefaultInputFactory implements InputFactory {
 
-    private final ElaraFactory elaraFactory;
+    private final Configuration configuration;
+    private final Singletons singletons;
 
-    public DefaultInputFactory(final ElaraFactory elaraFactory) {
-        this.elaraFactory = requireNonNull(elaraFactory);
-    }
-
-    protected ElaraFactory elaraFactory() {
-        return elaraFactory;
-    }
-
-    protected Configuration configuration() {
-        return elaraFactory.configuration();
-    }
-
-    @Override
-    public TimeSource timeSource() {
-        return configuration().timeSource();
+    public DefaultInputFactory(final Configuration configuration, final Singletons singletons) {
+        this.configuration = requireNonNull(configuration);
+        this.singletons = requireNonNull(singletons);
     }
 
     @Override
     public Input[] inputs() {
-        final List<Input> inputs = configuration().inputs();
-        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = elaraFactory().pluginFactory().plugins();
+        final List<Input> inputs = configuration.inputs();
+        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = singletons.plugins();
         if (plugins.length == 0) {
-            return inputs.toArray(EMPTY_INPUTS);
+            return inputs.toArray(NO_INPUTS);
         }
-        final BaseState baseState = elaraFactory().pluginFactory().baseState();
-        final TimeSource timeSource = timeSource();
+        final BaseState baseState = singletons.baseState();
         final List<Input> allInputs = new ArrayList<>(inputs.size() + 3 * plugins.length);
         allInputs.addAll(inputs);
         for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
             allInputs.addAll(Arrays.asList(plugin.inputs(baseState)));
         }
-        return allInputs.toArray(EMPTY_INPUTS);
+        return allInputs.toArray(NO_INPUTS);
     }
 
     @Override
-    public ReceiverFactory receiverFactory() {
-        final MessageLog.Appender commandAppender = configuration().commandLog().appender();
-        return new ReceiverFactory(configuration().timeSource(), commandAppender);
+    public Receiver receiver() {
+        final MessageLog.Appender commandAppender = configuration.commandLog().appender();
+        return new DefaultReceiver(configuration.timeSource(), commandAppender);
     }
 
     @Override
     public Step sequencerStep() {
-        return new SequencerStep(receiverFactory(), elaraFactory().inputFactory().inputs());
+        return new SequencerStep(singletons.receiver(), singletons.inputs());
     }
 
 }

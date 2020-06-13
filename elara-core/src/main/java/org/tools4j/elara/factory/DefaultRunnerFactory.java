@@ -24,36 +24,48 @@
 package org.tools4j.elara.factory;
 
 import org.tools4j.elara.init.Configuration;
-import org.tools4j.elara.plugin.api.Plugin;
-import org.tools4j.elara.plugin.base.BasePlugin;
-import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.loop.DutyCycleStep;
+import org.tools4j.nobark.loop.LoopCondition;
+import org.tools4j.nobark.loop.Step;
+
+import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
-public class DefaultPluginFactory implements PluginFactory {
-
-    private static final Plugin.Configuration[] EMPTY_PLUGIN_CONFIGURATIONS = {};
+public class DefaultRunnerFactory implements RunnerFactory {
 
     private final Configuration configuration;
-    private final Singletons singletons;
+    private final org.tools4j.elara.factory.Singletons singletons;
 
-    public DefaultPluginFactory(final Configuration configuration, final Singletons singletons) {
+    public DefaultRunnerFactory(final Configuration configuration, final org.tools4j.elara.factory.Singletons singletons) {
         this.configuration = requireNonNull(configuration);
         this.singletons = requireNonNull(singletons);
     }
 
     @Override
-    public org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins() {
-        return configuration.plugins().toArray(EMPTY_PLUGIN_CONFIGURATIONS);
+    public Runnable initStep() {
+        return () -> {};
     }
 
     @Override
-    public BaseState.Mutable baseState() {
-        for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : singletons.plugins()) {
-            if (plugin instanceof BasePlugin.BaseContext) {
-                return ((BasePlugin.BaseContext)plugin).baseState();
-            }
+    public LoopCondition runningCondition() {
+        return workDone -> true;
+    }
+
+    @Override
+    public Step dutyCycleStep() {
+        return new DutyCycleStep(singletons.sequencerStep(), singletons.commandPollerStep(),
+                singletons.eventApplierStep(), singletons.outputStep());
+    }
+
+    @Override
+    public Step[] dutyCycleWithExtraSteps() {
+        final List<Step> extraSteps = configuration.dutyCycleExtraSteps();
+        final Step[] dutyCycle = new Step[1 + extraSteps.size()];
+        dutyCycle[0] = singletons.dutyCycleStep();
+        for (int i = 1; i < dutyCycle.length; i++) {
+            dutyCycle[i] = extraSteps.get(i - 1);
         }
-        return BasePlugin.BaseContext.createDefaultBaseState();
+        return dutyCycle;
     }
 }

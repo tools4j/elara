@@ -33,6 +33,7 @@ import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.time.TimeSource;
+import org.tools4j.nobark.loop.Step;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
@@ -51,6 +52,7 @@ public interface Context extends Configuration {
     Context exceptionHandler(ExceptionHandler exceptionHandler);
     Context duplicateHandler(DuplicateHandler duplicateHandler);
     Context idleStrategy(IdleStrategy idleStrategy);
+    Context dutyCycleExtraStep(Step step);
     Context threadFactory(String threadName);
     Context threadFactory(ThreadFactory threadFactory);
 

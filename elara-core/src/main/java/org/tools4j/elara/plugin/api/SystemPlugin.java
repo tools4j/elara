@@ -23,47 +23,10 @@
  */
 package org.tools4j.elara.plugin.api;
 
-import org.tools4j.elara.application.CommandProcessor;
-import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.input.Input;
-import org.tools4j.elara.output.Output;
-import org.tools4j.elara.plugin.base.BaseState;
-
-import java.util.function.Consumer;
-
 /**
- * API implemented by an elara plugin.
+ * Elara system plugin with a reserved type range.
  * @param <P> the plugin state type
  */
-public interface Plugin<P> {
-
-    Input[] NO_INPUTS = {};
-    Plugin.Dependency<?>[] NO_DEPENDENCIES = {};
-    Consumer<Object> STATE_UNAWARE = state -> {};
-
-    P defaultPluginState();
-    Configuration configuration(org.tools4j.elara.init.Configuration appConfig, P pluginState);
-
-    default Dependency<?>[] dependencies() {
-        return NO_DEPENDENCIES;
-    }
-
-    interface Configuration {
-        Input[] inputs(BaseState baseState);
-        Output output(BaseState baseState);
-        CommandProcessor commandProcessor(BaseState baseState);
-        EventApplier eventApplier(BaseState.Mutable baseState);
-    }
-
-    @FunctionalInterface
-    interface Dependency<P> {
-        Plugin<P> plugin();
-        default Consumer<? super P> pluginStateAware() {
-            return STATE_UNAWARE;
-        }
-    }
-
-    enum NullState {
-        NULL;
-    }
+public interface SystemPlugin<P> extends Plugin<P> {
+    TypeRange typeRange();
 }

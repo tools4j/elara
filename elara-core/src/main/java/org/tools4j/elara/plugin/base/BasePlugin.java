@@ -28,6 +28,8 @@ import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.plugin.api.SystemPlugin;
+import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState.Mutable;
 
 import static java.util.Objects.requireNonNull;
@@ -36,7 +38,7 @@ import static java.util.Objects.requireNonNull;
  * Default plugin to initialise {@link BaseState}.  Another plugin can be used to initialise the base state if it
  * returns an implementation of {@link BaseContext}.
  */
-public enum BasePlugin implements Plugin<BaseState.Mutable> {
+public enum BasePlugin implements SystemPlugin<Mutable> {
     INSTANCE;
 
     @Override
@@ -45,10 +47,15 @@ public enum BasePlugin implements Plugin<BaseState.Mutable> {
     }
 
     @Override
-    public BaseContext configuration(final org.tools4j.elara.init.Configuration applicationContext, final Mutable baseState) {
-        requireNonNull(applicationContext);
+    public BaseContext configuration(final org.tools4j.elara.init.Configuration appConfig, final Mutable baseState) {
+        requireNonNull(appConfig);
         requireNonNull(baseState);
         return () -> baseState;
+    }
+
+    @Override
+    public TypeRange typeRange() {
+        return TypeRange.BASE;
     }
 
     /**
@@ -65,13 +72,8 @@ public enum BasePlugin implements Plugin<BaseState.Mutable> {
         BaseState.Mutable baseState();
 
         @Override
-        default Plugin<?>[] dependencies() {
-            return EMPTY_PLUGINS;
-        }
-
-        @Override
         default Input[] inputs(final BaseState baseState) {
-            return Input.EMPTY_INPUTS;
+            return NO_INPUTS;
         }
 
         @Override

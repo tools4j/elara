@@ -21,30 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.api;
+package org.tools4j.elara.factory;
 
-import org.tools4j.elara.input.SequenceGenerator;
-import org.tools4j.elara.plugin.base.BasePlugin;
-import org.tools4j.elara.plugin.boot.BootPlugin;
-import org.tools4j.elara.plugin.timer.TimerPlugin;
+import org.tools4j.nobark.loop.LoopCondition;
+import org.tools4j.nobark.loop.Step;
 
-public enum Plugins {
-    ;
-    public static BasePlugin basePlugin() {
-        return BasePlugin.INSTANCE;
-    }
-
-    public static TimerPlugin timerPlugin() {
-        return TimerPlugin.DEFAULT;
-    }
-    public static TimerPlugin timerPlugin(final int commandSource) {
-        return new TimerPlugin(commandSource);
-    }
-
-    public static BootPlugin bootPlugin() {
-        return BootPlugin.DEFAULT;
-    }
-    public static BootPlugin bootPlugin(final int commandSource, final SequenceGenerator sequenceGenerator) {
-        return new BootPlugin(commandSource, sequenceGenerator);
-    }
+public interface RunnerFactory {
+    Runnable initStep();
+    LoopCondition runningCondition();
+    Step dutyCycleStep();
+    Step[] dutyCycleWithExtraSteps();
 }

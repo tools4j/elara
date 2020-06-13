@@ -25,6 +25,7 @@ package org.tools4j.elara.init;
 
 import org.agrona.collections.Object2ObjectHashMap;
 import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.plugin.api.Plugin.Dependency;
 
 import java.util.List;
 import java.util.Map;
@@ -33,10 +34,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.plugin.api.Plugin.STATE_UNAWARE;
 
 final class PluginContext {
 
-    private static final Consumer<Object> STATE_UNAWARE = state -> {};
     private static final PluginBuilder<?> DEFAULT_BUILDER = defaultBuilder();
 
     private final Map<Plugin<?>, PluginBuilder<?>> pluginBuilders = new Object2ObjectHashMap<>();
@@ -80,6 +81,16 @@ final class PluginContext {
             final Consumer<P> consumer = (Consumer<P>)pluginStateAwares.getOrDefault(plugin, STATE_UNAWARE);
             pluginStateAwares.put(plugin, consumer.andThen(pluginStateAware));
         }
+        if (curBuilder == null) {
+            //only register dependencies if the plugin was not already registered before
+            for (final Dependency<?> dependency : plugin.dependencies()) {
+                register(dependency);
+            }
+        }
+    }
+
+    private <P> void register(final Dependency<P> dependency) {
+        register(dependency.plugin(), dependency.pluginStateAware());
     }
 
     private static <P> Plugin.Configuration build(final Plugin<P> plugin,

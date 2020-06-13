@@ -44,27 +44,21 @@ import static org.tools4j.elara.loop.OutputStep.DEFAULT_POLLER_ID;
 
 public class DefaultOutputFactory implements OutputFactory {
 
-    private final ElaraFactory elaraFactory;
+    private final Configuration configuration;
+    private final Singletons singletons;
 
-    public DefaultOutputFactory(final ElaraFactory elaraFactory) {
-        this.elaraFactory = requireNonNull(elaraFactory);
-    }
-
-    protected ElaraFactory elaraFactory() {
-        return elaraFactory;
-    }
-
-    protected Configuration configuration() {
-        return elaraFactory.configuration();
+    public DefaultOutputFactory(final Configuration configuration, final Singletons singletons) {
+        this.configuration = requireNonNull(configuration);
+        this.singletons = requireNonNull(singletons);
     }
 
     @Override
     public Output output() {
-        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = elaraFactory().pluginFactory().plugins();
+        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = singletons.plugins();
         if (plugins.length == 0) {
-            return configuration().output();
+            return configuration.output();
         }
-        final BaseState baseState = elaraFactory().pluginFactory().baseState();
+        final BaseState baseState = singletons.baseState();
         final Output[] outputs = new Output[plugins.length + 1];
         int count = 0;
         for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
@@ -74,9 +68,9 @@ public class DefaultOutputFactory implements OutputFactory {
             }
         }
         if (count == 0) {
-            return configuration().output();
+            return configuration.output();
         }
-        outputs[count++] = configuration().output();//application output last
+        outputs[count++] = configuration.output();//application output last
         return new CompositeOutput(
                 count == outputs.length ? outputs : Arrays.copyOf(outputs, count)
         );
@@ -84,35 +78,35 @@ public class DefaultOutputFactory implements OutputFactory {
 
     @Override
     public SequenceGenerator loopbackSequenceGenerator() {
-        return new SimpleSequenceGenerator();
+        return new SimpleSequenceGenerator(configuration.timeSource().currentTime());
     }
 
     @Override
     public CommandLoopback commandLoopback() {
         return new DefaultCommandLoopback(
-                configuration().commandLog().appender(),
-                configuration().timeSource(),
-                loopbackSequenceGenerator()
+                configuration.commandLog().appender(),
+                configuration.timeSource(),
+                singletons.loopbackSequenceGenerator()
         );
     }
 
     @Override
     public OutputHandler outputHandler() {
-        return new DefaultOutputHandler(output(), commandLoopback(), configuration().exceptionHandler());
+        return new DefaultOutputHandler(singletons.output(), singletons.commandLoopback(), configuration.exceptionHandler());
     }
 
     @Override
     public Step outputStep() {
-        if (configuration().output() == Output.NOOP) {
+        if (configuration.output() == Output.NOOP) {
             return Step.NO_OP;
         }
-        final OutputHandler outputHandler = outputHandler();
+        final OutputHandler outputHandler = singletons.outputHandler();
         try {
-            return new OutputStep(outputHandler, configuration().eventLog(), DEFAULT_POLLER_ID);
+            return new OutputStep(outputHandler, configuration.eventLog(), DEFAULT_POLLER_ID);
         } catch (final UnsupportedOperationException e) {
             //ignore, use non-tracking below
         }
-        return new OutputStep(outputHandler, configuration().eventLog());
+        return new OutputStep(outputHandler, configuration.eventLog());
     }
 
 }

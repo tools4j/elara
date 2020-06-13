@@ -28,6 +28,11 @@ public enum CommandType {
     /** Default application command type if no other positive type value is provided. */
     public static final int APPLICATION = 0;
 
+    /** Min event type that is reserved for use by elara or elara plugins*/
+    public static final int RESERVED_MIN = -19999;
+    /** Max event type that is reserved for use by elara or elara plugins*/
+    public static final int RESERVED_MAX = -1;
+
     public static boolean isAdmin(final int value) {
         return value < 0;
     }

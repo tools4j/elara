@@ -35,6 +35,7 @@ import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.log.InMemoryLog;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.output.CommandLoopback;
+import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
@@ -89,6 +90,7 @@ public class BankApplication {
                         .commandLog(commandLog)
                         .eventLog(eventLog)
                         .duplicateHandler(duplicateHandler)
+                        .plugin(Plugins.bootPlugin())
         );
     }
 

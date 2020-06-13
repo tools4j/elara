@@ -81,34 +81,44 @@ public class DefaultCommandLoopback implements CommandLoopback.Default {
             return this;
         }
 
-        void ensureNotClosed() {
+        AppendContext unclosedContext() {
             if (context != null) {
-                return;
+                return context;
             }
             throw new IllegalStateException("Enqueuing context is closed");
         }
 
         @Override
         public MutableDirectBuffer buffer() {
-            ensureNotClosed();
+            unclosedContext();
             return buffer;
         }
 
         @Override
         public void enqueue(final int length) {
-            ensureNotClosed();
+            if (length < 0) {
+                throw new IllegalArgumentException("Length cannot be negative: " + length);
+            }
             buffer.unwrap();
-            context.buffer().putInt(PAYLOAD_SIZE_OFFSET, length);
-            context.commit(HEADER_LENGTH + length);
-            context = null;
+            try (final AppendContext ac = unclosedContext()) {
+                if (length > 0) {
+                    ac.buffer().putInt(PAYLOAD_SIZE_OFFSET, length);
+                }
+                ac.commit(HEADER_LENGTH + length);
+            } finally {
+                context = null;
+            }
         }
 
         @Override
         public void abort() {
             if (context != null) {
                 buffer.unwrap();
-                context.abort();
-                context = null;
+                try {
+                    context.abort();
+                } finally {
+                    context = null;
+                }
             }
         }
 

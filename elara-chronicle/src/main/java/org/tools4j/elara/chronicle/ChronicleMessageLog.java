@@ -55,4 +55,9 @@ public class ChronicleMessageLog implements MessageLog {
     public void close() {
         queue.close();
     }
+
+    @Override
+    public String toString() {
+        return "ChronicleMessageLog{queue=" + queue + '}';
+    }
 }

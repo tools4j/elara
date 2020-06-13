@@ -21,29 +21,35 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.factory;
+package org.tools4j.elara.plugin.boot;
 
-import org.tools4j.elara.init.Configuration;
+import org.tools4j.elara.command.Command;
 
 /**
- * Main elara factory to create and wire elara objects.  Singleton object instances are obtained via
- * {@link #singletons()} with the {@link Singletons#dutyCycleWithExtraSteps() dutyCycle} containing the
- * {@link org.tools4j.elara.loop.DutyCycleStep DutyCycleStep} as central object for
- * {@link org.tools4j.elara.run.Elara Elara} to start the application.
- *
- * @see org.tools4j.elara.run.Elara
+ * Boot commands added to the command log when booting an elara application to signal startup and initialisation of the
+ * application.
  */
-public interface ElaraFactory {
-
-    Configuration configuration();
-    Singletons singletons();
-
+public enum BootCommands {
+    ;
     /**
-     * Creates a new elara factory for the provided configuration.
-     * @param configuration the configuration for the application to create
-     * @return a new factory to create and wire elara objects
+     * Command added to the command log when an application is started;  the boot plugin command processor translates
+     * this command into an {@link BootEvents#APP_INITIALISATION_STARTED APP_INITIALISATION_STARTED} event.
      */
-    static ElaraFactory create(final Configuration configuration) {
-        return new DefaultElaraFactory(configuration);
+    public static final int SIGNAL_APP_INITIALISATION_START = -20;
+    /**
+     * Command enqueued to the command via loopback when the first non-replayed event observed;  the boot plugin command
+     * processor translates this command into an
+     * {@link BootEvents#APP_INITIALISATION_COMPLETED APP_INITIALISATION_COMPLETED} event.
+     */
+    public static final int SIGNAL_APP_INITIALISATION_COMPLETE = -21;
+
+    public static boolean isBootCommand(final Command command) {
+        switch (command.type()) {
+            case SIGNAL_APP_INITIALISATION_START://fallthrough
+            case SIGNAL_APP_INITIALISATION_COMPLETE://fallthrough
+                return true;
+            default:
+                return false;
+        }
     }
 }

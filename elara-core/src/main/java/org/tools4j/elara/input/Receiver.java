@@ -33,6 +33,7 @@ public interface Receiver {
     ReceivingContext receivingMessage(int source, long sequence, int type);
     void receiveMessage(int source, long sequence, DirectBuffer buffer, int offset, int length);
     void receiveMessage(int source, long sequence, int type, DirectBuffer buffer, int offset, int length);
+    void receiveMessageWithoutPayload(int source, long sequence, int type);
 
     interface ReceivingContext extends AutoCloseable {
         MutableDirectBuffer buffer();
@@ -64,6 +65,13 @@ public interface Receiver {
             try (final ReceivingContext context = receivingMessage(source, sequence, type)) {
                 context.buffer().putBytes(0, buffer, offset, length);
                 context.receive(length);
+            }
+        }
+
+        @Override
+        default void receiveMessageWithoutPayload(final int source, final long sequence, final int type) {
+            try (final ReceivingContext context = receivingMessage(source, sequence, type)) {
+                context.receive(0);
             }
         }
     }

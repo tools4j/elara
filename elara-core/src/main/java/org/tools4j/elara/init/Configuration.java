@@ -33,6 +33,7 @@ import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.time.TimeSource;
+import org.tools4j.nobark.loop.Step;
 
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
@@ -48,6 +49,7 @@ public interface Configuration {
     ExceptionHandler exceptionHandler();
     DuplicateHandler duplicateHandler();
     IdleStrategy idleStrategy();
+    List<Step> dutyCycleExtraSteps();
     ThreadFactory threadFactory();
     List<Plugin.Configuration> plugins();
 }

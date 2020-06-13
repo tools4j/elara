@@ -33,6 +33,7 @@ public interface CommandLoopback {
 
     void enqueueCommand(DirectBuffer command, int offset, int length);
     void enqueueCommand(int type, DirectBuffer command, int offset, int length);
+    void enqueueCommandWithoutPayload(int type);
 
     interface EnqueuingContext extends AutoCloseable {
         MutableDirectBuffer buffer();
@@ -64,6 +65,13 @@ public interface CommandLoopback {
             try (final EnqueuingContext context = enqueuingCommand(type)) {
                 context.buffer().putBytes(0, command, offset, length);
                 context.enqueue(length);
+            }
+        }
+
+        @Override
+        default void enqueueCommandWithoutPayload(final int type) {
+            try (final EnqueuingContext context = enqueuingCommand(type)) {
+                context.enqueue(0);
             }
         }
     }

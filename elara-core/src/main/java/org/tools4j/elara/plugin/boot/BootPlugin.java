@@ -21,87 +21,81 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.timer;
+package org.tools4j.elara.plugin.boot;
 
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
+import org.tools4j.elara.input.DefaultReceiver;
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.input.Receiver;
+import org.tools4j.elara.input.SequenceGenerator;
+import org.tools4j.elara.input.SimpleSequenceGenerator;
 import org.tools4j.elara.output.Output;
-import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.plugin.api.Plugin.NullState;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.elara.plugin.timer.TimerState.Mutable;
-
-import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.plugin.boot.BootCommands.SIGNAL_APP_INITIALISATION_START;
 
 /**
- * Simple timer plugin to support timers using {@link TimerCommands} and {@link TimerEvents}.
+ * A plugin that issues a commands and events related to booting an elara application to indicate that the application
+ * has been started and initialised.
  */
-public class TimerPlugin implements SystemPlugin<Mutable> {
+public class BootPlugin implements SystemPlugin<NullState> {
 
-    public static final int DEFAULT_COMMAND_SOURCE = -10;
-    public static final TimerPlugin DEFAULT = new TimerPlugin(DEFAULT_COMMAND_SOURCE);
+    public static final int DEFAULT_COMMAND_SOURCE = -20;
+    public static final BootPlugin DEFAULT = new BootPlugin(DEFAULT_COMMAND_SOURCE, new SimpleSequenceGenerator(System.currentTimeMillis()));
 
     private final int commandSource;
+    private final SequenceGenerator sequenceGenerator;
 
-    public TimerPlugin(final int commandSource) {
+    public BootPlugin(final int commandSource, final SequenceGenerator sequenceGenerator) {
         this.commandSource = commandSource;
+        this.sequenceGenerator = requireNonNull(sequenceGenerator);
     }
 
     @Override
     public TypeRange typeRange() {
-        return TypeRange.TIMER;
+        return TypeRange.BOOT;
     }
 
     @Override
-    public Mutable defaultPluginState() {
-        return new SimpleTimerState();
+    public NullState defaultPluginState() {
+        return NullState.NULL;
     }
 
     @Override
-    public Configuration configuration(final org.tools4j.elara.init.Configuration appConfig, final Mutable timerState) {
+    public Configuration configuration(final org.tools4j.elara.init.Configuration appConfig, final NullState pluginState) {
         requireNonNull(appConfig);
-        requireNonNull(timerState);
+        requireNonNull(pluginState);
+        appendAppInitStartCommand(appConfig);
         return new Configuration() {
-            final TimerTrigger timerTrigger = new TimerTrigger(timerState);
-
             @Override
             public Input[] inputs(final BaseState baseState) {
-                return new Input[] {
-                        timerTrigger.asInput(commandSource, appConfig.timeSource())
-                };
+                return NO_INPUTS;
             }
 
             @Override
             public Output output(final BaseState baseState) {
-                return timerTrigger.asOutput();
+                return new BootOutput();
             }
 
             @Override
             public CommandProcessor commandProcessor(final BaseState baseState) {
-                return new TimerCommandProcessor(timerState);
+                return new BootCommandProcessor();
             }
 
             @Override
             public EventApplier eventApplier(final BaseState.Mutable baseState) {
-                return new TimerEventApplier(timerState);
+                return EventApplier.NOOP;
             }
         };
     }
 
-    @Override
-    public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final TimerPlugin that = (TimerPlugin) o;
-        return commandSource == that.commandSource;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(commandSource);
+    private void appendAppInitStartCommand(final org.tools4j.elara.init.Configuration appConfig) {
+        final Receiver receiver = new DefaultReceiver(appConfig.timeSource(), appConfig.commandLog().appender());
+        receiver.receiveMessageWithoutPayload(commandSource, sequenceGenerator.nextSequence(), SIGNAL_APP_INITIALISATION_START);
     }
 }

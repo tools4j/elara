@@ -34,6 +34,7 @@ import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.time.TimeSource;
+import org.tools4j.nobark.loop.Step;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +60,7 @@ final class DefaultContext implements Context {
     private DuplicateHandler duplicateHandler = DuplicateHandler.DEFAULT;
     private IdleStrategy idleStrategy = new BackoffIdleStrategy(
             100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100));
+    private final List<Step> dutyCycleExtraSteps = new ArrayList<>();
     private ThreadFactory threadFactory;
     private final PluginContext plugins = new PluginContext();
 
@@ -179,6 +181,17 @@ final class DefaultContext implements Context {
     @Override
     public Context idleStrategy(final IdleStrategy idleStrategy) {
         this.idleStrategy = requireNonNull(idleStrategy);
+        return this;
+    }
+
+    @Override
+    public List<Step> dutyCycleExtraSteps() {
+        return dutyCycleExtraSteps;
+    }
+
+    @Override
+    public Context dutyCycleExtraStep(final Step step) {
+        dutyCycleExtraSteps.add(step);
         return this;
     }
 
