@@ -50,6 +50,8 @@ def mockitoVersion = '3.3.3'
 def hdrHistogramVersion = '2.1.12'
 
 ext {
+    //gradle clean build publish -PossrhUsername=mterzer -PossrhPassword=xxx
+
     isReleaseVersion = !projVersion.endsWith('-SNAPSHOT')
     releasesRepoUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
     snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
