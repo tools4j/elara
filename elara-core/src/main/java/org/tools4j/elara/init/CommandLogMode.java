@@ -23,34 +23,22 @@
  */
 package org.tools4j.elara.init;
 
-import org.agrona.concurrent.IdleStrategy;
-import org.tools4j.elara.application.CommandProcessor;
-import org.tools4j.elara.application.DuplicateHandler;
-import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.application.ExceptionHandler;
-import org.tools4j.elara.input.Input;
-import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.output.Output;
-import org.tools4j.elara.plugin.api.Plugin;
-import org.tools4j.elara.time.TimeSource;
-import org.tools4j.nobark.loop.Step;
+/**
+ * Defines how to resume command log polling when restarting an application with an existing command log.
+ * <p>
+ * The default mode is {@link #FROM_END} so that only new commands will be polled; commands existing in the command log
+ * are skipped when starting the application.
+ */
+public enum CommandLogMode {
+    /** All commands in the command log are replayed */
+    REPLAY_ALL,
+    /** Resumes polling from the position of the last poll;  works only if this mode was used also previously */
+    FROM_LAST,
+    /** No replay at all, only newly added commands will be polled */
+    FROM_END;
 
-import java.util.List;
-import java.util.concurrent.ThreadFactory;
-
-public interface Configuration {
-    CommandProcessor commandProcessor();
-    EventApplier eventApplier();
-    List<Input> inputs();
-    Output output();
-    MessageLog commandLog();
-    CommandLogMode commandLogMode();
-    MessageLog eventLog();
-    TimeSource timeSource();
-    ExceptionHandler exceptionHandler();
-    DuplicateHandler duplicateHandler();
-    IdleStrategy idleStrategy();
-    List<Step> dutyCycleExtraSteps();
-    ThreadFactory threadFactory();
-    List<Plugin.Configuration> plugins();
+    /**
+     * Poller ID used for {@link #FROM_LAST} mode.
+     */
+    public static final String DEFAULT_POLLER_ID = "elara-cmd";
 }

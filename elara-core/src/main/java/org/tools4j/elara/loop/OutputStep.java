@@ -43,7 +43,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class OutputStep implements Step {
 
-    public static final String DEFAULT_POLLER_ID = "output";
+    public static final String DEFAULT_POLLER_ID = "elara-out";
 
     private final OutputHandler handler;
     private final Poller poller;

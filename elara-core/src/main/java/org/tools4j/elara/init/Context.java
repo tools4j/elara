@@ -46,6 +46,7 @@ public interface Context extends Configuration {
     Context output(Output output);
     Context commandLog(String file);
     Context commandLog(MessageLog commandLog);
+    Context commandLogMode(CommandLogMode mode);
     Context eventLog(String file);
     Context eventLog(MessageLog eventLog);
     Context timeSource(TimeSource timeSource);

@@ -54,6 +54,7 @@ final class DefaultContext implements Context {
     private final List<Input> inputs = new ArrayList<>();
     private Output output = Output.NOOP;
     private MessageLog commandLog;
+    private CommandLogMode commandLogMode = CommandLogMode.FROM_END;
     private MessageLog eventLog;
     private TimeSource timeSource;
     private ExceptionHandler exceptionHandler = ExceptionHandler.DEFAULT;
@@ -121,6 +122,17 @@ final class DefaultContext implements Context {
     @Override
     public Context commandLog(final MessageLog commandLog) {
         this.commandLog = requireNonNull(commandLog);
+        return this;
+    }
+
+    @Override
+    public CommandLogMode commandLogMode() {
+        return commandLogMode;
+    }
+
+    @Override
+    public Context commandLogMode(final CommandLogMode mode) {
+        this.commandLogMode = requireNonNull(mode);
         return this;
     }
 
