@@ -6,11 +6,25 @@ The tools4j elara project provides an efficient, zero garbage framework to imple
 
   The event store is pluggable; a default implementation is available for [chronicle queue](https://github.com/OpenHFT/Chronicle-Queue).
   
-#### Introduction 
+### Introduction 
+There are excellent introduction to event sourcing.  Some of our favorite links are
+* https://microservices.io/patterns/data/event-sourcing.html
+* https://www.youtube.com/watch?v=fhZwzm-d9ys
+* https://martinfowler.com/eaaDev/EventSourcing.html
 
-#### Samples
+In elara we are using the following terminology:
+* *Command:* an input message; can be a state modifying command or a query
+* *Event:* result of processing a command; instruction how to modify state or what output to generate
+* *Command Log:* persisted log that stores sequentially all incoming commands
+* *Event Log:* persisted event log that stores sequentially all routed events
+* *Input:* a source of input commands, such as a message subscription
+* *Output:* a publisher to communicate selected events to other applications
+* *Command Processor:* handles command messages and has read-only access to application state; routes events
+* *Event Applier:* trigger by events (routed or replayed); modifies the application state according to the event instruction
 
-###### Banking application
+### Samples
+
+#### Banking application
 A simple banking app that supports the following commands:
 * Creation of a bank account
 * Money deposit, withdrawal and transfer
@@ -19,14 +33,14 @@ Sample code and test to run:
 * [bank sample](https://github.com/tools4j/elara/tree/master/elara-samples/src/main/java/org/tools4j/elara/samples/bank)
 * [bank test](https://github.com/tools4j/elara/blob/master/elara-samples/src/test/java/org/tools4j/elara/samples/bank/BankApplicationTest.java)
 
-###### Timers
+#### Timers
 Timers are tricky with event sourcing.  Elara provides timers through the [timer plugin](TODO) with support for once-off and periodic timers.  The timer sample app demostrates both timer types in action:
 * [timer app](https://github.com/tools4j/elara/tree/master/elara-samples/src/main/java/org/tools4j/elara/samples/timer)
 * [timer app test](https://github.com/tools4j/elara/blob/master/elara-samples/src/test/java/org/tools4j/elara/samples/timer/TimerApplicationTest.java)
 
-#### Maven/Gradle
+### Maven/Gradle
 
-###### Maven
+#### Maven
 ```xml
 <dependency>
         <groupId>org.tools4j</groupId>
@@ -35,11 +49,11 @@ Timers are tricky with event sourcing.  Elara provides timers through the [timer
 </dependency>
 ```
 
-###### Gradle
+#### Gradle
 ```
 api "org.tools4j:elara-core:1.2'
 ```
 
-#### Download
+### Download
 You can download binaries, sources and javadoc from maven central:
 * [elara download](https://search.maven.org/search?q=a:elara-*)
