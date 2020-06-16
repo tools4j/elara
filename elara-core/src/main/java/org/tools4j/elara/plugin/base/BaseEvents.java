@@ -26,7 +26,6 @@ package org.tools4j.elara.plugin.base;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
-import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.FlyweightEvent;
@@ -38,28 +37,35 @@ public enum BaseEvents {
     public static FlyweightEvent commit(final FlyweightEvent flyweightEvent,
                                         final MutableDirectBuffer headerBuffer,
                                         final int offset,
-                                        final Command command,
-                                        final short index) {
-        return empty(flyweightEvent, headerBuffer, offset, command, index,
-                EventType.COMMIT);
+                                        final int source,
+                                        final long sequence,
+                                        final short index,
+                                        final long time) {
+        return empty(flyweightEvent, headerBuffer, offset, source, sequence, index, EventType.COMMIT, time,
+                Flags.COMMIT);
     }
 
     public static FlyweightEvent rollback(final FlyweightEvent flyweightEvent,
                                           final MutableDirectBuffer headerBuffer,
                                           final int offset,
-                                          final Command command,
-                                          final short index) {
-        return empty(flyweightEvent, headerBuffer, offset, command, index,
-                EventType.ROLLBACK);
+                                          final int source,
+                                          final long sequence,
+                                          final short index,
+                                          final long time) {
+        return empty(flyweightEvent, headerBuffer, offset, source, sequence, index, EventType.ROLLBACK, time,
+                Flags.ROLLBACK);
     }
 
     public static FlyweightEvent empty(final FlyweightEvent flyweightEvent,
-                                       final MutableDirectBuffer headerBuffer,
-                                       final int offset,
-                                       final Command command,
-                                       final short index,
-                                       final int type) {
-        return flyweightEvent.init(headerBuffer, offset, command.id().source(), command.id().sequence(), index,
-                type, command.time(), Flags.NONE, EMPTY_BUFFER, 0, 0);
+                                        final MutableDirectBuffer headerBuffer,
+                                        final int offset,
+                                        final int source,
+                                        final long sequence,
+                                        final short index,
+                                        final int type,
+                                        final long time,
+                                        final byte flags) {
+        return flyweightEvent.init(headerBuffer, offset, source, sequence, index, type, time, flags,
+                EMPTY_BUFFER, 0, 0);
     }
 }

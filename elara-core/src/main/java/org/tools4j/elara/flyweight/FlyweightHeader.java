@@ -62,6 +62,10 @@ public class FlyweightHeader implements Flyweight<FlyweightHeader>, Header, Fram
 
     @Override
     public FlyweightHeader init(final DirectBuffer src, final int srcOffset) {
+        final int length = src.capacity() - srcOffset;
+        if (length < HEADER_LENGTH) {
+            throw new IllegalArgumentException("Invalid frame header, expected min length + " + HEADER_LENGTH + " but found only " + length);
+        }
         Version.validate(src.getByte(srcOffset + VERSION_OFFSET));
         return initSilent(src, srcOffset);
     }

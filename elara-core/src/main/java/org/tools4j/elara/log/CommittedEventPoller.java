@@ -86,6 +86,11 @@ public class CommittedEventPoller implements Poller {
     }
 
     @Override
+    public boolean moveToPrevious() {
+        return eventPoller.moveToPrevious();
+    }
+
+    @Override
     public boolean moveTo(final long entryId) {
         final long curHeadId = aheadPoller.entryId();
         if (!aheadPoller.moveTo(entryId)) {

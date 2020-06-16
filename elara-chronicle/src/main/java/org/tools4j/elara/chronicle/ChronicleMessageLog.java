@@ -31,14 +31,16 @@ import static java.util.Objects.requireNonNull;
 public class ChronicleMessageLog implements MessageLog {
 
     private final ChronicleQueue queue;
+    private final ThreadLocal<ChronicleLogAppender> appender;
 
     public ChronicleMessageLog(final ChronicleQueue queue) {
         this.queue = requireNonNull(queue);
+        this.appender = ThreadLocal.withInitial(() -> new ChronicleLogAppender(queue));
     }
 
     @Override
     public Appender appender() {
-        return new ChronicleLogAppender(queue);
+        return appender.get();
     }
 
     @Override

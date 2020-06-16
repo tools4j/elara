@@ -226,6 +226,16 @@ public class InMemoryLog implements MessageLog {
             }
 
             @Override
+            public boolean moveToPrevious() {
+                int next = index - 1;
+                if (next < 0) {
+                    return false;
+                }
+                index = next;
+                return true;
+            }
+
+            @Override
             public boolean moveTo(final long entryId) {
                 if (entryId < 0) {
                     return false;

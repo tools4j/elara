@@ -26,30 +26,36 @@ package org.tools4j.elara.plugin.base;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.log.EventLogRepairer;
+import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.output.Output;
-import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState.Mutable;
+
+import java.io.IOException;
 
 import static java.util.Objects.requireNonNull;
 
 /**
  * Default plugin to initialise {@link BaseState}.  Another plugin can be used to initialise the base state if it
- * returns an implementation of {@link BaseContext}.
+ * returns an implementation of {@link BaseConfiguration}.
  */
 public enum BasePlugin implements SystemPlugin<Mutable> {
     INSTANCE;
 
     @Override
     public Mutable defaultPluginState() {
-        return BaseContext.createDefaultBaseState();
+        return BaseConfiguration.createDefaultBaseState();
     }
 
     @Override
-    public BaseContext configuration(final org.tools4j.elara.init.Configuration appConfig, final Mutable baseState) {
+    public BaseConfiguration configuration(final org.tools4j.elara.init.Configuration appConfig, final Mutable baseState) {
         requireNonNull(appConfig);
         requireNonNull(baseState);
+        if (baseState.processCommands()) {
+            repairEventLogIfNeeded(appConfig);
+        }
         return () -> baseState;
     }
 
@@ -64,7 +70,7 @@ public enum BasePlugin implements SystemPlugin<Mutable> {
      * state.
      */
     @FunctionalInterface
-    public interface BaseContext extends Configuration {
+    public interface BaseConfiguration extends Configuration {
         static BaseState.Mutable createDefaultBaseState() {
             return new DefaultBaseState();
         }
@@ -89,6 +95,16 @@ public enum BasePlugin implements SystemPlugin<Mutable> {
         @Override
         default EventApplier eventApplier(final BaseState.Mutable baseState) {
             return EventApplier.NOOP;
+        }
+    }
+
+    private void repairEventLogIfNeeded(final org.tools4j.elara.init.Configuration appConfig) {
+        final MessageLog eventLog = appConfig.eventLog();
+        final EventLogRepairer eventLogRepairer = new EventLogRepairer(eventLog);
+        if (eventLogRepairer.isCorrupted()) {
+            appConfig.exceptionHandler().handleException("Repairing corrupted event log",
+                    new IOException("Corrupted event log: " + eventLog));
+            eventLogRepairer.repair();
         }
     }
 }

@@ -26,6 +26,7 @@ package org.tools4j.elara.chronicle;
 import net.openhft.chronicle.bytes.Bytes;
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.queue.ExcerptTailer;
+import net.openhft.chronicle.queue.TailerDirection;
 import net.openhft.chronicle.wire.DocumentContext;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
@@ -88,6 +89,16 @@ public class ChronicleLogPoller implements Poller {
             }
         } while (present);
         return false;
+    }
+
+    @Override
+    public boolean moveToPrevious() {
+        tailer.direction(TailerDirection.BACKWARD);
+        try {
+            return moveToNext();
+        } finally {
+            tailer.direction(TailerDirection.FORWARD);
+        }
     }
 
     @Override

@@ -24,7 +24,7 @@
 package org.tools4j.elara.plugin.timer;
 
 /**
- * Descriptor of payload layout for time events in a byte buffer.
+ * Descriptor of payload layout for timer commands and events in a byte buffer.
  * <pre>
 
  0         1         2         3         4         5         6

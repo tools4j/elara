@@ -63,6 +63,7 @@ public interface MessageLog extends AutoCloseable {
         long entryId();
         boolean moveTo(long entryId);
         boolean moveToNext();//skip one
+        boolean moveToPrevious();//skip one
         Poller moveToStart();
         Poller moveToEnd();
         int poll(Handler handler);

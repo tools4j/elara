@@ -29,12 +29,12 @@ import org.tools4j.elara.log.MessageLog.Handler;
 
 import static java.util.Objects.requireNonNull;
 
-public class PollerCommandHandler implements Handler {
+public class CommandPollerHandler implements Handler {
 
     private final CommandHandler commandHandler;
     private final FlyweightCommand flyweightCommand = new FlyweightCommand();
 
-    public PollerCommandHandler(final CommandHandler commandHandler) {
+    public CommandPollerHandler(final CommandHandler commandHandler) {
         this.commandHandler = requireNonNull(commandHandler);
     }
 

@@ -27,7 +27,7 @@ import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.command.CompositeCommandProcessor;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.DefaultCommandHandler;
-import org.tools4j.elara.handler.PollerCommandHandler;
+import org.tools4j.elara.handler.CommandPollerHandler;
 import org.tools4j.elara.init.CommandLogMode;
 import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.log.MessageLog.Poller;
@@ -103,7 +103,7 @@ public class DefaultProcessorFactory implements ProcessorFactory {
             default:
                 throw new IllegalArgumentException("Unsupported command log mode: " + configuration.commandLogMode());
         }
-        return new CommandPollerStep(commandLogPoller, new PollerCommandHandler(singletons.commandHandler()));
+        return new CommandPollerStep(commandLogPoller, new CommandPollerHandler(singletons.commandHandler()));
     }
 
 

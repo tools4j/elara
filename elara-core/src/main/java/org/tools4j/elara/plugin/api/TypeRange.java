@@ -31,7 +31,10 @@ public enum TypeRange {
     TIMER(-10, -19),
     BOOT(-20, -29),
     LIVENESS(-30, -39),
-    HEARTBEAT(-40, -49);
+    HEARTBEAT(-40, -49),
+    CONTROL(-50, -59),
+    //..
+    REPLICATION(-90, -99);
 
     public static final int MAX_RESERVED_TYPE = -1;
     public static final int MIN_RESERVED_TYPE = -1000;

@@ -25,8 +25,11 @@ package org.tools4j.elara.factory;
 
 import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.plugin.api.Plugin;
-import org.tools4j.elara.plugin.base.BasePlugin;
+import org.tools4j.elara.plugin.api.Plugins;
+import org.tools4j.elara.plugin.base.BasePlugin.BaseConfiguration;
 import org.tools4j.elara.plugin.base.BaseState;
+
+import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
@@ -44,16 +47,29 @@ public class DefaultPluginFactory implements PluginFactory {
 
     @Override
     public org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins() {
-        return configuration.plugins().toArray(EMPTY_PLUGIN_CONFIGURATIONS);
+        final List<Plugin.Configuration> plugins = configuration.plugins();
+        boolean basePluginFound = false;
+        for (int i = 0; i < plugins.size(); i++) {
+            basePluginFound |= plugins.get(i) instanceof BaseConfiguration;
+        }
+        if (basePluginFound) {
+            return configuration.plugins().toArray(EMPTY_PLUGIN_CONFIGURATIONS);
+        }
+        final Plugin.Configuration[] pluginsWithBasePlugin = new Plugin.Configuration[plugins.size() + 1];
+        plugins.toArray(pluginsWithBasePlugin);
+        pluginsWithBasePlugin[pluginsWithBasePlugin.length - 1] = Plugins.basePlugin().configuration(
+                configuration, BaseConfiguration.createDefaultBaseState()
+        );
+        return pluginsWithBasePlugin;
     }
 
     @Override
     public BaseState.Mutable baseState() {
         for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : singletons.plugins()) {
-            if (plugin instanceof BasePlugin.BaseContext) {
-                return ((BasePlugin.BaseContext)plugin).baseState();
+            if (plugin instanceof BaseConfiguration) {
+                return ((BaseConfiguration)plugin).baseState();
             }
         }
-        return BasePlugin.BaseContext.createDefaultBaseState();
+        throw new IllegalStateException("Plugins must contain BaseConfiguration instance");
     }
 }
