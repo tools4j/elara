@@ -28,6 +28,13 @@ import org.tools4j.elara.flyweight.DataFrame;
 import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.Header;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.format.Hex.hex;
+
 /**
  * Formats value for {@link MessagePrinter} when printing lines containing {@link DataFrame} elements.
  */
@@ -85,7 +92,7 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
     default Object payloadSize(long line, long entryId, DataFrame frame) {return frame.header().payloadSize();}
     default Object payload(long line, long entryId, DataFrame frame) {
         final int size = frame.payload().capacity();
-        return size == 0 ? "(empty)" : "(" + size + " bytes)";}
+        return size == 0 ? "(empty)" : hex(frame.payload());}
 
     @Override
     default Object value(final String placeholder, final long line, final long entryId, final DataFrame frame) {
@@ -107,5 +114,27 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
             case PAYLOAD: return payload(entryId, entryId, frame);
             default: return placeholder;
         }
+    }
+
+    /**
+     * Replaces values for the specified placeholders with the given space char for the length of the original value's
+     * string representation.
+     *
+     * @param formatter             original formatter to get the value
+     * @param spaceChar             the space character
+     * @param placeholderToSpaceOut the place holders for which to replace space chars for the length of the value
+     * @return formatter that spaces out some of the values
+     */
+    static DataFrameFormatter spacer(final DataFrameFormatter formatter, final char spaceChar, final String... placeholderToSpaceOut) {
+        requireNonNull(formatter);
+        final String spaceStr = String.valueOf(spaceChar);
+        final Set<String> spaceOut = new HashSet<>(Arrays.asList(placeholderToSpaceOut));
+        return new DataFrameFormatter() {
+            @Override
+            public Object value(final String placeholder, final long line, final long entryId, final DataFrame frame) {
+                final Object value = formatter.value(placeholder, line, entryId, frame);
+                return spaceOut.contains(placeholder) ? String.valueOf(value).replaceAll(".", spaceStr) : value;
+            }
+        };
     }
 }

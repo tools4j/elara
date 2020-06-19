@@ -24,70 +24,93 @@
 package org.tools4j.elara.format;
 
 import org.tools4j.elara.flyweight.DataFrame;
+import org.tools4j.elara.flyweight.FlyweightCommand;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.format.DataFrameFormatter.DEFAULT;
-import static org.tools4j.elara.format.DataFrameFormatter.VERSION;
+import static org.tools4j.elara.format.DataFrameFormatter.SEQUENCE;
+import static org.tools4j.elara.format.DataFrameFormatter.SOURCE;
+import static org.tools4j.elara.format.DataFrameFormatter.spacer;
 import static org.tools4j.elara.format.MessagePrinter.composite;
 import static org.tools4j.elara.format.MessagePrinter.parameterized;
 
 public enum MessagePrinters {
     ;
 
+    public static final String VERSION_LINE     = "(elara message log format V{version}){nl}";
     public static final String GENERAL_FORMAT   = "{line}: {message}{nl}";
-    public static final String PIPE_FORMAT      = "{line}: in={source}|tp={type}}|sq={sequence}|tm={time}}|vs={version}|ix={index}|sz={payload-size}{nl}";
-    public static final String SHORT_FORMAT     = "{line}: in={source}, tp={type}, sq={sequence}, tm={time}, vs={version}, ix={index}, sz={payload-size}{nl}";
+    public static final String PIPE_FORMAT      = "{line}: src={source}|tp={type}}|sq={sequence}|tm={time}}|vr={version}|ix={index}|sz={payload-size}{nl}";
+    public static final String SHORT_FORMAT     = "{line}: src={source}, tp={type}, sq={sequence}, tm={time}, vs={version}, ix={index}, sz={payload-size}{nl}";
     public static final String LONG_FORMAT      = "{line}: source={source}, type={type}, sequence={sequence}, time={time}, version={version}, index={index}, size={payload-size}{nl}";
-    public static final String COMMAND_FORMAT   = "{line}: cmd={source}:{sequence} | type={type}, payload={payload} at {time}{version}{nl}";
-    public static final String EVENT_FORMAT_CMD = "{line}: evt={source}:{sequence}.{index} | type={type}, payload={payload} at {time}{version}{nl}";
-    public static final String EVENT_FORMAT_EVT = "{line}: evt={src-spc}.{seq-spc}.{index} | type={type}, payload={payload}{nl}";
+    public static final String COMMAND_FORMAT   = "{time} | {line} - cmd={source}:{sequence} | type={type}, payload({payload-size})={payload}{nl}";
+    public static final String EVENT_FORMAT_0   = "{time} | {line} - evt={source}:{sequence}.{index} | type={type}, payload({payload-size})={payload}{nl}";
+    public static final String EVENT_FORMAT_N   = "{time} | {line} - evt={source}.{sequence}.{index} | type={type}, payload({payload-size})={payload}{nl}";
 
     public static final MessagePrinter<Object> GENERAL = parameterized(GENERAL_FORMAT, ValueFormatter.DEFAULT);
-    public static final MessagePrinter<DataFrame> PIPE = parameterized(PIPE_FORMAT, DEFAULT);
-    public static final MessagePrinter<DataFrame> SHORT = parameterized(SHORT_FORMAT, DEFAULT);
-    public static final MessagePrinter<DataFrame> LONG = parameterized(LONG_FORMAT, DEFAULT);
+    public static final MessagePrinter<DataFrame> PIPE = parameterized(PIPE_FORMAT, DataFrameFormatter.DEFAULT);
+    public static final MessagePrinter<DataFrame> SHORT = parameterized(SHORT_FORMAT, DataFrameFormatter.DEFAULT);
+    public static final MessagePrinter<DataFrame> LONG = parameterized(LONG_FORMAT, DataFrameFormatter.DEFAULT);
 
-    public static final MessagePrinter<DataFrame> COMMAND = command(DEFAULT);
+    public static final MessagePrinter<DataFrame> COMMAND = command(DataFrameFormatter.DEFAULT);
+    public static final MessagePrinter<DataFrame> EVENT = event(DataFrameFormatter.DEFAULT);
+    public static final MessagePrinter<DataFrame> FRAME = frame(DataFrameFormatter.DEFAULT);
+
     public static MessagePrinter<DataFrame> command(final DataFrameFormatter formatter) {
+        return command(VERSION_LINE, COMMAND_FORMAT, formatter);
+    }
+
+    public static MessagePrinter<DataFrame> command(final String versionLine,
+                                                    final String commandLine,
+                                                    final DataFrameFormatter formatter) {
+        requireNonNull(versionLine);
+        requireNonNull(commandLine);
         requireNonNull(formatter);
         return composite(
                 (line, entryId, frame) -> line == 0 ? 0 : 1,
-                parameterized(COMMAND_FORMAT.replace(VERSION, " (V {version})"), formatter),
-                parameterized(COMMAND_FORMAT.replace(VERSION, ""), formatter)
+                parameterized(versionLine + commandLine, formatter),
+                parameterized(commandLine, formatter)
         );
     }
 
-    public static final MessagePrinter<DataFrame> EVENT = event(DEFAULT);
     public static MessagePrinter<DataFrame> event(final DataFrameFormatter formatter) {
-        requireNonNull(formatter);
-        final DataFrameFormatter sourceSeqSpacer = new DataFrameFormatter() {
-            @Override
-            public Object value(final String placeholder, final long line, final long entryId, final DataFrame frame) {
-                switch (placeholder) {
-                    case "{src-spc}":
-                        return String.valueOf(formatter.source(line, entryId, frame)).replaceAll(".", ".");
-                    case "{seq-spc}":
-                        return String.valueOf(formatter.sequence(line, entryId, frame)).replaceAll(".", ".");
-                    default:
-                        return formatter.value(placeholder, line, entryId, frame);
-                }
-            }
-        };
-        return composite(
-                (line, entryId, frame) -> {
+        return event(VERSION_LINE, EVENT_FORMAT_0, EVENT_FORMAT_N, formatter,
+                spacer(formatter, '.', SOURCE, SEQUENCE));
+    }
+
+    public static MessagePrinter<DataFrame> event(final String versionLine,
+                                                  final String eventLine0,
+                                                  final String eventLineN,
+                                                  final DataFrameFormatter formatter0,
+                                                  final DataFrameFormatter formatterN) {
+        return composite((line, entryId, frame) -> {
                     if (line == 0) return 0;
                     if (frame.header().index() == 0) return 1;
                     return 2;
                 },
-                parameterized(EVENT_FORMAT_CMD.replace(VERSION, " (V {version})"), sourceSeqSpacer),
-                parameterized(EVENT_FORMAT_CMD, sourceSeqSpacer),
-                parameterized(EVENT_FORMAT_EVT, sourceSeqSpacer)
+                parameterized(versionLine + eventLine0, formatter0),
+                parameterized(eventLine0, formatter0),
+                parameterized(eventLineN, formatterN)
         );
     }
 
-    public static final MessagePrinter<DataFrame> FRAME = frame(DEFAULT);
     public static MessagePrinter<DataFrame> frame(final DataFrameFormatter formatter) {
-        requireNonNull(formatter);
-        return composite((line, entryId, frame) -> frame.header().index() < 0 ? 0 : 1, command(formatter), event(formatter));
+        return composite(
+                (line, entryId, frame) -> frame.header().index() == FlyweightCommand.INDEX ? 0 : 1,
+                command(formatter),
+                event(formatter)
+        );
+    }
+
+    public static MessagePrinter<DataFrame> frame(final String versionLine,
+                                                  final String commandLine,
+                                                  final String eventLine0,
+                                                  final String eventLineN,
+                                                  final DataFrameFormatter commandFormatter,
+                                                  final DataFrameFormatter eventFormatter0,
+                                                  final DataFrameFormatter eventFormatterN) {
+        return composite(
+                (line, entryId, frame) -> frame.header().index() == FlyweightCommand.INDEX ? 0 : 1,
+                command(versionLine, commandLine, commandFormatter),
+                event(versionLine, eventLine0, eventLineN, eventFormatter0, eventFormatterN)
+        );
     }
 }

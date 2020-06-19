@@ -32,7 +32,6 @@ public enum Flags {
     public static final String NONE_STRING = "-";
     public static final String COMMIT_STRING = "C";
     public static final String ROLLBACK_STRING = "R";
-    public static final String UNDEFINED_STRING = "U";
 
     private static final int FINAL_MASK = COMMIT | ROLLBACK;
 
