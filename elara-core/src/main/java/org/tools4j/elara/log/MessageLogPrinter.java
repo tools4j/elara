@@ -26,6 +26,9 @@ package org.tools4j.elara.log;
 import org.tools4j.elara.flyweight.Flyweight;
 import org.tools4j.elara.format.MessagePrinter;
 import org.tools4j.elara.log.MessageLog.Handler.Result;
+import org.tools4j.nobark.loop.LoopCondition;
+import org.tools4j.nobark.run.StoppableThread;
+import org.tools4j.nobark.run.ThreadLike;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -33,6 +36,8 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
+
+import static java.util.Objects.requireNonNull;
 
 public class MessageLogPrinter implements AutoCloseable {
 
@@ -76,7 +81,7 @@ public class MessageLogPrinter implements AutoCloseable {
         }
     }
 
-    public <M> void print(final MessageLog.Poller poller, final Flyweight<M> flyweight) {
+    public void print(final MessageLog.Poller poller, final Flyweight<?> flyweight) {
         print(poller, flyweight, MessagePrinter.DEFAULT);
     }
 
@@ -90,6 +95,14 @@ public class MessageLogPrinter implements AutoCloseable {
                           final Flyweight<M> flyweight,
                           final Predicate<? super M> filter,
                           final MessagePrinter<? super M> printer) {
+        print(poller, flyweight, filter, printer, workDone -> workDone);
+    }
+
+    public <M> void print(final MessageLog.Poller poller,
+                          final Flyweight<M> flyweight,
+                          final Predicate<? super M> filter,
+                          final MessagePrinter<? super M> printer,
+                          final LoopCondition loopCondition) {
         final long[] linePtr = {0};
         final MessageLog.Handler handler = message -> {
             final M msg = flyweight.init(message, 0);
@@ -99,7 +112,25 @@ public class MessageLogPrinter implements AutoCloseable {
             }
             return Result.POLL;
         };
-        while (poller.poll(handler) > 0);
+        boolean workDone;
+        do {
+            workDone = poller.poll(handler) > 0;
+        } while (loopCondition.loopAgain(workDone));
         flush();
     }
+
+    public <M> ThreadLike printInBackground(final MessageLog.Poller poller,
+                                            final Flyweight<M> flyweight,
+                                            final Predicate<? super M> filter,
+                                            final MessagePrinter<? super M> printer) {
+        requireNonNull(poller);
+        requireNonNull(flyweight);
+        requireNonNull(filter);
+        requireNonNull(printer);
+        return StoppableThread.start(runningCondition -> () ->
+                print(poller, flyweight, filter, printer, workDone -> runningCondition.keepRunning()),
+                r -> new Thread(null, r, "log-printer")
+        );
+    }
+
 }

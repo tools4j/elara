@@ -27,7 +27,7 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 
-public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, Command.Id, Frame {
+public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, Command.Id, DataFrame {
 
     public static final short INDEX = Short.MIN_VALUE;
     private final FlyweightDataFrame frame = new FlyweightDataFrame();

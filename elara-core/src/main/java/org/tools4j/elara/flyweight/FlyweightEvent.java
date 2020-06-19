@@ -28,7 +28,7 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 
-public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.Id, Command.Id, Frame {
+public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.Id, Command.Id, DataFrame {
 
     private final FlyweightDataFrame frame = new FlyweightDataFrame();
     private final Flags flags = new FlyweightFlags();

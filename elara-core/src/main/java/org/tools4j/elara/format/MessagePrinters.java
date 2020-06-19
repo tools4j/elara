@@ -40,7 +40,7 @@ public enum MessagePrinters {
     public static final String LONG_FORMAT      = "{line}: source={source}, type={type}, sequence={sequence}, time={time}, version={version}, index={index}, size={payload-size}{nl}";
     public static final String COMMAND_FORMAT   = "{line}: cmd={source}:{sequence} | type={type}, payload={payload} at {time}{version}{nl}";
     public static final String EVENT_FORMAT_CMD = "{line}: evt={source}:{sequence}.{index} | type={type}, payload={payload} at {time}{version}{nl}";
-    public static final String EVENT_FORMAT_EVT = "{line}: evt={in-spc}.{seq-spc}.{index} | type={type}, payload={payload}{nl}";
+    public static final String EVENT_FORMAT_EVT = "{line}: evt={src-spc}.{seq-spc}.{index} | type={type}, payload={payload}{nl}";
 
     public static final MessagePrinter<Object> GENERAL = parameterized(GENERAL_FORMAT, ValueFormatter.DEFAULT);
     public static final MessagePrinter<DataFrame> PIPE = parameterized(PIPE_FORMAT, DEFAULT);
@@ -64,7 +64,7 @@ public enum MessagePrinters {
             @Override
             public Object value(final String placeholder, final long line, final long entryId, final DataFrame frame) {
                 switch (placeholder) {
-                    case "{in-spc}":
+                    case "{src-spc}":
                         return String.valueOf(formatter.source(line, entryId, frame)).replaceAll(".", ".");
                     case "{seq-spc}":
                         return String.valueOf(formatter.sequence(line, entryId, frame)).replaceAll(".", ".");

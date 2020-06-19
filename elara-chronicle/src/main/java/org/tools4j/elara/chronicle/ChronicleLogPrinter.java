@@ -26,12 +26,14 @@ package org.tools4j.elara.chronicle;
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.wire.WireType;
 import org.tools4j.elara.flyweight.DataFrame;
+import org.tools4j.elara.flyweight.Flyweight;
 import org.tools4j.elara.flyweight.FlyweightDataFrame;
 import org.tools4j.elara.format.DataFrameFormatter;
 import org.tools4j.elara.format.MessagePrinter;
 import org.tools4j.elara.format.MessagePrinters;
-import org.tools4j.elara.flyweight.Flyweight;
 import org.tools4j.elara.log.MessageLogPrinter;
+import org.tools4j.nobark.loop.LoopCondition;
+import org.tools4j.nobark.run.ThreadLike;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -79,26 +81,35 @@ public class ChronicleLogPrinter implements AutoCloseable {
     }
 
     public void print(final ChronicleQueue queue, final Flyweight<?> flyweight) {
-        messageLogPrinter.print(
-                new ChronicleLogPoller(queue), flyweight
-        );
+        messageLogPrinter.print(new ChronicleLogPoller(queue), flyweight);
     }
 
     public <M> void print(final ChronicleQueue queue,
                           final Flyweight<M> flyweight,
                           final MessagePrinter<? super M> printer) {
-        messageLogPrinter.print(
-                new ChronicleLogPoller(queue), flyweight, msg -> true, printer
-        );
+        messageLogPrinter.print(new ChronicleLogPoller(queue), flyweight, msg -> true, printer);
     }
 
     public <M> void print(final ChronicleQueue queue,
                           final Flyweight<M> flyweight,
                           final Predicate<? super M> filter,
                           final MessagePrinter<? super M> printer) {
-        messageLogPrinter.print(
-                new ChronicleLogPoller(queue), flyweight, filter, printer
-        );
+        messageLogPrinter.print(new ChronicleLogPoller(queue), flyweight, filter, printer);
+    }
+
+    public <M> void print(final ChronicleQueue queue,
+                          final Flyweight<M> flyweight,
+                          final Predicate<? super M> filter,
+                          final MessagePrinter<? super M> printer,
+                          final LoopCondition loopCondition) {
+        messageLogPrinter.print(new ChronicleLogPoller(queue), flyweight, filter, printer, loopCondition);
+    }
+
+    public <M> ThreadLike printInBackground(final ChronicleQueue queue,
+                                            final Flyweight<M> flyweight,
+                                            final Predicate<? super M> filter,
+                                            final MessagePrinter<? super M> printer) {
+        return messageLogPrinter.printInBackground(new ChronicleLogPoller(queue), flyweight, filter, printer);
     }
 
     public static void main(final String... args) {
