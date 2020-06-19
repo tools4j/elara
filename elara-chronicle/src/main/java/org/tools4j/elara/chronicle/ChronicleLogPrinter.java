@@ -25,10 +25,8 @@ package org.tools4j.elara.chronicle;
 
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.wire.WireType;
-import org.tools4j.elara.flyweight.DataFrame;
 import org.tools4j.elara.flyweight.Flyweight;
 import org.tools4j.elara.flyweight.FlyweightDataFrame;
-import org.tools4j.elara.format.DataFrameFormatter;
 import org.tools4j.elara.format.MessagePrinter;
 import org.tools4j.elara.format.MessagePrinters;
 import org.tools4j.elara.log.MessageLogPrinter;
@@ -38,7 +36,6 @@ import org.tools4j.nobark.run.ThreadLike;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.time.Instant;
 import java.util.function.Predicate;
 
 import static java.util.Objects.requireNonNull;
@@ -121,13 +118,6 @@ public class ChronicleLogPrinter implements AutoCloseable {
                 .path(args[0])
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
-        new ChronicleLogPrinter().print(queue, new FlyweightDataFrame(), MessagePrinters.frame(
-                new DataFrameFormatter() {
-                    @Override
-                    public Object time(final long line, final long entryId, final DataFrame frame) {
-                        return Instant.ofEpochMilli(frame.header().time());
-                    }
-                }
-        ));
+        new ChronicleLogPrinter().print(queue, new FlyweightDataFrame(), MessagePrinters.FRAME);
     }
 }

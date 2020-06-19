@@ -28,6 +28,7 @@ import org.tools4j.elara.flyweight.DataFrame;
 import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.Header;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -85,7 +86,7 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
         return type;
     }
     default Object sequence(long line, long entryId, DataFrame frame) {return frame.header().sequence();}
-    default Object time(long line, long entryId, DataFrame frame) {return frame.header().time();}
+    default Object time(long line, long entryId, DataFrame frame) {return Instant.ofEpochMilli(frame.header().time());}
     default Object version(long line,long entryId,  DataFrame frame) {return frame.header().version();}
     default Object flags(long line,long entryId,  DataFrame frame) {return Flags.toString(frame.header().flags());}
     default Object index(long line, long entryId, DataFrame frame) {return frame.header().index();}
@@ -122,18 +123,22 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
      *
      * @param formatter             original formatter to get the value
      * @param spaceChar             the space character
-     * @param placeholderToSpaceOut the place holders for which to replace space chars for the length of the value
+     * @param placeholderToSpaceOut the place holders for which to replace value with space chars
      * @return formatter that spaces out some of the values
      */
     static DataFrameFormatter spacer(final DataFrameFormatter formatter, final char spaceChar, final String... placeholderToSpaceOut) {
         requireNonNull(formatter);
-        final String spaceStr = String.valueOf(spaceChar);
         final Set<String> spaceOut = new HashSet<>(Arrays.asList(placeholderToSpaceOut));
         return new DataFrameFormatter() {
             @Override
             public Object value(final String placeholder, final long line, final long entryId, final DataFrame frame) {
                 final Object value = formatter.value(placeholder, line, entryId, frame);
-                return spaceOut.contains(placeholder) ? String.valueOf(value).replaceAll(".", spaceStr) : value;
+                if (spaceOut.contains(placeholder)) {
+                    final char[] chars = String.valueOf(value).toCharArray();
+                    Arrays.fill(chars, spaceChar);
+                    return String.valueOf(chars);
+                }
+                return value;
             }
         };
     }
