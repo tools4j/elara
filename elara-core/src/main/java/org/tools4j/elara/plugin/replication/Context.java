@@ -35,6 +35,6 @@ public interface Context extends Configuration {
     Context initialSendBufferCapacity(int size);
 
     static Context create() {
-        return new DefaultContext();//FIXME impl
+        return new DefaultContext();
     }
 }
