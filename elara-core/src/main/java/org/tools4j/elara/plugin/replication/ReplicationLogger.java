@@ -23,24 +23,13 @@
  */
 package org.tools4j.elara.plugin.replication;
 
-import org.tools4j.elara.event.Event;
-
-public interface ReplicationState {
-    long NULL_INDEX = -1;
-    short NULL_SERVER = -1;
-
-    int currentTerm();
-    short leaderId();
-    long eventLogSize();
-    long nextEventLogIndex(int serverId);
-
-    interface Volatile extends ReplicationState {
-        Mutable nextEventLogIndex(int serverId, long index);
-    }
-
-    interface Mutable extends ReplicationState.Volatile {
-        Mutable currentTerm(int term);
-        Mutable leaderId(short leaderId);
-        Mutable eventApplied(Event event);
-    }
+/**
+ * Logger for warning messages using {} placeholders for arguments.
+ */
+public interface ReplicationLogger {
+    ReplicationLogger DEFAULT = new OutputStreamReplicationLogger();
+    String PLACEHOLDER = "{}";
+    void warn(String message, long arg);
+    void warn(String message, long arg0, long arg1);
+    void warn(String message, long arg0, long arg1, long arg2);
 }

@@ -21,22 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.replicate;
+package org.tools4j.elara.plugin.replication;
 
-public interface ServerConfig {
-    int serverId();
-    int serverCount();
-    int serverId(int index);
-
-    static ServerConfig singleton() {
-        return singleton(1);
-    }
-
-    static ServerConfig singleton(final int serverId) {
-        return create(serverId, serverId);
-    }
-
-    static ServerConfig create(final int serverId, final int... serverIds) {
-        return new DefaultServerConfig(serverId, serverIds);
-    }
+public interface EventSender {
+    boolean sendEvent(int targetServerId, long eventLogIndex);
 }

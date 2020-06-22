@@ -33,15 +33,18 @@ public class DutyCycleStep implements Step {
     private final Step commandPollerStep;
     private final Step eventPollerStep;
     private final Step outputStep;
+    private final Step extraStep;
 
     public DutyCycleStep(final Step sequencerStep,
                          final Step commandPollerStep,
                          final Step eventPollerStep,
-                         final Step outputStep) {
+                         final Step outputStep,
+                         final Step extraStep) {
         this.sequencerStep = requireNonNull(sequencerStep);
         this.commandPollerStep = requireNonNull(commandPollerStep);
         this.eventPollerStep = requireNonNull(eventPollerStep);
         this.outputStep = requireNonNull(outputStep);
+        this.extraStep = requireNonNull(extraStep);
     }
 
 
@@ -53,6 +56,7 @@ public class DutyCycleStep implements Step {
         }
         if (commandPollerStep.perform()) {
             outputStep.perform();
+            extraStep.perform();
             return true;
         }
         //NOTES:
@@ -63,6 +67,6 @@ public class DutyCycleStep implements Step {
         //       (i) commands should be processed as fast as possible
         //      (ii) command time more accurately reflects real time, even if app latency is now reflected as 'transfer' time
         //     (iii) input back pressure is better than falling behind and the problem becomes visible to sender
-        return outputStep.perform() | sequencerStep.perform();
+        return outputStep.perform() | extraStep.perform() | sequencerStep.perform();
     }
 }

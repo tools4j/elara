@@ -60,6 +60,18 @@ public interface MessageLog extends AutoCloseable {
     }
 
     interface Poller {
+        /**
+         * Returns the current entry ID of this poller.
+         * <p>
+         * It returns the entry ID of the message currently polled if invoked while polling a message.
+         * Otherwise it returns the entry ID of the next message to be polled.
+         * <p>
+         * The index is monotonically increasing but not necessarily gap free;  for instance for a chronicle message log
+         * the entry ID consists of cycle and the sequence number within that cycle.
+         *
+         * @return the current entry ID of this poller.
+         *
+         */
         long entryId();
         boolean moveTo(long entryId);
         boolean moveToNext();//skip one

@@ -23,24 +23,24 @@
  */
 package org.tools4j.elara.plugin.replication;
 
-import org.tools4j.elara.event.Event;
+import org.agrona.DirectBuffer;
 
-public interface ReplicationState {
-    long NULL_INDEX = -1;
-    short NULL_SERVER = -1;
+public interface Connection {
+    Poller poller();
+    Publisher publisher();
 
-    int currentTerm();
-    short leaderId();
-    long eventLogSize();
-    long nextEventLogIndex(int serverId);
-
-    interface Volatile extends ReplicationState {
-        Mutable nextEventLogIndex(int serverId, long index);
+    @FunctionalInterface
+    interface Poller {
+        int poll(Handler handler);
     }
 
-    interface Mutable extends ReplicationState.Volatile {
-        Mutable currentTerm(int term);
-        Mutable leaderId(short leaderId);
-        Mutable eventApplied(Event event);
+    @FunctionalInterface
+    interface Handler {
+        void onMessage(int senderServerId, DirectBuffer buffer, int offset, int length);
+    }
+
+    @FunctionalInterface
+    interface Publisher {
+        boolean publish(int targetServerId, DirectBuffer buffer, int offset, int length);
     }
 }

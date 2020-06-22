@@ -25,12 +25,17 @@ package org.tools4j.elara.factory;
 
 import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.loop.DutyCycleStep;
+import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.nobark.loop.LoopCondition;
 import org.tools4j.nobark.loop.Step;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.nobark.loop.ComposableStep.composite;
+import static org.tools4j.nobark.loop.Step.NO_OP;
 
 public class DefaultRunnerFactory implements RunnerFactory {
 
@@ -54,18 +59,53 @@ public class DefaultRunnerFactory implements RunnerFactory {
 
     @Override
     public Step dutyCycleStep() {
+        final List<Step> pluginSteps = pluginSteps(false);
+        final List<Step> extraSteps = configuration.dutyCycleExtraSteps(false);
+        final Step extraStep;
+        if (pluginSteps.isEmpty() && extraSteps.isEmpty()) {
+            extraStep = NO_OP;
+        } else {
+            final Step[] allExtraSteps = new Step[pluginSteps.size() + extraSteps.size()];
+            for (int i = 0; i < pluginSteps.size(); i++) {
+                allExtraSteps[i] = pluginSteps.get(i);
+            }
+            final int off = pluginSteps.size();
+            for (int i = 0; i < extraSteps.size(); i++) {
+                allExtraSteps[off + i] = extraSteps.get(i);
+            }
+            extraStep = composite(allExtraSteps);
+        }
         return new DutyCycleStep(singletons.sequencerStep(), singletons.commandPollerStep(),
-                singletons.eventApplierStep(), singletons.outputStep());
+                singletons.eventApplierStep(), singletons.outputStep(), extraStep);
     }
 
     @Override
     public Step[] dutyCycleWithExtraSteps() {
-        final List<Step> extraSteps = configuration.dutyCycleExtraSteps();
-        final Step[] dutyCycle = new Step[1 + extraSteps.size()];
+        final List<Step> pluginStepsAlways = pluginSteps(true);
+        final List<Step> extraStepsAlways = configuration.dutyCycleExtraSteps(true);
+        final Step[] dutyCycle = new Step[1 + pluginStepsAlways.size() + extraStepsAlways.size()];
         dutyCycle[0] = singletons.dutyCycleStep();
-        for (int i = 1; i < dutyCycle.length; i++) {
-            dutyCycle[i] = extraSteps.get(i - 1);
+        int offset = 1;
+        for (int i = 0; i < pluginStepsAlways.size(); i++) {
+            dutyCycle[offset + i] = pluginStepsAlways.get(i);
+        }
+        offset = 1 + pluginStepsAlways.size();
+        for (int i = 0; i < extraStepsAlways.size(); i++) {
+            dutyCycle[offset + i] = extraStepsAlways.get(i);
         }
         return dutyCycle;
+    }
+
+    private List<Step> pluginSteps(final boolean alwaysExecute) {
+        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = singletons.plugins();
+        if (plugins.length == 0) {
+            return Collections.emptyList();
+        }
+        final BaseState baseState = singletons.baseState();
+        final List<Step> steps = new ArrayList<>(plugins.length);
+        for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
+            steps.add(plugin.step(baseState, alwaysExecute));
+        }
+        return steps;
     }
 }

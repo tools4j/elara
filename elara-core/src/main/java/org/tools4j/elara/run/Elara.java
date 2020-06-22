@@ -38,7 +38,7 @@ public enum Elara {
     ;
 
     public static ElaraRunner launch(final Context context) {
-        return launch(ElaraFactory.create(context.validateAndPopulateDefaults()));
+        return launch((Configuration)context.populateDefaults());
     }
 
     public static ElaraRunner launch(final Configuration configuration) {

@@ -23,12 +23,8 @@
  */
 package org.tools4j.elara.plugin.base;
 
-import org.tools4j.elara.application.CommandProcessor;
-import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.EventLogRepairer;
 import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState.Mutable;
@@ -50,7 +46,8 @@ public enum BasePlugin implements SystemPlugin<Mutable> {
     }
 
     @Override
-    public BaseConfiguration configuration(final org.tools4j.elara.init.Configuration appConfig, final Mutable baseState) {
+    public BaseConfiguration configuration(final org.tools4j.elara.init.Configuration appConfig,
+                                           final BaseState.Mutable baseState) {
         requireNonNull(appConfig);
         requireNonNull(baseState);
         if (baseState.processCommands()) {
@@ -70,32 +67,12 @@ public enum BasePlugin implements SystemPlugin<Mutable> {
      * state.
      */
     @FunctionalInterface
-    public interface BaseConfiguration extends Configuration {
+    public interface BaseConfiguration extends Configuration.Default {
         static BaseState.Mutable createDefaultBaseState() {
             return new DefaultBaseState();
         }
 
         BaseState.Mutable baseState();
-
-        @Override
-        default Input[] inputs(final BaseState baseState) {
-            return NO_INPUTS;
-        }
-
-        @Override
-        default Output output(final BaseState baseState) {
-            return Output.NOOP;
-        }
-
-        @Override
-        default CommandProcessor commandProcessor(final BaseState baseState) {
-            return CommandProcessor.NOOP;
-        }
-
-        @Override
-        default EventApplier eventApplier(final BaseState.Mutable baseState) {
-            return EventApplier.NOOP;
-        }
     }
 
     private void repairEventLogIfNeeded(final org.tools4j.elara.init.Configuration appConfig) {

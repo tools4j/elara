@@ -24,25 +24,32 @@
 package org.tools4j.elara.plugin.replication;
 
 /**
- * Descriptor of payload layout for replication commands and events in a byte buffer.
+ * Descriptor of message layout for replication messages in a byte buffer.
  * <pre>
 
      0         1         2         3         4         5         6
      0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-     |Version| Flags |     Type      |      Payload Size = 0         |
+     |Version| Flags |     Type      |         Payload Size          |
      +-------+-------+-------+-------+-------+-------+-------+-------+
      |      Candidate/Leader ID      |             Term              |
      +-------+-------+-------+-------+-------+-------+-------+-------+
-
+     |                           Log Index                           |
+     +-------+-------+-------+-------+-------+-------+-------+-------+
+     |                      Committed Log Index                      |
+     +-------+-------+-------+-------+-------+-------+-------+-------+
+     |                           Payload                             |
+     |                             ...                               |
 
  * </pre>
  */
-public enum ReplicationPayloadDescriptor {
+public enum ReplicationMessageDescriptor {
     ;
+
     public static final byte VERSION = 1;
-    public static final byte FLAGS = 0;
-    public static final int TERM_ENFORCED = -1;
+    public static final byte FLAGS_NONE = 0;
+    public static final byte FLAGS_APPEND_SUCCESS = 1;
+    public static final short CANDIDATE_REJECTED = -1;
 
     public static final int VERSION_OFFSET = 0;
     public static final int VERSION_LENGTH = Byte.BYTES;
@@ -56,10 +63,17 @@ public enum ReplicationPayloadDescriptor {
     public static final int CANDIDATE_ID_LENGTH = Integer.BYTES;
     public static final int TERM_OFFSET = CANDIDATE_ID_OFFSET + CANDIDATE_ID_LENGTH;
     public static final int TERM_LENGTH = Integer.BYTES;
+    public static final int LOG_INDEX_OFFSET = TERM_OFFSET + TERM_LENGTH;
+    public static final int LOG_INDEX_LENGTH = Long.BYTES;
+    public static final int COMMITTED_LOG_INDEX_OFFSET = LOG_INDEX_OFFSET + LOG_INDEX_LENGTH;
+    public static final int COMMITTED_LOG_INDEX_LENGTH = Long.BYTES;
 
-    public static final int PAYLOAD_LENGTH = TERM_OFFSET + TERM_LENGTH;
+    public static final int HEADER_OFFSET = 0;
+    public static final int HEADER_LENGTH = COMMITTED_LOG_INDEX_OFFSET + COMMITTED_LOG_INDEX_LENGTH;
+    public static final int PAYLOAD_OFFSET = HEADER_OFFSET + HEADER_LENGTH;
 
     //aliases
     public static final int LEADER_ID_OFFSET = CANDIDATE_ID_OFFSET;
     public static final int LEADER_ID_LENGTH = CANDIDATE_ID_LENGTH;
+
 }

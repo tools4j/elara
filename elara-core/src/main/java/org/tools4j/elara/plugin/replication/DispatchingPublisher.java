@@ -23,24 +23,30 @@
  */
 package org.tools4j.elara.plugin.replication;
 
-import org.tools4j.elara.event.Event;
+import org.agrona.DirectBuffer;
+import org.agrona.collections.Int2ObjectHashMap;
+import org.tools4j.elara.plugin.replication.Connection.Publisher;
 
-public interface ReplicationState {
-    long NULL_INDEX = -1;
-    short NULL_SERVER = -1;
+public class DispatchingPublisher implements Publisher {
 
-    int currentTerm();
-    short leaderId();
-    long eventLogSize();
-    long nextEventLogIndex(int serverId);
+    private final Int2ObjectHashMap<Publisher> publisherByServerId = new Int2ObjectHashMap<>();
 
-    interface Volatile extends ReplicationState {
-        Mutable nextEventLogIndex(int serverId, long index);
+    public DispatchingPublisher(final Configuration configuration) {
+        final int currentServerId = configuration.serverId();
+        for (final int serverId : configuration.serverIds()) {
+            if (serverId != currentServerId) {
+                final Publisher publisher = configuration.connection(serverId).publisher();
+                publisherByServerId.put(serverId, publisher);
+            }
+        }
     }
 
-    interface Mutable extends ReplicationState.Volatile {
-        Mutable currentTerm(int term);
-        Mutable leaderId(short leaderId);
-        Mutable eventApplied(Event event);
+    @Override
+    public boolean publish(final int targetServerId, final DirectBuffer buffer, final int offset, final int length) {
+        final Publisher publisher = publisherByServerId.get(targetServerId);
+        if (publisher != null) {
+            return publisher.publish(targetServerId, buffer, offset, length);
+        }
+        throw new NullPointerException("No publisher found for target server " + targetServerId);
     }
 }

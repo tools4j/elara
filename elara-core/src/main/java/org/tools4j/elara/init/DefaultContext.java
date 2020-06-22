@@ -62,6 +62,7 @@ final class DefaultContext implements Context {
     private IdleStrategy idleStrategy = new BackoffIdleStrategy(
             100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100));
     private final List<Step> dutyCycleExtraSteps = new ArrayList<>();
+    private final List<Step> dutyCycleExtraStepsAlways = new ArrayList<>();
     private ThreadFactory threadFactory;
     private final PluginContext plugins = new PluginContext();
 
@@ -197,13 +198,14 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public List<Step> dutyCycleExtraSteps() {
-        return dutyCycleExtraSteps;
+    public List<Step> dutyCycleExtraSteps(final boolean alwaysExecute) {
+        return alwaysExecute ? dutyCycleExtraStepsAlways : dutyCycleExtraSteps;
     }
 
     @Override
-    public Context dutyCycleExtraStep(final Step step) {
-        dutyCycleExtraSteps.add(step);
+    public Context dutyCycleExtraStep(final Step step, final boolean alwaysExecute) {
+        requireNonNull(step);
+        (alwaysExecute ? dutyCycleExtraStepsAlways : dutyCycleExtraSteps).add(step);
         return this;
     }
 
@@ -253,19 +255,7 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Context validateAndPopulateDefaults() {
-        if (commandProcessor == null) {
-            throw new IllegalStateException("Command processor must be set");
-        }
-        if (eventApplier == null) {
-            throw new IllegalStateException("Event applier must be set");
-        }
-        if (commandLog == null) {
-            throw new IllegalStateException("Command log must be set");
-        }
-        if (eventLog == null) {
-            throw new IllegalStateException("Event log must be set");
-        }
+    public Context populateDefaults() {
         if (timeSource == null) {
             timeSource = System::currentTimeMillis;
         }
@@ -273,6 +263,28 @@ final class DefaultContext implements Context {
             threadFactory(DEFAULT_THREAD_NAME);
         }
         return this;
+    }
+
+    static Configuration validate(final Configuration configuration) {
+        if (configuration.commandProcessor() == null) {
+            throw new IllegalArgumentException("Command processor must be set");
+        }
+        if (configuration.eventApplier() == null) {
+            throw new IllegalArgumentException("Event applier must be set");
+        }
+        if (configuration.commandLog() == null) {
+            throw new IllegalArgumentException("Command log must be set");
+        }
+        if (configuration.eventLog() == null) {
+            throw new IllegalArgumentException("Event log must be set");
+        }
+        if (configuration.timeSource() == null) {
+            throw new IllegalArgumentException("Time source must be set");
+        }
+        if (configuration.threadFactory() == null) {
+            throw new IllegalArgumentException("Thread factory must be set");
+        }
+        return configuration;
     }
 
 }

@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
+import static org.tools4j.elara.init.Configuration.validate;
 
 public class DefaultSingletons implements Singletons {
 
@@ -68,6 +69,7 @@ public class DefaultSingletons implements Singletons {
                              final FactorySupplier<? extends ApplierFactory> applierFactorySupplier,
                              final FactorySupplier<? extends OutputFactory> outputFactorySupplier,
                              final FactorySupplier<? extends PluginFactory> pluginFactorySupplier) {
+        validate(configuration);
         this.runnerFactory = runnerFactorySupplier.supply(configuration, this);
         this.inputFactory = inputFactorySupplier.supply(configuration, this);
         this.processorFactory = processorFactorySupplier.supply(configuration, this);

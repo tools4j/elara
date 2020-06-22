@@ -21,35 +21,35 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.factory;
+package org.tools4j.elara.plugin.replication;
 
-import org.tools4j.elara.init.Configuration;
+import org.tools4j.elara.application.CommandProcessor;
+import org.tools4j.elara.command.Command;
+import org.tools4j.elara.route.EventRouter;
+import org.tools4j.elara.route.EventRouter.RoutingContext;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.init.Configuration.validate;
+import static org.tools4j.elara.plugin.replication.ReplicationEvents.leaderElected;
 
-public class DefaultElaraFactory implements ElaraFactory {
+public class ReplicationCommandProcessor implements CommandProcessor {
 
-    private final Configuration configuration;
-    private final Singletons singletons;
+    private final ReplicationState replicationState;
 
-    public DefaultElaraFactory(final Configuration configuration) {
-        this(configuration, new DefaultSingletons(configuration));
-    }
-
-    public DefaultElaraFactory(final Configuration configuration, final Singletons singletons) {
-        this.configuration = validate(configuration);
-        this.singletons = requireNonNull(singletons);
+    public ReplicationCommandProcessor(final ReplicationState replicationState) {
+        this.replicationState = requireNonNull(replicationState);
     }
 
     @Override
-    public Configuration configuration() {
-        return configuration;
+    public void onCommand(final Command command, final EventRouter router) {
+        if (command.type() == ReplicationCommands.PROPOSE_LEADER) {
+            final int candidateId = ReplicationCommands.candidateId(command);
+            if (candidateId != replicationState.leaderId()) {
+                final int nextTerm = replicationState.currentTerm() + 1;
+                try (final RoutingContext context = router.routingEvent(ReplicationEvents.LEADER_ELECTED)) {
+                    final int length = leaderElected(context.buffer(), 0, nextTerm, candidateId);
+                    context.route(length);
+                }
+            }
+        }
     }
-
-    @Override
-    public Singletons singletons() {
-        return singletons;
-    }
-
 }

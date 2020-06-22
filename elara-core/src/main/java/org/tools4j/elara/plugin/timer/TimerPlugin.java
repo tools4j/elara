@@ -40,7 +40,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Simple timer plugin to support timers using {@link TimerCommands} and {@link TimerEvents}.
  */
-public class TimerPlugin implements SystemPlugin<Mutable> {
+public class TimerPlugin implements SystemPlugin<TimerState.Mutable> {
 
     public static final int DEFAULT_COMMAND_SOURCE = -10;
     public static final TimerPlugin DEFAULT = new TimerPlugin(DEFAULT_COMMAND_SOURCE);
@@ -65,7 +65,7 @@ public class TimerPlugin implements SystemPlugin<Mutable> {
     public Configuration configuration(final org.tools4j.elara.init.Configuration appConfig, final Mutable timerState) {
         requireNonNull(appConfig);
         requireNonNull(timerState);
-        return new Configuration() {
+        return new Configuration.Default() {
             final TimerTrigger timerTrigger = new TimerTrigger(timerState);
 
             @Override

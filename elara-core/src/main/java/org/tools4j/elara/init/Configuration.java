@@ -50,7 +50,15 @@ public interface Configuration {
     ExceptionHandler exceptionHandler();
     DuplicateHandler duplicateHandler();
     IdleStrategy idleStrategy();
-    List<Step> dutyCycleExtraSteps();
+    List<Step> dutyCycleExtraSteps(boolean alwaysExecute);
     ThreadFactory threadFactory();
     List<Plugin.Configuration> plugins();
+
+    static Context configure() {
+        return Context.create();
+    }
+
+    static Configuration validate(final Configuration configuration) {
+        return DefaultContext.validate(configuration);
+    }
 }

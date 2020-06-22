@@ -23,27 +23,30 @@
  */
 package org.tools4j.elara.plugin.replication;
 
+import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.event.Event;
 
+import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.FLAGS_NONE;
+import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.FLAGS_OFFSET;
+import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.PAYLOAD_SIZE_OFFSET;
+import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.TYPE_OFFSET;
+import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.LEADER_ID_OFFSET;
+import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.PAYLOAD_LENGTH;
+import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.TERM_ENFORCED;
+import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.TERM_OFFSET;
+
 /**
- * Boot events issued in response to boot commands.
+ * Replication events.
  */
 public enum ReplicationEvents {
     ;
-    public static final int LEADER_VOTE_REQUESTED = -90;
-    public static final int LEADER_VOTE_GRANTED = -91;
-    public static final int LEADER_ELECTED = -92;
-    public static final int LEADER_ENFORCED = -93;
+    public static final short LEADER_ELECTED = -90;
+    public static final short LEADER_ENFORCED = -99;
 
-    public static final int EVENT_APPENDED = -94;
-
-    public static boolean isBootEvent(final Event event) {
+    public static boolean isReplicationEvent(final Event event) {
         switch (event.type()) {
-            case LEADER_VOTE_REQUESTED://fallthrough
-            case LEADER_VOTE_GRANTED://fallthrough
             case LEADER_ELECTED://fallthrough
             case LEADER_ENFORCED://fallthrough
-            case EVENT_APPENDED://fallthrough
                 return true;
             default:
                 return false;
@@ -52,18 +55,42 @@ public enum ReplicationEvents {
 
     public static String replicationEventName(final Event event) {
         switch (event.type()) {
-            case LEADER_VOTE_REQUESTED:
-                return "LEADER_VOTE_REQUESTED";
-            case LEADER_VOTE_GRANTED:
-                return "LEADER_VOTE_GRANTED";
             case LEADER_ELECTED:
                 return "LEADER_ELECTED";
             case LEADER_ENFORCED:
                 return "LEADER_ENFORCED";
-            case EVENT_APPENDED:
-                return "EVENT_APPENDED";
             default:
-                throw new IllegalArgumentException("Not a boot event: " + event);
+                throw new IllegalArgumentException("Not a replication event: " + event);
         }
+    }
+
+    public static int leaderElected(final MutableDirectBuffer buffer, final int offset,
+                                    final int term,
+                                    final int leaderId) {
+        buffer.putByte(offset + ReplicationMessageDescriptor.VERSION_OFFSET, ReplicationMessageDescriptor.VERSION);
+        buffer.putByte(offset + FLAGS_OFFSET, FLAGS_NONE);
+        buffer.putShort(offset + TYPE_OFFSET, LEADER_ELECTED);
+        buffer.putInt(offset + PAYLOAD_SIZE_OFFSET, 0);
+        buffer.putInt(offset + LEADER_ID_OFFSET, leaderId);
+        buffer.putInt(offset + TERM_OFFSET, term);
+        return PAYLOAD_LENGTH;
+    }
+
+    public static int leaderEnforced(final MutableDirectBuffer buffer, final int offset,
+                                     final int leaderId) {
+        buffer.putByte(offset + FLAGS_OFFSET, FLAGS_NONE);
+        buffer.putShort(offset + TYPE_OFFSET, LEADER_ENFORCED);
+        buffer.putInt(offset + PAYLOAD_SIZE_OFFSET, 0);
+        buffer.putInt(offset + LEADER_ID_OFFSET, leaderId);
+        buffer.putInt(offset + TERM_OFFSET, TERM_ENFORCED);
+        return PAYLOAD_LENGTH;
+    }
+
+    public static int term(final Event event) {
+        return event.payload().getInt(TERM_OFFSET);
+    }
+
+    public static short leaderId(final Event event) {
+        return event.payload().getShort(LEADER_ID_OFFSET);
     }
 }

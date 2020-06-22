@@ -23,24 +23,21 @@
  */
 package org.tools4j.elara.plugin.replication;
 
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.input.Input;
 
-public interface ReplicationState {
-    long NULL_INDEX = -1;
-    short NULL_SERVER = -1;
+public interface Configuration {
+    int serverId();
+    int[] serverIds();
+    Input enforceLeaderInput();
+    Connection connection(int serverId);
+    ReplicationLogger replicationLogger();
+    int initialSendBufferCapacity();
 
-    int currentTerm();
-    short leaderId();
-    long eventLogSize();
-    long nextEventLogIndex(int serverId);
-
-    interface Volatile extends ReplicationState {
-        Mutable nextEventLogIndex(int serverId, long index);
+    static Context configure() {
+        return Context.create();
     }
 
-    interface Mutable extends ReplicationState.Volatile {
-        Mutable currentTerm(int term);
-        Mutable leaderId(short leaderId);
-        Mutable eventApplied(Event event);
+    static Configuration validate(final Configuration configuration) {
+        return DefaultContext.validate(configuration);
     }
 }

@@ -48,7 +48,7 @@ public class HeartbeatPlugin implements Plugin<NullState> {
     public Configuration configuration(final org.tools4j.elara.init.Configuration appConfig, final NullState pluginState) {
         requireNonNull(appConfig);
         requireNonNull(pluginState);
-        return new Configuration() {
+        return new Configuration.Default() {
             @Override
             public Input[] inputs(final BaseState baseState) {
                 return new Input[0];

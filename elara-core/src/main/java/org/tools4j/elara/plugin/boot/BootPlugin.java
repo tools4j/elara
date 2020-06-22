@@ -24,9 +24,7 @@
 package org.tools4j.elara.plugin.boot;
 
 import org.tools4j.elara.application.CommandProcessor;
-import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.input.DefaultReceiver;
-import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.input.SimpleSequenceGenerator;
@@ -71,12 +69,7 @@ public class BootPlugin implements SystemPlugin<NullState> {
         requireNonNull(appConfig);
         requireNonNull(pluginState);
         appendAppInitStartCommand(appConfig);
-        return new Configuration() {
-            @Override
-            public Input[] inputs(final BaseState baseState) {
-                return NO_INPUTS;
-            }
-
+        return new Configuration.Default() {
             @Override
             public Output output(final BaseState baseState) {
                 return new BootOutput();
@@ -85,11 +78,6 @@ public class BootPlugin implements SystemPlugin<NullState> {
             @Override
             public CommandProcessor commandProcessor(final BaseState baseState) {
                 return new BootCommandProcessor();
-            }
-
-            @Override
-            public EventApplier eventApplier(final BaseState.Mutable baseState) {
-                return EventApplier.NOOP;
             }
         };
     }

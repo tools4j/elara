@@ -21,50 +21,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.replicate;
+package org.tools4j.elara.plugin.replication;
 
-import java.util.Arrays;
+import org.tools4j.elara.input.Input;
+import org.tools4j.elara.input.Receiver;
 
-public class DefaultServerConfig implements ServerConfig {
+public interface EnforceLeaderInput extends Input {
+    @Override
+    EnforceLeaderPoller poller();
 
-    private final int serverId;
-    private final int[] serverIds;
-
-    public DefaultServerConfig(final int serverId, final int... serverIds) {
-        validateServerId(serverId, serverIds);
-        this.serverId = serverId;
-        this.serverIds = serverIds;
-    }
-
-    private static void validateServerId(final int serverId, final int... serverIds) {
-        for (final int id : serverIds) {
-            if (id == serverId) {
-                return;
-            }
+    @FunctionalInterface
+    interface EnforceLeaderPoller extends Poller {
+        @Override
+        default int poll(final Receiver receiver) {
+            return poll((EnforceLeaderReceiver)receiver);
         }
-        throw new IllegalArgumentException("Server ID " + serverId + " is not in " + Arrays.toString(serverIds));
+
+        int poll(EnforceLeaderReceiver receiver);
     }
 
-    @Override
-    public int serverId() {
-        return serverId;
-    }
-
-    @Override
-    public int serverCount() {
-        return serverIds.length;
-    }
-
-    @Override
-    public int serverId(final int index) {
-        return serverIds[index];
-    }
-
-    @Override
-    public String toString() {
-        return "DefaultServerConfig{" +
-                "serverId=" + serverId +
-                ", serverIds=" + Arrays.toString(serverIds) +
-                '}';
+    interface EnforceLeaderReceiver extends Receiver {
+        void enforceLeader(int source, long sequence, int leaderId);
     }
 }

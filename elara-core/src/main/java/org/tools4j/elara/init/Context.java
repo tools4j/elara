@@ -53,7 +53,7 @@ public interface Context extends Configuration {
     Context exceptionHandler(ExceptionHandler exceptionHandler);
     Context duplicateHandler(DuplicateHandler duplicateHandler);
     Context idleStrategy(IdleStrategy idleStrategy);
-    Context dutyCycleExtraStep(Step step);
+    Context dutyCycleExtraStep(Step step, boolean alwaysExecute);
     Context threadFactory(String threadName);
     Context threadFactory(ThreadFactory threadFactory);
 
@@ -62,7 +62,7 @@ public interface Context extends Configuration {
     <P> Context plugin(Plugin<P> plugin, Consumer<? super P> pluginStateAware);
     <P> Context plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider, Consumer<? super P> pluginStateAware);
 
-    Context validateAndPopulateDefaults();
+    Context populateDefaults();
 
     static Context create() {
         return new DefaultContext();

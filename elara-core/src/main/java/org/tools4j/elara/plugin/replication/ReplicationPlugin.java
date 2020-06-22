@@ -25,79 +25,70 @@ package org.tools4j.elara.plugin.replication;
 
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.input.DefaultReceiver;
-import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.Receiver;
-import org.tools4j.elara.input.SequenceGenerator;
-import org.tools4j.elara.input.SimpleSequenceGenerator;
-import org.tools4j.elara.output.Output;
-import org.tools4j.elara.plugin.api.Plugin.NullState;
+import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.log.MessageLog.Appender;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.elara.plugin.boot.BootCommandProcessor;
-import org.tools4j.elara.plugin.boot.BootOutput;
+import org.tools4j.elara.plugin.replication.Connection.Handler;
+import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.plugin.boot.BootCommands.SIGNAL_APP_INITIALISATION_START;
 
 /**
  * A plugin that issues a commands and events related to booting an elara application to indicate that the application
  * has been started and initialised.
  */
-public class ReplicationPlugin implements SystemPlugin<NullState> {
+public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable> {
 
-    public static final int DEFAULT_COMMAND_SOURCE = -20;
-    public static final ReplicationPlugin DEFAULT = new ReplicationPlugin(DEFAULT_COMMAND_SOURCE, new SimpleSequenceGenerator(System.currentTimeMillis()));
+    private org.tools4j.elara.plugin.replication.Configuration configuration;
 
-    private final int commandSource;
-    private final SequenceGenerator sequenceGenerator;
-
-    public ReplicationPlugin(final int commandSource, final SequenceGenerator sequenceGenerator) {
-        this.commandSource = commandSource;
-        this.sequenceGenerator = requireNonNull(sequenceGenerator);
+    public ReplicationPlugin(final org.tools4j.elara.plugin.replication.Configuration configuration) {
+        this.configuration = org.tools4j.elara.plugin.replication.Configuration.validate(configuration);
     }
 
     @Override
     public TypeRange typeRange() {
-        return TypeRange.BOOT;
+        return TypeRange.REPLICATION;
     }
 
     @Override
-    public NullState defaultPluginState() {
-        return NullState.NULL;
+    public ReplicationState.Mutable defaultPluginState() {
+        return new DefaultReplicationState();
     }
 
     @Override
-    public Configuration configuration(final org.tools4j.elara.init.Configuration appConfig, final NullState pluginState) {
+    public Configuration configuration(final org.tools4j.elara.init.Configuration appConfig,
+                                       final ReplicationState.Mutable replicationState) {
         requireNonNull(appConfig);
-        requireNonNull(pluginState);
-        appendAppInitStartCommand(appConfig);
-        return new Configuration() {
+        requireNonNull(replicationState);
+        final MessageLog eventLog = appConfig.eventLog();
+        final Appender eventLogAppender = eventLog.appender();
+        final EnforcedLeaderEventReceiver enforcedLeaderEventReceiver = new EnforcedLeaderEventReceiver(
+                appConfig.timeSource(), configuration, replicationState, eventLogAppender
+        );
+        final DispatchingPublisher dispatchingPublisher = new DispatchingPublisher(configuration);
+        final Handler connectionHandler = new ConnectionHandler(configuration, replicationState, eventLogAppender,
+                dispatchingPublisher);
+        final EventSender eventSender = new DefaultEventSender(configuration, replicationState, eventLog,
+                dispatchingPublisher);
+        return new Configuration.Default() {
             @Override
-            public Input[] inputs(final BaseState baseState) {
-                return NO_INPUTS;
-            }
-
-            @Override
-            public Output output(final BaseState baseState) {
-                return new BootOutput();
+            public Step step(final BaseState baseState, final boolean alwaysExecute) {
+                return alwaysExecute ? Step.NO_OP : new ReplicationAppenderStep(
+                        configuration, replicationState, enforcedLeaderEventReceiver, connectionHandler, eventSender
+                );
             }
 
             @Override
             public CommandProcessor commandProcessor(final BaseState baseState) {
-                return new BootCommandProcessor();
+                return new ReplicationCommandProcessor(replicationState);
             }
 
             @Override
             public EventApplier eventApplier(final BaseState.Mutable baseState) {
-                return EventApplier.NOOP;
+                return new ReplicationEventApplier(configuration, baseState, replicationState);
             }
         };
-    }
-
-    private void appendAppInitStartCommand(final org.tools4j.elara.init.Configuration appConfig) {
-        final Receiver receiver = new DefaultReceiver(appConfig.timeSource(), appConfig.commandLog().appender());
-        receiver.receiveMessageWithoutPayload(commandSource, sequenceGenerator.nextSequence(), SIGNAL_APP_INITIALISATION_START);
     }
 }

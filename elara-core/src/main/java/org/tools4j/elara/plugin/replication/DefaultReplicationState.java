@@ -23,24 +23,57 @@
  */
 package org.tools4j.elara.plugin.replication;
 
+import org.agrona.collections.Long2LongHashMap;
 import org.tools4j.elara.event.Event;
 
-public interface ReplicationState {
-    long NULL_INDEX = -1;
-    short NULL_SERVER = -1;
+public class DefaultReplicationState implements ReplicationState.Mutable {
 
-    int currentTerm();
-    short leaderId();
-    long eventLogSize();
-    long nextEventLogIndex(int serverId);
+    private int currentTerm;
+    private short leaderId = NULL_SERVER;
+    private long eventLogSize;
+    private final Long2LongHashMap nextEventLogIndexByServerId = new Long2LongHashMap(NULL_INDEX);
 
-    interface Volatile extends ReplicationState {
-        Mutable nextEventLogIndex(int serverId, long index);
+    @Override
+    public int currentTerm() {
+        return currentTerm;
     }
 
-    interface Mutable extends ReplicationState.Volatile {
-        Mutable currentTerm(int term);
-        Mutable leaderId(short leaderId);
-        Mutable eventApplied(Event event);
+    @Override
+    public Mutable currentTerm(final int term) {
+        currentTerm = term;
+        return this;
+    }
+
+    @Override
+    public short leaderId() {
+        return leaderId;
+    }
+
+    @Override
+    public Mutable leaderId(final short leaderId) {
+        this.leaderId = leaderId;
+        return this;
+    }
+
+    @Override
+    public long eventLogSize() {
+        return eventLogSize;
+    }
+
+    @Override
+    public Mutable eventApplied(final Event event) {
+        eventLogSize++;
+        return this;
+    }
+
+    @Override
+    public long nextEventLogIndex(final int serverId) {
+        return nextEventLogIndexByServerId.get(serverId);
+    }
+
+    @Override
+    public Mutable nextEventLogIndex(final int serverId, final long index) {
+        nextEventLogIndexByServerId.put(serverId, index);
+        return this;
     }
 }
