@@ -47,22 +47,26 @@ import static java.util.Objects.requireNonNull;
  *     - Events are also long values; if current state hash is
  *         - even: then event value is same as command value
  *         - odd:  then event value is the bitwise inverse of the value
- *     - State is an xor hash of all event values
+ *     - State is a simple hash of all event values
  * </pre>
  */
 public class HashApplication {
 
     public static final long NULL_VALUE = Long.MIN_VALUE;
-    private static final int SOURCE = 42;
+    public static final int DEFAULT_SOURCE = 42;
 
     public interface State {
         long hash();
+        long count();
     }
+
     public interface ModifiableState extends State {
         void update(long add);
     }
+
     public static class DefaultState implements ModifiableState {
         private long hash;
+        private long count;
 
         @Override
         public long hash() {
@@ -71,11 +75,17 @@ public class HashApplication {
 
         @Override
         public void update(final long add) {
-            hash ^= add;
+            hash = 47 * hash + add;
+            count++;
+        }
+
+        @Override
+        public long count() {
+            return count;
         }
     }
 
-    private static CommandProcessor commandProcessor(final State state) {
+    public static CommandProcessor commandProcessor(final State state) {
         requireNonNull(state);
         return (command, router) -> {
             if (command.isApplication()) {
@@ -89,7 +99,7 @@ public class HashApplication {
         };
     }
 
-    private static EventApplier eventApplier(final ModifiableState state) {
+    public static EventApplier eventApplier(final ModifiableState state) {
         requireNonNull(state);
         return event -> {
             if (event.isApplication()) {
@@ -99,14 +109,18 @@ public class HashApplication {
         };
     }
 
-    private static Input input(final AtomicLong input) {
+    public static Input input(final AtomicLong input) {
+        return input(DEFAULT_SOURCE, input);
+    }
+
+    public static Input input(final int source, final AtomicLong input) {
         requireNonNull(input);
         final AtomicLong seqNo = new AtomicLong();
         return () -> receiver -> {
             final long value = input.getAndSet(NULL_VALUE);
             if (value != NULL_VALUE) {
                 final long seq = seqNo.incrementAndGet();
-                try (final ReceivingContext context = receiver.receivingMessage(SOURCE, seq)) {
+                try (final ReceivingContext context = receiver.receivingMessage(source, seq)) {
                     context.buffer().putLong(0, value);
                     context.receive(Long.BYTES);
                 }
@@ -117,20 +131,6 @@ public class HashApplication {
     }
 
     public static ElaraRunner inMemory(final ModifiableState state, final AtomicLong input) {
-        requireNonNull(state);
-        requireNonNull(input);
-        return Elara.launch(Context.create()
-                .commandProcessor(commandProcessor(state))
-                .eventApplier(eventApplier(state))
-                .input(input(input))
-                .commandLog(new InMemoryLog())
-                .eventLog(new InMemoryLog())
-        );
-    }
-
-    public static ElaraRunner persisted(final ModifiableState state, final AtomicLong input) {
-        requireNonNull(state);
-        requireNonNull(input);
         return Elara.launch(Context.create()
                 .commandProcessor(commandProcessor(state))
                 .eventApplier(eventApplier(state))

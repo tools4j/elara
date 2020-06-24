@@ -35,6 +35,7 @@ import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.time.TimeSource;
 import org.tools4j.nobark.loop.Step;
 
+import java.util.Collection;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -43,6 +44,8 @@ public interface Context extends Configuration {
     Context commandProcessor(CommandProcessor commandProcessor);
     Context eventApplier(EventApplier eventApplier);
     Context input(Input input);
+    Context inputs(Input... inputs);
+    Context inputs(Collection<? extends Input> inputs);
     Context output(Output output);
     Context commandLog(String file);
     Context commandLog(MessageLog commandLog);

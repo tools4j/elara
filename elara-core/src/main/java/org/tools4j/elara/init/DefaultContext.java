@@ -37,6 +37,7 @@ import org.tools4j.elara.time.TimeSource;
 import org.tools4j.nobark.loop.Step;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -96,6 +97,20 @@ final class DefaultContext implements Context {
     @Override
     public Context input(final Input input) {
         inputs.add(input);
+        return this;
+    }
+
+    @Override
+    public Context inputs(final Input... inputs) {
+        for (final Input input : inputs) {
+            input(input);
+        }
+        return this;
+    }
+
+    @Override
+    public Context inputs(final Collection<? extends Input> inputs) {
+        this.inputs.addAll(inputs);
         return this;
     }
 

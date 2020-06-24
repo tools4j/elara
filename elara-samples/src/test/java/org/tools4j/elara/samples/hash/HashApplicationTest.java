@@ -46,7 +46,7 @@ public class HashApplicationTest {
         final AtomicLong input = new AtomicLong(NULL_VALUE);
         final ModifiableState state = new DefaultState();
         final Random random = new Random(123);
-        final long expected = -979046443710241886L;
+        final long expected = 6244545253611137478L;
 
         //when
         try (final ElaraRunner runner = HashApplication.inMemory(state, input)) {
@@ -64,7 +64,7 @@ public class HashApplicationTest {
         final AtomicLong input = new AtomicLong(NULL_VALUE);
         final ModifiableState state = new DefaultState();
         final Random random = new Random(123);
-        final long expected = -979046443710241886L;
+        final long expected = 6244545253611137478L;
 
         //when
         try (final ElaraRunner runner = HashApplication.chronicleQueue(state, input)) {
