@@ -21,14 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.samples.replication;
+package org.tools4j.elara.samples.network;
 
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.input.Receiver.ReceivingContext;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.samples.replication.Channel.NULL_VALUE;
+import static org.tools4j.elara.samples.network.Buffer.NULL_VALUE;
 
 public class BufferInput implements Input {
 

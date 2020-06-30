@@ -23,47 +23,8 @@
  */
 package org.tools4j.elara.samples.replication;
 
-import java.util.Arrays;
-
-public class RingBuffer implements Buffer {
-
-    private final long[] values;
-    private int writeOffset;
-    private int readOffset;
-    private int n;
-
-    public RingBuffer(final int capacity) {
-        this.values = new long[capacity];
-        Arrays.fill(values, NULL_VALUE);
-    }
-
-    @Override
-    public synchronized boolean offer(final long value) {
-        if (n == values.length) {
-            return false;
-        }
-        values[writeOffset] = value;
-        n++;
-        writeOffset++;
-        if (writeOffset == values.length) {
-            writeOffset = 0;
-        }
-        return true;
-    }
-
-    @Override
-    public synchronized long consume() {
-        if (n == 0) {
-            return NULL_VALUE;
-        }
-        final long value = values[readOffset];
-        values[readOffset] = NULL_VALUE;
-        n--;
-        readOffset++;
-        if (readOffset == values.length) {
-            readOffset = 0;
-        }
-        return value;
-    }
-
+public interface IdMapping {
+    int count();
+    int idByIndex(int index);
+    int indexById(int id);
 }

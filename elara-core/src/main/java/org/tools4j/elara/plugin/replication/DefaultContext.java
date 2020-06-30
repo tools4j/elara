@@ -38,7 +38,6 @@ final class DefaultContext implements Context {
     private int serverId = NULL_SERVER;
     private final IntArrayList serverIds = new IntArrayList();
     private Input enforceLeaderInput = NULL_INPUT;
-    private Connection connection = null;
     private final Int2ObjectHashMap<Connection> connectionByServerId = new Int2ObjectHashMap<>();
     private ReplicationLogger replicationLogger = ReplicationLogger.DEFAULT;
     private int initialSendBufferCapacity = DEFAULT_INITIAL_SEND_BUFFER_CAPACITY;
@@ -58,10 +57,6 @@ final class DefaultContext implements Context {
         this.serverIds.addInt(serverId);
         if (local) {
             this.serverId = serverId;
-        } else {
-            if (connection != null && !connectionByServerId.containsKey(serverId)) {
-                connectionByServerId.put(serverId, connection);
-            }
         }
         return this;
     }
@@ -86,20 +81,6 @@ final class DefaultContext implements Context {
     @Override
     public Connection connection(final int serverId) {
         return connectionByServerId.get(serverId);
-    }
-
-    @Override
-    public Context connection(final Connection connection) {
-        final Connection old = this.connection;
-        this.connection = requireNonNull(connection);
-        for (int i = 0; i < serverIds.size(); i++) {
-            final int serverId = serverIds.get(i);
-            final Connection c = connectionByServerId.get(serverId);
-            if (c == null || c == old) {
-                connectionByServerId.put(serverId, connection);
-            }
-        }
-        return this;
     }
 
     @Override

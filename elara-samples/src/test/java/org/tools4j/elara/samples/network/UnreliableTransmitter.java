@@ -21,10 +21,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.samples.replication;
+package org.tools4j.elara.samples.network;
 
-public interface Buffer extends Channel {
+import java.util.concurrent.ThreadLocalRandom;
 
-    long consume();
+import static java.util.Objects.requireNonNull;
+
+public class UnreliableTransmitter implements Transmitter {
+
+    private final float lossRatio;
+    private final Transmitter delegate;
+
+    public UnreliableTransmitter(final float lossRatio, final Transmitter delegate) {
+        this.delegate = requireNonNull(delegate);
+        this.lossRatio = lossRatio;
+    }
+
+    @Override
+    public void transmit(final Buffer senderBuffer, final Buffer receiverBuffer) {
+        if (ThreadLocalRandom.current().nextFloat() < lossRatio) {
+            //lost
+            senderBuffer.consume();
+            return;
+        }
+        delegate.transmit(senderBuffer, receiverBuffer);
+    }
 
 }

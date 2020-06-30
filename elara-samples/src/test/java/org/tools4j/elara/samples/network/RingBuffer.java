@@ -21,32 +21,48 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.samples.replication;
+package org.tools4j.elara.samples.network;
 
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Arrays;
 
-import static java.util.Objects.requireNonNull;
+public class RingBuffer implements Buffer {
 
-/**
- * A transmission channel that incurs random data loss.
- */
-public class UnreliableChannel implements Channel {
+    private final long[] values;
+    private int writeOffset;
+    private int readOffset;
+    private int n;
 
-    private final Channel destination;
-    private final float lossRatio;
-
-    public UnreliableChannel(final Channel destination, final float lossRatio) {
-        this.destination = requireNonNull(destination);
-        this.lossRatio = lossRatio;
+    public RingBuffer(final int capacity) {
+        this.values = new long[capacity];
+        Arrays.fill(values, NULL_VALUE);
     }
 
     @Override
-    public boolean offer(final long value) {
-        final ThreadLocalRandom random = ThreadLocalRandom.current();
-        final boolean isLost = random.nextFloat() < lossRatio;
-        if (isLost) {
-            return true;
+    public synchronized boolean offer(final long value) {
+        if (n == values.length) {
+            return false;
         }
-        return destination.offer(value);
+        values[writeOffset] = value;
+        n++;
+        writeOffset++;
+        if (writeOffset == values.length) {
+            writeOffset = 0;
+        }
+        return true;
+    }
+
+    @Override
+    public synchronized long consume() {
+        if (n == 0) {
+            return NULL_VALUE;
+        }
+        final long value = values[readOffset];
+        values[readOffset] = NULL_VALUE;
+        n--;
+        readOffset++;
+        if (readOffset == values.length) {
+            readOffset = 0;
+        }
+        return value;
     }
 }

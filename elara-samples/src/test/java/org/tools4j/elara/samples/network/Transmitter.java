@@ -21,42 +21,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.samples.replication;
+package org.tools4j.elara.samples.network;
 
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.LongSupplier;
 
-import static java.util.Objects.requireNonNull;
+@FunctionalInterface
+public interface Transmitter {
+    void transmit(Buffer senderBuffer, Buffer receiverBuffer);
 
-/**
- * A transmission channel that incurs random delays loss.
- */
-public class LatentChannel implements Channel {
-
-    private final Channel destination;
-    private final long delayMinMillis;//inclusive
-    private final long delayMaxMillis;//exclusive
-
-    public LatentChannel(final Channel destination, final long delayMinMillis, final long delayMaxMillis) {
-        this.destination = requireNonNull(destination);
-        this.delayMinMillis = delayMinMillis;
-        this.delayMaxMillis = delayMaxMillis;
+    static Transmitter sync() {
+        return new SyncTransmitter();
     }
 
-    @Override
-    public boolean offer(final long value) {
-        final ThreadLocalRandom random = ThreadLocalRandom.current();
-        final long delayMillis = random.nextLong(delayMinMillis, delayMaxMillis);
-        if (delayMillis > 0) {
-            sleep(delayMillis);
-        }
-        return destination.offer(value);
+    static Transmitter async(final ScheduledExecutorService executorService) {
+        return new AsyncTransmitter(executorService);
     }
 
-    private static void sleep(final long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (final InterruptedException e) {
-            //don't care
-        }
+    static Transmitter async(final LongSupplier delayNanos, final ScheduledExecutorService executorService) {
+        return new AsyncTransmitter(delayNanos, executorService);
+    }
+
+    static Transmitter unreliable(final float lossRatio, final Transmitter transmitter) {
+        return new UnreliableTransmitter(lossRatio, transmitter);
     }
 }

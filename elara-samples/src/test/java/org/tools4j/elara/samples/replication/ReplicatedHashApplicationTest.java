@@ -29,18 +29,27 @@ import org.junit.jupiter.api.Test;
 import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.chronicle.ChronicleMessageLog;
 import org.tools4j.elara.init.Context;
+import org.tools4j.elara.input.Input;
+import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.samples.hash.HashApplication;
 import org.tools4j.elara.samples.hash.HashApplication.DefaultState;
 import org.tools4j.elara.samples.hash.HashApplication.ModifiableState;
 import org.tools4j.elara.samples.hash.HashApplication.State;
+import org.tools4j.elara.samples.network.AtomicBuffer;
+import org.tools4j.elara.samples.network.Buffer;
+import org.tools4j.elara.samples.network.BufferInput;
+import org.tools4j.elara.samples.network.DefaultServerTopology;
+import org.tools4j.elara.samples.network.RingBuffer;
+import org.tools4j.elara.samples.network.ServerTopology;
+import org.tools4j.elara.samples.network.Transmitter;
 import org.tools4j.nobark.run.ThreadLike;
 
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.LongSupplier;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
-import static org.tools4j.elara.samples.hash.HashApplication.NULL_VALUE;
 import static org.tools4j.elara.samples.hash.HashApplication.commandProcessor;
 import static org.tools4j.elara.samples.hash.HashApplication.eventApplier;
 
@@ -51,33 +60,35 @@ import static org.tools4j.elara.samples.hash.HashApplication.eventApplier;
 public class ReplicatedHashApplicationTest {
 
     private static final int SOURCE_OFFSET = 1000000000;
-    private final int commandTransmissionDelayMillisMin = 0;
-    private final int commandTransmissionDelayMillisMax = 2;
-    private final int appendRequestTransmissionDelayMillisMin = 0;
-    private final int appendRequestTransmissionDelayMillisMax = 10;
-    private final int appendResponseTransmissionDelayMillisMin = 0;
-    private final int appendResponseTransmissionDelayMillisMax = 10;
-    private final float commandTransmissionLossRatio = 0.01f;
-    private final float appendRequestTransmissionLossRatio = 0.01f;
-    private final float appendResponseTransmissionLossRatio = 0.01f;
-    private final int networkBufferCapacity = 100;
+
+    private final NetworkConfig networkConfig = NetworkConfig.DEFAULT;
 
     @Test
     public void run() throws Exception {
         //given
         final int servers = 10;
         final int sources = 10;
+        final int nThreads = 1;
         final int commandsPerSource = 1000;
-        final BufferInput[][] inputByServerAndSource = inputs(servers, sources);
+        final IdMapping serverIds = DefaultIdMapping.enumerate(servers);
+        final IdMapping sourceIds = DefaultIdMapping.enumerate(SOURCE_OFFSET, sources);
+        final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(nThreads);
+        final Transmitter commandTransmitter = transmitter(networkConfig.commandLink(), scheduledExecutorService);
+        //final ServerTopology serverTopology = serverTopology(serverIds, networkConfig);
+        final ServerTopology sourceTopology = sourceTopology(sources, serverIds, commandTransmitter);
         final ModifiableState[] appStates = appStates(servers);
 
         //when
-        final ElaraRunner[] runners = startServers(appStates, inputByServerAndSource);
-        final ThreadLike[] publishers = startPublishers(commandsPerSource, inputByServerAndSource);
+        final ElaraRunner[] runners = startServers(appStates, sourceIds,  sourceTopology);
+        final ThreadLike[] publishers = startSourcePublishers(commandsPerSource, sourceIds, sourceTopology);
 
         //then
         for (final ThreadLike publisher : publishers) {
-            publisher.join(1000);
+            publisher.join(10000);
+        }
+        scheduledExecutorService.shutdown();
+        if (!scheduledExecutorService.awaitTermination(10, TimeUnit.SECONDS)) {
+            scheduledExecutorService.shutdownNow();
         }
         for (final ElaraRunner runner : runners) {
             runner.stop();
@@ -89,44 +100,50 @@ public class ReplicatedHashApplicationTest {
         }
     }
 
-    private BufferInput[][] inputs(final int servers, final int sources) {
-        final BufferInput inputs[][] = new BufferInput[servers][sources];
-        for (int server = 0; server < servers; server++) {
-            for (int source = 0; source < sources; source++) {
-                inputs[server][source] = input(SOURCE_OFFSET + source);
-            }
+    private Input[] inputs(final IdMapping sourceIds, final Buffer[] buffers) {
+        final Input[] inputs = new Input[buffers.length];
+        for (int i = 0; i < inputs.length; i++) {
+            inputs[i] = new BufferInput(sourceIds.idByIndex(i), buffers[i]);
         }
         return inputs;
     }
 
-    private BufferInput input(final int source) {
-        return new BufferInput(source, new RingBuffer(networkBufferCapacity));
-    }
-
-    private ThreadLike[] startPublishers(final int commandsPerSource, final BufferInput[][] inputByServerAndSource) {
-        final int sources = inputByServerAndSource[0].length;
+    private ThreadLike[] startSourcePublishers(final int commandsPerSource,
+                                               final IdMapping sourceIds,
+                                               final ServerTopology sourceTopology) {
+        final int sources = sourceTopology.senders();
         final ThreadLike[] publishers = new ThreadLike[sources];
         for (int i = 0; i < sources; i++) {
-            publishers[i] = startPublisher(i, commandsPerSource, inputByServerAndSource);
+            final int source = SOURCE_OFFSET + i;
+            publishers[i] = MulticastSource.startRandom(source, sourceIds, commandsPerSource, sourceTopology);
         }
         return publishers;
     }
 
-    private ThreadLike startPublisher(final int sourceIndex,
-                                      final int commandsPerSource,
-                                      final BufferInput[][] inputByServerAndSource) {
-        final int servers = inputByServerAndSource.length;
-        final Channel[] channels = new Channel[servers];
-        for (int i = 0; i < servers; i++) {
-            channels[i] = networkChannel(inputByServerAndSource[i][sourceIndex].buffer());
+    private ServerTopology sourceTopology(final int sources,
+                                          final IdMapping serverIds,
+                                          final Transmitter transmitter) {
+        final Buffer[] sendBuffers = buffers(sources, networkConfig.commandLink().senderBufferCapacity());
+        final Buffer[][] receiveBuffers = new Buffer[serverIds.count()][];
+        for (int i = 0; i < receiveBuffers.length; i++) {
+            receiveBuffers[i] = buffers(sources, networkConfig.commandLink().receiverBufferCapacity());
         }
-        return MulticastPublisher.start("publisher-" + sourceIndex, randomValueSupplier(), commandsPerSource,
-                channels);
+        return new DefaultServerTopology(sendBuffers, receiveBuffers, transmitter);
     }
 
-    private Channel networkChannel(final Channel destination) {
-        return new LatentChannel(new UnreliableChannel(destination, commandTransmissionLossRatio),
-                commandTransmissionDelayMillisMin, commandTransmissionDelayMillisMax);
+    private Buffer[] buffers(final int n, final int capacity) {
+        final Buffer[] buffers = new Buffer[n];
+        for (int i = 0; i < n; i++) {
+            buffers[i] = capacity == 1 ? new AtomicBuffer() : new RingBuffer(capacity);
+        }
+        return buffers;
+    }
+
+    private Transmitter transmitter(final NetworkConfig.LinkConfig linkConfig,
+                                    final ScheduledExecutorService executorService) {
+        final Transmitter delayed = Transmitter.async(linkConfig.transmissionDelayNanos(), executorService);
+        final float lossRatio = linkConfig.transmissionLossRatio();
+        return lossRatio == 0 ? delayed : Transmitter.unreliable(lossRatio, delayed);
     }
 
     private ModifiableState[] appStates(final int servers) {
@@ -137,16 +154,19 @@ public class ReplicatedHashApplicationTest {
         return states;
     }
 
-    private ElaraRunner[] startServers(final ModifiableState[] appStates, final BufferInput[][] inputByServerAndSource) {
-        final int servers = inputByServerAndSource.length;
+    private ElaraRunner[] startServers(final ModifiableState[] appStates,
+                                       final IdMapping sourceIds,
+                                       final ServerTopology sourceTopology) {
+        final int servers = appStates.length;
         final ElaraRunner[] runners = new ElaraRunner[servers];
         for (int server = 0; server < servers; server++) {
-            runners[server] = startServer(server, appStates[server], inputByServerAndSource[server]);
+            final Input[] inputs = inputs(sourceIds, sourceTopology.receiveBuffers(server));
+            runners[server] = startServer(server, appStates[server], inputs);
         }
         return runners;
     }
 
-    private ElaraRunner startServer(final int server, final ModifiableState appState, final BufferInput[] inputs) {
+    private ElaraRunner startServer(final int server, final ModifiableState appState, final Input[] inputs) {
         final ChronicleQueue cq = ChronicleQueue.singleBuilder()
                 .path("build/chronicle/replication/server-" + server + "-cmd.cq4")
                 .wireType(WireType.BINARY_LIGHT)
@@ -164,15 +184,4 @@ public class ReplicatedHashApplicationTest {
                 .duplicateHandler(DuplicateHandler.NOOP)
         );
     }
-
-    private static LongSupplier randomValueSupplier() {
-        return () -> {
-            long value;
-            do {
-                value = ThreadLocalRandom.current().nextLong();;
-            } while (value == NULL_VALUE);
-            return value;
-        };
-    }
-
 }

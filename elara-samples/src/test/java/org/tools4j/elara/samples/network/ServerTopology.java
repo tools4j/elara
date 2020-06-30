@@ -21,19 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.replication;
+package org.tools4j.elara.samples.network;
 
-import org.tools4j.elara.input.Input;
-
-public interface Context extends Configuration {
-    Context serverId(short serverId, boolean local);
-    Context enforceLeaderInput(Input input);
-    Context enforceLeaderInput(EnforceLeaderInput input);
-    Context connection(short serverId, Connection connection);
-    Context replicationLogger(ReplicationLogger logger);
-    Context initialSendBufferCapacity(int size);
-
-    static Context create() {
-        return new DefaultContext();
-    }
+public interface ServerTopology {
+    int senders();
+    int receivers();
+    boolean transmit(int sender, int receiver, long value);
+    Buffer[] receiveBuffers(int receiver);
+    Buffer receiveBuffer(int sender, int receiver);
 }

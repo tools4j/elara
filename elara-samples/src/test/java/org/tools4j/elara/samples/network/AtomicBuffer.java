@@ -21,13 +21,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.samples.replication;
+package org.tools4j.elara.samples.network;
 
-import org.tools4j.elara.samples.hash.HashApplication;
+import java.util.concurrent.atomic.AtomicLong;
 
-public interface Channel {
+public class AtomicBuffer implements Buffer {
 
-    long NULL_VALUE = HashApplication.NULL_VALUE;
+    private final AtomicLong buffer = new AtomicLong(NULL_VALUE);
 
-    boolean offer(long value);
+    @Override
+    public boolean offer(final long value) {
+        return buffer.compareAndSet(NULL_VALUE, value);
+    }
+
+    @Override
+    public long consume() {
+        return buffer.getAndSet(NULL_VALUE);
+    }
+
 }

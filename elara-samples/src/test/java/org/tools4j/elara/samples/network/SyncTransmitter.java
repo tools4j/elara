@@ -21,22 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.samples.replication;
+package org.tools4j.elara.samples.network;
 
-import java.util.concurrent.atomic.AtomicLong;
-
-public class AtomicBuffer implements Buffer {
-
-    private final AtomicLong buffer = new AtomicLong(NULL_VALUE);
+public class SyncTransmitter implements Transmitter {
 
     @Override
-    public boolean offer(final long value) {
-        return buffer.compareAndSet(NULL_VALUE, value);
-    }
-
-    @Override
-    public long consume() {
-        return buffer.getAndSet(NULL_VALUE);
+    public void transmit(final Buffer senderBuffer, final Buffer receiverBuffer) {
+        final long value = senderBuffer.consume();
+        while (!receiverBuffer.offer(value)) {
+            if (Thread.interrupted()) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
     }
 
 }
