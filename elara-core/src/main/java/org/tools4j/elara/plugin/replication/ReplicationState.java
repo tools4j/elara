@@ -27,10 +27,10 @@ import org.tools4j.elara.event.Event;
 
 public interface ReplicationState {
     long NULL_INDEX = -1;
-    short NULL_SERVER = -1;
+    int NULL_SERVER = -1;
 
     int currentTerm();
-    short leaderId();
+    int leaderId();
     long eventLogSize();
     long nextEventLogIndex(int serverId);
 
@@ -40,7 +40,7 @@ public interface ReplicationState {
 
     interface Mutable extends ReplicationState.Volatile {
         Mutable currentTerm(int term);
-        Mutable leaderId(short leaderId);
+        Mutable leaderId(int leaderId);
         Mutable eventApplied(Event event);
     }
 }

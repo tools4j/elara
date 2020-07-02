@@ -98,12 +98,16 @@ public class ChronicleLogPoller implements Poller {
             return moveToNext();
         } finally {
             tailer.direction(TailerDirection.FORWARD);
+            if (tailer.index() < tailer.queue().firstIndex()) {
+                //weirdly it moves before start when going from end one back with a single entry in the queue
+                tailer.toStart();
+            }
         }
     }
 
     @Override
     public int poll(final Handler handler) {
-        try (final DocumentContext context = tailer.readingDocument()) {
+        try (DocumentContext context = tailer.readingDocument()) {
             if (context.isData()) {
                 final Bytes<?> bytes = context.wire().bytes();
                 final int size = bytes.readInt();

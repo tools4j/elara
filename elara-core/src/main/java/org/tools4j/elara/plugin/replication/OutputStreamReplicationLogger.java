@@ -31,7 +31,7 @@ public class OutputStreamReplicationLogger implements ReplicationLogger, AutoClo
 
     private final PrintStream warn;
     private final boolean closeOnLoggerClose;
-    private final PlaceholderReplacer replacer = new PlaceholderReplacer(128);
+    private final ThreadLocal<PlaceholderReplacer> replacer = ThreadLocal.withInitial(() -> new PlaceholderReplacer(128));
 
     public OutputStreamReplicationLogger() {
         this(System.err, false);
@@ -44,21 +44,21 @@ public class OutputStreamReplicationLogger implements ReplicationLogger, AutoClo
 
     @Override
     public void warn(final String message, final long arg) {
-        warn.println(replacer.init(message).replace(arg).exit());
+        warn.println(replacer.get().init(message).replace(arg).exit());
     }
 
     @Override
     public void warn(final String message, final long arg0, final long arg1) {
-        warn.println(replacer.init(message).replace(arg0).replace(arg1).exit());
+        warn.println(replacer.get().init(message).replace(arg0).replace(arg1).exit());
     }
 
     @Override
     public void warn(final String message, final long arg0, final long arg1, final long arg2) {
-        warn.println(replacer.init(message).replace(arg0).replace(arg1).replace(arg2).exit());
+        warn.println(replacer.get().init(message).replace(arg0).replace(arg1).replace(arg2).exit());
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         if (closeOnLoggerClose) {
             warn.close();
         }
@@ -72,6 +72,7 @@ public class OutputStreamReplicationLogger implements ReplicationLogger, AutoClo
             this.temp = new StringBuilder(initialCapacity);
         }
         PlaceholderReplacer init(final String message) {
+            this.temp.setLength(0);
             this.message = message;
             this.start = 0;
             return this;
@@ -82,9 +83,6 @@ public class OutputStreamReplicationLogger implements ReplicationLogger, AutoClo
                 temp.append(message, start, index);
                 temp.append(arg);
                 start = index + PLACEHOLDER.length();
-            } else {
-                temp.append(message, start, message.length());
-                start = message.length();
             }
             return this;
         }

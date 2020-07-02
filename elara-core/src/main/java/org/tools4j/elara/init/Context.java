@@ -56,7 +56,7 @@ public interface Context extends Configuration {
     Context exceptionHandler(ExceptionHandler exceptionHandler);
     Context duplicateHandler(DuplicateHandler duplicateHandler);
     Context idleStrategy(IdleStrategy idleStrategy);
-    Context dutyCycleExtraStep(Step step, boolean alwaysExecute);
+    Context dutyCycleExtraStep(Step step, ExecutionType executionType);
     Context threadFactory(String threadName);
     Context threadFactory(ThreadFactory threadFactory);
 

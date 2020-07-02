@@ -31,6 +31,10 @@ import org.tools4j.elara.chronicle.ChronicleMessageLog;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.plugin.api.Plugins;
+import org.tools4j.elara.plugin.replication.Configuration;
+import org.tools4j.elara.plugin.replication.Connection;
+import org.tools4j.elara.plugin.replication.EnforceLeaderInput;
+import org.tools4j.elara.plugin.replication.ReplicationPlugin;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.samples.hash.HashApplication;
@@ -48,8 +52,11 @@ import org.tools4j.nobark.run.ThreadLike;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;
 import static org.tools4j.elara.samples.hash.HashApplication.commandProcessor;
 import static org.tools4j.elara.samples.hash.HashApplication.eventApplier;
 
@@ -60,6 +67,7 @@ import static org.tools4j.elara.samples.hash.HashApplication.eventApplier;
 public class ReplicatedHashApplicationTest {
 
     private static final int SOURCE_OFFSET = 1000000000;
+    private static final int ENFORCE_LEADER_SOURCE = 2 * SOURCE_OFFSET - 1;
 
     private final NetworkConfig networkConfig = NetworkConfig.DEFAULT;
 
@@ -69,17 +77,19 @@ public class ReplicatedHashApplicationTest {
         final int servers = 10;
         final int sources = 10;
         final int nThreads = 1;
-        final int commandsPerSource = 1000;
+        final int commandsPerSource = 100;
         final IdMapping serverIds = DefaultIdMapping.enumerate(servers);
         final IdMapping sourceIds = DefaultIdMapping.enumerate(SOURCE_OFFSET, sources);
         final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(nThreads);
+        final Transmitter appendTransmitter = transmitter(networkConfig.appendLink(), scheduledExecutorService);
         final Transmitter commandTransmitter = transmitter(networkConfig.commandLink(), scheduledExecutorService);
-        //final ServerTopology serverTopology = serverTopology(serverIds, networkConfig);
+        final ServerTopology serverTopology = serverTopology(serverIds, appendTransmitter);
         final ServerTopology sourceTopology = sourceTopology(sources, serverIds, commandTransmitter);
         final ModifiableState[] appStates = appStates(servers);
+        final EnforceLeaderInput enforceLeaderInput = enforceLeaderInput(serverIds);
 
         //when
-        final ElaraRunner[] runners = startServers(appStates, sourceIds,  sourceTopology);
+        final ElaraRunner[] runners = startServers(appStates, serverIds, serverTopology, sourceTopology, enforceLeaderInput);
         final ThreadLike[] publishers = startSourcePublishers(commandsPerSource, sourceIds, sourceTopology);
 
         //then
@@ -108,6 +118,21 @@ public class ReplicatedHashApplicationTest {
         return inputs;
     }
 
+    private EnforceLeaderInput enforceLeaderInput(final IdMapping serverIds) {
+        final AtomicInteger nextLeader = new AtomicInteger(
+                serverIds.idByIndex(0)
+//                serverIds.idByIndex(ThreadLocalRandom.current().nextInt(serverIds.count()))
+        );
+        return () -> receiver -> {
+            final int leaderId = nextLeader.getAndSet(NULL_SERVER);
+            if (leaderId != NULL_SERVER) {
+                receiver.enforceLeader(ENFORCE_LEADER_SOURCE, System.currentTimeMillis(), leaderId);
+                return 1;
+            }
+            return 0;
+        };
+    }
+
     private ThreadLike[] startSourcePublishers(final int commandsPerSource,
                                                final IdMapping sourceIds,
                                                final ServerTopology sourceTopology) {
@@ -118,6 +143,16 @@ public class ReplicatedHashApplicationTest {
             publishers[i] = MulticastSource.startRandom(source, sourceIds, commandsPerSource, sourceTopology);
         }
         return publishers;
+    }
+
+    private ServerTopology serverTopology(final IdMapping serverIds, final Transmitter transmitter) {
+        final int servers = serverIds.count();
+        final Buffer[] sendBuffers = buffers(servers, networkConfig.appendLink().senderBufferCapacity());
+        final Buffer[][] receiveBuffers = new Buffer[servers][];
+        for (int i = 0; i < servers; i++) {
+            receiveBuffers[i] = buffers(servers, networkConfig.appendLink().receiverBufferCapacity());
+        }
+        return new DefaultServerTopology(sendBuffers, receiveBuffers, transmitter);
     }
 
     private ServerTopology sourceTopology(final int sources,
@@ -156,23 +191,60 @@ public class ReplicatedHashApplicationTest {
 
     private ElaraRunner[] startServers(final ModifiableState[] appStates,
                                        final IdMapping sourceIds,
-                                       final ServerTopology sourceTopology) {
+                                       final ServerTopology serverTopology,
+                                       final ServerTopology sourceTopology,
+                                       final EnforceLeaderInput enforceLeaderInput) {
         final int servers = appStates.length;
         final ElaraRunner[] runners = new ElaraRunner[servers];
         for (int server = 0; server < servers; server++) {
             final Input[] inputs = inputs(sourceIds, sourceTopology.receiveBuffers(server));
-            runners[server] = startServer(server, appStates[server], inputs);
+            final ReplicationPlugin replicationPlugin = replicationPlugin(server, sourceIds, serverTopology, enforceLeaderInput);
+            runners[server] = startServer(server, sourceIds, appStates[server], inputs, replicationPlugin);
         }
         return runners;
     }
 
-    private ElaraRunner startServer(final int server, final ModifiableState appState, final Input[] inputs) {
+    private ReplicationPlugin replicationPlugin(final int server,
+                                                final IdMapping serverIds,
+                                                final ServerTopology serverTopology,
+                                                final EnforceLeaderInput enforceLeaderInput) {
+        return Plugins.replicationPlugin(replicationConfig(server, serverIds, serverTopology, enforceLeaderInput));
+    }
+
+    private Configuration replicationConfig(final int server,
+                                            final IdMapping serverIds,
+                                            final ServerTopology serverTopology,
+                                            final EnforceLeaderInput enforceLeaderInput) {
+        final org.tools4j.elara.plugin.replication.Context context = ReplicationPlugin.configure();
+        for (int i = 0; i < serverIds.count(); i++) {
+            final int serverId = serverIds.idByIndex(i);
+            context.serverId(serverId, i == server)
+                    .connection(serverId, connection(serverId, serverIds, serverTopology));
+        }
+        return context.enforceLeaderInput(enforceLeaderInput);
+    }
+
+    private Connection connection(final int serverId,
+                                  final IdMapping serverIds,
+                                  final ServerTopology serverTopology) {
+        return Connection.create(
+                new LongValuePoller(serverId, serverIds, serverTopology),
+                new LongValuePublisher(serverId, serverIds, serverTopology)
+        );
+    }
+
+    private ElaraRunner startServer(final int server,
+                                    final IdMapping sourceIds,
+                                    final ModifiableState appState,
+                                    final Input[] inputs,
+                                    final ReplicationPlugin replicationPlugin) {
+        final int serverId = sourceIds.idByIndex(server);
         final ChronicleQueue cq = ChronicleQueue.singleBuilder()
-                .path("build/chronicle/replication/server-" + server + "-cmd.cq4")
+                .path("build/chronicle/replication/server-" + serverId + "-cmd.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         final ChronicleQueue eq = ChronicleQueue.singleBuilder()
-                .path("build/chronicle/replication/server-" + server + "-evt.cq4")
+                .path("build/chronicle/replication/server-" + serverId + "-evt.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         return Elara.launch(Context.create()
@@ -182,6 +254,8 @@ public class ReplicatedHashApplicationTest {
                 .commandLog(new ChronicleMessageLog(cq))
                 .eventLog(new ChronicleMessageLog(eq))
                 .duplicateHandler(DuplicateHandler.NOOP)
+                .plugin(Plugins.bootPlugin())
+                .plugin(replicationPlugin)
         );
     }
 }

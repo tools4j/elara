@@ -53,10 +53,23 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Context serverId(final short serverId, final boolean local) {
+    public Context serverId(final int serverId) {
+        return serverId(serverId, true);
+    }
+
+    @Override
+    public Context serverId(final int serverId, final boolean local) {
         this.serverIds.addInt(serverId);
         if (local) {
             this.serverId = serverId;
+        }
+        return this;
+    }
+
+    @Override
+    public Context serverIds(final int... serverIds) {
+        for (final int serverId : serverIds) {
+            serverId(serverId, false);
         }
         return this;
     }
@@ -84,7 +97,7 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Context connection(final short serverId, final Connection connection) {
+    public Context connection(final int serverId, final Connection connection) {
         connectionByServerId.put(serverId, connection);
         return this;
     }

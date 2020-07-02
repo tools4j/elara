@@ -29,7 +29,7 @@ import org.tools4j.elara.event.Event;
 public class DefaultReplicationState implements ReplicationState.Mutable {
 
     private int currentTerm;
-    private short leaderId = NULL_SERVER;
+    private int leaderId = NULL_SERVER;
     private long eventLogSize;
     private final Long2LongHashMap nextEventLogIndexByServerId = new Long2LongHashMap(NULL_INDEX);
 
@@ -45,12 +45,12 @@ public class DefaultReplicationState implements ReplicationState.Mutable {
     }
 
     @Override
-    public short leaderId() {
+    public int leaderId() {
         return leaderId;
     }
 
     @Override
-    public Mutable leaderId(final short leaderId) {
+    public Mutable leaderId(final int leaderId) {
         this.leaderId = leaderId;
         return this;
     }

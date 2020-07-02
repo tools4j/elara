@@ -24,6 +24,7 @@
 package org.tools4j.elara.plugin.boot;
 
 import org.tools4j.elara.application.CommandProcessor;
+import org.tools4j.elara.init.ExecutionType;
 import org.tools4j.elara.input.DefaultReceiver;
 import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.input.SequenceGenerator;
@@ -33,6 +34,7 @@ import org.tools4j.elara.plugin.api.Plugin.NullState;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.boot.BootCommands.SIGNAL_APP_INITIALISATION_START;
@@ -70,6 +72,17 @@ public class BootPlugin implements SystemPlugin<NullState> {
         requireNonNull(pluginState);
         appendAppInitStartCommand(appConfig);
         return new Configuration.Default() {
+            @Override
+            public Step step(final BaseState baseState, final ExecutionType executionType) {
+                if (executionType == ExecutionType.INIT_ONCE_ONLY) {
+                    return () -> {
+                        appendAppInitStartCommand(appConfig);
+                        return true;
+                    };
+                }
+                return Step.NO_OP;
+            }
+
             @Override
             public Output output(final BaseState baseState) {
                 return new BootOutput();

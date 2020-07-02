@@ -123,7 +123,7 @@ public class DefaultIndexTrackingPoller implements IndexTrackingPoller {
 
     @Override
     public DefaultIndexTrackingPoller moveToStart() {
-        moveToStart();
+        poller.moveToStart();
         index = 0;
         return this;
     }

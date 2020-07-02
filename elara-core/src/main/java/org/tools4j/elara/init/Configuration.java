@@ -50,7 +50,7 @@ public interface Configuration {
     ExceptionHandler exceptionHandler();
     DuplicateHandler duplicateHandler();
     IdleStrategy idleStrategy();
-    List<Step> dutyCycleExtraSteps(boolean alwaysExecute);
+    List<Step> dutyCycleExtraSteps(ExecutionType executionType);
     ThreadFactory threadFactory();
     List<Plugin.Configuration> plugins();
 

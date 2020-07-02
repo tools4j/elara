@@ -78,6 +78,7 @@ final class EnforcedLeaderEventReceiver implements Receiver.Default, EnforceLead
     @Override
     public void enforceLeader(final int source, final long sequence, final int leaderId) {
         if (!isValidLeaderId(leaderId)) {
+            //FIXME log error
             return;
         }
         try (final Receiver.ReceivingContext context = receivingMessage(source, sequence, ENFORCE_LEADER)) {

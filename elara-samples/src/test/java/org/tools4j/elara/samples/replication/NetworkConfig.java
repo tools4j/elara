@@ -36,12 +36,7 @@ public interface NetworkConfig {
         }
 
         @Override
-        public LinkConfig appendRequestLink() {
-            return LinkConfig.DEFAULT;
-        }
-
-        @Override
-        public LinkConfig appendResponseLink() {
+        public LinkConfig appendLink() {
             return LinkConfig.DEFAULT;
         }
     };
@@ -84,10 +79,7 @@ public interface NetworkConfig {
     default LinkConfig commandLink() {
         return LinkConfig.IDEAL;
     }
-    default LinkConfig appendRequestLink() {
-        return LinkConfig.IDEAL;
-    }
-    default LinkConfig appendResponseLink() {
+    default LinkConfig appendLink() {
         return LinkConfig.IDEAL;
     }
 }

@@ -25,8 +25,10 @@ package org.tools4j.elara.plugin.replication;
 
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
+import org.tools4j.elara.init.ExecutionType;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.log.MessageLog.Appender;
+import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState;
@@ -34,6 +36,7 @@ import org.tools4j.elara.plugin.replication.Connection.Handler;
 import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.init.ExecutionType.ALWAYS_WHEN_EVENTS_APPLIED;
 
 /**
  * A plugin that issues a commands and events related to booting an elara application to indicate that the application
@@ -41,10 +44,16 @@ import static java.util.Objects.requireNonNull;
  */
 public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable> {
 
-    private org.tools4j.elara.plugin.replication.Configuration configuration;
+    private static Dependency<?>[] DEPENDENCIES = {Dependency.of(Plugins.bootPlugin())};
+
+    private final org.tools4j.elara.plugin.replication.Configuration configuration;
 
     public ReplicationPlugin(final org.tools4j.elara.plugin.replication.Configuration configuration) {
         this.configuration = org.tools4j.elara.plugin.replication.Configuration.validate(configuration);
+    }
+
+    public static Context configure() {
+        return Context.create();
     }
 
     @Override
@@ -55,6 +64,11 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
     @Override
     public ReplicationState.Mutable defaultPluginState() {
         return new DefaultReplicationState();
+    }
+
+    @Override
+    public Dependency<?>[] dependencies() {
+        return DEPENDENCIES;
     }
 
     @Override
@@ -74,8 +88,8 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
                 dispatchingPublisher);
         return new Configuration.Default() {
             @Override
-            public Step step(final BaseState baseState, final boolean alwaysExecute) {
-                return alwaysExecute ? Step.NO_OP : new ReplicationAppenderStep(
+            public Step step(final BaseState baseState, final ExecutionType executionType) {
+                return executionType != ALWAYS_WHEN_EVENTS_APPLIED ? Step.NO_OP : new ReplicationAppenderStep(
                         configuration, replicationState, enforcedLeaderEventReceiver, connectionHandler, eventSender
                 );
             }

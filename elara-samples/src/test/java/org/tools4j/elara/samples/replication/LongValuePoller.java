@@ -60,24 +60,32 @@ public class LongValuePoller implements Connection.Poller {
 
         long value = NULL_VALUE;
         int sender;
-        for (sender = roundRobin; sender < n && value == NULL_VALUE; sender++) {
+        for (sender = roundRobin; sender < n; sender++) {
             value = receiverBuffers[sender].consume();
+            if (value != NULL_VALUE) {
+                break;
+            }
         }
         if (value == NULL_VALUE) {
-            for (sender = 0; sender < roundRobin && value == NULL_VALUE; sender++) {
+            for (sender = 0; sender < roundRobin; sender++) {
                 value = receiverBuffers[sender].consume();
+                if (value != NULL_VALUE) {
+                    break;
+                }
             }
         }
         if (value != NULL_VALUE) {
-            roundRobin = sender + 1 >= n ? 0 : sender + 1;
             buffer.putLong(0, value);
             try {
                 handler.onMessage(serverIds.idByIndex(sender), buffer, 0, Long.BYTES);
             } finally {
                 buffer.putLong(0, 0);
             }
-            return 1;
+            roundRobin = sender + 1;
         }
-        return 0;
+        if (roundRobin >= n) {
+            roundRobin = 0;
+        }
+        return value != NULL_VALUE ? 1 : 0;
     }
 }

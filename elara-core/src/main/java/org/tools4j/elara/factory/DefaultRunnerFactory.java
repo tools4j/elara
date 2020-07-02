@@ -24,6 +24,7 @@
 package org.tools4j.elara.factory;
 
 import org.tools4j.elara.init.Configuration;
+import org.tools4j.elara.init.ExecutionType;
 import org.tools4j.elara.loop.DutyCycleStep;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.nobark.loop.LoopCondition;
@@ -34,6 +35,9 @@ import java.util.Collections;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.init.ExecutionType.ALWAYS;
+import static org.tools4j.elara.init.ExecutionType.ALWAYS_WHEN_EVENTS_APPLIED;
+import static org.tools4j.elara.init.ExecutionType.INIT_ONCE_ONLY;
 import static org.tools4j.nobark.loop.ComposableStep.composite;
 import static org.tools4j.nobark.loop.Step.NO_OP;
 
@@ -49,7 +53,10 @@ public class DefaultRunnerFactory implements RunnerFactory {
 
     @Override
     public Runnable initStep() {
-        return () -> {};
+        final List<Step> pluginSteps = pluginSteps(INIT_ONCE_ONLY);
+        final List<Step> extraSteps = configuration.dutyCycleExtraSteps(INIT_ONCE_ONLY);
+        final Step step = compositeStep(pluginSteps, extraSteps);
+        return step::perform;
     }
 
     @Override
@@ -59,30 +66,17 @@ public class DefaultRunnerFactory implements RunnerFactory {
 
     @Override
     public Step dutyCycleStep() {
-        final List<Step> pluginSteps = pluginSteps(false);
-        final List<Step> extraSteps = configuration.dutyCycleExtraSteps(false);
-        final Step extraStep;
-        if (pluginSteps.isEmpty() && extraSteps.isEmpty()) {
-            extraStep = NO_OP;
-        } else {
-            final Step[] allExtraSteps = new Step[pluginSteps.size() + extraSteps.size()];
-            for (int i = 0; i < pluginSteps.size(); i++) {
-                allExtraSteps[i] = pluginSteps.get(i);
-            }
-            final int off = pluginSteps.size();
-            for (int i = 0; i < extraSteps.size(); i++) {
-                allExtraSteps[off + i] = extraSteps.get(i);
-            }
-            extraStep = composite(allExtraSteps);
-        }
+        final List<Step> pluginSteps = pluginSteps(ALWAYS_WHEN_EVENTS_APPLIED);
+        final List<Step> extraSteps = configuration.dutyCycleExtraSteps(ALWAYS_WHEN_EVENTS_APPLIED);
+        final Step extraStep = compositeStep(pluginSteps, extraSteps);
         return new DutyCycleStep(singletons.sequencerStep(), singletons.commandPollerStep(),
                 singletons.eventApplierStep(), singletons.outputStep(), extraStep);
     }
 
     @Override
     public Step[] dutyCycleWithExtraSteps() {
-        final List<Step> pluginStepsAlways = pluginSteps(true);
-        final List<Step> extraStepsAlways = configuration.dutyCycleExtraSteps(true);
+        final List<Step> pluginStepsAlways = pluginSteps(ALWAYS);
+        final List<Step> extraStepsAlways = configuration.dutyCycleExtraSteps(ALWAYS);
         final Step[] dutyCycle = new Step[1 + pluginStepsAlways.size() + extraStepsAlways.size()];
         dutyCycle[0] = singletons.dutyCycleStep();
         int offset = 1;
@@ -96,7 +90,7 @@ public class DefaultRunnerFactory implements RunnerFactory {
         return dutyCycle;
     }
 
-    private List<Step> pluginSteps(final boolean alwaysExecute) {
+    private List<Step> pluginSteps(final ExecutionType executionType) {
         final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = singletons.plugins();
         if (plugins.length == 0) {
             return Collections.emptyList();
@@ -104,8 +98,23 @@ public class DefaultRunnerFactory implements RunnerFactory {
         final BaseState baseState = singletons.baseState();
         final List<Step> steps = new ArrayList<>(plugins.length);
         for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
-            steps.add(plugin.step(baseState, alwaysExecute));
+            steps.add(plugin.step(baseState, executionType));
         }
         return steps;
+    }
+
+    private static Step compositeStep(final List<Step> pluginSteps, final List<Step> extraSteps) {
+        if (pluginSteps.isEmpty() && extraSteps.isEmpty()) {
+            return NO_OP;
+        }
+        final Step[] allExtraSteps = new Step[pluginSteps.size() + extraSteps.size()];
+        for (int i = 0; i < pluginSteps.size(); i++) {
+            allExtraSteps[i] = pluginSteps.get(i);
+        }
+        final int off = pluginSteps.size();
+        for (int i = 0; i < extraSteps.size(); i++) {
+            allExtraSteps[off + i] = extraSteps.get(i);
+        }
+        return composite(allExtraSteps);
     }
 }

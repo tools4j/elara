@@ -21,21 +21,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.replication;
+package org.tools4j.elara.init;
 
-import org.tools4j.elara.input.Input;
-
-public interface Context extends Configuration {
-    Context serverId(int serverId);
-    Context serverId(int serverId, boolean local);
-    Context serverIds(int... serverIds);
-    Context enforceLeaderInput(Input input);
-    Context enforceLeaderInput(EnforceLeaderInput input);
-    Context connection(int serverId, Connection connection);
-    Context replicationLogger(ReplicationLogger logger);
-    Context initialSendBufferCapacity(int size);
-
-    static Context create() {
-        return new DefaultContext();
-    }
+/**
+ * Extra steps that are linked to the duty cycle loop
+ */
+public enum ExecutionType {
+    /** Execute a single time when initialising the duty cycle loop */
+    INIT_ONCE_ONLY,
+    /** Execute always when all events have been applied; application and plugin state is up-to-date */
+    ALWAYS_WHEN_EVENTS_APPLIED,
+    /** Execute always even when events are being replied */
+    ALWAYS
 }

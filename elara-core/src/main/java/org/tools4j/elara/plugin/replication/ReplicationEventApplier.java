@@ -26,8 +26,10 @@ package org.tools4j.elara.plugin.replication;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.plugin.boot.BootEvents;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;
 
 public class ReplicationEventApplier implements EventApplier {
 
@@ -46,6 +48,9 @@ public class ReplicationEventApplier implements EventApplier {
     @Override
     public void onEvent(final Event event) {
         switch (event.type()) {
+            case BootEvents.APP_INITIALISATION_STARTED:
+                updateLeader(replicationState.currentTerm() + 1, NULL_SERVER);
+                break;
             case ReplicationEvents.LEADER_ELECTED://same for both
             case ReplicationEvents.LEADER_ENFORCED:
                 updateLeader(event);
@@ -55,8 +60,12 @@ public class ReplicationEventApplier implements EventApplier {
     }
 
     private void updateLeader(final Event event) {
-        final short leaderId = ReplicationEvents.leaderId(event);
+        final int leaderId = ReplicationEvents.leaderId(event);
         final int term = ReplicationEvents.term(event);
+        updateLeader(term, leaderId);
+    }
+
+    private void updateLeader(final int term, final int leaderId) {
         final boolean isLeader = leaderId == configuration.serverId();
         baseState.processCommands(isLeader);
         replicationState

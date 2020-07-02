@@ -25,6 +25,7 @@ package org.tools4j.elara.plugin.api;
 
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
+import org.tools4j.elara.init.ExecutionType;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.base.BaseState;
@@ -32,6 +33,8 @@ import org.tools4j.elara.plugin.base.BaseState.Mutable;
 import org.tools4j.nobark.loop.Step;
 
 import java.util.function.Consumer;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * API implemented by an elara plugin.
@@ -51,7 +54,7 @@ public interface Plugin<P> {
     }
 
     interface Configuration {
-        Step step(BaseState baseState, boolean alwaysExecute);
+        Step step(BaseState baseState, ExecutionType executionType);
         Input[] inputs(BaseState baseState);
         Output output(BaseState baseState);
         CommandProcessor commandProcessor(BaseState baseState);
@@ -59,7 +62,7 @@ public interface Plugin<P> {
 
         interface Default extends Configuration {
             @Override
-            default Step step(final BaseState baseState, final boolean alwaysExecute) {return Step.NO_OP;}
+            default Step step(final BaseState baseState, final ExecutionType executionType) {return Step.NO_OP;}
             @Override
             default Input[] inputs(final BaseState baseState) {return NO_INPUTS;}
             @Override
@@ -76,6 +79,27 @@ public interface Plugin<P> {
         Plugin<P> plugin();
         default Consumer<? super P> pluginStateAware() {
             return STATE_UNAWARE;
+        }
+
+        static <P> Dependency<P> of(final Plugin<P> plugin) {
+            requireNonNull(plugin);
+            return () -> plugin;
+        }
+
+        static <P> Dependency<P> of(final Plugin<P> plugin, final Consumer<? super P> pluginStateAware) {
+            requireNonNull(plugin);
+            requireNonNull(pluginStateAware);
+            return new Dependency<P>() {
+                @Override
+                public Plugin<P> plugin() {
+                    return plugin;
+                }
+
+                @Override
+                public Consumer<? super P> pluginStateAware() {
+                    return pluginStateAware;
+                }
+            };
         }
     }
 

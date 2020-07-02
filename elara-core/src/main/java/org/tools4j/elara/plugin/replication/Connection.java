@@ -25,9 +25,27 @@ package org.tools4j.elara.plugin.replication;
 
 import org.agrona.DirectBuffer;
 
+import static java.util.Objects.requireNonNull;
+
 public interface Connection {
     Poller poller();
     Publisher publisher();
+
+    static Connection create(final Poller poller, final Publisher publisher) {
+        requireNonNull(poller);
+        requireNonNull(publisher);
+        return new Connection() {
+            @Override
+            public Poller poller() {
+                return poller;
+            }
+
+            @Override
+            public Publisher publisher() {
+                return publisher;
+            }
+        };
+    }
 
     @FunctionalInterface
     interface Poller {

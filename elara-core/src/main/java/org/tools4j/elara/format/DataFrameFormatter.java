@@ -23,9 +23,11 @@
  */
 package org.tools4j.elara.format;
 
+import org.tools4j.elara.command.CommandType;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.DataFrame;
 import org.tools4j.elara.flyweight.Flags;
+import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.Header;
 
 import java.time.Instant;
@@ -74,6 +76,7 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
         final Header header = frame.header();
         final int type = header.type();
         if (header.index() >= 0) {
+            //event
             switch (type) {
                 case EventType.APPLICATION:
                     return "A";
@@ -81,6 +84,12 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
                     return "C";
                 case EventType.ROLLBACK:
                     return "R";
+            }
+        }
+        if (header.index() == FlyweightCommand.INDEX) {
+            //command
+            if (type == CommandType.APPLICATION) {
+                return "A";
             }
         }
         return type;

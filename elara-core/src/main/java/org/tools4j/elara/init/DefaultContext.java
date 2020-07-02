@@ -38,6 +38,8 @@ import org.tools4j.nobark.loop.Step;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -62,8 +64,7 @@ final class DefaultContext implements Context {
     private DuplicateHandler duplicateHandler = DuplicateHandler.DEFAULT;
     private IdleStrategy idleStrategy = new BackoffIdleStrategy(
             100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100));
-    private final List<Step> dutyCycleExtraSteps = new ArrayList<>();
-    private final List<Step> dutyCycleExtraStepsAlways = new ArrayList<>();
+    private final EnumMap<ExecutionType, List<Step>> extraSteps = new EnumMap<>(ExecutionType.class);
     private ThreadFactory threadFactory;
     private final PluginContext plugins = new PluginContext();
 
@@ -213,14 +214,15 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public List<Step> dutyCycleExtraSteps(final boolean alwaysExecute) {
-        return alwaysExecute ? dutyCycleExtraStepsAlways : dutyCycleExtraSteps;
+    public List<Step> dutyCycleExtraSteps(final ExecutionType executionType) {
+        return extraSteps.getOrDefault(executionType, Collections.emptyList());
     }
 
     @Override
-    public Context dutyCycleExtraStep(final Step step, final boolean alwaysExecute) {
+    public Context dutyCycleExtraStep(final Step step, final ExecutionType executionType) {
         requireNonNull(step);
-        (alwaysExecute ? dutyCycleExtraStepsAlways : dutyCycleExtraSteps).add(step);
+        requireNonNull(executionType);
+        extraSteps.computeIfAbsent(executionType, k -> new ArrayList<>()).add(step);
         return this;
     }
 

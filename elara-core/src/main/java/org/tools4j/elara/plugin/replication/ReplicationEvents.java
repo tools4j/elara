@@ -90,7 +90,7 @@ public enum ReplicationEvents {
         return event.payload().getInt(TERM_OFFSET);
     }
 
-    public static short leaderId(final Event event) {
-        return event.payload().getShort(LEADER_ID_OFFSET);
+    public static int leaderId(final Event event) {
+        return event.payload().getInt(LEADER_ID_OFFSET);
     }
 }
