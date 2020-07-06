@@ -39,7 +39,6 @@ final class DefaultContext implements Context {
     private final IntArrayList serverIds = new IntArrayList();
     private Input enforceLeaderInput = NULL_INPUT;
     private final Int2ObjectHashMap<Connection> connectionByServerId = new Int2ObjectHashMap<>();
-    private ReplicationLogger replicationLogger = ReplicationLogger.DEFAULT;
     private int initialSendBufferCapacity = DEFAULT_INITIAL_SEND_BUFFER_CAPACITY;
 
     @Override
@@ -99,17 +98,6 @@ final class DefaultContext implements Context {
     @Override
     public Context connection(final int serverId, final Connection connection) {
         connectionByServerId.put(serverId, connection);
-        return this;
-    }
-
-    @Override
-    public ReplicationLogger replicationLogger() {
-        return replicationLogger;
-    }
-
-    @Override
-    public Context replicationLogger(final ReplicationLogger logger) {
-        this.replicationLogger = requireNonNull(logger);
         return this;
     }
 

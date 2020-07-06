@@ -84,13 +84,16 @@ public class ReplicationAppenderStep implements Step {
         if (isLeader()) {
             boolean workDone = false;
             final long eventLogSize = replicationState.eventLogSize();
-            for (short serverId = 0; serverId < serverIds.length; serverId++) {
-                final long nextEventLogIndex = replicationState.nextEventLogIndex(serverId);
-                if (nextEventLogIndex < eventLogSize) {
-                    if (eventSender.sendEvent(serverId, nextEventLogIndex)) {
-                        replicationState.nextEventLogIndex(serverId, nextEventLogIndex + 1);
+            for (short server = 0; server < serverIds.length; server++) {
+                final int followerId = serverIds[server];
+                if (followerId != serverId) {
+                    final long nextEventLogIndex = replicationState.nextEventLogIndex(followerId);
+                    if (nextEventLogIndex < eventLogSize) {
+                        if (eventSender.sendEvent(followerId, nextEventLogIndex)) {
+                            replicationState.nextEventLogIndex(followerId, nextEventLogIndex + 1);
+                        }
+                        workDone = true;//we have still some work done if we move the poller forward or backward
                     }
-                    workDone = true;//we have still some work done if we move the poller forward or backward
                 }
             }
             return workDone;

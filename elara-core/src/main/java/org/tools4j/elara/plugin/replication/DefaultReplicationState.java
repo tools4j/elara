@@ -31,7 +31,7 @@ public class DefaultReplicationState implements ReplicationState.Mutable {
     private int currentTerm;
     private int leaderId = NULL_SERVER;
     private long eventLogSize;
-    private final Long2LongHashMap nextEventLogIndexByServerId = new Long2LongHashMap(NULL_INDEX);
+    private final Long2LongHashMap nextEventLogIndexByServerId = new Long2LongHashMap(0);
 
     @Override
     public int currentTerm() {

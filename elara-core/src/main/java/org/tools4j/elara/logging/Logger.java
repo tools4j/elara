@@ -21,22 +21,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.replication;
+package org.tools4j.elara.logging;
 
-import org.tools4j.elara.input.Input;
+import static org.tools4j.elara.logging.Logger.Level.INFO;
 
-public interface Configuration {
-    int serverId();
-    int[] serverIds();
-    Input enforceLeaderInput();
-    Connection connection(int serverId);
-    int initialSendBufferCapacity();
-
-    static Context configure() {
-        return Context.create();
+@FunctionalInterface
+public interface Logger {
+    enum Level {
+        ERROR, WARN, INFO, DEBUG
     }
 
-    static Configuration validate(final Configuration configuration) {
-        return DefaultContext.validate(configuration);
+    void log(Level level, CharSequence message);
+
+    default boolean isEnabled(final Level level) {
+        return level.ordinal() <= INFO.ordinal();
+    }
+
+    @FunctionalInterface
+    interface Factory {
+        Logger create(Class<?> clazz);
     }
 }

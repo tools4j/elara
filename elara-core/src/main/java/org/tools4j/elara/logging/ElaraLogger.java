@@ -21,22 +21,35 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.replication;
+package org.tools4j.elara.logging;
 
-import org.tools4j.elara.input.Input;
+import org.tools4j.elara.logging.Logger.Factory;
+import org.tools4j.elara.logging.Logger.Level;
 
-public interface Configuration {
-    int serverId();
-    int[] serverIds();
-    Input enforceLeaderInput();
-    Connection connection(int serverId);
-    int initialSendBufferCapacity();
+public interface ElaraLogger {
 
-    static Context configure() {
-        return Context.create();
+    static ElaraLogger create(final Factory loggerFactory, final Class<?> clazz) {
+        return DefaultElaraLogger.create(loggerFactory.create(clazz));
     }
 
-    static Configuration validate(final Configuration configuration) {
-        return DefaultContext.validate(configuration);
+    static ElaraLogger threadLocal(final Factory loggerFactory, final Class<?> clazz) {
+        return DefaultElaraLogger.threadLocal(loggerFactory.create(clazz));
+    }
+
+    PlaceholderReplacer log(Level level, String message);
+
+    boolean isEnabled(Level level);
+
+    default PlaceholderReplacer error(final String message) {
+        return log(Level.ERROR, message);
+    }
+    default PlaceholderReplacer warn(final String message) {
+        return log(Level.WARN, message);
+    }
+    default PlaceholderReplacer info(final String message) {
+        return log(Level.INFO, message);
+    }
+    default PlaceholderReplacer debug(final String message) {
+        return log(Level.DEBUG, message);
     }
 }

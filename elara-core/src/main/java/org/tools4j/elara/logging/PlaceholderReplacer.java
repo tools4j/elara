@@ -21,15 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.replication;
+package org.tools4j.elara.logging;
 
-/**
- * Logger for warning messages using {} placeholders for arguments.
- */
-public interface ReplicationLogger {
-    ReplicationLogger DEFAULT = new OutputStreamReplicationLogger();
+public interface PlaceholderReplacer {
     String PLACEHOLDER = "{}";
-    void warn(String message, long arg);
-    void warn(String message, long arg0, long arg1);
-    void warn(String message, long arg0, long arg1, long arg2);
+    PlaceholderReplacer replace(long arg);
+    PlaceholderReplacer replace(Object arg);
+    CharSequence format();
 }

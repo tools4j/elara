@@ -79,11 +79,12 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
         final MessageLog eventLog = appConfig.eventLog();
         final Appender eventLogAppender = eventLog.appender();
         final EnforcedLeaderEventReceiver enforcedLeaderEventReceiver = new EnforcedLeaderEventReceiver(
-                appConfig.timeSource(), configuration, replicationState, eventLogAppender
+                appConfig.loggerFactory(), appConfig.timeSource(), configuration, replicationState, eventLogAppender
         );
         final DispatchingPublisher dispatchingPublisher = new DispatchingPublisher(configuration);
-        final Handler connectionHandler = new ConnectionHandler(configuration, replicationState, eventLogAppender,
-                dispatchingPublisher);
+        final Handler connectionHandler = new ConnectionHandler(
+                appConfig.loggerFactory(), configuration, replicationState, eventLogAppender, dispatchingPublisher
+        );
         final EventSender eventSender = new DefaultEventSender(configuration, replicationState, eventLog,
                 dispatchingPublisher);
         return new Configuration.Default() {
@@ -96,12 +97,12 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
 
             @Override
             public CommandProcessor commandProcessor(final BaseState baseState) {
-                return new ReplicationCommandProcessor(replicationState);
+                return new ReplicationCommandProcessor(appConfig.loggerFactory(), configuration, replicationState);
             }
 
             @Override
             public EventApplier eventApplier(final BaseState.Mutable baseState) {
-                return new ReplicationEventApplier(configuration, baseState, replicationState);
+                return new ReplicationEventApplier(appConfig.loggerFactory(), configuration, baseState, replicationState);
             }
         };
     }

@@ -42,7 +42,6 @@ public enum ReplicationPayloadDescriptor {
     ;
     public static final byte VERSION = 1;
     public static final byte FLAGS = 0;
-    public static final int TERM_ENFORCED = -1;
 
     public static final int VERSION_OFFSET = 0;
     public static final int VERSION_LENGTH = Byte.BYTES;

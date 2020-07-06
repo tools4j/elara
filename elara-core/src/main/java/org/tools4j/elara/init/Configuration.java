@@ -30,6 +30,7 @@ import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.time.TimeSource;
@@ -49,6 +50,7 @@ public interface Configuration {
     TimeSource timeSource();
     ExceptionHandler exceptionHandler();
     DuplicateHandler duplicateHandler();
+    Logger.Factory loggerFactory();
     IdleStrategy idleStrategy();
     List<Step> dutyCycleExtraSteps(ExecutionType executionType);
     ThreadFactory threadFactory();

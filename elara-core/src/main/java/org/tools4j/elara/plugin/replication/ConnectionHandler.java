@@ -28,6 +28,8 @@ import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.flyweight.FrameDescriptor;
 import org.tools4j.elara.log.MessageLog.Appender;
+import org.tools4j.elara.logging.ElaraLogger;
+import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.plugin.replication.Connection.Publisher;
 
 import java.nio.ByteBuffer;
@@ -40,12 +42,13 @@ import static org.tools4j.elara.plugin.replication.ReplicationMessages.APPEND_RE
 import static org.tools4j.elara.plugin.replication.ReplicationMessages.APPEND_RESPONSE;
 import static org.tools4j.elara.plugin.replication.ReplicationMessages.logIndex;
 import static org.tools4j.elara.plugin.replication.ReplicationMessages.payloadSize;
+import static org.tools4j.elara.plugin.replication.ReplicationMessages.term;
 import static org.tools4j.elara.plugin.replication.ReplicationMessages.type;
 import static org.tools4j.elara.plugin.replication.ReplicationMessages.version;
 
 final class ConnectionHandler implements Connection.Handler {
 
-    private final ReplicationLogger logger;
+    private final ElaraLogger logger;
     private final int serverId;
     private final ReplicationState.Volatile state;
     private final Appender eventLogAppender;
@@ -53,11 +56,12 @@ final class ConnectionHandler implements Connection.Handler {
     private final UnsafeBuffer bufferView = new UnsafeBuffer(0, 0);
     private final MutableDirectBuffer sendBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect(HEADER_LENGTH));
 
-    ConnectionHandler(final Configuration configuration,
+    ConnectionHandler(final Logger.Factory loggerFactory,
+                      final Configuration configuration,
                       final ReplicationState.Volatile state,
                       final Appender eventLogAppender,
                       final Publisher responseSender) {
-        this.logger = configuration.replicationLogger();
+        this.logger = ElaraLogger.create(loggerFactory, getClass());
         this.serverId = configuration.serverId();
         this.state = requireNonNull(state);
         this.eventLogAppender = requireNonNull(eventLogAppender);
@@ -71,29 +75,24 @@ final class ConnectionHandler implements Connection.Handler {
             final byte type = type(bufferView);
             final byte version = version(bufferView);
             if (version != VERSION) {
-                logger.warn("Ignoring message of type {}: version {} found but expected {}", type,
-                        version, VERSION);
+                logger.warn("Ignoring message of type {}: version {} found but expected {}")
+                        .replace(type).replace(version).replace(VERSION).format();
                 return;
             }
             if (isLeader()) {
                 if (type != APPEND_RESPONSE) {
-                    logger.warn("Ignoring message of type {} in leader mode", type);
+                    logger.warn("Ignoring message of type {} in leader mode").replace(type).format();
                     return;
                 }
                 if (senderServerId == state.leaderId()) {
-                    logger.warn("Ignoring message of type {} in leader mode: response from {} is from myself?!",
-                            type, senderServerId);
+                    logger.warn("Ignoring message of type {} in leader mode: response from {} is from myself?!")
+                            .replace(type).replace(senderServerId).format();
                     return;
                 }
                 handleAppendResponse(senderServerId, bufferView);
             } else {
                 if (type != APPEND_REQUEST) {
-                    logger.warn("Ignoring message of type {} in follower mode", type);
-                    return;
-                }
-                if (senderServerId != state.leaderId()) {
-                    logger.warn("Ignoring message of type {} in follower mode: leader is {} but message received from {}",
-                            type, state.leaderId(), senderServerId);
+                    logger.warn("Ignoring message of type {} in follower mode").replace(type).format();
                     return;
                 }
                 handleAppendRequest(senderServerId, bufferView);
@@ -104,13 +103,26 @@ final class ConnectionHandler implements Connection.Handler {
     }
 
     private void handleAppendRequest(final int senderServerId, final DirectBuffer buffer) {
+        final int senderTerm = term(buffer);
+        final int currentTerm = state.currentTerm();
+        if (senderTerm < currentTerm) {
+            logger.warn("Ignoring append-request message in follower mode: term {} of sender {} is lower than current term {}")
+                    .replace(senderTerm).replace(senderServerId).replace(currentTerm).format();
+            return;
+        }
+        final int leaderId = state.leaderId();
+        if (senderTerm == currentTerm && senderServerId != state.leaderId()) {
+            logger.warn("Ignoring append-request message in follower mode: leader is {} in term {} but message received from {}")
+                    .replace(leaderId).replace(currentTerm).replace(senderServerId).format();
+            return;
+        }
         final long logIndex = logIndex(buffer);
         long nextEventLogIndex = state.eventLogSize();
         if (logIndex == nextEventLogIndex) {
             final int payloadSize = payloadSize(buffer);
             if (payloadSize < FrameDescriptor.HEADER_LENGTH) {
-                logger.warn("Ignoring append-request message in follower mode: payload size {} is smaller than frame header length {}",
-                        payloadSize, FrameDescriptor.HEADER_LENGTH);
+                logger.warn("Ignoring append-request message in follower mode: payload size {} is smaller than frame header length {}")
+                        .replace(payloadSize).replace(FrameDescriptor.HEADER_LENGTH).format();
                 return;
             }
             eventLogAppender.append(buffer, PAYLOAD_OFFSET, payloadSize);
@@ -125,7 +137,8 @@ final class ConnectionHandler implements Connection.Handler {
         final int length = ReplicationMessages.appendResponse(sendBuffer, 0, state.currentTerm(),
                 state.leaderId(), nextEventLogIndex, success);
         if (!responseSender.publish(targetServerId, sendBuffer, 0, length)) {
-            logger.warn("sending append response to {} for next event log index {} failed", targetServerId, nextEventLogIndex);
+            logger.warn("sending append response to {} for next event log index {} failed")
+                    .replace(targetServerId).replace(nextEventLogIndex).format();
         }
     }
 

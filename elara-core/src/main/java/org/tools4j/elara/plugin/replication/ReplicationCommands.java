@@ -55,6 +55,15 @@ public enum ReplicationCommands {
         }
     }
 
+    public static String replicationCommandName(final Command command) {
+        switch (command.type()) {
+            case PROPOSE_LEADER:
+                return "PROPOSE_LEADER";
+            default:
+                throw new IllegalArgumentException("Not a replication command: " + command);
+        }
+    }
+
     public static int proposeLeader(final MutableDirectBuffer buffer, final int offset, final short candidateId) {
         return proposeOrEnforceLeader(buffer, offset, PROPOSE_LEADER, candidateId);
     }

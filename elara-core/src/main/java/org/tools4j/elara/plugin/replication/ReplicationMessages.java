@@ -117,7 +117,7 @@ public enum ReplicationMessages {
     }
 
     public static int term(final DirectBuffer buffer) {
-        return buffer.getInt(LEADER_ID_OFFSET);
+        return buffer.getInt(TERM_OFFSET);
     }
 
     public static int logIndex(final DirectBuffer buffer) {

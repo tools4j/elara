@@ -26,7 +26,6 @@ package org.tools4j.elara.plugin.replication;
 import org.tools4j.elara.event.Event;
 
 public interface ReplicationState {
-    long NULL_INDEX = -1;
     int NULL_SERVER = -1;
 
     int currentTerm();

@@ -31,6 +31,8 @@ import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.logging.Logger;
+import org.tools4j.elara.logging.Logger.Factory;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.time.TimeSource;
@@ -47,6 +49,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.logging.OutputStreamLogger.SYSTEM_FACTORY;
 
 final class DefaultContext implements Context {
 
@@ -61,6 +64,7 @@ final class DefaultContext implements Context {
     private MessageLog eventLog;
     private TimeSource timeSource;
     private ExceptionHandler exceptionHandler = ExceptionHandler.DEFAULT;
+    private Logger.Factory loggerFactory = SYSTEM_FACTORY;
     private DuplicateHandler duplicateHandler = DuplicateHandler.DEFAULT;
     private IdleStrategy idleStrategy = new BackoffIdleStrategy(
             100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100));
@@ -199,6 +203,20 @@ final class DefaultContext implements Context {
     @Override
     public Context duplicateHandler(final DuplicateHandler duplicateHandler) {
         this.duplicateHandler = requireNonNull(duplicateHandler);
+        return this;
+    }
+
+    @Override
+    public Factory loggerFactory() {
+        return loggerFactory;
+    }
+
+    @Override
+    public Context loggerFactory(final Factory loggerFactory) {
+        this.loggerFactory = requireNonNull(loggerFactory);
+        if (duplicateHandler == DuplicateHandler.DEFAULT && loggerFactory != SYSTEM_FACTORY) {
+            duplicateHandler = DuplicateHandler.loggingHandler(loggerFactory);
+        }
         return this;
     }
 

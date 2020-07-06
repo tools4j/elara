@@ -30,6 +30,7 @@ import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.time.TimeSource;
@@ -55,6 +56,7 @@ public interface Context extends Configuration {
     Context timeSource(TimeSource timeSource);
     Context exceptionHandler(ExceptionHandler exceptionHandler);
     Context duplicateHandler(DuplicateHandler duplicateHandler);
+    Context loggerFactory(Logger.Factory loggerFactory);
     Context idleStrategy(IdleStrategy idleStrategy);
     Context dutyCycleExtraStep(Step step, ExecutionType executionType);
     Context threadFactory(String threadName);

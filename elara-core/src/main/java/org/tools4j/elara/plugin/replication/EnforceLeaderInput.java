@@ -41,6 +41,9 @@ public interface EnforceLeaderInput extends Input {
     }
 
     interface EnforceLeaderReceiver extends Receiver {
+        int serverId();
+        int leaderId();
+        int currentTerm();
         void enforceLeader(int source, long sequence, int leaderId);
     }
 }

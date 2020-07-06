@@ -25,21 +25,28 @@ package org.tools4j.elara.plugin.replication;
 
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.logging.ElaraLogger;
+import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.boot.BootEvents;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.plugin.boot.BootEvents.bootEventName;
+import static org.tools4j.elara.plugin.replication.ReplicationEvents.replicationEventName;
 import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;
 
 public class ReplicationEventApplier implements EventApplier {
 
+    private final ElaraLogger logger;
     private final Configuration configuration;
     private final BaseState.Mutable baseState;
     private final ReplicationState.Mutable replicationState;
 
-    public ReplicationEventApplier(final Configuration configuration,
+    public ReplicationEventApplier(final Logger.Factory loggerFactory,
+                                   final Configuration configuration,
                                    final BaseState.Mutable baseState,
                                    final ReplicationState.Mutable replicationState) {
+        this.logger = ElaraLogger.create(loggerFactory, getClass());
         this.configuration = requireNonNull(configuration);
         this.baseState = requireNonNull(baseState);
         this.replicationState = requireNonNull(replicationState);
@@ -49,7 +56,7 @@ public class ReplicationEventApplier implements EventApplier {
     public void onEvent(final Event event) {
         switch (event.type()) {
             case BootEvents.APP_INITIALISATION_STARTED:
-                updateLeader(replicationState.currentTerm() + 1, NULL_SERVER);
+                updateLeader(bootEventName(event), replicationState.currentTerm() + 1, NULL_SERVER);
                 break;
             case ReplicationEvents.LEADER_ELECTED://same for both
             case ReplicationEvents.LEADER_ENFORCED:
@@ -62,15 +69,17 @@ public class ReplicationEventApplier implements EventApplier {
     private void updateLeader(final Event event) {
         final int leaderId = ReplicationEvents.leaderId(event);
         final int term = ReplicationEvents.term(event);
-        updateLeader(term, leaderId);
+        updateLeader(replicationEventName(event), term, leaderId);
     }
 
-    private void updateLeader(final int term, final int leaderId) {
-        final boolean isLeader = leaderId == configuration.serverId();
-        baseState.processCommands(isLeader);
+    private void updateLeader(final String eventName, final int term, final int leaderId) {
+        final int serverId = configuration.serverId();
+        baseState.processCommands(leaderId == serverId);
         replicationState
                 .leaderId(leaderId)
                 .currentTerm(term)
         ;
+        logger.info("Server {} applied {}: Updating leader to {} for term {}")
+                .replace(serverId).replace(eventName).replace(leaderId).replace(term).format();
     }
 }

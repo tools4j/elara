@@ -32,7 +32,6 @@ public interface Context extends Configuration {
     Context enforceLeaderInput(Input input);
     Context enforceLeaderInput(EnforceLeaderInput input);
     Context connection(int serverId, Connection connection);
-    Context replicationLogger(ReplicationLogger logger);
     Context initialSendBufferCapacity(int size);
 
     static Context create() {

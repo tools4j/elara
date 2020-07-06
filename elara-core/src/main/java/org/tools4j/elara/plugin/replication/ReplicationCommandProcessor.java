@@ -25,30 +25,48 @@ package org.tools4j.elara.plugin.replication;
 
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.command.Command;
+import org.tools4j.elara.logging.ElaraLogger;
+import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.plugin.replication.ReplicationCommands.replicationCommandName;
 import static org.tools4j.elara.plugin.replication.ReplicationEvents.leaderElected;
 
 public class ReplicationCommandProcessor implements CommandProcessor {
 
+    private final ElaraLogger logger;
+    private final Configuration configuration;
     private final ReplicationState replicationState;
 
-    public ReplicationCommandProcessor(final ReplicationState replicationState) {
+    public ReplicationCommandProcessor(final Logger.Factory loggerFactory,
+                                       final Configuration configuration,
+                                       final ReplicationState replicationState) {
+        this.logger = ElaraLogger.create(loggerFactory, getClass());
+        this.configuration = requireNonNull(configuration);
         this.replicationState = requireNonNull(replicationState);
     }
 
     @Override
     public void onCommand(final Command command, final EventRouter router) {
         if (command.type() == ReplicationCommands.PROPOSE_LEADER) {
+            final String commandName = replicationCommandName(command);
+            final int serverId = configuration.serverId();
             final int candidateId = ReplicationCommands.candidateId(command);
-            if (candidateId != replicationState.leaderId()) {
+            final int leaderId = replicationState.leaderId();
+            if (candidateId != leaderId) {
                 final int nextTerm = replicationState.currentTerm() + 1;
+                logger.info("Server {} processing {}: electing candidate {} to replace current leader {} for next term {}")
+                        .replace(serverId).replace(commandName).replace(candidateId)
+                        .replace(leaderId).replace(nextTerm).format();
                 try (final RoutingContext context = router.routingEvent(ReplicationEvents.LEADER_ELECTED)) {
                     final int length = leaderElected(context.buffer(), 0, nextTerm, candidateId);
                     context.route(length);
                 }
+            } else {
+                logger.info("Server {} processing {}: ignored since proposed candidate {} is already leader")
+                        .replace(serverId).replace(commandName).replace(candidateId).format();
             }
         }
     }

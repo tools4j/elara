@@ -34,7 +34,6 @@ import org.tools4j.elara.log.MessageLog.Handler;
 import org.tools4j.elara.plugin.replication.Connection.Publisher;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_INDEX;
 import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;
 
 final class DefaultEventSender implements EventSender {
@@ -71,16 +70,18 @@ final class DefaultEventSender implements EventSender {
         final long index = poller.index();
         if (index == eventLogIndex) {
             return poller.poll(publishingHandler.init(targetServerId, eventLogIndex)) > 0;
-        } else if (index < eventLogIndex) {
+        }
+        if (index < eventLogIndex) {
             return poller.moveToNext();
         } else {
-            return poller.moveToPrevious();
+            poller.moveToPrevious();
         }
+        return false;
     }
 
     private final class PublishingHandler implements Handler {
         int targetServerId = NULL_SERVER;
-        long eventLogIndex = NULL_INDEX;
+        long eventLogIndex = -1;
         PublishingHandler init(final int targetServerId, final long eventLogIndex) {
             this.targetServerId = targetServerId;
             this.eventLogIndex = eventLogIndex;

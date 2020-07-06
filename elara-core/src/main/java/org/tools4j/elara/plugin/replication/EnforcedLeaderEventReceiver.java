@@ -31,6 +31,8 @@ import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.log.ExpandableDirectBuffer;
 import org.tools4j.elara.log.MessageLog.AppendContext;
 import org.tools4j.elara.log.MessageLog.Appender;
+import org.tools4j.elara.logging.ElaraLogger;
+import org.tools4j.elara.logging.Logger.Factory;
 import org.tools4j.elara.plugin.replication.EnforceLeaderInput.EnforceLeaderReceiver;
 import org.tools4j.elara.time.TimeSource;
 
@@ -39,14 +41,12 @@ import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationCommands.ENFORCE_LEADER;
-import static org.tools4j.elara.plugin.replication.ReplicationCommands.leaderId;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.FLAGS_NONE;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.FLAGS_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.PAYLOAD_SIZE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.TYPE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.LEADER_ID_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.PAYLOAD_LENGTH;
-import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.TERM_ENFORCED;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.TERM_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.VERSION;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.VERSION_OFFSET;
@@ -54,25 +54,43 @@ import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;
 
 final class EnforcedLeaderEventReceiver implements Receiver.Default, EnforceLeaderReceiver {
 
-    private final ReplicationLogger logger;
+    private final ElaraLogger logger;
     private final TimeSource timeSource;
+    private final int serverId;
     private final IntHashSet serverIds;
     private final ReplicationState state;
     private final Appender eventLogAppender;
     private final ReceivingContext receivingContext = new ReceivingContext();
 
-    EnforcedLeaderEventReceiver(final TimeSource timeSource,
+    EnforcedLeaderEventReceiver(final Factory loggerFactory,
+                                final TimeSource timeSource,
                                 final Configuration configuration,
                                 final ReplicationState state,
                                 final Appender eventLogAppender) {
-        this.logger = configuration.replicationLogger();
+        this.logger = ElaraLogger.create(loggerFactory, getClass());
         this.timeSource = requireNonNull(timeSource);
         this.serverIds = new IntHashSet(NULL_SERVER);
         this.state = requireNonNull(state);
         this.eventLogAppender = requireNonNull(eventLogAppender);
+        this.serverId = configuration.serverId();
         for (final int serverId : configuration.serverIds()) {
             serverIds.add(serverId);
         }
+    }
+
+    @Override
+    public int serverId() {
+        return serverId;
+    }
+
+    @Override
+    public int currentTerm() {
+        return state.currentTerm();
+    }
+
+    @Override
+    public int leaderId() {
+        return state.leaderId();
     }
 
     @Override
@@ -131,7 +149,7 @@ final class EnforcedLeaderEventReceiver implements Receiver.Default, EnforceLead
             if (length != PAYLOAD_LENGTH) {
                 throw new IllegalArgumentException("Enforce leader command must have length " + PAYLOAD_LENGTH);
             }
-            if (isValidLeaderId(leaderId(buffer))) {
+            if (!isValidLeaderId(ReplicationCommands.leaderId(buffer))) {
                 abort();
                 return;
             }
@@ -163,22 +181,24 @@ final class EnforcedLeaderEventReceiver implements Receiver.Default, EnforceLead
 
     }
 
-    private static void completeEventPayload(final MutableDirectBuffer buffer) {
+    private void completeEventPayload(final MutableDirectBuffer buffer) {
+        final int nextTerm = 1 + state.currentTerm();
         buffer.putByte(VERSION_OFFSET, VERSION);
         buffer.putByte(FLAGS_OFFSET, FLAGS_NONE);
         buffer.putShort(TYPE_OFFSET, ENFORCE_LEADER);
         buffer.putInt(PAYLOAD_SIZE_OFFSET, 0);
         // already set: buffer.putInt(LEADER_ID_OFFSET, leaderId);
-        buffer.putInt(TERM_OFFSET, TERM_ENFORCED);
+        buffer.putInt(TERM_OFFSET, nextTerm);
     }
 
     private boolean isValidLeaderId(final int leaderId) {
         if (leaderId == state.leaderId()) {
-            logger.warn("Ignoring enforce-leader input: enforced leader {} is already the current leader", leaderId);
+            logger.warn("Ignoring enforce-leader input: enforced leader {} is already the current leader")
+                    .replace(leaderId).format();
             return false;
         }
         if (!serverIds.contains(leaderId)) {
-            logger.warn("Ignoring enforce-leader input: server ID {} is invalid", leaderId);
+            logger.warn("Ignoring enforce-leader input: server ID {} is invalid").replace(leaderId).format();
             return false;
         }
         return true;

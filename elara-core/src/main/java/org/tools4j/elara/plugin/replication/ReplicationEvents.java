@@ -32,7 +32,6 @@ import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.TYPE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.LEADER_ID_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.PAYLOAD_LENGTH;
-import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.TERM_ENFORCED;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.TERM_OFFSET;
 
 /**
@@ -77,12 +76,13 @@ public enum ReplicationEvents {
     }
 
     public static int leaderEnforced(final MutableDirectBuffer buffer, final int offset,
+                                     final int term,
                                      final int leaderId) {
         buffer.putByte(offset + FLAGS_OFFSET, FLAGS_NONE);
         buffer.putShort(offset + TYPE_OFFSET, LEADER_ENFORCED);
         buffer.putInt(offset + PAYLOAD_SIZE_OFFSET, 0);
         buffer.putInt(offset + LEADER_ID_OFFSET, leaderId);
-        buffer.putInt(offset + TERM_OFFSET, TERM_ENFORCED);
+        buffer.putInt(offset + TERM_OFFSET, term);
         return PAYLOAD_LENGTH;
     }
 
