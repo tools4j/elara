@@ -75,24 +75,26 @@ final class ConnectionHandler implements Connection.Handler {
             final byte type = type(bufferView);
             final byte version = version(bufferView);
             if (version != VERSION) {
-                logger.warn("Ignoring message of type {}: version {} found but expected {}")
-                        .replace(type).replace(version).replace(VERSION).format();
+                logger.warn("Server {}: Ignoring message of type {} from {}: version {} found but expected {}")
+                        .replace(serverId).replace(type).replace(senderServerId).replace(version).replace(VERSION).format();
                 return;
             }
             if (isLeader()) {
                 if (type != APPEND_RESPONSE) {
-                    logger.warn("Ignoring message of type {} in leader mode").replace(type).format();
+                    logger.warn("Server {}: Ignoring message of type {} from sender {} in leader mode")
+                            .replace(serverId).replace(type).replace(senderServerId).format();
                     return;
                 }
                 if (senderServerId == state.leaderId()) {
-                    logger.warn("Ignoring message of type {} in leader mode: response from {} is from myself?!")
-                            .replace(type).replace(senderServerId).format();
+                    logger.warn("Server {}: Ignoring message of type {} in leader mode: response from sender {} is from myself?!")
+                            .replace(serverId).replace(type).replace(senderServerId).format();
                     return;
                 }
                 handleAppendResponse(senderServerId, bufferView);
             } else {
                 if (type != APPEND_REQUEST) {
-                    logger.warn("Ignoring message of type {} in follower mode").replace(type).format();
+                    logger.warn("Server {}: Ignoring message of type {} from sender {} in follower mode")
+                            .replace(serverId).replace(type).replace(senderServerId).format();
                     return;
                 }
                 handleAppendRequest(senderServerId, bufferView);
@@ -106,14 +108,14 @@ final class ConnectionHandler implements Connection.Handler {
         final int senderTerm = term(buffer);
         final int currentTerm = state.currentTerm();
         if (senderTerm < currentTerm) {
-            logger.warn("Ignoring append-request message in follower mode: term {} of sender {} is lower than current term {}")
-                    .replace(senderTerm).replace(senderServerId).replace(currentTerm).format();
+            logger.warn("Server {}: Ignoring append-request message in follower mode: term {} of sender {} is lower than current term {}")
+                    .replace(serverId).replace(senderTerm).replace(senderServerId).replace(currentTerm).format();
             return;
         }
         final int leaderId = state.leaderId();
         if (senderTerm == currentTerm && senderServerId != state.leaderId()) {
-            logger.warn("Ignoring append-request message in follower mode: leader is {} in term {} but message received from {}")
-                    .replace(leaderId).replace(currentTerm).replace(senderServerId).format();
+            logger.warn("Server {}: Ignoring append-request message in follower mode: leader is {} in term {} but message received from sender {}")
+                    .replace(serverId).replace(leaderId).replace(currentTerm).replace(senderServerId).format();
             return;
         }
         final long logIndex = logIndex(buffer);
@@ -121,8 +123,8 @@ final class ConnectionHandler implements Connection.Handler {
         if (logIndex == nextEventLogIndex) {
             final int payloadSize = payloadSize(buffer);
             if (payloadSize < FrameDescriptor.HEADER_LENGTH) {
-                logger.warn("Ignoring append-request message in follower mode: payload size {} is smaller than frame header length {}")
-                        .replace(payloadSize).replace(FrameDescriptor.HEADER_LENGTH).format();
+                logger.warn("Server {}: Ignoring append-request message in follower mode: payload size {} is smaller than frame header length {}")
+                        .replace(serverId).replace(payloadSize).replace(FrameDescriptor.HEADER_LENGTH).format();
                 return;
             }
             eventLogAppender.append(buffer, PAYLOAD_OFFSET, payloadSize);
@@ -137,8 +139,8 @@ final class ConnectionHandler implements Connection.Handler {
         final int length = ReplicationMessages.appendResponse(sendBuffer, 0, state.currentTerm(),
                 state.leaderId(), nextEventLogIndex, success);
         if (!responseSender.publish(targetServerId, sendBuffer, 0, length)) {
-            logger.warn("sending append response to {} for next event log index {} failed")
-                    .replace(targetServerId).replace(nextEventLogIndex).format();
+            logger.warn("Server {}: Sending append response to {} for next event log index {} failed")
+                    .replace(serverId).replace(targetServerId).replace(nextEventLogIndex).format();
         }
     }
 

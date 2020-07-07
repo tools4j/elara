@@ -27,8 +27,7 @@ public class SyncTransmitter implements Transmitter {
 
     @Override
     public void transmit(final Buffer senderBuffer, final Buffer receiverBuffer) {
-        final long value = senderBuffer.consume();
-        while (!receiverBuffer.offer(value)) {
+        while (!receiverBuffer.offer(senderBuffer)) {
             if (Thread.interrupted()) {
                 Thread.currentThread().interrupt();
                 return;

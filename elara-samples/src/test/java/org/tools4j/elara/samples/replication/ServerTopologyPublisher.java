@@ -29,13 +29,13 @@ import org.tools4j.elara.samples.network.ServerTopology;
 
 import static java.util.Objects.requireNonNull;
 
-public class LongValuePublisher implements Connection.Publisher {
+public class ServerTopologyPublisher implements Connection.Publisher {
 
     private final int senderServerId;
     private final IdMapping serverIds;
     private final ServerTopology topology;
 
-    public LongValuePublisher(final int senderServerId, final IdMapping serverIds, final ServerTopology topology) {
+    public ServerTopologyPublisher(final int senderServerId, final IdMapping serverIds, final ServerTopology topology) {
         if (serverIds.count() != topology.senders()) {
             throw new IllegalArgumentException("Servers " + serverIds.count() + " must equal number of senders " +
                     topology.senders());
@@ -53,6 +53,6 @@ public class LongValuePublisher implements Connection.Publisher {
     public boolean publish(final int targetServerId, final DirectBuffer buffer, final int offset, final int length) {
         final int sender = serverIds.indexById(senderServerId);
         final int receiver = serverIds.indexById(targetServerId);
-        return topology.transmit(sender, receiver, buffer.getLong(0));
+        return topology.transmit(sender, receiver, buffer, offset, length);
     }
 }

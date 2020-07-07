@@ -23,12 +23,13 @@
  */
 package org.tools4j.elara.samples.network;
 
-import org.tools4j.elara.samples.hash.HashApplication;
+import org.agrona.DirectBuffer;
+import org.agrona.MutableDirectBuffer;
 
 public interface Buffer {
-    long NULL_VALUE = HashApplication.NULL_VALUE;
-
-    boolean offer(long value);
-    long consume();
-
+    int CONSUMED_NOTHING = -1;
+    boolean offer(DirectBuffer src, int offset, int length);
+    int consume(MutableDirectBuffer dst, int dstOffset);
+    int consume();
+    boolean offer(Buffer buffer);
 }

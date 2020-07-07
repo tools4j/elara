@@ -28,7 +28,7 @@ import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.input.Receiver.ReceivingContext;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.samples.network.Buffer.NULL_VALUE;
+import static org.tools4j.elara.samples.network.Buffer.CONSUMED_NOTHING;
 
 public class BufferInput implements Input {
 
@@ -57,16 +57,16 @@ public class BufferInput implements Input {
     private final class BufferPoller implements Poller {
         @Override
         public int poll(final Receiver receiver) {
-            final long value = buffer.consume();
-            if (value == NULL_VALUE) {
-                return 0;
-            }
-            sequence++;
             try (final ReceivingContext context = receiver.receivingMessage(source, sequence)) {
-                context.buffer().putLong(0, value);
-                context.receive(Long.BYTES);
+                final int consumed = buffer.consume(context.buffer(), 0);
+                if (consumed == CONSUMED_NOTHING) {
+                    context.abort();
+                    return 0;
+                }
+                sequence++;
+                context.receive(consumed);
+                return 1;
             }
-            return 1;
         }
     }
 }

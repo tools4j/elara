@@ -23,6 +23,8 @@
  */
 package org.tools4j.elara.samples.network;
 
+import org.agrona.DirectBuffer;
+
 import static java.util.Objects.requireNonNull;
 
 public class DefaultServerTopology implements ServerTopology {
@@ -58,9 +60,9 @@ public class DefaultServerTopology implements ServerTopology {
     }
 
     @Override
-    public boolean transmit(final int sender, final int receiver, final long value) {
+    public boolean transmit(final int sender, final int receiver, final DirectBuffer buffer, final int offset, final int length) {
         final Buffer senderBuffer = sendBuffers[sender];
-        if (!senderBuffer.offer(value)) {
+        if (!senderBuffer.offer(buffer, offset, length)) {
             return false;
         }
         final Buffer receiverBuffer = receiveBuffers[receiver][sender];

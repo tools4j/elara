@@ -23,34 +23,43 @@
  */
 package org.tools4j.elara.samples.replication;
 
+import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.plugin.replication.Connection;
 import org.tools4j.elara.plugin.replication.Connection.Handler;
 import org.tools4j.elara.samples.network.Buffer;
 import org.tools4j.elara.samples.network.ServerTopology;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.samples.network.Buffer.NULL_VALUE;
+import static org.tools4j.elara.samples.network.Buffer.CONSUMED_NOTHING;
 
-public class LongValuePoller implements Connection.Poller {
+public class ReceiveBufferPoller implements Connection.Poller {
 
+    private final int serverId;
     private final IdMapping serverIds;
     private final Buffer[] receiverBuffers;
     private int roundRobin;
-    private final MutableDirectBuffer buffer = new UnsafeBuffer(new byte[Long.BYTES]);
+    private final MutableDirectBuffer buffer;
 
-    public LongValuePoller(final int serverId, final IdMapping serverIds, final ServerTopology topology) {
-        this(serverIds, topology.receiveBuffers(serverIds.indexById(serverId)));
+    public ReceiveBufferPoller(final int serverId,
+                               final IdMapping serverIds,
+                               final ServerTopology topology,
+                               final int initialBufferCapacity) {
+        this(serverId, serverIds, topology.receiveBuffers(serverIds.indexById(serverId)), initialBufferCapacity);
     }
 
-    public LongValuePoller(final IdMapping serverIds, final Buffer[] receiverBuffers) {
+    public ReceiveBufferPoller(final int serverId,
+                               final IdMapping serverIds,
+                               final Buffer[] receiverBuffers,
+                               final int initialBufferCapacity) {
         if (serverIds.count() != receiverBuffers.length) {
             throw new IllegalArgumentException("there must be exactly 1 receive buffer per server, but it was " +
                     receiverBuffers.length + " buffers for " + serverIds.count() + " servers");
         }
+        this.serverId = serverId;
         this.serverIds = requireNonNull(serverIds);
         this.receiverBuffers = requireNonNull(receiverBuffers);
+        this.buffer = new ExpandableArrayBuffer(initialBufferCapacity);
     }
 
     @Override
@@ -58,34 +67,33 @@ public class LongValuePoller implements Connection.Poller {
         requireNonNull(handler);
         final int n = receiverBuffers.length;
 
-        long value = NULL_VALUE;
+        int consumed = CONSUMED_NOTHING;
         int sender;
         for (sender = roundRobin; sender < n; sender++) {
-            value = receiverBuffers[sender].consume();
-            if (value != NULL_VALUE) {
+            consumed = receiverBuffers[sender].consume(buffer, 0);
+            if (consumed != CONSUMED_NOTHING) {
                 break;
             }
         }
-        if (value == NULL_VALUE) {
+        if (consumed == CONSUMED_NOTHING) {
             for (sender = 0; sender < roundRobin; sender++) {
-                value = receiverBuffers[sender].consume();
-                if (value != NULL_VALUE) {
+                consumed = receiverBuffers[sender].consume(buffer, 0);
+                if (consumed != CONSUMED_NOTHING) {
                     break;
                 }
             }
         }
-        if (value != NULL_VALUE) {
-            buffer.putLong(0, value);
+        if (consumed != CONSUMED_NOTHING) {
             try {
-                handler.onMessage(serverIds.idByIndex(sender), buffer, 0, Long.BYTES);
+                handler.onMessage(serverIds.idByIndex(sender), buffer, 0, consumed);
             } finally {
-                buffer.putLong(0, 0);
+                buffer.setMemory(0, consumed, (byte)0);
             }
             roundRobin = sender + 1;
         }
         if (roundRobin >= n) {
             roundRobin = 0;
         }
-        return value != NULL_VALUE ? 1 : 0;
+        return consumed != CONSUMED_NOTHING ? 1 : 0;
     }
 }

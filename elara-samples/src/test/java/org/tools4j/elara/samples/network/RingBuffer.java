@@ -23,46 +23,77 @@
  */
 package org.tools4j.elara.samples.network;
 
-import java.util.Arrays;
+import org.agrona.DirectBuffer;
+import org.agrona.ExpandableArrayBuffer;
+import org.agrona.MutableDirectBuffer;
 
 public class RingBuffer implements Buffer {
 
-    private final long[] values;
+    private final MutableDirectBuffer[] buffers;
     private int writeOffset;
     private int readOffset;
     private int n;
 
-    public RingBuffer(final int capacity) {
-        this.values = new long[capacity];
-        Arrays.fill(values, NULL_VALUE);
+    public RingBuffer(final int ringCapacity, final int initialBufferCapacity) {
+        this.buffers = new MutableDirectBuffer[ringCapacity];
+        for (int i = 0; i < buffers.length; i++) {
+            buffers[i] = new ExpandableArrayBuffer(initialBufferCapacity);
+        }
     }
 
     @Override
-    public synchronized boolean offer(final long value) {
-        if (n == values.length) {
+    public synchronized boolean offer(final DirectBuffer src, final int offset, final int length) {
+        if (n == buffers.length) {
             return false;
         }
-        values[writeOffset] = value;
+        buffers[writeOffset].putInt(0, length);
+        buffers[writeOffset].putBytes(Integer.BYTES, src, offset, length);
         n++;
         writeOffset++;
-        if (writeOffset == values.length) {
+        if (writeOffset == buffers.length) {
             writeOffset = 0;
         }
         return true;
     }
 
     @Override
-    public synchronized long consume() {
-        if (n == 0) {
-            return NULL_VALUE;
+    public synchronized boolean offer(final Buffer buffer) {
+        if (n == buffers.length) {
+            return false;
         }
-        final long value = values[readOffset];
-        values[readOffset] = NULL_VALUE;
+        final int length = buffer.consume(buffers[writeOffset], Integer.BYTES);
+        if (length == CONSUMED_NOTHING) {
+            return false;
+        }
+        buffers[writeOffset].putInt(0, length);
+        n++;
+        writeOffset++;
+        if (writeOffset == buffers.length) {
+            writeOffset = 0;
+        }
+        return true;
+    }
+
+    @Override
+    public synchronized int consume(final MutableDirectBuffer dst, final int dstOffset) {
+        if (n == 0) {
+            return CONSUMED_NOTHING;
+        }
+        final int length = buffers[readOffset].getInt(0);
+        if (dst != null) {
+            dst.putBytes(dstOffset, buffers[readOffset], Integer.BYTES, length);
+        }
+        buffers[readOffset].setMemory(0, Integer.BYTES + length, (byte)0);
         n--;
         readOffset++;
-        if (readOffset == values.length) {
+        if (readOffset == buffers.length) {
             readOffset = 0;
         }
-        return value;
+        return length;
+    }
+
+    @Override
+    public int consume() {
+        return consume(null, 0);
     }
 }

@@ -47,6 +47,6 @@ public class DispatchingPublisher implements Publisher {
         if (publisher != null) {
             return publisher.publish(targetServerId, buffer, offset, length);
         }
-        throw new NullPointerException("No publisher found for target server " + targetServerId);
+        return false;
     }
 }

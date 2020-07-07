@@ -26,23 +26,37 @@ package org.tools4j.elara.samples.replication;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.LongSupplier;
 
+import static java.util.Objects.requireNonNull;
+
 public interface NetworkConfig {
 
     NetworkConfig IDEAL = new NetworkConfig() {};
-    NetworkConfig DEFAULT = new NetworkConfig() {
-        @Override
-        public LinkConfig commandLink() {
-            return LinkConfig.DEFAULT;
-        }
+    NetworkConfig RELIABLE = create(LinkConfig.RELIABLE);
+    NetworkConfig DEFAULT = create(LinkConfig.DEFAULT);
 
-        @Override
-        public LinkConfig appendLink() {
-            return LinkConfig.DEFAULT;
-        }
-    };
+    static NetworkConfig create(final LinkConfig linkConfig) {
+        return create(linkConfig, linkConfig);
+    }
+
+    static NetworkConfig create(final LinkConfig commandLink, final LinkConfig appendLink) {
+        requireNonNull(commandLink);
+        requireNonNull(appendLink);
+        return new NetworkConfig() {
+            @Override
+            public LinkConfig commandLink() {
+                return commandLink;
+            }
+
+            @Override
+            public LinkConfig appendLink() {
+                return appendLink;
+            }
+        };
+    }
 
     interface LinkConfig {
         LinkConfig IDEAL = new LinkConfig() {};
+        LinkConfig RELIABLE = real(0, 100, 0);
         LinkConfig DEFAULT = real(0, 100, 0.01f);
 
         static LinkConfig real(final long minDelayNanos, final long maxDelayNanos, final float lossRatio) {
@@ -74,6 +88,7 @@ public interface NetworkConfig {
         default int receiverBufferCapacity() {
             return 100;
         }
+        default int initialMessageCapacity() {return 128;}
     }
 
     default LinkConfig commandLink() {

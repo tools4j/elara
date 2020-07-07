@@ -25,7 +25,6 @@ package org.tools4j.elara.samples.replication;
 
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.wire.WireType;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.DuplicateHandler;
@@ -44,13 +43,13 @@ import org.tools4j.elara.samples.hash.HashApplication;
 import org.tools4j.elara.samples.hash.HashApplication.DefaultState;
 import org.tools4j.elara.samples.hash.HashApplication.ModifiableState;
 import org.tools4j.elara.samples.hash.HashApplication.State;
-import org.tools4j.elara.samples.network.AtomicBuffer;
 import org.tools4j.elara.samples.network.Buffer;
 import org.tools4j.elara.samples.network.BufferInput;
 import org.tools4j.elara.samples.network.DefaultServerTopology;
 import org.tools4j.elara.samples.network.RingBuffer;
 import org.tools4j.elara.samples.network.ServerTopology;
 import org.tools4j.elara.samples.network.Transmitter;
+import org.tools4j.elara.samples.replication.NetworkConfig.LinkConfig;
 import org.tools4j.nobark.run.ThreadLike;
 
 import java.util.concurrent.Executors;
@@ -59,6 +58,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;
 
 /**
@@ -70,16 +70,16 @@ public class ReplicatedHashApplicationTest {
     private static final int SOURCE_OFFSET = 1000000000;
     private static final int ENFORCE_LEADER_SOURCE = 2 * SOURCE_OFFSET - 1;
 
-    private final NetworkConfig networkConfig = NetworkConfig.DEFAULT;
+    private final NetworkConfig networkConfig = NetworkConfig.RELIABLE;
 
-    @Disabled //FIXME manually run for now, and failing
+    //@Disabled //FIXME manually run for now, and failing
     @Test
     public void run() throws Exception {
         //given
         final int servers = 3;
         final int sources = 10;
         final int nThreads = 1;
-        final int commandsPerSource = 1000;
+        final int commandsPerSource = 2000;
         final IdMapping serverIds = DefaultIdMapping.enumerate(servers);
         final IdMapping sourceIds = DefaultIdMapping.enumerate(SOURCE_OFFSET, sources);
         final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(nThreads);
@@ -94,10 +94,11 @@ public class ReplicatedHashApplicationTest {
         final ElaraRunner[] runners = startServers(appStates, sourceIds, serverIds, serverTopology, sourceTopology, enforceLeaderInput);
         final ThreadLike[] publishers = startSourcePublishers(commandsPerSource, sourceIds, sourceTopology);
 
-        //then
         for (final ThreadLike publisher : publishers) {
             publisher.join(10000);
         }
+        Thread.sleep(10000);
+
         scheduledExecutorService.shutdown();
         if (!scheduledExecutorService.awaitTermination(10, TimeUnit.SECONDS)) {
             scheduledExecutorService.shutdownNow();
@@ -107,9 +108,13 @@ public class ReplicatedHashApplicationTest {
             runner.join(1000);
         }
 
+        //then
         for (int i = 0; i < servers; i++) {
             final State state = appStates[i];
             System.out.println("server-" + serverIds.idByIndex(i) + ": count=" + state.count() + ", hash=" + state.hash());
+            assertEquals(appStates[i].count(), sources * commandsPerSource, "appState[" + i + "].count");
+            assertEquals(appStates[0].count(), appStates[i].count(), "appState[" + i + "].count");
+            assertEquals(appStates[0].hash(), appStates[i].hash(), "appState[" + i + "].hash");
         }
     }
 
@@ -151,11 +156,12 @@ public class ReplicatedHashApplicationTest {
     }
 
     private ServerTopology serverTopology(final IdMapping serverIds, final Transmitter transmitter) {
+        final LinkConfig apdCfg = networkConfig.appendLink();
         final int servers = serverIds.count();
-        final Buffer[] sendBuffers = buffers(servers, networkConfig.appendLink().senderBufferCapacity());
+        final Buffer[] sendBuffers = buffers(servers, apdCfg.senderBufferCapacity(), apdCfg.initialMessageCapacity());
         final Buffer[][] receiveBuffers = new Buffer[servers][];
         for (int i = 0; i < servers; i++) {
-            receiveBuffers[i] = buffers(servers, networkConfig.appendLink().receiverBufferCapacity());
+            receiveBuffers[i] = buffers(servers, apdCfg.receiverBufferCapacity(), apdCfg.initialMessageCapacity());
         }
         return new DefaultServerTopology(sendBuffers, receiveBuffers, transmitter);
     }
@@ -163,18 +169,19 @@ public class ReplicatedHashApplicationTest {
     private ServerTopology sourceTopology(final int sources,
                                           final IdMapping serverIds,
                                           final Transmitter transmitter) {
-        final Buffer[] sendBuffers = buffers(sources, networkConfig.commandLink().senderBufferCapacity());
+        final LinkConfig cmdCfg = networkConfig.commandLink();
+        final Buffer[] sendBuffers = buffers(sources, cmdCfg.senderBufferCapacity(), cmdCfg.initialMessageCapacity());
         final Buffer[][] receiveBuffers = new Buffer[serverIds.count()][];
         for (int i = 0; i < receiveBuffers.length; i++) {
-            receiveBuffers[i] = buffers(sources, networkConfig.commandLink().receiverBufferCapacity());
+            receiveBuffers[i] = buffers(sources, cmdCfg.receiverBufferCapacity(), cmdCfg.initialMessageCapacity());
         }
         return new DefaultServerTopology(sendBuffers, receiveBuffers, transmitter);
     }
 
-    private Buffer[] buffers(final int n, final int capacity) {
+    private Buffer[] buffers(final int n, final int bufferCapacity, final int initialMessageCapacity) {
         final Buffer[] buffers = new Buffer[n];
         for (int i = 0; i < n; i++) {
-            buffers[i] = capacity == 1 ? new AtomicBuffer() : new RingBuffer(capacity);
+            buffers[i] = new RingBuffer(bufferCapacity, initialMessageCapacity);
         }
         return buffers;
     }
@@ -221,11 +228,13 @@ public class ReplicatedHashApplicationTest {
                                             final IdMapping serverIds,
                                             final ServerTopology serverTopology,
                                             final EnforceLeaderInput enforceLeaderInput) {
+        final int curServerId = serverIds.idByIndex(server);
+        final Connection connection = connection(curServerId, serverIds, serverTopology);
         final org.tools4j.elara.plugin.replication.Context context = ReplicationPlugin.configure();
         for (int i = 0; i < serverIds.count(); i++) {
             final int serverId = serverIds.idByIndex(i);
             context.serverId(serverId, i == server)
-                    .connection(serverId, connection(serverId, serverIds, serverTopology));
+                    .connection(serverId, connection);
         }
         return context.enforceLeaderInput(enforceLeaderInput);
     }
@@ -234,8 +243,8 @@ public class ReplicatedHashApplicationTest {
                                   final IdMapping serverIds,
                                   final ServerTopology serverTopology) {
         return Connection.create(
-                new LongValuePoller(serverId, serverIds, serverTopology),
-                new LongValuePublisher(serverId, serverIds, serverTopology)
+                new ReceiveBufferPoller(serverId, serverIds, serverTopology, networkConfig.appendLink().receiverBufferCapacity()),
+                new ServerTopologyPublisher(serverId, serverIds, serverTopology)
         );
     }
 

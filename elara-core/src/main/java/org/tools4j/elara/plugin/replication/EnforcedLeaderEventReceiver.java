@@ -96,7 +96,8 @@ final class EnforcedLeaderEventReceiver implements Receiver.Default, EnforceLead
     @Override
     public void enforceLeader(final int source, final long sequence, final int leaderId) {
         if (!isValidLeaderId(leaderId)) {
-            //FIXME log error
+            logger.warn("Server {}: Ignoring enforce-leader request {}:{} due to invalid leader ID {}")
+                    .replace(serverId).replace(source).replace(sequence).replace(leaderId).format();
             return;
         }
         try (final Receiver.ReceivingContext context = receivingMessage(source, sequence, ENFORCE_LEADER)) {

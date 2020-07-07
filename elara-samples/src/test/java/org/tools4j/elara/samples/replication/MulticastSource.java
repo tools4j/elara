@@ -23,6 +23,8 @@
  */
 package org.tools4j.elara.samples.replication;
 
+import org.agrona.MutableDirectBuffer;
+import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.samples.network.ServerTopology;
 import org.tools4j.nobark.run.RunnableFactory.RunningCondition;
 import org.tools4j.nobark.run.StoppableThread;
@@ -39,6 +41,7 @@ public class MulticastSource {
     private final int sourceIndex;
     private final LongSupplier valueSource;
     private final ServerTopology topology;
+    private final MutableDirectBuffer buffer = new UnsafeBuffer(new byte[Long.BYTES]);
 
     private MulticastSource(final int sourceIndex,
                             final LongSupplier valueSource,
@@ -78,9 +81,9 @@ public class MulticastSource {
             if (!runningCondition.keepRunning()) {
                 return;
             }
-            final long value = valueSource.getAsLong();
+            buffer.putLong(0, valueSource.getAsLong());
             for (int receiver = 0; receiver < topology.receivers(); receiver++) {
-                while (!topology.transmit(sourceIndex, receiver, value)) {
+                while (!topology.transmit(sourceIndex, receiver, buffer, 0, Long.BYTES)) {
                     if (!runningCondition.keepRunning()) {
                         return;
                     }

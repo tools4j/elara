@@ -23,10 +23,12 @@
  */
 package org.tools4j.elara.samples.network;
 
+import org.agrona.DirectBuffer;
+
 public interface ServerTopology {
     int senders();
     int receivers();
-    boolean transmit(int sender, int receiver, long value);
+    boolean transmit(int sender, int receiver, DirectBuffer buffer, int offset, int length);
     Buffer[] receiveBuffers(int receiver);
     Buffer receiveBuffer(int sender, int receiver);
 }
