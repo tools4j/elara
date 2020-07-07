@@ -194,12 +194,13 @@ final class EnforcedLeaderEventReceiver implements Receiver.Default, EnforceLead
 
     private boolean isValidLeaderId(final int leaderId) {
         if (leaderId == state.leaderId()) {
-            logger.warn("Ignoring enforce-leader input: enforced leader {} is already the current leader")
-                    .replace(leaderId).format();
+            logger.warn("Server {}: Ignoring enforce-leader input: enforced leader {} is already the current leader")
+                    .replace(serverId).replace(leaderId).format();
             return false;
         }
         if (!serverIds.contains(leaderId)) {
-            logger.warn("Ignoring enforce-leader input: server ID {} is invalid").replace(leaderId).format();
+            logger.warn("Server {}: Ignoring enforce-leader input: server ID {} is invalid")
+                    .replace(serverId).replace(leaderId).format();
             return false;
         }
         return true;

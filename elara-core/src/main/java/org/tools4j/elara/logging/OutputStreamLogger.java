@@ -65,7 +65,7 @@ public class OutputStreamLogger implements Logger {
         printDate(stream, time);
         stream.print('T');
         printTime(stream, time);
-        stream.print('T');
+        stream.print('Z');
         stream.print(' ');
         stream.print(levelString(level));
         stream.print(' ');
@@ -121,8 +121,8 @@ public class OutputStreamLogger implements Logger {
         printDigits(stream, minutes, 2);
         stream.print(':');
         printDigits(stream, seconds, 2);
-        stream.print(',');
-        printDigits(stream, millis, 2);
+        stream.print('.');
+        printDigits(stream, millis, 3);
     }
 
     private static void printDigits(final PrintStream stream, final int value, final int digits) {

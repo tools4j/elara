@@ -90,7 +90,7 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
         return new Configuration.Default() {
             @Override
             public Step step(final BaseState baseState, final ExecutionType executionType) {
-                return executionType != ALWAYS_WHEN_EVENTS_APPLIED ? Step.NO_OP : new ReplicationAppenderStep(
+                return executionType != ALWAYS_WHEN_EVENTS_APPLIED ? Step.NO_OP : new ReplicationPluginStep(
                         configuration, replicationState, enforcedLeaderEventReceiver, connectionHandler, eventSender
                 );
             }

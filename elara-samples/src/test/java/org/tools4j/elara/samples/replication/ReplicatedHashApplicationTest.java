@@ -56,8 +56,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;
 
@@ -112,9 +113,13 @@ public class ReplicatedHashApplicationTest {
         for (int i = 0; i < servers; i++) {
             final State state = appStates[i];
             System.out.println("server-" + serverIds.idByIndex(i) + ": count=" + state.count() + ", hash=" + state.hash());
-            assertEquals(appStates[i].count(), sources * commandsPerSource, "appState[" + i + "].count");
-            assertEquals(appStates[0].count(), appStates[i].count(), "appState[" + i + "].count");
-            assertEquals(appStates[0].hash(), appStates[i].hash(), "appState[" + i + "].hash");
+        }
+        final State refState = appStates[0];
+        for (int i = 1; i < servers; i++) {
+            final State state = appStates[i];
+            assertEquals(sources * commandsPerSource, state.count(), "appState[" + i + "].count");
+            assertEquals(refState.count(), state.count(), "appState[" + i + "].count");
+            assertEquals(refState.hash(), state.hash(), "appState[" + i + "].hash");
         }
     }
 
@@ -127,19 +132,14 @@ public class ReplicatedHashApplicationTest {
     }
 
     private EnforceLeaderInput enforceLeaderInput(final IdMapping serverIds) {
-        final AtomicInteger nextLeader = new AtomicInteger(
-                serverIds.idByIndex(ThreadLocalRandom.current().nextInt(serverIds.count()))
-        );
+        final long[] seqPtr = {System.currentTimeMillis()};
+        final int nextLeader = serverIds.idByIndex(ThreadLocalRandom.current().nextInt(serverIds.count()));
         return () -> receiver -> {
-            if (receiver.leaderId() != NULL_SERVER || nextLeader.get() != receiver.serverId()) {
+            if (receiver.leaderId() == nextLeader || receiver.serverId() != nextLeader) {
                 return 0;
             }
-            final int leaderId = nextLeader.getAndSet(NULL_SERVER);
-            if (leaderId != NULL_SERVER) {
-                receiver.enforceLeader(ENFORCE_LEADER_SOURCE, System.currentTimeMillis(), leaderId);
-                return 1;
-            }
-            return 0;
+            receiver.enforceLeader(ENFORCE_LEADER_SOURCE, seqPtr[0]++, nextLeader);
+            return 1;
         };
     }
 

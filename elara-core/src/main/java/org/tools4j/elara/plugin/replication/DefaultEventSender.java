@@ -72,7 +72,7 @@ final class DefaultEventSender implements EventSender {
             return poller.poll(publishingHandler.init(targetServerId, eventLogIndex)) > 0;
         }
         if (index < eventLogIndex) {
-            return poller.moveToNext();
+            poller.moveToNext();
         } else {
             poller.moveToPrevious();
         }

@@ -34,7 +34,7 @@ public class BufferInput implements Input {
 
     private final int source;
     private final Buffer buffer;
-    private long sequence;
+    private long sequence = System.currentTimeMillis();
 
     public BufferInput(final int source, final Buffer buffer) {
         this.source = source;

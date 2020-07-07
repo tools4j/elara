@@ -33,7 +33,7 @@ import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
-public class ReplicationAppenderStep implements Step {
+public class ReplicationPluginStep implements Step {
 
     private final int serverId;
     private final int[] serverIds;
@@ -44,11 +44,11 @@ public class ReplicationAppenderStep implements Step {
     private final Input.Poller enforcedInputPoller;
     private final Connection.Poller[] connectionPollers;
 
-    public ReplicationAppenderStep(final Configuration configuration,
-                                   final ReplicationState.Volatile replicationState,
-                                   final EnforcedLeaderEventReceiver enforcedLeaderEventReceiver,
-                                   final Handler connectionHandler,
-                                   final EventSender eventSender) {
+    public ReplicationPluginStep(final Configuration configuration,
+                                 final ReplicationState.Volatile replicationState,
+                                 final EnforcedLeaderEventReceiver enforcedLeaderEventReceiver,
+                                 final Handler connectionHandler,
+                                 final EventSender eventSender) {
         this.serverId = configuration.serverId();
         this.serverIds = configuration.serverIds();
         this.replicationState = requireNonNull(replicationState);
