@@ -8,8 +8,8 @@ The event store is pluggable; a default implementation is available for [chronic
   
 Elara makes uses [direct buffers]() as defined by the [agrona](https://github.com/real-logic/agrona) library.  For this reason elara applications are perfectly suited to integrate with [SBE](https://github.com/real-logic/simple-binary-encoding) and [aeron](https://github.com/real-logic/aeron) UDP/IPC messaging.
 
-Elara is under active development; however it is considered mature and is used in productive applications in the financial industry.
-  
+The elara library is used productively in applications in the financial industry.  However elara is also under active development and some new plugins and features may be considered experimental especially if they are not released yet.
+
 ### Introduction 
 There are excellent introduction to event sourcing.  Some of our favorite links are
 * https://microservices.io/patterns/data/event-sourcing.html
