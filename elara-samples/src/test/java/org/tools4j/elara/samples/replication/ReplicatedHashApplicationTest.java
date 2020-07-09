@@ -80,7 +80,7 @@ public class ReplicatedHashApplicationTest {
         final int servers = 3;
         final int sources = 10;
         final int nThreads = 1;
-        final int commandsPerSource = 2000;
+        final int commandsPerSource = 200;
         final IdMapping serverIds = DefaultIdMapping.enumerate(servers);
         final IdMapping sourceIds = DefaultIdMapping.enumerate(SOURCE_OFFSET, sources);
         final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(nThreads);
