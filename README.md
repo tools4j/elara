@@ -7,6 +7,8 @@ The tools4j elara project provides an efficient, zero garbage framework to imple
 The event store is pluggable; a default implementation is available for [chronicle queue](https://github.com/OpenHFT/Chronicle-Queue).
   
 Elara makes uses [direct buffers]() as defined by the [agrona](https://github.com/real-logic/agrona) library.  For this reason elara applications are perfectly suited to integrate with [SBE](https://github.com/real-logic/simple-binary-encoding) and [aeron](https://github.com/real-logic/aeron) UDP/IPC messaging.
+
+Elara is under active development; however it is considered mature and is used in productive applications in the financial industry.
   
 ### Introduction 
 There are excellent introduction to event sourcing.  Some of our favorite links are
