@@ -33,6 +33,7 @@ import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_ID_OFF
 import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_REPETITION_OFFSET;
 import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_TIMEOUT_OFFSET;
 import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_TYPE_OFFSET;
+import static org.tools4j.elara.plugin.timer.TimerState.REPETITION_SINGLE;
 
 /**
  * Timer events applying the timer state change through {@link TimerEventApplier}.
@@ -55,9 +56,6 @@ public enum TimerEvents {
     public static final int TIMER_STARTED = -12;
     /** Event type for event indicating that a timer has been stopped.*/
     public static final int TIMER_STOPPED = -13;
-
-    /** Repetition value for a simple timer without repetitions */
-    public static final int REPETITION_SINGLE = -1;
 
     public static int timerStarted(final MutableDirectBuffer buffer,
                                    final int offset,

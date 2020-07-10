@@ -26,6 +26,9 @@ package org.tools4j.elara.plugin.timer;
 import org.tools4j.elara.time.TimeSource;
 
 public interface TimerState {
+    /** Repetition value for a simple timer without repetitions */
+    int REPETITION_SINGLE = -1;
+
     int count();
     int indexById(long id);
     long id(int index);
@@ -35,12 +38,11 @@ public interface TimerState {
     long timeout(int index);
 
     default long deadline(final int index) {
-        return time(index) + timeout(index) * nextRepetition(index);
+        return Static.deadline(time(index), timeout(index), nextRepetition(index));
     }
 
     default int nextRepetition(final int index) {
-        final int repetition = repetition(index);
-        return repetition == TimerEvents.REPETITION_SINGLE ? 1 : repetition + 1;
+        return Static.nextRepetition(repetition(index));
     }
 
     default boolean hasTimer(final long id) {
@@ -73,6 +75,16 @@ public interface TimerState {
                 return true;
             }
             return false;
+        }
+    }
+
+    interface Static {
+        static long deadline(final long time, final long timeout, final int nextRepetition) {
+            return time + timeout * nextRepetition;
+        }
+
+        static int nextRepetition(final int repetition) {
+            return repetition == REPETITION_SINGLE ? 1 : repetition + 1;
         }
     }
 }

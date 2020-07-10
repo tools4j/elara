@@ -29,9 +29,9 @@ import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.plugin.timer.TimerEvents.REPETITION_SINGLE;
 import static org.tools4j.elara.plugin.timer.TimerEvents.timerExpired;
 import static org.tools4j.elara.plugin.timer.TimerEvents.timerFired;
+import static org.tools4j.elara.plugin.timer.TimerState.REPETITION_SINGLE;
 
 public class TimerCommandProcessor implements CommandProcessor {
 

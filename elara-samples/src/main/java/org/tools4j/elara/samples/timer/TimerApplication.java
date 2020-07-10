@@ -33,14 +33,15 @@ import org.tools4j.elara.chronicle.ChronicleMessageLog;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.flyweight.FlyweightEvent;
-import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.log.InMemoryLog;
 import org.tools4j.elara.plugin.api.Plugins;
+import org.tools4j.elara.plugin.timer.SimpleTimerState;
 import org.tools4j.elara.plugin.timer.TimerCommands;
 import org.tools4j.elara.plugin.timer.TimerEvents;
+import org.tools4j.elara.plugin.timer.TimerState;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.run.Elara;
@@ -51,6 +52,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Queue;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -64,13 +66,19 @@ public class TimerApplication {
 
     public ElaraRunner inMemory(final Queue<DirectBuffer> commandQueue,
                                 final Consumer<? super Event> eventConsumer) {
+        return inMemory(commandQueue, eventConsumer, () -> new SimpleTimerState());
+    }
+
+    public ElaraRunner inMemory(final Queue<DirectBuffer> commandQueue,
+                                final Consumer<? super Event> eventConsumer,
+                                final Supplier<? extends TimerState.Mutable> timerStateSupplier) {
         return Elara.launch(Context.create()
                 .commandProcessor(this::process)
                 .eventApplier(eventApplier(eventConsumer))
                 .input(() -> new CommandPoller(commandQueue))
                 .commandLog(new InMemoryLog())
                 .eventLog(new InMemoryLog())
-                .plugin(Plugins.timerPlugin())
+                .plugin(Plugins.timerPlugin(), timerStateSupplier)
         );
     }
 

@@ -49,7 +49,10 @@ package org.tools4j.elara.samples.timer;
 import org.agrona.DirectBuffer;
 import org.junit.jupiter.api.Test;
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.plugin.timer.DeadlineHeapTimerState;
+import org.tools4j.elara.plugin.timer.SimpleTimerState;
 import org.tools4j.elara.plugin.timer.TimerEvents;
+import org.tools4j.elara.plugin.timer.TimerState;
 import org.tools4j.elara.run.ElaraRunner;
 
 import java.time.Instant;
@@ -58,6 +61,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.tools4j.elara.plugin.timer.TimerEvents.timerId;
@@ -67,22 +71,32 @@ import static org.tools4j.elara.samples.timer.TimerApplication.PERIODIC_REPETITI
 import static org.tools4j.elara.samples.timer.TimerApplication.TIMER_TYPE_PERIODIC;
 import static org.tools4j.elara.samples.timer.TimerApplication.TIMER_TYPE_SINGLE;
 
+/**
+ * Unit test for {@link TimerApplication}.
+ */
 class TimerApplicationTest {
 
     @Test
     public void singleTimers() {
-        singleTimers(false);
+        singleTimers(false, true);
+    }
+
+    @Test
+    public void singleTimersWithDeadlineHeap() {
+        singleTimers(false, false);
     }
 
     @Test
     public void singleTimersPersisted() {
-        singleTimers(true);
+        singleTimers(true, true);
     }
 
-    private void singleTimers(final boolean persisted) {
+    private void singleTimers(final boolean persisted, final boolean simpleState) {
         //given
         final int[] timeouts = {200, 500, 800, 1000};
         final TimerApplication app = new TimerApplication();
+        final Supplier<? extends TimerState.Mutable> timerStateSupplier = simpleState ?
+                SimpleTimerState::new : DeadlineHeapTimerState::new;
         final Queue<DirectBuffer> commands = new ConcurrentLinkedQueue<>();
         commands.add(TimerApplication.startTimer(1001, timeouts[0]));
         commands.add(TimerApplication.startTimer(1002, timeouts[1]));
@@ -94,7 +108,7 @@ class TimerApplicationTest {
         //when
         try (final ElaraRunner runner = persisted ?
                 app.chronicleQueue(commands, "single", events::add) :
-                app.inMemory(commands, events::add)) {
+                app.inMemory(commands, events::add, timerStateSupplier)) {
             while (!commands.isEmpty()) {
                 runner.join(20);
             }
@@ -146,19 +160,26 @@ class TimerApplicationTest {
 
     @Test
     public void periodicTimer() {
-        periodicTimer(false);
+        periodicTimer(false, true);
+    }
+
+    @Test
+    public void periodicTimerWithDeadlineHeap() {
+        periodicTimer(false, false);
     }
 
     @Test
     public void periodicTimerPersisted() {
-        periodicTimer(true);
+        periodicTimer(true, true);
     }
 
-    private void periodicTimer(final boolean persisted) {
+    private void periodicTimer(final boolean persisted, final boolean simpleState) {
         //given
         final int timerId = 666666666;
         final long periodMillis = 500;
         final TimerApplication app = new TimerApplication();
+        final Supplier<? extends TimerState.Mutable> timerStateSupplier = simpleState ?
+                SimpleTimerState::new : DeadlineHeapTimerState::new;
         final Queue<DirectBuffer> commands = new ConcurrentLinkedQueue<>();
         final List<Event> events = new ArrayList<>();
 
@@ -166,7 +187,7 @@ class TimerApplicationTest {
         commands.add(TimerApplication.startPeriodic(timerId, periodMillis));
         try (final ElaraRunner runner = persisted ?
                 app.chronicleQueue(commands, "periodic", events::add) :
-                app.inMemory(commands, events::add)) {
+                app.inMemory(commands, events::add, timerStateSupplier)) {
 
             //then
             runner.join(100 + periodMillis * (PERIODIC_REPETITIONS + 1));
