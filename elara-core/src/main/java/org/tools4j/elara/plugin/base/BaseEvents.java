@@ -26,9 +26,11 @@ package org.tools4j.elara.plugin.base;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
+import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.FlyweightEvent;
+import org.tools4j.elara.flyweight.Frame;
 
 public enum BaseEvents {
     ;
@@ -67,5 +69,66 @@ public enum BaseEvents {
                                         final byte flags) {
         return flyweightEvent.init(headerBuffer, offset, source, sequence, index, type, time, flags,
                 EMPTY_BUFFER, 0, 0);
+    }
+
+    public static boolean isBaseEvent(final Event event) {
+        return isBaseEventType(event.type());
+    }
+
+    public static boolean isBaseEvent(final Frame frame) {
+        return frame.header().index() >= 0 && isBaseEventType(frame.header().type());
+    }
+
+    public static boolean isBaseEventType(final int eventType) {
+        switch (eventType) {
+            case EventType.APPLICATION://fallthrough
+            case EventType.COMMIT://fallthrough
+            case EventType.ROLLBACK://fallthrough
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static String baseEventName(final Event event) {
+        return baseEventName(event.type());
+    }
+
+    public static String baseEventName(final Frame frame) {
+        return baseEventName(frame.header().type());
+    }
+
+    public static String baseEventName(final int eventType) {
+        switch (eventType) {
+            case EventType.APPLICATION:
+                return "APPLICATION";
+            case EventType.COMMIT:
+                return "COMMIT";
+            case EventType.ROLLBACK:
+                return "ROLLBACK";
+            default:
+                throw new IllegalArgumentException("Not a base event type: " + eventType);
+        }
+    }
+
+    public static char baseEventCode(final Event event) {
+        return baseEventCode(event.type());
+    }
+
+    public static char baseEventCode(final Frame frame) {
+        return baseEventCode(frame.header().type());
+    }
+
+    public static char baseEventCode(final int eventType) {
+        switch (eventType) {
+            case EventType.APPLICATION:
+                return 'A';
+            case EventType.COMMIT:
+                return 'C';
+            case EventType.ROLLBACK:
+                return 'R';
+            default:
+                throw new IllegalArgumentException("Not a base event type: " + eventType);
+        }
     }
 }

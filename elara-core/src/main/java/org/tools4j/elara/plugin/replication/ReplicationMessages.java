@@ -26,9 +26,7 @@ package org.tools4j.elara.plugin.replication;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 
-import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.CANDIDATE_ID_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.COMMITTED_LOG_INDEX_OFFSET;
-import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.FLAGS_APPEND_SUCCESS;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.FLAGS_NONE;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.FLAGS_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.HEADER_LENGTH;
@@ -50,16 +48,7 @@ public enum ReplicationMessages {
     public static final short APPEND_REQUEST = -95;
     public static final short APPEND_RESPONSE = -96;
 
-    public static String replicationMessageName(final int type) {
-        switch (type) {
-            case APPEND_REQUEST:
-                return "APPEND_REQUEST";
-            case APPEND_RESPONSE:
-                return "APPEND_RESPONSE";
-            default:
-                throw new IllegalArgumentException("Not a replication message type: " + type);
-        }
-    }
+    public static final byte FLAG_APPEND_SUCCESS = 1;
 
     public static int appendRequest(final MutableDirectBuffer buffer, final int offset,
                                     final int term,
@@ -86,7 +75,7 @@ public enum ReplicationMessages {
                                      final long nextEventLogIndex,
                                      final boolean success) {
         buffer.putByte(offset + VERSION_OFFSET, VERSION);
-        buffer.putByte(offset + FLAGS_OFFSET, success ? FLAGS_APPEND_SUCCESS : FLAGS_NONE);
+        buffer.putByte(offset + FLAGS_OFFSET, success ? FLAG_APPEND_SUCCESS : FLAGS_NONE);
         buffer.putShort(offset + TYPE_OFFSET, APPEND_RESPONSE);
         buffer.putInt(offset + PAYLOAD_SIZE_OFFSET, 0);
         buffer.putInt(offset + LEADER_ID_OFFSET, leaderId);
@@ -97,38 +86,63 @@ public enum ReplicationMessages {
     }
 
     public static byte version(final DirectBuffer buffer) {
-        return buffer.getByte(VERSION_OFFSET);
+        return ReplicationMessageDescriptor.version(buffer);
+    }
+
+    public static byte flags(final DirectBuffer buffer) {
+        return ReplicationMessageDescriptor.flags(buffer);
     }
 
     public static boolean isAppendSuccess(final DirectBuffer buffer) {
-        return (FLAGS_APPEND_SUCCESS & buffer.getByte(FLAGS_OFFSET)) != 0;
+        return (FLAG_APPEND_SUCCESS & flags(buffer)) != 0;
     }
 
     public static byte type(final DirectBuffer buffer) {
-        return buffer.getByte(TYPE_OFFSET);
+        return ReplicationMessageDescriptor.type(buffer);
     }
 
     public static int candidateId(final DirectBuffer buffer) {
-        return buffer.getInt(CANDIDATE_ID_OFFSET);
+        return ReplicationMessageDescriptor.candidateId(buffer);
     }
 
     public static int leaderId(final DirectBuffer buffer) {
-        return buffer.getInt(LEADER_ID_OFFSET);
+        return ReplicationMessageDescriptor.leaderId(buffer);
     }
 
     public static int term(final DirectBuffer buffer) {
-        return buffer.getInt(TERM_OFFSET);
+        return ReplicationMessageDescriptor.term(buffer);
     }
 
     public static int logIndex(final DirectBuffer buffer) {
-        return buffer.getInt(LOG_INDEX_OFFSET);
+        return ReplicationMessageDescriptor.logIndex(buffer);
     }
 
     public static int committedLogIndex(final DirectBuffer buffer) {
-        return buffer.getInt(COMMITTED_LOG_INDEX_OFFSET);
+        return ReplicationMessageDescriptor.committedLogIndex(buffer);
     }
 
     public static int payloadSize(final DirectBuffer buffer) {
-        return buffer.getInt(PAYLOAD_SIZE_OFFSET);
+        return ReplicationMessageDescriptor.payloadSize(buffer);
+    }
+
+    public static boolean isReplicationMessageType(final int type) {
+        switch (type) {
+            case APPEND_REQUEST:
+            case APPEND_RESPONSE:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static String replicationMessageName(final int type) {
+        switch (type) {
+            case APPEND_REQUEST:
+                return "APPEND_REQUEST";
+            case APPEND_RESPONSE:
+                return "APPEND_RESPONSE";
+            default:
+                throw new IllegalArgumentException("Not a replication message type: " + type);
+        }
     }
 }

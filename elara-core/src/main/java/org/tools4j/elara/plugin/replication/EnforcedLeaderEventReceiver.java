@@ -150,7 +150,7 @@ final class EnforcedLeaderEventReceiver implements Receiver.Default, EnforceLead
             if (length != PAYLOAD_LENGTH) {
                 throw new IllegalArgumentException("Enforce leader command must have length " + PAYLOAD_LENGTH);
             }
-            if (!isValidLeaderId(ReplicationCommands.leaderId(buffer))) {
+            if (!isValidLeaderId(ReplicationPayloadDescriptor.candidateId(buffer))) {
                 abort();
                 return;
             }

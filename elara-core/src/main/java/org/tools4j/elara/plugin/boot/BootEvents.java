@@ -24,6 +24,7 @@
 package org.tools4j.elara.plugin.boot;
 
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.flyweight.Frame;
 
 /**
  * Boot events issued in response to boot commands.
@@ -44,7 +45,15 @@ public enum BootEvents {
     public static final int APP_INITIALISATION_COMPLETED = -21;
 
     public static boolean isBootEvent(final Event event) {
-        switch (event.type()) {
+        return isBootEvent(event.type());
+    }
+
+    public static boolean isBootEvent(final Frame frame) {
+        return frame.header().index() >= 0 && isBootEvent(frame.header().type());
+    }
+
+    public static boolean isBootEvent(final int eventType) {
+        switch (eventType) {
             case APP_INITIALISATION_STARTED://fallthrough
             case APP_INITIALISATION_COMPLETED://fallthrough
                 return true;
@@ -54,13 +63,21 @@ public enum BootEvents {
     }
 
     public static String bootEventName(final Event event) {
-        switch (event.type()) {
+        return bootEventName(event.type());
+    }
+
+    public static String bootEventName(final Frame frame) {
+        return bootEventName(frame.header().type());
+    }
+
+    public static String bootEventName(final int eventType) {
+        switch (eventType) {
             case APP_INITIALISATION_STARTED:
                 return "APP_INITIALISATION_STARTED";
             case APP_INITIALISATION_COMPLETED:
                 return "APP_INITIALISATION_COMPLETED";
             default:
-                throw new IllegalArgumentException("Not a boot event: " + event);
+                throw new IllegalArgumentException("Not a boot event type: " + eventType);
         }
     }
 }

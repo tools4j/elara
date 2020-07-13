@@ -23,6 +23,8 @@
  */
 package org.tools4j.elara.plugin.replication;
 
+import org.agrona.DirectBuffer;
+
 /**
  * Descriptor of message layout for replication messages in a byte buffer.
  * <pre>
@@ -48,8 +50,6 @@ public enum ReplicationMessageDescriptor {
 
     public static final byte VERSION = 1;
     public static final byte FLAGS_NONE = 0;
-    public static final byte FLAGS_APPEND_SUCCESS = 1;
-    public static final short CANDIDATE_REJECTED = -1;
 
     public static final int VERSION_OFFSET = 0;
     public static final int VERSION_LENGTH = Byte.BYTES;
@@ -76,4 +76,39 @@ public enum ReplicationMessageDescriptor {
     public static final int LEADER_ID_OFFSET = CANDIDATE_ID_OFFSET;
     public static final int LEADER_ID_LENGTH = CANDIDATE_ID_LENGTH;
 
+    public static byte version(final DirectBuffer buffer) {
+        return buffer.getByte(VERSION_OFFSET);
+    }
+
+    public static byte flags(final DirectBuffer buffer) {
+        return buffer.getByte(FLAGS_OFFSET);
+    }
+
+    public static byte type(final DirectBuffer buffer) {
+        return buffer.getByte(TYPE_OFFSET);
+    }
+
+    public static int candidateId(final DirectBuffer buffer) {
+        return buffer.getInt(CANDIDATE_ID_OFFSET);
+    }
+
+    public static int leaderId(final DirectBuffer buffer) {
+        return buffer.getInt(LEADER_ID_OFFSET);
+    }
+
+    public static int term(final DirectBuffer buffer) {
+        return buffer.getInt(TERM_OFFSET);
+    }
+
+    public static int logIndex(final DirectBuffer buffer) {
+        return buffer.getInt(LOG_INDEX_OFFSET);
+    }
+
+    public static int committedLogIndex(final DirectBuffer buffer) {
+        return buffer.getInt(COMMITTED_LOG_INDEX_OFFSET);
+    }
+
+    public static int payloadSize(final DirectBuffer buffer) {
+        return buffer.getInt(PAYLOAD_SIZE_OFFSET);
+    }
 }

@@ -23,18 +23,17 @@
  */
 package org.tools4j.elara.plugin.replication;
 
-import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
+import org.tools4j.elara.flyweight.Frame;
 
-import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.FLAGS_NONE;
-import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.FLAGS_OFFSET;
-import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.PAYLOAD_SIZE_OFFSET;
-import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.TYPE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.CANDIDATE_ID_OFFSET;
-import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.LEADER_ID_OFFSET;
+import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.FLAGS_NONE;
+import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.FLAGS_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.PAYLOAD_LENGTH;
+import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.PAYLOAD_SIZE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.TERM_OFFSET;
+import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.TYPE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.VERSION;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.VERSION_OFFSET;
 
@@ -45,24 +44,6 @@ public enum ReplicationCommands {
     ;
     public static final short PROPOSE_LEADER = -90;
     public static final short ENFORCE_LEADER = -99;//not a proper command as it is directly injected as an event
-
-    public static boolean isReplicationCommand(final Command command) {
-        switch (command.type()) {
-            case PROPOSE_LEADER://fallthrough
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    public static String replicationCommandName(final Command command) {
-        switch (command.type()) {
-            case PROPOSE_LEADER:
-                return "PROPOSE_LEADER";
-            default:
-                throw new IllegalArgumentException("Not a replication command: " + command);
-        }
-    }
 
     public static int proposeLeader(final MutableDirectBuffer buffer, final int offset, final short candidateId) {
         return proposeOrEnforceLeader(buffer, offset, PROPOSE_LEADER, candidateId);
@@ -84,10 +65,40 @@ public enum ReplicationCommands {
     }
 
     public static int candidateId(final Command command) {
-        return command.payload().getInt(CANDIDATE_ID_OFFSET);
+        return ReplicationPayloadDescriptor.candidateId(command.payload());
     }
 
-    public static int leaderId(final DirectBuffer buffer) {
-        return buffer.getInt(LEADER_ID_OFFSET);
+    public static boolean isReplicationCommand(final Command command) {
+        return isReplicationCommandType(command.type());
+    }
+
+    public static boolean isReplicationCommand(final Frame frame) {
+        return frame.header().index() >= 0 && isReplicationCommandType(frame.header().type());
+    }
+
+    public static boolean isReplicationCommandType(final int commandType) {
+        switch (commandType) {
+            case PROPOSE_LEADER://fallthrough
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static String replicationCommandName(final Command command) {
+        return replicationCommandName(command.type());
+    }
+
+    public static String replicationCommandName(final Frame frame) {
+        return replicationCommandName(frame.header().type());
+    }
+
+    public static String replicationCommandName(final int commandType) {
+        switch (commandType) {
+            case PROPOSE_LEADER:
+                return "PROPOSE_LEADER";
+            default:
+                throw new IllegalArgumentException("Not a replication command type: " + commandType);
+        }
     }
 }

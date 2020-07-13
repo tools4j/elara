@@ -23,6 +23,8 @@
  */
 package org.tools4j.elara.plugin.replication;
 
+import org.agrona.DirectBuffer;
+
 /**
  * Descriptor of payload layout for replication commands and events in a byte buffer.
  * <pre>
@@ -41,7 +43,7 @@ package org.tools4j.elara.plugin.replication;
 public enum ReplicationPayloadDescriptor {
     ;
     public static final byte VERSION = 1;
-    public static final byte FLAGS = 0;
+    public static final byte FLAGS_NONE = 0;
 
     public static final int VERSION_OFFSET = 0;
     public static final int VERSION_LENGTH = Byte.BYTES;
@@ -61,4 +63,32 @@ public enum ReplicationPayloadDescriptor {
     //aliases
     public static final int LEADER_ID_OFFSET = CANDIDATE_ID_OFFSET;
     public static final int LEADER_ID_LENGTH = CANDIDATE_ID_LENGTH;
+
+    public static byte version(final DirectBuffer payload) {
+        return payload.getByte(VERSION_OFFSET);
+    }
+
+    public static byte flags(final DirectBuffer payload) {
+        return payload.getByte(FLAGS_OFFSET);
+    }
+
+    public static int type(final DirectBuffer payload) {
+        return payload.getInt(TYPE_OFFSET);
+    }
+
+    public static int payloadSize(final DirectBuffer payload) {
+        return payload.getInt(PAYLOAD_SIZE_OFFSET);
+    }
+
+    public static int candidateId(final DirectBuffer payload) {
+        return payload.getInt(CANDIDATE_ID_OFFSET);
+    }
+
+    public static int leaderId(final DirectBuffer payload) {
+        return payload.getInt(LEADER_ID_OFFSET);
+    }
+
+    public static int term(final DirectBuffer payload) {
+        return payload.getInt(TERM_OFFSET);
+    }
 }

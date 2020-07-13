@@ -32,7 +32,11 @@ import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
 
 /**
  * A timer state optimisation to efficiently find the next triggering timer.  Orders timer IDs by deadline
- * in a heap data structure.
+ * in a heap data structure leading to<pre>
+ *     - constant polling time via indexOfNextDeadline()
+ *     - log(n) time to add or remove a timer
+ *     - log(n) time to change the repetition of a timer
+ * </pre>
  */
 public class DeadlineHeapTimerState implements TimerState.Mutable {
 

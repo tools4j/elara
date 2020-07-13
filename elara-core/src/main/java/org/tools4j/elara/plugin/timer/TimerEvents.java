@@ -27,6 +27,7 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.flyweight.Frame;
 
 import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.PAYLOAD_SIZE;
 import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_ID_OFFSET;
@@ -102,11 +103,11 @@ public enum TimerEvents {
     }
 
     private static int timerEvent(final MutableDirectBuffer buffer,
-                                   final int offset,
-                                   final long timerId,
-                                   final int timerType,
-                                   final int repetition,
-                                   final long timeout) {
+                                  final int offset,
+                                  final long timerId,
+                                  final int timerType,
+                                  final int repetition,
+                                  final long timeout) {
         buffer.putLong(offset + TIMER_ID_OFFSET, timerId);
         buffer.putInt(offset + TIMER_TYPE_OFFSET, timerType);
         buffer.putInt(offset + TIMER_REPETITION_OFFSET, repetition);
@@ -115,20 +116,31 @@ public enum TimerEvents {
     }
 
     public static long timerId(final Event event) {
-        return event.payload().getLong(TIMER_ID_OFFSET);
+        return TimerPayloadDescriptor.timerId(event.payload());
     }
+
     public static int timerType(final Event event) {
-        return event.payload().getInt(TIMER_TYPE_OFFSET);
+        return TimerPayloadDescriptor.timerType(event.payload());
     }
+
     public static int timerRepetition(final Event event) {
-        return event.payload().getInt(TIMER_REPETITION_OFFSET);
+        return TimerPayloadDescriptor.timerRepetition(event.payload());
     }
+
     public static long timerTimeout(final Event event) {
-        return event.payload().getLong(TIMER_TIMEOUT_OFFSET);
+        return TimerPayloadDescriptor.timerTimeout(event.payload());
     }
 
     public static boolean isTimerEvent(final Event event) {
-        switch (event.type()) {
+        return isTimerEventType(event.type());
+    }
+
+    public static boolean isTimerEvent(final Frame frame) {
+        return frame.header().index() >= 0 && isTimerEventType(frame.header().type());
+    }
+
+    public static boolean isTimerEventType(final int eventType) {
+        switch (eventType) {
             case TIMER_EXPIRED://fallthrough
             case TIMER_FIRED://fallthrough
             case TIMER_STARTED://fallthrough
@@ -140,7 +152,15 @@ public enum TimerEvents {
     }
 
     public static String timerEventName(final Event event) {
-        switch (event.type()) {
+        return timerEventName(event.type());
+    }
+
+    public static String timerEventName(final Frame frame) {
+        return timerEventName(frame.header().type());
+    }
+
+    public static String timerEventName(final int eventType) {
+        switch (eventType) {
             case TIMER_EXPIRED:
                 return "TIMER_EXPIRED";
             case TIMER_FIRED:
@@ -150,7 +170,7 @@ public enum TimerEvents {
             case TIMER_STOPPED:
                 return "TIMER_STOPPED";
             default:
-                throw new IllegalArgumentException("Not a timer event: " + event);
+                throw new IllegalArgumentException("Not a timer event type: " + eventType);
         }
     }
 }

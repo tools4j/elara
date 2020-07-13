@@ -23,6 +23,8 @@
  */
 package org.tools4j.elara.plugin.timer;
 
+import org.agrona.DirectBuffer;
+
 /**
  * Descriptor of payload layout for timer commands and events in a byte buffer.
  * <pre>
@@ -53,4 +55,19 @@ public enum TimerPayloadDescriptor {
 
     public static final int PAYLOAD_SIZE = TIMER_TIMEOUT_OFFSET + TIMER_TIMEOUT_LENGTH;
 
+    public static long timerId(final DirectBuffer payload) {
+        return payload.getLong(TIMER_ID_OFFSET);
+    }
+
+    public static int timerType(final DirectBuffer payload) {
+        return payload.getInt(TIMER_TYPE_OFFSET);
+    }
+
+    public static int timerRepetition(final DirectBuffer payload) {
+        return payload.getInt(TIMER_REPETITION_OFFSET);
+    }
+
+    public static long timerTimeout(final DirectBuffer payload) {
+        return payload.getLong(TIMER_TIMEOUT_OFFSET);
+    }
 }
