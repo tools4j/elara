@@ -75,7 +75,7 @@ public class BankApplication {
     public ElaraRunner launch(final Queue<BankCommand> inputQueue,
                               final MessageLog commandLog,
                               final MessageLog eventLog) {
-        return launch(() -> new CommandPoller(inputQueue), commandLog, eventLog);
+        return launch(new CommandInput(inputQueue), commandLog, eventLog);
     }
 
     public ElaraRunner launch(final Input input,
@@ -137,11 +137,11 @@ public class BankApplication {
         return "(unknown)";
     }
 
-    private static class CommandPoller implements Input.Poller {
+    private static class CommandInput implements Input {
         final Queue<BankCommand> commands;
         long seq = 0;
 
-        CommandPoller(final Queue<BankCommand> commands) {
+        CommandInput(final Queue<BankCommand> commands) {
             this.commands = requireNonNull(commands);
         }
 

@@ -23,12 +23,10 @@
  */
 package org.tools4j.elara.plugin.replication;
 
-import org.tools4j.elara.input.Input;
-
 public interface Configuration {
     int serverId();
     int[] serverIds();
-    Input enforceLeaderInput();
+    EnforceLeaderInput enforceLeaderInput();
     Connection connection(int serverId);
     int initialSendBufferCapacity();
 

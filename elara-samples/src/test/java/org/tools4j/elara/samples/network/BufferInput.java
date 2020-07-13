@@ -50,23 +50,16 @@ public class BufferInput implements Input {
     }
 
     @Override
-    public Poller poller() {
-        return new BufferPoller();
-    }
-
-    private final class BufferPoller implements Poller {
-        @Override
-        public int poll(final Receiver receiver) {
-            try (final ReceivingContext context = receiver.receivingMessage(source, sequence)) {
-                final int consumed = buffer.consume(context.buffer(), 0);
-                if (consumed == CONSUMED_NOTHING) {
-                    context.abort();
-                    return 0;
-                }
-                sequence++;
-                context.receive(consumed);
-                return 1;
+    public int poll(final Receiver receiver) {
+        try (final ReceivingContext context = receiver.receivingMessage(source, sequence)) {
+            final int consumed = buffer.consume(context.buffer(), 0);
+            if (consumed == CONSUMED_NOTHING) {
+                context.abort();
+                return 0;
             }
+            sequence++;
+            context.receive(consumed);
+            return 1;
         }
     }
 }

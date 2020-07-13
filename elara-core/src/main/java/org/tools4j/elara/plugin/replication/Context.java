@@ -23,13 +23,10 @@
  */
 package org.tools4j.elara.plugin.replication;
 
-import org.tools4j.elara.input.Input;
-
 public interface Context extends Configuration {
     Context serverId(int serverId);
     Context serverId(int serverId, boolean local);
     Context serverIds(int... serverIds);
-    Context enforceLeaderInput(Input input);
     Context enforceLeaderInput(EnforceLeaderInput input);
     Context connection(int serverId, Connection connection);
     Context initialSendBufferCapacity(int size);

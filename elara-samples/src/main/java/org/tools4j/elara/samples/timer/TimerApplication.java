@@ -75,7 +75,7 @@ public class TimerApplication {
         return Elara.launch(Context.create()
                 .commandProcessor(this::process)
                 .eventApplier(eventApplier(eventConsumer))
-                .input(() -> new CommandPoller(commandQueue))
+                .input(new CommandInput(commandQueue))
                 .commandLog(new InMemoryLog())
                 .eventLog(new InMemoryLog())
                 .plugin(Plugins.timerPlugin(), timerStateSupplier)
@@ -96,7 +96,7 @@ public class TimerApplication {
         return Elara.launch(Context.create()
                 .commandProcessor(this::process)
                 .eventApplier(eventApplier(eventConsumer))
-                .input(() -> new CommandPoller(commandQueue))
+                .input(new CommandInput(commandQueue))
                 .commandLog(new ChronicleMessageLog(cq))
                 .eventLog(new ChronicleMessageLog(eq))
                 .plugin(Plugins.timerPlugin())
@@ -193,11 +193,11 @@ public class TimerApplication {
         return new FlyweightEvent().init(buffer, 0);
     }
 
-    private static class CommandPoller implements Input.Poller {
+    private static class CommandInput implements Input {
         final Queue<DirectBuffer> commands;
         long seq = 0;
 
-        CommandPoller(final Queue<DirectBuffer> commands) {
+        CommandInput(final Queue<DirectBuffer> commands) {
             this.commands = requireNonNull(commands);
         }
 

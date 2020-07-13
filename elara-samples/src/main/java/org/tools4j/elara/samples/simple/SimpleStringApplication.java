@@ -28,7 +28,6 @@ import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver;
@@ -51,7 +50,7 @@ public class SimpleStringApplication {
         return Elara.launch(Context.create()
                 .commandProcessor(this::process)
                 .eventApplier(this::apply)
-                .input(() -> new StringInputPoller(inputQueue))
+                .input(new StringInput(inputQueue))
                 .output(this::publish)
                 .commandLog(new InMemoryLog())
                 .eventLog(new InMemoryLog())
@@ -78,11 +77,11 @@ public class SimpleStringApplication {
         return "(unknown)";
     }
 
-    private static class StringInputPoller implements Input.Poller {
+    private static class StringInput implements Input {
         final Queue<String> strings;
         long seq = 0;
 
-        StringInputPoller(final Queue<String> strings) {
+        StringInput(final Queue<String> strings) {
             this.strings = requireNonNull(strings);
         }
 

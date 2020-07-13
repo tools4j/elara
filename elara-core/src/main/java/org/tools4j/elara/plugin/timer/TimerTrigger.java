@@ -64,7 +64,7 @@ public final class TimerTrigger {
     public Input asInput(final int commandSource, final TimeSource timeSource) {
         requireNonNull(timeSource);
         final SequenceGenerator sequenceGenerator = new SimpleSequenceGenerator();
-        return () -> receiver -> {
+        return receiver -> {
             final long time = timeSource.currentTime();
             if (time >= nextTriggerTime) {
                 final int next = timerState.indexOfNextDeadline();

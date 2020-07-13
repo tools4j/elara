@@ -25,10 +25,5 @@ package org.tools4j.elara.input;
 
 @FunctionalInterface
 public interface Input {
-    Poller poller();
-
-    @FunctionalInterface
-    interface Poller {
-        int poll(Receiver receiver);
-    }
+    int poll(Receiver receiver);
 }

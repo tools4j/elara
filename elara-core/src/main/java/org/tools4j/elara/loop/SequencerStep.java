@@ -32,21 +32,21 @@ import static java.util.Objects.requireNonNull;
 public final class SequencerStep implements Step {
 
     private final Receiver receiver;
-    private final Input.Poller[] inputPollers;
+    private final Input[] inputs;
 
     private int roundRobinIndex = 0;
 
     public SequencerStep(final Receiver receiver, final Input... inputs) {
         this.receiver = requireNonNull(receiver);
-        this.inputPollers = initPollersFor(inputs);
+        this.inputs = requireNonNull(inputs);
     }
 
     @Override
     public boolean perform() {
-        final int count = inputPollers.length;
+        final int count = inputs.length;
         for (int i = 0; i < count; i++) {
             final int index = getAndIncrementRoundRobinIndex(count);
-            if (inputPollers[index].poll(receiver) > 0) {
+            if (inputs[index].poll(receiver) > 0) {
                 return true;
             }
         }
@@ -60,13 +60,5 @@ public final class SequencerStep implements Step {
             roundRobinIndex = 0;
         }
         return index;
-    }
-
-    private Input.Poller[] initPollersFor(final Input... inputs) {
-        final Input.Poller[] pollers = new Input.Poller[inputs.length];
-        for (int i = 0; i < inputs.length; i++) {
-            pollers[i] = inputs[i].poller();
-        }
-        return pollers;
     }
 }

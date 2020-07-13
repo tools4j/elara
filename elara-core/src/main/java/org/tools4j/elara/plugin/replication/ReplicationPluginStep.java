@@ -23,7 +23,6 @@
  */
 package org.tools4j.elara.plugin.replication;
 
-import org.tools4j.elara.input.Input;
 import org.tools4j.elara.plugin.replication.Connection.Handler;
 import org.tools4j.elara.plugin.replication.Connection.Poller;
 import org.tools4j.nobark.loop.Step;
@@ -41,7 +40,7 @@ public class ReplicationPluginStep implements Step {
     private final EnforcedLeaderEventReceiver enforcedLeaderEventReceiver;
     private final Handler connectionHandler;
     private final EventSender eventSender;
-    private final Input.Poller enforcedInputPoller;
+    private final EnforceLeaderInput enforceLeaderInput;
     private final Connection.Poller[] connectionPollers;
 
     public ReplicationPluginStep(final Configuration configuration,
@@ -55,7 +54,7 @@ public class ReplicationPluginStep implements Step {
         this.enforcedLeaderEventReceiver = requireNonNull(enforcedLeaderEventReceiver);
         this.connectionHandler = requireNonNull(connectionHandler);
         this.eventSender = requireNonNull(eventSender);
-        this.enforcedInputPoller = configuration.enforceLeaderInput().poller();
+        this.enforceLeaderInput = configuration.enforceLeaderInput();
         this.connectionPollers = initPollers(configuration);
     }
 
@@ -69,7 +68,7 @@ public class ReplicationPluginStep implements Step {
     }
 
     private boolean pollEnforcedLeaderInput() {
-        return enforcedInputPoller.poll(enforcedLeaderEventReceiver) > 0;
+        return enforceLeaderInput.poll(enforcedLeaderEventReceiver) > 0;
     }
 
     private boolean pollConnections() {

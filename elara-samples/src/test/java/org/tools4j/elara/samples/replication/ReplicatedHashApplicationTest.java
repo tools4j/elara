@@ -57,10 +57,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;
 
 /**
  * Unit test running the {@link HashApplication} on multiple nodes and threads using the
@@ -134,7 +131,7 @@ public class ReplicatedHashApplicationTest {
     private EnforceLeaderInput enforceLeaderInput(final IdMapping serverIds) {
         final long[] seqPtr = {System.currentTimeMillis()};
         final int nextLeader = serverIds.idByIndex(ThreadLocalRandom.current().nextInt(serverIds.count()));
-        return () -> receiver -> {
+        return receiver -> {
             if (receiver.leaderId() == nextLeader || receiver.serverId() != nextLeader) {
                 return 0;
             }

@@ -26,18 +26,17 @@ package org.tools4j.elara.plugin.replication;
 import org.agrona.collections.Int2ObjectHashMap;
 import org.agrona.collections.IntArrayList;
 import org.agrona.collections.IntHashSet;
-import org.tools4j.elara.input.Input;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;
 
 final class DefaultContext implements Context {
     public static final int DEFAULT_INITIAL_SEND_BUFFER_CAPACITY = 1024;
-    private static final EnforceLeaderInput NULL_INPUT = () -> receiver -> 0;
+    private static final EnforceLeaderInput NULL_INPUT = receiver -> 0;
 
     private int serverId = NULL_SERVER;
     private final IntArrayList serverIds = new IntArrayList();
-    private Input enforceLeaderInput = NULL_INPUT;
+    private EnforceLeaderInput enforceLeaderInput = NULL_INPUT;
     private final Int2ObjectHashMap<Connection> connectionByServerId = new Int2ObjectHashMap<>();
     private int initialSendBufferCapacity = DEFAULT_INITIAL_SEND_BUFFER_CAPACITY;
 
@@ -74,14 +73,8 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Input enforceLeaderInput() {
+    public EnforceLeaderInput enforceLeaderInput() {
         return enforceLeaderInput;
-    }
-
-    @Override
-    public Context enforceLeaderInput(final Input input) {
-        this.enforceLeaderInput = requireNonNull(input);
-        return this;
     }
 
     @Override

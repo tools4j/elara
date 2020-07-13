@@ -116,7 +116,7 @@ public class HashApplication {
     public static Input input(final int source, final AtomicLong input) {
         requireNonNull(input);
         final AtomicLong seqNo = new AtomicLong();
-        return () -> receiver -> {
+        return receiver -> {
             final long value = input.getAndSet(NULL_VALUE);
             if (value != NULL_VALUE) {
                 final long seq = seqNo.incrementAndGet();
