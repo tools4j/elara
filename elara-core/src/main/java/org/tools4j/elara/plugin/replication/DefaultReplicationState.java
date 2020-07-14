@@ -32,6 +32,7 @@ public class DefaultReplicationState implements ReplicationState.Mutable {
     private int leaderId = NULL_SERVER;
     private long eventLogSize;
     private final Long2LongHashMap nextEventLogIndexByServerId = new Long2LongHashMap(0);
+    private final Long2LongHashMap nextNotBefore = new Long2LongHashMap(0);
 
     @Override
     public int currentTerm() {
@@ -72,8 +73,38 @@ public class DefaultReplicationState implements ReplicationState.Mutable {
     }
 
     @Override
-    public Mutable nextEventLogIndex(final int serverId, final long index) {
-        nextEventLogIndexByServerId.put(serverId, index);
+    public Volatile nextEventLogIndex(final int serverId, final long index) {
+        putOrRemove(nextEventLogIndexByServerId, serverId, index);
         return this;
+    }
+
+    @Override
+    public long nextNotBefore(final int serverId) {
+        return nextNotBefore.get(serverId);
+    }
+
+    @Override
+    public Volatile nextNotBefore(final int serverId, final long nanos) {
+        putOrRemove(nextNotBefore, serverId, nanos);
+        return this;
+    }
+
+    private static void putOrRemove(final Long2LongHashMap map, final long key, final long value) {
+        if (value == map.missingValue()) {
+            map.remove(key);
+        } else {
+            map.put(key, value);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultReplicationState{" +
+                "currentTerm=" + currentTerm +
+                ", leaderId=" + leaderId +
+                ", eventLogSize=" + eventLogSize +
+                ", nextEventLogIndexByServerId=" + nextEventLogIndexByServerId +
+                ", nextNotBefore=" + nextNotBefore +
+                '}';
     }
 }

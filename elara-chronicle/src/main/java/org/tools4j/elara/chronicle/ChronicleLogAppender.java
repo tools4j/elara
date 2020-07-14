@@ -26,6 +26,7 @@ package org.tools4j.elara.chronicle;
 import net.openhft.chronicle.bytes.Bytes;
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.queue.ExcerptAppender;
+import net.openhft.chronicle.queue.RollCycle;
 import net.openhft.chronicle.wire.DocumentContext;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
@@ -46,6 +47,30 @@ public class ChronicleLogAppender implements MessageLog.Appender {
 
     public ChronicleLogAppender(final ExcerptAppender appender) {
         this.appender = requireNonNull(appender);
+    }
+
+    public ChronicleQueue queue() {
+        return appender.queue();
+    }
+
+    public RollCycle rollCycle() {
+        return queue().rollCycle();
+    }
+
+    public long lastEntryId() {
+        return appender.lastIndexAppended();
+    }
+
+    public int cycle() {
+        return appender.cycle();
+    }
+
+    public int lastCycle() {
+        return rollCycle().toCycle(lastEntryId());
+    }
+
+    public long lastSequence() {
+        return rollCycle().toSequenceNumber(lastEntryId());
     }
 
     @Override
@@ -142,5 +167,12 @@ public class ChronicleLogAppender implements MessageLog.Appender {
         public boolean isClosed() {
             return context == null;
         }
+    }
+
+    @Override
+    public String toString() {
+        return "ChronicleLogAppender{" +
+                "appender=" + appender +
+                '}';
     }
 }

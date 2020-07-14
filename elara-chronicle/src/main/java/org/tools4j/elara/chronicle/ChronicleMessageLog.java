@@ -38,13 +38,17 @@ public class ChronicleMessageLog implements MessageLog {
         this.appender = ThreadLocal.withInitial(() -> new ChronicleLogAppender(queue));
     }
 
+    public ChronicleQueue queue() {
+        return queue;
+    }
+
     @Override
-    public Appender appender() {
+    public ChronicleLogAppender appender() {
         return appender.get();
     }
 
     @Override
-    public Poller poller() {
+    public ChronicleLogPoller poller() {
         return new ChronicleLogPoller(queue);
     }
 

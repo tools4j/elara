@@ -32,6 +32,8 @@ import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.chronicle.ChronicleMessageLog;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.logging.Logger.Level;
+import org.tools4j.elara.logging.OutputStreamLogger;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.plugin.replication.Configuration;
 import org.tools4j.elara.plugin.replication.Connection;
@@ -68,9 +70,9 @@ public class ReplicatedHashApplicationTest {
     private static final int SOURCE_OFFSET = 1000000000;
     private static final int ENFORCE_LEADER_SOURCE = 2 * SOURCE_OFFSET - 1;
 
-    private final NetworkConfig networkConfig = NetworkConfig.RELIABLE;
+    //private final NetworkConfig networkConfig = NetworkConfig.RELIABLE;
+    private final NetworkConfig networkConfig = NetworkConfig.UNRELIABLE;
 
-    //@Disabled //FIXME manually run for now, and failing
     @Test
     public void run() throws Exception {
         //given
@@ -114,7 +116,9 @@ public class ReplicatedHashApplicationTest {
         final State refState = appStates[0];
         for (int i = 1; i < servers; i++) {
             final State state = appStates[i];
-            assertEquals(sources * commandsPerSource, state.count(), "appState[" + i + "].count");
+            if (networkConfig.isReliable()) {
+                assertEquals(sources * commandsPerSource, state.count(), "appState[" + i + "].count");
+            }
             assertEquals(refState.count(), state.count(), "appState[" + i + "].count");
             assertEquals(refState.hash(), state.hash(), "appState[" + i + "].hash");
         }
@@ -266,6 +270,7 @@ public class ReplicatedHashApplicationTest {
                 .commandLog(new ChronicleMessageLog(cq))
                 .eventLog(new ChronicleMessageLog(eq))
                 .duplicateHandler(DuplicateHandler.NOOP)
+                .loggerFactory(clazz -> new OutputStreamLogger(Level.DEBUG))
                 .plugin(Plugins.bootPlugin())
                 .plugin(replicationPlugin)
         );

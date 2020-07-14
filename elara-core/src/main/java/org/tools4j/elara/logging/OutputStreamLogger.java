@@ -43,16 +43,27 @@ public class OutputStreamLogger implements Logger {
     private static final long DAYS_0000_TO_1970 = (DAYS_PER_CYCLE * 5L) - (30L * 365L + 7L);
     private static final long MILLIS_PER_DAY = 24 * 60 * 60 * 1000L;
 
+    private final Level level;
     private final PrintStream out;
     private final PrintStream err;
 
     public OutputStreamLogger() {
-        this(System.out, System.err);
+        this(Level.INFO);
     }
 
-    public OutputStreamLogger(final PrintStream out, final PrintStream err) {
+    public OutputStreamLogger(final Level level) {
+        this(level, System.out, System.err);
+    }
+
+    public OutputStreamLogger(final Level level, final PrintStream out, final PrintStream err) {
+        this.level = requireNonNull(level);
         this.out = requireNonNull(out);
         this.err = requireNonNull(err);
+    }
+
+    @Override
+    public boolean isEnabled(final Level level) {
+        return level.ordinal() <= this.level.ordinal();
     }
 
     @Override

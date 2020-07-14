@@ -26,6 +26,7 @@ package org.tools4j.elara.chronicle;
 import net.openhft.chronicle.bytes.Bytes;
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.queue.ExcerptTailer;
+import net.openhft.chronicle.queue.RollCycle;
 import net.openhft.chronicle.queue.TailerDirection;
 import net.openhft.chronicle.wire.DocumentContext;
 import org.agrona.MutableDirectBuffer;
@@ -55,6 +56,22 @@ public class ChronicleLogPoller implements Poller {
         this.tailer = requireNonNull(tailer);
     }
 
+    public ChronicleQueue queue() {
+        return tailer.queue();
+    }
+
+    public RollCycle rollCycle() {
+        return queue().rollCycle();
+    }
+
+    public int cycle() {
+        return rollCycle().toCycle(tailer.index());
+    }
+
+    public long sequence() {
+        return rollCycle().toSequenceNumber(tailer.index());
+    }
+
     @Override
     public long entryId() {
         return tailer.index();
@@ -62,7 +79,12 @@ public class ChronicleLogPoller implements Poller {
 
     @Override
     public boolean moveTo(final long entryId) {
-        return tailer.moveToIndex(entryId);
+        final long curEntryId = tailer.index();
+        if (tailer.moveToIndex(entryId)) {
+            return true;
+        }
+        tailer.moveToIndex(curEntryId);
+        return false;
     }
 
     @Override
@@ -81,8 +103,12 @@ public class ChronicleLogPoller implements Poller {
     public boolean moveToNext() {
         boolean present;
         do {
+            final long index = tailer.index();
             try (final DocumentContext context = tailer.readingDocument()) {
                 if (context.isData()) {
+                    if (index != context.index()) {
+                        context.rollbackOnClose();
+                    }
                     return true;
                 }
                 present = context.isPresent();
@@ -101,6 +127,7 @@ public class ChronicleLogPoller implements Poller {
             if (tailer.index() < tailer.queue().firstIndex()) {
                 //weirdly it moves before start when going from end one back with a single entry in the queue
                 tailer.toStart();
+                return false;
             }
         }
     }
@@ -130,4 +157,10 @@ public class ChronicleLogPoller implements Poller {
         }
     }
 
+    @Override
+    public String toString() {
+        return "ChronicleLogPoller{" +
+                "tailer=" + tailer +
+                '}';
+    }
 }

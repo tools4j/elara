@@ -23,12 +23,10 @@
  */
 package org.tools4j.elara.plugin.replication;
 
-import org.tools4j.elara.input.Receiver;
-
 public interface EnforceLeaderInput {
     int poll(EnforceLeaderReceiver receiver);
 
-    interface EnforceLeaderReceiver extends Receiver {
+    interface EnforceLeaderReceiver {
         int serverId();
         int leaderId();
         int currentTerm();

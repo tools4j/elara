@@ -43,21 +43,11 @@ import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.
 public enum ReplicationCommands {
     ;
     public static final short PROPOSE_LEADER = -90;
-    public static final short ENFORCE_LEADER = -99;//not a proper command as it is directly injected as an event
 
-    public static int proposeLeader(final MutableDirectBuffer buffer, final int offset, final short candidateId) {
-        return proposeOrEnforceLeader(buffer, offset, PROPOSE_LEADER, candidateId);
-    }
-
-    public static int enforceLeader(final MutableDirectBuffer buffer, final int offset, final short candidateId) {
-        return proposeOrEnforceLeader(buffer, offset, ENFORCE_LEADER, candidateId);
-    }
-
-    private static int proposeOrEnforceLeader(final MutableDirectBuffer buffer, final int offset,
-                                              final short type, final int candidateId) {
+    public static int proposeLeader(final MutableDirectBuffer buffer, final int offset, final int candidateId) {
         buffer.putByte(offset + VERSION_OFFSET, VERSION);
         buffer.putByte(offset + FLAGS_OFFSET, FLAGS_NONE);
-        buffer.putShort(offset + TYPE_OFFSET, type);
+        buffer.putShort(offset + TYPE_OFFSET, PROPOSE_LEADER);
         buffer.putInt(offset + PAYLOAD_SIZE_OFFSET, 0);
         buffer.putInt(offset + CANDIDATE_ID_OFFSET, candidateId);
         buffer.putInt(offset + TERM_OFFSET, 0);

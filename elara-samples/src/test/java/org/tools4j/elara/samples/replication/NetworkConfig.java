@@ -32,7 +32,7 @@ public interface NetworkConfig {
 
     NetworkConfig IDEAL = new NetworkConfig() {};
     NetworkConfig RELIABLE = create(LinkConfig.RELIABLE);
-    NetworkConfig DEFAULT = create(LinkConfig.DEFAULT);
+    NetworkConfig UNRELIABLE = create(LinkConfig.UNRELIABLE);
 
     static NetworkConfig create(final LinkConfig linkConfig) {
         return create(linkConfig, linkConfig);
@@ -57,7 +57,7 @@ public interface NetworkConfig {
     interface LinkConfig {
         LinkConfig IDEAL = new LinkConfig() {};
         LinkConfig RELIABLE = real(0, 100, 0);
-        LinkConfig DEFAULT = real(0, 100, 0.01f);
+        LinkConfig UNRELIABLE = real(0, 100, 0.002f);
 
         static LinkConfig real(final long minDelayNanos, final long maxDelayNanos, final float lossRatio) {
             return new LinkConfig() {
@@ -96,5 +96,8 @@ public interface NetworkConfig {
     }
     default LinkConfig appendLink() {
         return LinkConfig.IDEAL;
+    }
+    default boolean isReliable() {
+        return commandLink().transmissionLossRatio() == 0 && appendLink().transmissionLossRatio() == 0;
     }
 }

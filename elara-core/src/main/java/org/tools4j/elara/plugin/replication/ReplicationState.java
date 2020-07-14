@@ -32,9 +32,11 @@ public interface ReplicationState {
     int leaderId();
     long eventLogSize();
     long nextEventLogIndex(int serverId);
+    long nextNotBefore(int serverId);
 
     interface Volatile extends ReplicationState {
-        Mutable nextEventLogIndex(int serverId, long index);
+        Volatile nextEventLogIndex(int serverId, long index);
+        Volatile nextNotBefore(int serverId, long time);
     }
 
     interface Mutable extends ReplicationState.Volatile {

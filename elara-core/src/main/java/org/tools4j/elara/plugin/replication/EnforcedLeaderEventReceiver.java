@@ -23,12 +23,9 @@
  */
 package org.tools4j.elara.plugin.replication;
 
-import org.agrona.MutableDirectBuffer;
 import org.agrona.collections.IntHashSet;
 import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.FlyweightHeader;
-import org.tools4j.elara.input.Receiver;
-import org.tools4j.elara.log.ExpandableDirectBuffer;
 import org.tools4j.elara.log.MessageLog.AppendContext;
 import org.tools4j.elara.log.MessageLog.Appender;
 import org.tools4j.elara.logging.ElaraLogger;
@@ -40,19 +37,11 @@ import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_OFFSET;
-import static org.tools4j.elara.plugin.replication.ReplicationCommands.ENFORCE_LEADER;
-import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.FLAGS_NONE;
-import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.FLAGS_OFFSET;
-import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.PAYLOAD_SIZE_OFFSET;
-import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.TYPE_OFFSET;
-import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.LEADER_ID_OFFSET;
+import static org.tools4j.elara.plugin.replication.ReplicationEvents.LEADER_ENFORCED;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.PAYLOAD_LENGTH;
-import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.TERM_OFFSET;
-import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.VERSION;
-import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.VERSION_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;
 
-final class EnforcedLeaderEventReceiver implements Receiver.Default, EnforceLeaderReceiver {
+final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
 
     private final ElaraLogger logger;
     private final TimeSource timeSource;
@@ -60,7 +49,6 @@ final class EnforcedLeaderEventReceiver implements Receiver.Default, EnforceLead
     private final IntHashSet serverIds;
     private final ReplicationState state;
     private final Appender eventLogAppender;
-    private final ReceivingContext receivingContext = new ReceivingContext();
 
     EnforcedLeaderEventReceiver(final Factory loggerFactory,
                                 final TimeSource timeSource,
@@ -100,96 +88,15 @@ final class EnforcedLeaderEventReceiver implements Receiver.Default, EnforceLead
                     .replace(serverId).replace(source).replace(sequence).replace(leaderId).format();
             return;
         }
-        try (final Receiver.ReceivingContext context = receivingMessage(source, sequence, ENFORCE_LEADER)) {
-            context.buffer().putInt(LEADER_ID_OFFSET, leaderId);
-            context.receive(PAYLOAD_LENGTH);
-        }
-    }
-
-    @Override
-    public Receiver.ReceivingContext receivingMessage(final int source, final long sequence, final int type) {
-        return receivingContext.init(source, sequence, type);
-    }
-
-    private final class ReceivingContext implements Receiver.ReceivingContext {
-        private final ExpandableDirectBuffer buffer = new ExpandableDirectBuffer();
-        private AppendContext context;
-
-        ReceivingContext init(final int source, final long sequence, final int type) {
-            if (type != ENFORCE_LEADER) {
-                throw new IllegalArgumentException("Unsupported type in enforce-leader input: " + type);
-            }
-            if (this.context != null) {
-                abort();
-                throw new IllegalStateException("Receiving context not closed");
-            }
-            this.context = eventLogAppender.appending();
-            this.buffer.wrap(context.buffer(), PAYLOAD_OFFSET);
+        final int nextTerm = 1 + state.currentTerm();
+        try (final AppendContext context = eventLogAppender.appending()) {
             FlyweightHeader.writeTo(
-                    source, type, sequence, timeSource.currentTime(), Flags.COMMIT, (short)0, PAYLOAD_LENGTH,
+                    source, LEADER_ENFORCED, sequence, timeSource.currentTime(), Flags.COMMIT, (short)0, PAYLOAD_LENGTH,
                     context.buffer(), HEADER_OFFSET
             );
-            return this;
+            ReplicationEvents.leaderEnforced(context.buffer(), PAYLOAD_OFFSET, nextTerm, leaderId);
+            context.commit(HEADER_LENGTH + PAYLOAD_LENGTH);
         }
-
-        private AppendContext unclosedContext() {
-            if (context != null) {
-                return context;
-            }
-            throw new IllegalStateException("Receiving context is closed");
-        }
-
-        @Override
-        public MutableDirectBuffer buffer() {
-            unclosedContext();
-            return buffer;
-        }
-
-        @Override
-        public void receive(final int length) {
-            if (length != PAYLOAD_LENGTH) {
-                throw new IllegalArgumentException("Enforce leader command must have length " + PAYLOAD_LENGTH);
-            }
-            if (!isValidLeaderId(ReplicationPayloadDescriptor.candidateId(buffer))) {
-                abort();
-                return;
-            }
-            completeEventPayload(buffer);
-            buffer.unwrap();
-            try (final AppendContext ac = unclosedContext()) {
-                ac.commit(HEADER_LENGTH + length);
-            } finally {
-                context = null;
-            }
-        }
-
-        @Override
-        public void abort() {
-            if (context != null) {
-                buffer.unwrap();
-                try {
-                    context.abort();
-                } finally {
-                    context = null;
-                }
-            }
-        }
-
-        @Override
-        public boolean isClosed() {
-            return context == null;
-        }
-
-    }
-
-    private void completeEventPayload(final MutableDirectBuffer buffer) {
-        final int nextTerm = 1 + state.currentTerm();
-        buffer.putByte(VERSION_OFFSET, VERSION);
-        buffer.putByte(FLAGS_OFFSET, FLAGS_NONE);
-        buffer.putShort(TYPE_OFFSET, ENFORCE_LEADER);
-        buffer.putInt(PAYLOAD_SIZE_OFFSET, 0);
-        // already set: buffer.putInt(LEADER_ID_OFFSET, leaderId);
-        buffer.putInt(TERM_OFFSET, nextTerm);
     }
 
     private boolean isValidLeaderId(final int leaderId) {

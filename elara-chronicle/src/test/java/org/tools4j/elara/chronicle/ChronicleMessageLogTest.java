@@ -42,7 +42,9 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.tools4j.elara.log.MessageLog.Handler.Result.POLL;
 
 /**
@@ -110,6 +112,68 @@ class ChronicleMessageLogTest {
         //when + then
         final DirectBuffer[] messages = appendingWithAbort(messageLog);
         pollAndAssert(messageLog.poller(), messages);
+    }
+
+    @Test
+    public void moveTo(final TestInfo testInfo) {
+        //given
+        final ChronicleMessageLog messageLog = chronicleMessageLog(testInfo);
+        final DirectBuffer[] messages = append(messageLog);
+        final ChronicleLogPoller poller = messageLog.poller();
+        final long firstEntryId = poller.entryId();
+        final long secondEntryId;
+        final long lastEntryId;
+        final long afterLastEntryId;
+
+        //when + then
+        assertEquals(0, poller.sequence(), "[0]poller.sequence");
+        assertFalse(poller.moveToPrevious(), "[0]poller.moveToPrevious");
+        assertTrue(poller.moveToNext(), "[0]poller.moveToNext");
+        assertEquals(1, poller.sequence(), "[1]poller.sequence");
+        secondEntryId = poller.entryId();
+        assertTrue(poller.moveToNext(), "[1]poller.moveToNext");
+        assertEquals(2, poller.sequence(), "[2]poller.sequence");
+
+        //when
+        poller.moveToEnd();
+        afterLastEntryId = poller.entryId();
+
+        //then
+        assertEquals(messages.length, poller.sequence(), "[" + messages.length + "]poller.sequence");
+
+        //when + then
+        assertTrue(poller.moveToPrevious(), "[" + messages.length + "]poller.moveToPrevious");
+        assertEquals(messages.length - 1, poller.sequence(), "[" + (messages.length - 1) + "]poller.sequence");
+        lastEntryId = poller.entryId();
+
+        //when
+        poller.moveToStart();
+
+        //then
+        assertEquals(0, poller.sequence(), "[0]poller.sequence");
+
+        //when + then
+        for (int i = 0; i < messages.length; i++) {
+            assertTrue(poller.moveToNext(), "[" + i + "]poller.moveToNext");
+            assertEquals(i + 1, poller.sequence(), "[" + (i+1) + "]poller.sequence");
+        }
+        assertFalse(poller.moveToNext(), "[" + messages.length + "]poller.moveToNext");
+        for (int i = messages.length - 1; i >= 0; i--) {
+            assertTrue(poller.moveToPrevious(), "[" + i + "]poller.moveToPrevious");
+            assertEquals(i, poller.sequence(), "[" + i + "]poller.sequence");
+        }
+        assertFalse(poller.moveToPrevious(), "[0]poller.moveToPrevious");
+        assertEquals(0, poller.sequence(), "[0]poller.sequence");
+
+        //when + then
+        assertFalse(poller.moveTo(afterLastEntryId), "poller.moveTo(afterLastEntryId)");
+        assertEquals(0, poller.sequence(), "[0]poller.sequence");
+        assertTrue(poller.moveTo(lastEntryId), "poller.moveTo(lastEntryId)");
+        assertEquals(messages.length - 1, poller.sequence(), "[lastEntryId]poller.sequence");
+        assertTrue(poller.moveTo(firstEntryId), "poller.moveTo(firstEntryId)");
+        assertEquals(0, poller.sequence(), "[firstEntryId]poller.sequence");
+        assertTrue(poller.moveTo(secondEntryId), "poller.moveTo(secondEntryId)");
+        assertEquals(1, poller.sequence(), "[secondEntryId]poller.sequence");
     }
 
     private DirectBuffer[] append(final ChronicleMessageLog messageLog) {

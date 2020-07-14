@@ -30,6 +30,7 @@ import org.tools4j.elara.flyweight.FrameDescriptor;
 import org.tools4j.elara.log.MessageLog.Appender;
 import org.tools4j.elara.logging.ElaraLogger;
 import org.tools4j.elara.logging.Logger;
+import org.tools4j.elara.logging.Logger.Level;
 import org.tools4j.elara.plugin.replication.Connection.Publisher;
 
 import java.nio.ByteBuffer;
@@ -128,27 +129,52 @@ final class ConnectionHandler implements Connection.Handler {
                 return;
             }
             eventLogAppender.append(buffer, PAYLOAD_OFFSET, payloadSize);
+            if (logger.isEnabled(Level.DEBUG)) {
+                logger.debug("Server {}: Processed append-request message {} in follower mode")
+                        .replace(serverId).replace(nextEventLogIndex).format();
+            }
             nextEventLogIndex++;
         }
-        sendAppendResponse(senderServerId, nextEventLogIndex, logIndex <= nextEventLogIndex);
+        final boolean success = logIndex <= nextEventLogIndex;
+        if (!success && logger.isEnabled(Level.DEBUG)) {
+            logger.debug("Server {}: Ignoring append-request message in follower mode: expected event log index {} but received {}")
+                    .replace(serverId).replace(nextEventLogIndex).replace(logIndex).format();
+        }
+        final long nextSendingTime = success ? 0 : state.nextNotBefore(senderServerId);
+        if (nextSendingTime == 0 || System.nanoTime() - nextSendingTime >= 0) {
+            final boolean sent = sendAppendResponse(senderServerId, nextEventLogIndex, success);
+            if (success) {
+                state.nextNotBefore(senderServerId, 0);
+            } else if (sent) {
+                state.nextNotBefore(senderServerId, System.nanoTime() + 100_000);
+            }
+        }
     }
 
-    private void sendAppendResponse(final int targetServerId,
-                                    final long nextEventLogIndex,
-                                    final boolean success) {
+    private boolean sendAppendResponse(final int targetServerId,
+                                       final long nextEventLogIndex,
+                                       final boolean success) {
         final int length = ReplicationMessages.appendResponse(sendBuffer, 0, state.currentTerm(),
                 state.leaderId(), nextEventLogIndex, success);
         if (!responseSender.publish(targetServerId, sendBuffer, 0, length)) {
             logger.warn("Server {}: Sending append response to {} for next event log index {} failed")
                     .replace(serverId).replace(targetServerId).replace(nextEventLogIndex).format();
+            return false;
         }
+        return true;
     }
 
     private void handleAppendResponse(final int senderServerId, final DirectBuffer buffer) {
         final boolean appendSuccessful = ReplicationMessages.isAppendSuccess(buffer);
         final long nextEventLogIndex = logIndex(buffer);
         if (!appendSuccessful || nextEventLogIndex > state.nextEventLogIndex(senderServerId)) {
-            state.nextEventLogIndex(senderServerId, nextEventLogIndex);
+            if (state.nextEventLogIndex(senderServerId) != nextEventLogIndex) {
+                state.nextEventLogIndex(senderServerId, nextEventLogIndex);
+                if (logger.isEnabled(Level.DEBUG)) {
+                    logger.debug("Server {}: Reset next event log index to to {} for server {}")
+                            .replace(serverId).replace(nextEventLogIndex).replace(senderServerId).format();
+                }
+            }
         }
     }
 
