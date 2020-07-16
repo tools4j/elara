@@ -26,9 +26,16 @@ package org.tools4j.elara.plugin.timer;
 import org.agrona.collections.IntArrayList;
 import org.agrona.collections.Long2LongHashMap;
 import org.agrona.collections.LongArrayList;
+import org.tools4j.elara.time.TimeSource;
 
 import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
 
+/**
+ * A very simple implementation of {@link TimerState} keeping timers in simple lists.
+ * <p>
+ * Note that this timer state implementation is not recommended for larger numbers of concurrent timers as it takes
+ * O(n) time to find the timer with the next deadline!
+ */
 public class SimpleTimerState implements TimerState.Mutable {
 
     public static final int DEFAULT_INITIAL_CAPACITY = 64;
@@ -123,5 +130,30 @@ public class SimpleTimerState implements TimerState.Mutable {
     @Override
     public void repetition(final int index, final int repetition) {
         repetitions.setInt(index, repetition);
+    }
+
+    @Override
+    public int indexOfNextDeadline() {
+        final int count = count();
+        int index = -1;
+        long minDeadline = TimeSource.END_OF_TIME;
+        for (int i = 0; i < count; i++) {
+            final long deadline = deadline(i);
+            if (deadline < minDeadline) {
+                index = i;
+                minDeadline = deadline;
+            }
+        }
+        return index;
+    }
+
+    @Override
+    public String toString() {
+        if (count() == 0) {
+            return "SimpleTimerState{}";
+        }
+        return "SimpleTimerState{" +
+                "next=" + id(indexOfNextDeadline()) +
+                ", ids=[" + ids + "]}";
     }
 }

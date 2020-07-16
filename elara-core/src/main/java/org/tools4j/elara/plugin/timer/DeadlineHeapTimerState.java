@@ -37,6 +37,7 @@ import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
  *     - log(n) time to add or remove a timer
  *     - log(n) time to change the repetition of a timer
  * </pre>
+ * The data structure is very similar to that used by {@link java.util.PriorityQueue}.
  */
 public class DeadlineHeapTimerState implements TimerState.Mutable {
 
@@ -46,7 +47,7 @@ public class DeadlineHeapTimerState implements TimerState.Mutable {
     private final List<Timer> timerHeapByDeadline;
     private final List<Timer> unused;
 
-    private static class Timer {
+    private static final class Timer {
         long id;
         int type;
         int repetition;
@@ -160,6 +161,7 @@ public class DeadlineHeapTimerState implements TimerState.Mutable {
     }
 
     private void siftUp(final int index, final Timer timer) {
+        //see PriorityQueue.siftUp(..)
         final long deadline = timer.deadline();
         int k = index;
         while (k > 0) {
@@ -175,6 +177,7 @@ public class DeadlineHeapTimerState implements TimerState.Mutable {
     }
 
     private void siftDown(final int index, final Timer timer) {
+        //see PriorityQueue.siftDown(..)
         final long deadline = timer.deadline();
         final int size = timerHeapByDeadline.size();
         int k = index;
@@ -226,9 +229,9 @@ public class DeadlineHeapTimerState implements TimerState.Mutable {
         }
         timer.repetition = repetition;
         if (repetition > prevRepetition) {
-            siftUp(index, timer);
-        } else {
             siftDown(index, timer);
+        } else {
+            siftUp(index, timer);
         }
     }
 
@@ -239,5 +242,15 @@ public class DeadlineHeapTimerState implements TimerState.Mutable {
 
     private void release(final Timer timer) {
         unused.add(timer.reset());
+    }
+
+    @Override
+    public String toString() {
+        if (count() == 0) {
+            return "DeadlineHeapTimerState{}";
+        }
+        return "DeadlineHeapTimerState{" +
+                "next=" + id(indexOfNextDeadline()) +
+                ", ids=" + idToIndex.keySet() + "}";
     }
 }

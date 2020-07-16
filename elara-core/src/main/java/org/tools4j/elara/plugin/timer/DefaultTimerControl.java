@@ -25,24 +25,45 @@ package org.tools4j.elara.plugin.timer;
 
 import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.init.Context;
+import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.route.EventRouter;
-import org.tools4j.elara.route.EventRouter.RoutingContext;
 
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.plugin.timer.TimerEvents.periodicStarted;
-import static org.tools4j.elara.plugin.timer.TimerEvents.timerStarted;
-import static org.tools4j.elara.plugin.timer.TimerEvents.timerStopped;
 
 /**
  * Controller to simplify routing of timer start and stop events.  Requires application access to timer state which is
- * available through {@link Configuration#plugins()}.
+ * available through {@link Configuration#configure()} for instance by registering the timer plugin as follows:
+ * <pre>
+ *     DefaultTimerControl timerControl = new DefaultTimerControl();
+ *     Configuration.configure().plugin(Plugins.timerPlugin(), timerControl);
+ * </pre>
+ *
+ * Other initialisation alternatives are
+ * <pre>
+ *     DefaultTimerControl timerControl = new DefaultTimerControl(new DeadlineHeapTimerState());
+ *     Configuration.configure().plugin(Plugins.timerPlugin(), timerControl.timerState);
+ * </pre>
+ * or also
+ * <pre>
+ *     DefaultTimerControl timerControl = new DefaultTimerControl();
+ *     Configuration.configure().plugin(Plugins.timerPlugin(), new DeadlineHeapTimerState(), timerControl);
+ * </pre>
+ *
+ * @see Context#plugin(Plugin, Consumer) 
+ * @see Context#plugin(Plugin, Supplier)
+ * @see Context#plugin(Plugin, Supplier, Consumer)
  */
 public class DefaultTimerControl implements TimerControl, Consumer<TimerState> {
 
     private TimerState timerState;
+
+    public DefaultTimerControl() {
+        super();
+    }
 
     public DefaultTimerControl(final Context context) {
         context.plugin(Plugins.timerPlugin(), this);
@@ -65,52 +86,33 @@ public class DefaultTimerControl implements TimerControl, Consumer<TimerState> {
     }
 
     @Override
-    public long startTimer(final int type, final long timeout, final EventRouter eventRouter) {
-        final long id = nextTimerId(eventRouter);
-        try (final RoutingContext context = eventRouter.routingEvent(TimerEvents.TIMER_STARTED)) {
-            final int length = timerStarted( context.buffer(), 0, id, type, timeout);
-            context.route(length);
+    public boolean startTimer(final long id, final int type, final long timeout, final EventRouter eventRouter) {
+        if (timerState().hasTimer(id)) {
+            return false;
         }
-        return id;
+        TimerEvents.routeTimerStarted(id, type, timeout, eventRouter);
+        return true;
     }
 
     @Override
-    public long startPeriodic(final int type, final long timeout, final EventRouter eventRouter) {
-        final long id = nextTimerId(eventRouter);
-        try (final RoutingContext context = eventRouter.routingEvent(TimerEvents.TIMER_STARTED)) {
-            final int length = periodicStarted( context.buffer(), 0, id, type, timeout);
-            context.route(length);
+    public boolean startPeriodic(final long id, final int type, final long timeout, final EventRouter eventRouter) {
+        if (timerState().hasTimer(id)) {
+            return false;
         }
-        return id;
+        TimerEvents.routePeriodicStarted(id, type, timeout, eventRouter);
+        return true;
     }
 
     @Override
     public boolean stopTimer(final long id, final EventRouter eventRouter) {
         final TimerState timerState = timerState();
         final int index = timerState.indexById(id);
-        if (index >= 0) {
-            try (final RoutingContext context = eventRouter.routingEvent(TimerEvents.TIMER_STOPPED)) {
-                final int length = timerStopped( context.buffer(), 0, id, timerState.type(index),
-                        timerState.repetition(index), timerState.timeout(index));
-                context.route(length);
-            }
-            return true;
+        if (index < 0) {
+            return false;
         }
-        return false;
+        TimerEvents.routeTimerStopped(id, timerState.type(index), timerState.repetition(index),
+                timerState.timeout(index), eventRouter);
+        return true;
     }
 
-    @Override
-    public long nextTimerId(final EventRouter eventRouter) {
-        final long maxId = maxTimerId(timerState());
-        return Math.max(0, maxId) + 1 + eventRouter.nextEventIndex();
-    }
-
-    private static long maxTimerId(final TimerState timerState) {
-        long maxId = Long.MIN_VALUE;
-        final int count = timerState.count();
-        for (int i = 0; i < count; i++) {
-            maxId = Long.max(maxId, timerState.id(i));
-        }
-        return maxId;
-    }
 }

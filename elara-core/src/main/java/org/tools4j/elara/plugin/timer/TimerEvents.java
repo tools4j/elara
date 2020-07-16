@@ -28,6 +28,8 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.flyweight.Frame;
+import org.tools4j.elara.route.EventRouter;
+import org.tools4j.elara.route.EventRouter.RoutingContext;
 
 import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.PAYLOAD_SIZE;
 import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_ID_OFFSET;
@@ -57,6 +59,34 @@ public enum TimerEvents {
     public static final int TIMER_STARTED = -12;
     /** Event type for event indicating that a timer has been stopped.*/
     public static final int TIMER_STOPPED = -13;
+
+    public static void routeTimerStarted(final long timerId,
+                                         final int timerType,
+                                         final long timeout,
+                                         final EventRouter eventRouter) {
+        try (final RoutingContext context = eventRouter.routingEvent(TIMER_STARTED)) {
+            context.route(timerStarted(context.buffer(), 0, timerId, timerType, timeout));
+        }
+    }
+
+    public static void routePeriodicStarted(final long timerId,
+                                            final int timerType,
+                                            final long timeout,
+                                            final EventRouter eventRouter) {
+        try (final RoutingContext context = eventRouter.routingEvent(TIMER_STARTED)) {
+            context.route(periodicStarted(context.buffer(), 0, timerId, timerType, timeout));
+        }
+    }
+
+    public static void routeTimerStopped(final long timerId,
+                                         final int timerType,
+                                         final int repetition,
+                                         final long timeout,
+                                         final EventRouter eventRouter) {
+        try (final RoutingContext context = eventRouter.routingEvent(TIMER_STOPPED)) {
+            context.route(timerStopped(context.buffer(), 0, timerId, timerType, repetition, timeout));
+        }
+    }
 
     public static int timerStarted(final MutableDirectBuffer buffer,
                                    final int offset,

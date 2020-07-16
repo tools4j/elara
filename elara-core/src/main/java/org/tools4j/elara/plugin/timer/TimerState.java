@@ -23,14 +23,13 @@
  */
 package org.tools4j.elara.plugin.timer;
 
-import org.tools4j.elara.time.TimeSource;
-
 public interface TimerState {
     /** Repetition value for a simple timer without repetitions */
     int REPETITION_SINGLE = -1;
 
     int count();
     int indexById(long id);
+    int indexOfNextDeadline();
     long id(int index);
     int type(int index);
     int repetition(int index);
@@ -47,20 +46,6 @@ public interface TimerState {
 
     default boolean hasTimer(final long id) {
         return indexById(id) >= 0;
-    }
-
-    default int indexOfNextDeadline() {
-        final int count = count();
-        int index = -1;
-        long minDeadline = TimeSource.END_OF_TIME;
-        for (int i = 0; i < count; i++) {
-            final long deadline = deadline(i);
-            if (deadline < minDeadline) {
-                index = i;
-                minDeadline = deadline;
-            }
-        }
-        return index;
     }
 
     interface Mutable extends TimerState {
