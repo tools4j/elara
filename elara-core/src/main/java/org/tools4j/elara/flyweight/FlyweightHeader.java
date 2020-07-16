@@ -96,7 +96,7 @@ public class FlyweightHeader implements Flyweight<FlyweightHeader>, Header, Fram
 
     @Override
     public int type() {
-        return header.getShort(TYPE_OFFSET);
+        return header.getInt(TYPE_OFFSET);
     }
 
     @Override
@@ -126,7 +126,7 @@ public class FlyweightHeader implements Flyweight<FlyweightHeader>, Header, Fram
 
     @Override
     public int payloadSize() {
-        return header.getShort(PAYLOAD_SIZE_OFFSET);
+        return header.getInt(PAYLOAD_SIZE_OFFSET);
     }
 
     @Override

@@ -44,7 +44,7 @@ public interface IndexTrackingPoller extends Poller {
     long index();
 
     /**
-     * NOTE: this method is possibly slow if it has to move a log of positions!
+     * NOTE: this method is possibly slow if it has to move a lot of positions!
      *
      * Moves to the specified index
      * @param index the index to move to, valid from zero to (#entries - 1)
@@ -53,7 +53,7 @@ public interface IndexTrackingPoller extends Poller {
     boolean moveToIndex(long index);
 
     /**
-     * NOTE: this method is possibly slow if it has to move a log of positions!
+     * NOTE: this method is possibly slow if it has to move a lot of positions!
      *
      * Moves to the end of the message log.
      * @return this poller
