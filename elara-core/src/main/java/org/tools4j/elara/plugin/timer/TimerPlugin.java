@@ -26,7 +26,6 @@ package org.tools4j.elara.plugin.timer;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState;
@@ -65,28 +64,21 @@ public class TimerPlugin implements SystemPlugin<TimerState.Mutable> {
         requireNonNull(appConfig);
         requireNonNull(timerState);
         return new Configuration.Default() {
-            final TimerTrigger timerTrigger = new TimerTrigger(timerState);
+            final TimerTriggerInput timerTrigger = new TimerTriggerInput(commandSource, appConfig.timeSource(), timerState);
 
             @Override
             public Input[] inputs(final BaseState baseState) {
-                return new Input[] {
-                        timerTrigger.asInput(commandSource, appConfig.timeSource())
-                };
-            }
-
-            @Override
-            public Output output(final BaseState baseState) {
-                return timerTrigger.asOutput();
+                return new Input[] {timerTrigger};
             }
 
             @Override
             public CommandProcessor commandProcessor(final BaseState baseState) {
-                return new TimerCommandProcessor(timerState, timerTrigger);
+                return new TimerCommandProcessor(timerState);
             }
 
             @Override
             public EventApplier eventApplier(final BaseState.Mutable baseState) {
-                return new TimerEventApplier(timerState);
+                return new TimerEventApplier(timerState, timerTrigger);
             }
         };
     }

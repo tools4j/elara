@@ -36,17 +36,14 @@ import static org.tools4j.elara.plugin.timer.TimerState.REPETITION_SINGLE;
 public class TimerCommandProcessor implements CommandProcessor {
 
     private final TimerState timerState;
-    private final TimerTrigger timerTrigger;
 
-    public TimerCommandProcessor(final TimerState timerState, final TimerTrigger timerTrigger) {
+    public TimerCommandProcessor(final TimerState timerState) {
         this.timerState = requireNonNull(timerState);
-        this.timerTrigger = requireNonNull(timerTrigger);
     }
 
     @Override
     public void onCommand(final Command command, final EventRouter router) {
         if (command.type() == TimerCommands.TRIGGER_TIMER) {
-            timerTrigger.triggerCommandProcessed();
             final long timerId = TimerCommands.timerId(command);
             if (timerState.hasTimer(timerId)) {
                 final int repetition = TimerCommands.timerRepetition(command);

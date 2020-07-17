@@ -35,27 +35,34 @@ import static org.tools4j.elara.plugin.timer.TimerEvents.timerType;
 public class TimerEventApplier implements EventApplier {
 
     private final TimerState.Mutable timerState;
+    private final TimerTriggerInput timerTriggerInput;
 
-    public TimerEventApplier(final TimerState.Mutable timerState) {
+    public TimerEventApplier(final TimerState.Mutable timerState, final TimerTriggerInput timerTriggerInput) {
         this.timerState = requireNonNull(timerState);
+        this.timerTriggerInput = requireNonNull(timerTriggerInput);
     }
 
     @Override
     public void onEvent(final Event event) {
         switch (event.type()) {
             case TimerEvents.TIMER_STARTED:
-                timerState.add(
+                if (timerState.add(
                         timerId(event), timerType(event), timerRepetition(event), event.time(), timerTimeout(event)
-                );
+                )) {
+                    timerTriggerInput.timerEventApplied();
+                }
                 break;
             case TimerEvents.TIMER_FIRED: {
                 final int index = timerState.indexById(timerId(event));
                 timerState.repetition(index, timerState.repetition(index) + 1);
+                timerTriggerInput.timerEventApplied();
                 break;
             }
             case TimerEvents.TIMER_EXPIRED://fall through
             case TimerEvents.TIMER_STOPPED:
-                timerState.removeById(timerId(event));
+                if (timerState.removeById(timerId(event))) {
+                    timerTriggerInput.timerEventApplied();
+                }
                 break;
         }
     }
