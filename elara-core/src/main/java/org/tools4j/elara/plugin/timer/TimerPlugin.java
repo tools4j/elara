@@ -27,7 +27,6 @@ import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
-import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState;
@@ -82,7 +81,7 @@ public class TimerPlugin implements SystemPlugin<TimerState.Mutable> {
 
             @Override
             public CommandProcessor commandProcessor(final BaseState baseState) {
-                return new TimerCommandProcessor(timerState);
+                return new TimerCommandProcessor(timerState, timerTrigger);
             }
 
             @Override

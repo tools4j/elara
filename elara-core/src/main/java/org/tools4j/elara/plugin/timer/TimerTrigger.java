@@ -39,25 +39,30 @@ public final class TimerTrigger {
 
     private final TimerState timerState;
 
-    private long nextTriggerTime = TimeSource.BIG_BANG;
+    private boolean triggerCommandToProcess;
 
     public TimerTrigger(final TimerState timerState) {
         this.timerState = requireNonNull(timerState);
     }
 
+    void triggerCommandProcessed() {
+        triggerCommandToProcess = false;
+    }
+
     public Output asOutput() {
         return (event, replay, loopback) -> {
-            if (event.time() >= nextTriggerTime) {
-                final int next = timerState.indexOfNextDeadline();
-                if (next >= 0 && timerState.deadline(next) <= event.time()) {
-                    try (final CommandLoopback.EnqueuingContext context = loopback.enqueuingCommand(TRIGGER_TIMER)) {
-                        final int length = triggerTimer(context.buffer(), 0, timerState.id(next),
-                                timerState.type(next), timerState.repetition(next), timerState.timeout(next));
-                        context.enqueue(length);
-                    }
+            if (triggerCommandToProcess) {
+                return;
+            }
+            final int next = timerState.indexOfNextDeadline();
+            if (next >= 0 && timerState.deadline(next) <= event.time()) {
+                try (final CommandLoopback.EnqueuingContext context = loopback.enqueuingCommand(TRIGGER_TIMER)) {
+                    final int length = triggerTimer(context.buffer(), 0, timerState.id(next),
+                            timerState.type(next), timerState.repetition(next), timerState.timeout(next));
+                    context.enqueue(length);
+                    triggerCommandToProcess = true;
                 }
             }
-            nextTriggerTime = TimerEvents.isTimerEvent(event) ? event.time() : event.time() + 1;
         };
     }
 
@@ -65,18 +70,18 @@ public final class TimerTrigger {
         requireNonNull(timeSource);
         final SequenceGenerator sequenceGenerator = new SimpleSequenceGenerator();
         return receiver -> {
-            final long time = timeSource.currentTime();
-            if (time >= nextTriggerTime) {
-                final int next = timerState.indexOfNextDeadline();
-                if (next >= 0 && timerState.deadline(next) <= time) {
-                    final long seq = sequenceGenerator.nextSequence();
-                    try (final ReceivingContext context = receiver.receivingMessage(commandSource, seq, TRIGGER_TIMER)) {
-                        final int length = triggerTimer(context.buffer(), 0, timerState.id(next),
-                                timerState.type(next), timerState.repetition(next), timerState.timeout(next));
-                        context.receive(length);
-                    }
+            if (triggerCommandToProcess) {
+                return 0;
+            }
+            final int next = timerState.indexOfNextDeadline();
+            if (next >= 0 && timerState.deadline(next) <= timeSource.currentTime()) {
+                final long seq = sequenceGenerator.nextSequence();
+                try (final ReceivingContext context = receiver.receivingMessage(commandSource, seq, TRIGGER_TIMER)) {
+                    final int length = triggerTimer(context.buffer(), 0, timerState.id(next),
+                            timerState.type(next), timerState.repetition(next), timerState.timeout(next));
+                    context.receive(length);
+                    triggerCommandToProcess = true;
                 }
-                nextTriggerTime = time + 1;
                 return 1;
             }
             return 0;
