@@ -78,7 +78,7 @@ public class ReplicatedHashApplicationTest {
         //given
         final int servers = 3;
         final int sources = 10;
-        final int nThreads = 1;
+        final int nThreads = 5;
         final int commandsPerSource = 200;
         final IdMapping serverIds = DefaultIdMapping.enumerate(servers);
         final IdMapping sourceIds = DefaultIdMapping.enumerate(SOURCE_OFFSET, sources);
@@ -97,7 +97,7 @@ public class ReplicatedHashApplicationTest {
         for (final ThreadLike publisher : publishers) {
             publisher.join(10000);
         }
-        Thread.sleep(10000);
+        Thread.sleep(12000);
 
         scheduledExecutorService.shutdown();
         if (!scheduledExecutorService.awaitTermination(10, TimeUnit.SECONDS)) {
@@ -271,7 +271,6 @@ public class ReplicatedHashApplicationTest {
                 .eventLog(new ChronicleMessageLog(eq))
                 .duplicateHandler(DuplicateHandler.NOOP)
                 .loggerFactory(clazz -> new OutputStreamLogger(Level.DEBUG))
-                .plugin(Plugins.bootPlugin())
                 .plugin(replicationPlugin)
         );
     }

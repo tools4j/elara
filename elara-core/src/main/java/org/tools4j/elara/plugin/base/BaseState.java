@@ -30,6 +30,7 @@ public interface BaseState {
     boolean processCommands();
 
     boolean allEventsAppliedFor(Command.Id id);
+
     boolean eventApplied(Event.Id id);
 
     interface Mutable extends BaseState {

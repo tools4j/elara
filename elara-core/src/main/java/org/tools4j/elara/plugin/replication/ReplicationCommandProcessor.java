@@ -27,12 +27,14 @@ import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.logging.ElaraLogger;
 import org.tools4j.elara.logging.Logger;
+import org.tools4j.elara.plugin.boot.BootCommands;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.replication.ReplicationCommands.replicationCommandName;
 import static org.tools4j.elara.plugin.replication.ReplicationEvents.leaderElected;
+import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;
 
 public class ReplicationCommandProcessor implements CommandProcessor {
 
@@ -50,7 +52,16 @@ public class ReplicationCommandProcessor implements CommandProcessor {
 
     @Override
     public void onCommand(final Command command, final EventRouter router) {
-        if (command.type() == ReplicationCommands.PROPOSE_LEADER) {
+        if (command.type() == BootCommands.SIGNAL_APP_INITIALISATION_START) {
+            if (isLeader()) {
+                //step down
+                try (final RoutingContext context = router.routingEvent(ReplicationEvents.LEADER_ELECTED)) {
+                    final int length = ReplicationEvents.leaderElected(context.buffer(), 0,
+                            replicationState.currentTerm() + 1, NULL_SERVER);
+                    context.route(length);
+                }
+            }
+        } else if (command.type() == ReplicationCommands.PROPOSE_LEADER) {
             final String commandName = replicationCommandName(command);
             final int serverId = configuration.serverId();
             final int candidateId = ReplicationCommands.candidateId(command);
@@ -69,5 +80,9 @@ public class ReplicationCommandProcessor implements CommandProcessor {
                         .replace(serverId).replace(commandName).replace(candidateId).format();
             }
         }
+    }
+
+    private boolean isLeader() {
+        return configuration.serverId() == replicationState.leaderId();
     }
 }

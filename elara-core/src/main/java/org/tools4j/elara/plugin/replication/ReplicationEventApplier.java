@@ -28,12 +28,9 @@ import org.tools4j.elara.event.Event;
 import org.tools4j.elara.logging.ElaraLogger;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.elara.plugin.boot.BootEvents;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.plugin.boot.BootEvents.bootEventName;
 import static org.tools4j.elara.plugin.replication.ReplicationEvents.replicationEventName;
-import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;
 
 public class ReplicationEventApplier implements EventApplier {
 
@@ -55,9 +52,6 @@ public class ReplicationEventApplier implements EventApplier {
     @Override
     public void onEvent(final Event event) {
         switch (event.type()) {
-            case BootEvents.APP_INITIALISATION_STARTED:
-                updateLeader(bootEventName(event), replicationState.currentTerm() + 1, NULL_SERVER);
-                break;
             case ReplicationEvents.LEADER_ELECTED://same for both
             case ReplicationEvents.LEADER_ENFORCED:
                 updateLeader(event);

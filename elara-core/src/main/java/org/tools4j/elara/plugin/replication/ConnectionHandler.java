@@ -26,11 +26,13 @@ package org.tools4j.elara.plugin.replication;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
+import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.flyweight.FrameDescriptor;
 import org.tools4j.elara.log.MessageLog.Appender;
 import org.tools4j.elara.logging.ElaraLogger;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.logging.Logger.Level;
+import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.replication.Connection.Publisher;
 
 import java.nio.ByteBuffer;
@@ -51,19 +53,23 @@ final class ConnectionHandler implements Connection.Handler {
 
     private final ElaraLogger logger;
     private final int serverId;
+    private final BaseState baseState;
     private final ReplicationState.Volatile state;
     private final Appender eventLogAppender;
     private final Publisher responseSender;
+    private final FlyweightEvent flyweightEvent = new FlyweightEvent();
     private final UnsafeBuffer bufferView = new UnsafeBuffer(0, 0);
     private final MutableDirectBuffer sendBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect(HEADER_LENGTH));
 
     ConnectionHandler(final Logger.Factory loggerFactory,
                       final Configuration configuration,
+                      final BaseState baseState,
                       final ReplicationState.Volatile state,
                       final Appender eventLogAppender,
                       final Publisher responseSender) {
         this.logger = ElaraLogger.create(loggerFactory, getClass());
         this.serverId = configuration.serverId();
+        this.baseState = requireNonNull(baseState);
         this.state = requireNonNull(state);
         this.eventLogAppender = requireNonNull(eventLogAppender);
         this.responseSender = requireNonNull(responseSender);
@@ -126,6 +132,12 @@ final class ConnectionHandler implements Connection.Handler {
             if (payloadSize < FrameDescriptor.HEADER_LENGTH) {
                 logger.warn("Server {}: Ignoring append-request message in follower mode: payload size {} is smaller than frame header length {}")
                         .replace(serverId).replace(payloadSize).replace(FrameDescriptor.HEADER_LENGTH).format();
+                return;
+            }
+            flyweightEvent.init(buffer, PAYLOAD_OFFSET);
+            if (baseState.eventApplied(flyweightEvent.id())) {
+                logger.warn("Server {}: Ignoring append-request message in follower mode: event {}:{}.{} has already been applied")
+                        .replace(serverId).replace(flyweightEvent.source()).replace(flyweightEvent.sequence()).replace(flyweightEvent.index()).format();
                 return;
             }
             eventLogAppender.append(buffer, PAYLOAD_OFFSET, payloadSize);

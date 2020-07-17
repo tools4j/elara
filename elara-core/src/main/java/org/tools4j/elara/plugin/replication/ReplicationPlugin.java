@@ -36,7 +36,6 @@ import org.tools4j.elara.plugin.replication.Connection.Handler;
 import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.init.ExecutionType.ALWAYS_WHEN_EVENTS_APPLIED;
 
 /**
  * A plugin that issues a commands and events related to booting an elara application to indicate that the application
@@ -44,8 +43,10 @@ import static org.tools4j.elara.init.ExecutionType.ALWAYS_WHEN_EVENTS_APPLIED;
  */
 public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable> {
 
-    private static Dependency<?>[] DEPENDENCIES = {Dependency.of(Plugins.bootPlugin())};
-
+    private static final Dependency<?>[] DEPENDENCIES = {
+            Dependency.of(Plugins.basePlugin(), baseState -> baseState.processCommands(false)),
+            Dependency.of(Plugins.bootPlugin())
+    };
     private final org.tools4j.elara.plugin.replication.Configuration configuration;
 
     public ReplicationPlugin(final org.tools4j.elara.plugin.replication.Configuration configuration) {
@@ -82,17 +83,23 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
                 appConfig.loggerFactory(), appConfig.timeSource(), configuration, replicationState, eventLogAppender
         );
         final DispatchingPublisher dispatchingPublisher = new DispatchingPublisher(configuration);
-        final Handler connectionHandler = new ConnectionHandler(
-                appConfig.loggerFactory(), configuration, replicationState, eventLogAppender, dispatchingPublisher
-        );
         final EventSender eventSender = new DefaultEventSender(configuration, replicationState, eventLog,
                 dispatchingPublisher);
+
         return new Configuration.Default() {
             @Override
             public Step step(final BaseState baseState, final ExecutionType executionType) {
-                return executionType != ALWAYS_WHEN_EVENTS_APPLIED ? Step.NO_OP : new ReplicationPluginStep(
-                        configuration, replicationState, enforcedLeaderEventReceiver, connectionHandler, eventSender
-                );
+                switch (executionType) {
+                    case ALWAYS_WHEN_EVENTS_APPLIED:
+                        final Handler connectionHandler = new ConnectionHandler(
+                                appConfig.loggerFactory(), configuration, baseState, replicationState, eventLogAppender, dispatchingPublisher
+                        );
+                        return new ReplicationPluginStep(
+                                configuration, replicationState, enforcedLeaderEventReceiver, connectionHandler, eventSender
+                        );
+                    default:
+                        return Step.NO_OP;
+                }
             }
 
             @Override
