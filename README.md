@@ -10,10 +10,10 @@ Elara makes uses [direct buffers]() as defined by the [agrona](https://github.co
 
 The elara library is used productively in applications in the financial industry.  However elara is also under active development and some new plugins and features may be considered experimental especially if they are not released yet.
 
-### Introduction 
+### Overview
 
-#### Event Sourcing
-There are excellent introduction to event sourcing.  Some of our favorite links are
+#### Introduction
+There are excellent introductions to event sourcing out there.  Some of our favorite links are
 * https://microservices.io/patterns/data/event-sourcing.html
 * https://www.youtube.com/watch?v=fhZwzm-d9ys
 * https://martinfowler.com/eaaDev/EventSourcing.html
@@ -22,12 +22,13 @@ There are excellent introduction to event sourcing.  Some of our favorite links 
 ![Elara Event Sourcing](./elara.jpg)
 
 #### Terminology 
-* **Command:** an input message; can be a state modifying command or a query
+* **Command:** essentially an input message but enriched with timestamp, source and sequence number; can be a state modifying command or a query
 * **Event:** result of processing a command; instruction how to modify state or what output to generate
-* **Command Log:** persisted log that stores sequentially all incoming commands
-* **Event Log:** persisted event log that stores sequentially all routed events
+* **Command Log:** persisted log that sequentially stores all incoming commands
+* **Event Log:** persisted event log that sequentially stores all routed events
+* **Application State:** transient in-memory state of the application;  can be constructed from events via _Event Applier_
 * **Input:** a source of input commands, such as a message subscription
-* **Output:** a publisher to communicate selected events to other applications
+* **Output:** transforms selected events into output messages and publishes them to downstream applications
 * **Command Processor:** handles command messages and has read-only access to application state; routes events
 * **Event Applier:** triggered by events (routed or replayed); modifies the application state according to the event instruction
 

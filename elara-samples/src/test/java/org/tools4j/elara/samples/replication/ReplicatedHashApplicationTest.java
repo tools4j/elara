@@ -26,6 +26,7 @@ package org.tools4j.elara.samples.replication;
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.wire.WireType;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.OS;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
@@ -98,6 +99,9 @@ public class ReplicatedHashApplicationTest {
             publisher.join(10000);
         }
         Thread.sleep(12000);
+        if (OS.WINDOWS.isCurrentOs()) {
+            Thread.sleep(30000);
+        }
 
         scheduledExecutorService.shutdown();
         if (!scheduledExecutorService.awaitTermination(10, TimeUnit.SECONDS)) {
