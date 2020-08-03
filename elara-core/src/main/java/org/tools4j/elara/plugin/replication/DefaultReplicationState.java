@@ -24,6 +24,8 @@
 package org.tools4j.elara.plugin.replication;
 
 import org.agrona.collections.Long2LongHashMap;
+import org.agrona.collections.Long2LongHashMap.ValueIterator;
+import org.agrona.collections.LongArrayList;
 import org.tools4j.elara.event.Event;
 
 public class DefaultReplicationState implements ReplicationState.Mutable {
@@ -32,7 +34,9 @@ public class DefaultReplicationState implements ReplicationState.Mutable {
     private int leaderId = NULL_SERVER;
     private long eventLogSize;
     private final Long2LongHashMap nextEventLogIndexByServerId = new Long2LongHashMap(0);
+    private final Long2LongHashMap confirmedEventLogIndexByServerId = new Long2LongHashMap(0);
     private final Long2LongHashMap nextNotBefore = new Long2LongHashMap(0);
+    private final LongArrayList temp = new LongArrayList();
 
     @Override
     public int currentTerm() {
@@ -76,6 +80,37 @@ public class DefaultReplicationState implements ReplicationState.Mutable {
     public Volatile nextEventLogIndex(final int serverId, final long index) {
         putOrRemove(nextEventLogIndexByServerId, serverId, index);
         return this;
+    }
+
+    @Override
+    public long confirmedEventLogIndex(final int serverId) {
+        return confirmedEventLogIndexByServerId.get(serverId);
+    }
+
+    @Override
+    public Volatile confirmedEventLogIndex(final int serverId, final long index) {
+        putOrRemove(confirmedEventLogIndexByServerId, serverId, index);
+        return this;
+    }
+
+    @Override
+    public long committedEventLogIndex(final int serverCount) {
+        final int majority = (serverCount / 2) + 1;
+        if (confirmedEventLogIndexByServerId.size() < majority) {
+            return -1;
+        }
+        temp.clear();
+        final ValueIterator it = confirmedEventLogIndexByServerId.values().iterator();
+        while (it.hasNext()) {
+            final long value = it.nextValue();
+            int index = temp.size();
+            temp.addLong(value);
+            while (index > 0 && value > temp.get(index - 1)) {
+                temp.set(index, temp.get(index - 1));
+            }
+            temp.set(index, value);
+        }
+        return temp.get(majority - 1);
     }
 
     @Override

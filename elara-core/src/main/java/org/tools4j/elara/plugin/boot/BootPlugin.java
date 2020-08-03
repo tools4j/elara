@@ -70,7 +70,6 @@ public class BootPlugin implements SystemPlugin<NullState> {
     public Configuration configuration(final org.tools4j.elara.init.Configuration appConfig, final NullState pluginState) {
         requireNonNull(appConfig);
         requireNonNull(pluginState);
-        appendAppInitStartCommand(appConfig);
         return new Configuration.Default() {
             @Override
             public Step step(final BaseState baseState, final ExecutionType executionType) {

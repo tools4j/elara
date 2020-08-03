@@ -51,6 +51,9 @@ import static org.tools4j.elara.plugin.replication.ReplicationMessages.version;
 
 final class ConnectionHandler implements Connection.Handler {
 
+    public static final long RESPONSE_DELAY_NANOS = 60;
+    public static final long RESEND_DELAY_NANOS = 10_000;
+
     private final ElaraLogger logger;
     private final int serverId;
     private final BaseState baseState;
@@ -158,7 +161,7 @@ final class ConnectionHandler implements Connection.Handler {
             if (success) {
                 state.nextNotBefore(senderServerId, 0);
             } else if (sent) {
-                state.nextNotBefore(senderServerId, System.nanoTime() + 100_000);
+                state.nextNotBefore(senderServerId, System.nanoTime() + RESPONSE_DELAY_NANOS);
             }
         }
     }
@@ -179,6 +182,9 @@ final class ConnectionHandler implements Connection.Handler {
     private void handleAppendResponse(final int senderServerId, final DirectBuffer buffer) {
         final boolean appendSuccessful = ReplicationMessages.isAppendSuccess(buffer);
         final long nextEventLogIndex = logIndex(buffer);
+        if (appendSuccessful && nextEventLogIndex > 0) {
+            state.confirmedEventLogIndex(senderServerId, nextEventLogIndex - 1);
+        }
         if (!appendSuccessful || nextEventLogIndex > state.nextEventLogIndex(senderServerId)) {
             if (state.nextEventLogIndex(senderServerId) != nextEventLogIndex) {
                 state.nextEventLogIndex(senderServerId, nextEventLogIndex);

@@ -31,6 +31,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.plugin.replication.ConnectionHandler.RESEND_DELAY_NANOS;
 
 public class ReplicationPluginStep implements Step {
 
@@ -92,6 +93,17 @@ public class ReplicationPluginStep implements Step {
                             replicationState.nextEventLogIndex(followerId, nextEventLogIndex + 1);
                         }
                         workDone = true;//we have still some work done if we move the poller forward or backward
+                    } else {
+                        final long confirmedEventLogIndex = replicationState.confirmedEventLogIndex(followerId);
+                        if (confirmedEventLogIndex < eventLogSize) {
+                            final long nanoTime = System.nanoTime();
+                            final long nextTime = replicationState.nextNotBefore(followerId);
+                            if (nextTime == 0 || nanoTime - nextTime >= 0) {
+                                replicationState.nextEventLogIndex(followerId, confirmedEventLogIndex + 1);
+                                replicationState.nextNotBefore(followerId, nanoTime + RESEND_DELAY_NANOS);
+                                workDone = true;
+                            }
+                        }
                     }
                 }
             }
