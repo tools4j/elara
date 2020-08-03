@@ -11,12 +11,17 @@ Elara makes uses [direct buffers]() as defined by the [agrona](https://github.co
 The elara library is used productively in applications in the financial industry.  However elara is also under active development and some new plugins and features may be considered experimental especially if they are not released yet.
 
 ### Introduction 
+
+#### Event Sourcing
 There are excellent introduction to event sourcing.  Some of our favorite links are
 * https://microservices.io/patterns/data/event-sourcing.html
 * https://www.youtube.com/watch?v=fhZwzm-d9ys
 * https://martinfowler.com/eaaDev/EventSourcing.html
 
-In elara we are using the following terminology:
+#### Elara Event Sourcing
+![Elara Event Sourcing](./elara.jpg)
+
+#### Terminology 
 * **Command:** an input message; can be a state modifying command or a query
 * **Event:** result of processing a command; instruction how to modify state or what output to generate
 * **Command Log:** persisted log that stores sequentially all incoming commands
