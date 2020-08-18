@@ -21,37 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.api;
+package org.tools4j.elara.plugin.metrics;
 
-/**
- * Type ranges for command and event types used by {@link SystemPlugin system plugins}.
- */
-public enum TypeRange {
-    BASE(-1, -9),
-    TIMER(-10, -19),
-    BOOT(-20, -29),
-//    LIVELINESS(-30, -39),
-//    HEARTBEAT(-40, -49),
-//    CONTROL(-50, -59),
-//    METRICS(-60, -69),
-    //..
-    REPLICATION(-90, -99);
-
-    public static final int MAX_RESERVED_TYPE = -1;
-    public static final int MIN_RESERVED_TYPE = -1000;
-
-    private final int maxType;
-    private final int minType;
-
-    TypeRange(final int maxType, final int minType) {
-        assert maxType >= minType;
-        assert minType >= MIN_RESERVED_TYPE;
-        assert maxType <= MAX_RESERVED_TYPE;
-        this.maxType = maxType;
-        this.minType = minType;
-    }
-
-    public boolean isInRange(final int type) {
-        return maxType >= type && type >= minType;
-    }
+public enum FrequencyMetric {
+    INPUTS_POLL_FREQUENCY,
+    COMMAND_QUEUE_POLL_FREQUENCY,
+    EVENT_QUEUE_POLL_FREQUENCY,
+    DUTY_CYCLE_FREQUENCY,
+    INPUT_RECEIVED_FREQUENCY,
+    COMMAND_PROCESSED_FREQUENCY,
+    EVENT_APPLIED_FREQUENCY,
+    OUTPUT_PUBLISHED_FREQUENCY
 }
