@@ -23,13 +23,40 @@
  */
 package org.tools4j.elara.plugin.metrics;
 
+import java.util.Set;
+
 public enum FrequencyMetric {
-    INPUTS_POLL_FREQUENCY,
-    COMMAND_QUEUE_POLL_FREQUENCY,
-    EVENT_QUEUE_POLL_FREQUENCY,
+    /* duty cycle step invocation */
     DUTY_CYCLE_FREQUENCY,
+    EVENT_QUEUE_POLL_FREQUENCY,
+    COMMAND_QUEUE_POLL_FREQUENCY,
+    INPUTS_POLL_FREQUENCY,
+    EXTRA_STEP_INVOCATION_FREQUENCY,
+
+    /* duty cycle step performed work */
     INPUT_RECEIVED_FREQUENCY,
     COMMAND_PROCESSED_FREQUENCY,
     EVENT_APPLIED_FREQUENCY,
-    OUTPUT_PUBLISHED_FREQUENCY
+    OUTPUT_PUBLISHED_FREQUENCY,
+    EXTRA_STEP_PERFORMED_FREQUENCY;
+
+    private static final FrequencyMetric[] VALUES = values();
+
+    public static short choice(final FrequencyMetric... metrics) {
+        short choice = 0;
+        for (final FrequencyMetric metric : metrics) {
+            choice |= metric.ordinal();
+        }
+        return choice;
+    }
+
+    public static short choice(final Set<FrequencyMetric> metrics) {
+        short choice = 0;
+        for (final FrequencyMetric metric : VALUES) {
+            if (metrics.contains(metric)) {
+                choice |= metric.ordinal();
+            }
+        }
+        return choice;
+    }
 }

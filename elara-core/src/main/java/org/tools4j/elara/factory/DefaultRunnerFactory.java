@@ -70,7 +70,7 @@ public class DefaultRunnerFactory implements RunnerFactory {
         final List<Step> extraSteps = configuration.dutyCycleExtraSteps(ALWAYS_WHEN_EVENTS_APPLIED);
         final Step extraStep = compositeStep(pluginSteps, extraSteps);
         return new DutyCycleStep(singletons.sequencerStep(), singletons.commandPollerStep(),
-                singletons.eventApplierStep(), singletons.outputStep(), extraStep);
+                singletons.eventPollerStep(), singletons.outputStep(), extraStep);
     }
 
     @Override

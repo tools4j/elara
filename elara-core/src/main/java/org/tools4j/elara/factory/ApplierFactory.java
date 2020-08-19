@@ -30,5 +30,5 @@ import org.tools4j.nobark.loop.Step;
 public interface ApplierFactory {
     EventApplier eventApplier();
     EventHandler eventHandler();
-    Step eventApplierStep();
+    Step eventPollerStep();
 }

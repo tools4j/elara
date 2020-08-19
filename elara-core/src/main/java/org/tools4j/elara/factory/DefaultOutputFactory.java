@@ -72,7 +72,8 @@ public class DefaultOutputFactory implements OutputFactory {
         }
         outputs[count++] = configuration.output();//application output last
         return new CompositeOutput(
-                count == outputs.length ? outputs : Arrays.copyOf(outputs, count)
+                count == outputs.length ? outputs : Arrays.copyOf(outputs, count),
+                configuration.exceptionHandler()
         );
     }
 

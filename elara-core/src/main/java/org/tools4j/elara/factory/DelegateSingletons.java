@@ -89,8 +89,8 @@ public class DelegateSingletons implements Singletons {
     }
 
     @Override
-    public Step eventApplierStep() {
-        return delegate.eventApplierStep();
+    public Step eventPollerStep() {
+        return delegate.eventPollerStep();
     }
 
     @Override

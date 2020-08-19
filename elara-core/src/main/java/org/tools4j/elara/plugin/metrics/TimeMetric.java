@@ -23,6 +23,10 @@
  */
 package org.tools4j.elara.plugin.metrics;
 
+import java.util.Set;
+
+import static java.util.Objects.requireNonNull;
+
 /**
  * <pre>{@code
  *                             Input --> (_) --> Command -+--> Event.0 --> (_) +-> State
@@ -31,13 +35,14 @@ package org.tools4j.elara.plugin.metrics;
  *
  *                            ^     ^   ^   ^   ^             ^           ^    ^   ^   ^
  *  (input sending time)......'     |   |   |   |             |           |    |   |   |^
- *  (input polling time)............'   |   |   |             |           |    |   |   ||  ^    ^
- *  (command appending time)............'   |   |             |           |    |   |   ||  |    |
- *  (command polling time)..................'   |             |           |    |   |   ||  |    |
- *  (processing start time).....................'             |           |    |   |   ||  |    |
- *  (routing start time)......................................'           |    |   |   ||  |    |
- *  (event appending time)................................................'    |   |   ||  |    |
- *  (event polling time).......................................................'   |   ||  |    |
+ *  (input polling time)............'   |   |   |             |           |    |^  |   ||  ^    ^
+ *  (command appending time)............'   |   |             |           |    ||  |   ||  |    |
+ *  (command polling time)..................'   |             |           |    ||  |   ||  |    |
+ *  (processing start time).....................'             |           |    ||  |   ||  |    |
+ *  (routing start time)......................................'           |    ||  |   ||  |    |
+ *  (event appending time)................................................'    ||  |   ||  |    |
+ *  (event polling time).......................................................'|  |   ||  |    |
+ *  (output polling time).......................................................'  |   ||  |    |
  *  (applying start time)..........................................................'   ||  |    |
  *  (applying end time)................................................................'|  |    |
  *  (processing end time)...............................................................'  |    |
@@ -47,16 +52,60 @@ package org.tools4j.elara.plugin.metrics;
  * }</pre>
  */
 public enum TimeMetric {
-    INPUT_POLLING_TIME,
-    COMMAND_APPENDING_TIME,
-    COMMAND_POLLING_TIME,
-    PROCESSING_START_TIME,
-    ROUTING_START_TIME,
-    EVENT_APPENDING_TIME,
-    EVENT_POLLING_TIME,
-    APPLYING_START_TIME,
-    APPLYING_END_TIME,
-    PROCESSING_END_TIME,
-    OUTPUT_START_TIME,
-    OUTPUT_END_TIME
+    INPUT_POLLING_TIME(Target.COMMAND),
+    COMMAND_APPENDING_TIME(Target.COMMAND),
+    COMMAND_POLLING_TIME(Target.COMMAND),
+    PROCESSING_START_TIME(Target.COMMAND),
+    ROUTING_START_TIME(Target.EVENT),
+    EVENT_APPENDING_TIME(Target.EVENT),
+    EVENT_POLLING_TIME(Target.EVENT),
+    OUTPUT_POLLING_TIME(Target.OUTPUT),
+    APPLYING_START_TIME(Target.EVENT),
+    APPLYING_END_TIME(Target.EVENT),
+    PROCESSING_END_TIME(Target.COMMAND),
+    OUTPUT_START_TIME(Target.OUTPUT),
+    OUTPUT_END_TIME(Target.OUTPUT);
+
+    private final Target target;
+
+    TimeMetric(final Target target) {
+        this.target = requireNonNull(target);
+    }
+
+    public final Target target() {
+        return target;
+    }
+
+    public enum Target{
+        COMMAND((byte)0x40),
+        EVENT((byte)0x80),
+        OUTPUT((byte)0xC0);
+
+        final byte flagMask;
+        Target(final byte flagMask) {
+            this.flagMask = flagMask;
+        }
+    }
+
+    private static final TimeMetric[] VALUES = values();
+
+    public static byte flags(final Target target, final TimeMetric... metrics) {
+        byte flags = target.flagMask;
+        for (final TimeMetric metric : metrics) {
+            if (target == metric.target()) {
+                flags |= metric.ordinal();
+            }
+        }
+        return flags;
+    }
+
+    public static short flags(final Target target, final Set<TimeMetric> metrics) {
+        byte flags = target.flagMask;
+        for (final TimeMetric metric : VALUES) {
+            if (target == metric.target() && metrics.contains(metric)) {
+                flags |= metric.ordinal();
+            }
+        }
+        return flags;
+    }
 }

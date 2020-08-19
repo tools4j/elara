@@ -23,6 +23,7 @@
  */
 package org.tools4j.elara.output;
 
+import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.event.Event;
 
 import static java.util.Objects.requireNonNull;
@@ -30,16 +31,27 @@ import static java.util.Objects.requireNonNull;
 public class CompositeOutput implements Output {
 
     private final Output[] outputs;
+    private final ExceptionHandler exceptionHandler;
 
-    public CompositeOutput(final Output... outputs) {
+    public CompositeOutput(final Output[] outputs, final ExceptionHandler exceptionHandler) {
         this.outputs = requireNonNull(outputs);
+        this.exceptionHandler = requireNonNull(exceptionHandler);
     }
 
     @Override
-    public void publish(final Event event, final boolean replay, final CommandLoopback loopback) {
+    public Ack publish(final Event event, final boolean replay, final int retry, final CommandLoopback loopback) {
+        Ack ack = Ack.COMMIT;
         for (final Output output : outputs) {
-            output.publish(event, replay, loopback);
+            try {
+                if (Ack.RETRY == output.publish(event, replay, retry, loopback)) {
+                    ack = Ack.RETRY;
+                }
+            } catch (final Throwable t) {
+                exceptionHandler.handleEventOutputException(event, t);
+                //no retry, handle exception and be explicit for retry
+            }
         }
+        return ack;
     }
 
 }

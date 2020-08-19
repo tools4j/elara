@@ -35,6 +35,7 @@ import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.log.InMemoryLog;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.output.CommandLoopback;
+import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.run.Elara;
@@ -119,8 +120,9 @@ public class BankApplication {
 
     }
 
-    private void publish(final Event event, final boolean replay, final CommandLoopback loopback) {
-        System.out.println("published: " + event + ", replay=" + replay + ", payload=" + payloadFor(event));
+    private Ack publish(final Event event, final boolean replay, final int retry, final CommandLoopback loopback) {
+        System.out.println("published: " + event + ", replay=" + replay + ", retry=" + retry + ", payload=" + payloadFor(event));
+        return Ack.COMMIT;
     }
 
     private String payloadFor(final Command command) {

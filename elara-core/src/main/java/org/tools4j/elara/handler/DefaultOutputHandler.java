@@ -27,6 +27,7 @@ import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.Output;
+import org.tools4j.elara.output.Output.Ack;
 
 import static java.util.Objects.requireNonNull;
 
@@ -45,11 +46,12 @@ public class DefaultOutputHandler implements OutputHandler {
     }
 
     @Override
-    public void publish(final Event event, final boolean replay) {
+    public Ack publish(final Event event, final boolean replay, final int retry) {
         try {
-            output.publish(event, replay, commandLoopback);
+            return output.publish(event, replay, retry, commandLoopback);
         } catch (final Throwable t) {
             exceptionHandler.handleEventOutputException(event, t);
+            return Ack.COMMIT;//to retry handle exception and be explicit
         }
     }
 }

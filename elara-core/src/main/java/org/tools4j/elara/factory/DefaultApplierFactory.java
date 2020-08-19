@@ -74,14 +74,14 @@ public class DefaultApplierFactory implements ApplierFactory {
     public EventHandler eventHandler() {
         return new EventHandler(
                 singletons.baseState(),
-                eventApplier(),
+                singletons.eventApplier(),
                 configuration.exceptionHandler(),
                 configuration.duplicateHandler()
         );
     }
 
     @Override
-    public Step eventApplierStep() {
-        return new EventPollerStep(configuration.eventLog().poller(), eventHandler());
+    public Step eventPollerStep() {
+        return new EventPollerStep(configuration.eventLog().poller(), singletons.eventHandler());
     }
 }

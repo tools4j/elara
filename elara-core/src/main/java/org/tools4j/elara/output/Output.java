@@ -27,7 +27,12 @@ import org.tools4j.elara.event.Event;
 
 @FunctionalInterface
 public interface Output {
-    Output NOOP = (event, replay, loopback) -> {};
+    Output NOOP = (event, replay, retry, loopback) -> Ack.COMMIT;
 
-    void publish(Event event, boolean replay, CommandLoopback loopback);
+    enum Ack {
+        COMMIT,
+        RETRY
+    }
+
+    Ack publish(Event event, boolean replay, int retry, CommandLoopback loopback);
 }

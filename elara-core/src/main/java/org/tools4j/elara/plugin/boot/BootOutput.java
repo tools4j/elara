@@ -33,9 +33,10 @@ import static org.tools4j.elara.plugin.boot.BootEvents.APP_INITIALISATION_STARTE
 public class BootOutput implements Output {
 
     @Override
-    public void publish(final Event event, final boolean replay, final CommandLoopback loopback) {
-        if (!replay && event.type() == APP_INITIALISATION_STARTED) {
+    public Ack publish(final Event event, final boolean replay, final int retry, final CommandLoopback loopback) {
+        if (!replay && retry == 0 && event.type() == APP_INITIALISATION_STARTED) {
             loopback.enqueueCommandWithoutPayload(SIGNAL_APP_INITIALISATION_COMPLETE);
         }
+        return Ack.COMMIT;
     }
 }

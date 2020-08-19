@@ -160,8 +160,8 @@ public class DefaultSingletons implements Singletons {
     }
 
     @Override
-    public Step eventApplierStep() {
-        return getOrCreate(Step.class, applierFactory, ApplierFactory::eventApplierStep);
+    public Step eventPollerStep() {
+        return getOrCreate(Step.class, applierFactory, ApplierFactory::eventPollerStep);
     }
 
     //OutputFactory

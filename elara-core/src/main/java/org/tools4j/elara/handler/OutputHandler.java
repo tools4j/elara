@@ -24,7 +24,8 @@
 package org.tools4j.elara.handler;
 
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.output.Output.Ack;
 
 public interface OutputHandler {
-    void publish(Event event, boolean replay);
+    Ack publish(Event event, boolean replay, int retry);
 }

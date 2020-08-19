@@ -31,6 +31,7 @@ import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.log.MessageLog.Handler;
 import org.tools4j.elara.log.MessageLog.Handler.Result;
 import org.tools4j.elara.log.MessageLog.Poller;
+import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
@@ -51,6 +52,7 @@ public class OutputStep implements Step {
     private final Handler defaultHandler = buffer -> onMessage(buffer, false);
     private final FlyweightEvent flyweightEvent = new FlyweightEvent();
     private Poller replayPoller;
+    private int retry;
 
     public OutputStep(final OutputHandler handler, final MessageLog messageLog) {
         this(handler, new CommittedEventPoller(messageLog), null);
@@ -80,8 +82,12 @@ public class OutputStep implements Step {
     private Result onMessage(final DirectBuffer message, final boolean replay) {
         flyweightEvent.init(message, 0);
         try {
-            handler.publish(flyweightEvent, replay);
-            return Result.POLL;
+            if (Ack.COMMIT == handler.publish(flyweightEvent, replay, retry)) {
+                retry = 0;
+                return Result.POLL;
+            }
+            retry++;
+            return Result.PEEK;
         } finally {
             flyweightEvent.reset();
         }

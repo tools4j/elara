@@ -33,6 +33,7 @@ import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.log.InMemoryLog;
 import org.tools4j.elara.output.CommandLoopback;
+import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
@@ -66,8 +67,9 @@ public class SimpleStringApplication {
         System.out.println("applied: " + event + ", payload=" + payloadFor(event.type(), event.payload()));
     }
 
-    private void publish(final Event event, final boolean replay, final CommandLoopback loopback) {
-        System.out.println("published: " + event + ", replay=" + replay + ", payload=" + payloadFor(event.type(), event.payload()));
+    private Ack publish(final Event event, final boolean replay, final int retry, final CommandLoopback loopback) {
+        System.out.println("published: " + event + ", replay=" + replay + ", retry=" + retry + ", payload=" + payloadFor(event.type(), event.payload()));
+        return Ack.COMMIT;
     }
 
     private String payloadFor(final int type, final DirectBuffer payload) {
