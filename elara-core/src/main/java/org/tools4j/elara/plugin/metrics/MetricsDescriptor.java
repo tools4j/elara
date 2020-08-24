@@ -24,6 +24,7 @@
 package org.tools4j.elara.plugin.metrics;
 
 import org.agrona.DirectBuffer;
+import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 
 /**
  * Descriptor of frame layout for time and frequency counter metrics.
@@ -52,8 +53,8 @@ import org.agrona.DirectBuffer;
      +-------+-------+-------+-------+-------+-------+-------+-------+
      |                             Time                              |
      +-------+-------+-------+-------+-------+-------+-------+-------+
-     |                           Counter 0                           |
-     |                           Counter 1                           |
+     |                            Count 0                            |
+     |                            Count 1                            |
      |                             ...                               |
 
  * </pre>
@@ -94,6 +95,19 @@ public enum MetricsDescriptor {
 
     public static byte flags(final DirectBuffer buffer) {
         return buffer.getByte(FLAGS_OFFSET);
+    }
+
+    public static boolean isTimeMetrics(final DirectBuffer buffer) {
+        return FLAGS_NONE != flags(buffer);
+    }
+
+    public static boolean isFrequencyMetrics(final DirectBuffer buffer) {
+        return FLAGS_NONE == flags(buffer);
+    }
+
+    public static Target target(final DirectBuffer buffer) {
+        final byte flags = flags(buffer);
+        return Target.byFlags(flags);
     }
 
     public static int index(final DirectBuffer buffer) {

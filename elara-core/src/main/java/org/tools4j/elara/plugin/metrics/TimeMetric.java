@@ -52,24 +52,27 @@ import static java.util.Objects.requireNonNull;
  * }</pre>
  */
 public enum TimeMetric {
-    INPUT_POLLING_TIME(Target.COMMAND),
-    COMMAND_APPENDING_TIME(Target.COMMAND),
-    COMMAND_POLLING_TIME(Target.COMMAND),
-    PROCESSING_START_TIME(Target.COMMAND),
-    ROUTING_START_TIME(Target.EVENT),
-    EVENT_APPENDING_TIME(Target.EVENT),
-    EVENT_POLLING_TIME(Target.EVENT),
-    OUTPUT_POLLING_TIME(Target.OUTPUT),
-    APPLYING_START_TIME(Target.EVENT),
-    APPLYING_END_TIME(Target.EVENT),
-    PROCESSING_END_TIME(Target.COMMAND),
-    OUTPUT_START_TIME(Target.OUTPUT),
-    OUTPUT_END_TIME(Target.OUTPUT);
+    INPUT_SENDING_TIME(Target.COMMAND, (byte)0x01),
+    INPUT_POLLING_TIME(Target.COMMAND, (byte)0x02),
+    COMMAND_APPENDING_TIME(Target.COMMAND, (byte)0x04),
+    COMMAND_POLLING_TIME(Target.COMMAND, (byte)0x08),
+    PROCESSING_START_TIME(Target.COMMAND, (byte)0x10),
+    ROUTING_START_TIME(Target.EVENT, (byte)0x01),
+    EVENT_APPENDING_TIME(Target.EVENT, (byte)0x02),
+    EVENT_POLLING_TIME(Target.EVENT, (byte)0x04),
+    OUTPUT_POLLING_TIME(Target.OUTPUT, (byte)0x01),
+    APPLYING_START_TIME(Target.EVENT, (byte)0x08),
+    APPLYING_END_TIME(Target.EVENT, (byte)0x10),
+    PROCESSING_END_TIME(Target.COMMAND, (byte)0x20),
+    OUTPUT_START_TIME(Target.OUTPUT, (byte)0x02),
+    OUTPUT_END_TIME(Target.OUTPUT, (byte)0x04);
 
     private final Target target;
+    private final byte flagBit;
 
-    TimeMetric(final Target target) {
+    TimeMetric(final Target target, final byte flagBit) {
         this.target = requireNonNull(target);
+        this.flagBit = flagBit;
     }
 
     public final Target target() {
@@ -81,31 +84,45 @@ public enum TimeMetric {
         EVENT((byte)0x80),
         OUTPUT((byte)0xC0);
 
+        private static final Target[] VALUES = values();
+        private static final byte MASK = (byte)0xC0;
+
         final byte flagMask;
         Target(final byte flagMask) {
             this.flagMask = flagMask;
+        }
+
+        public static Target byFlags(final byte flags) {
+            final byte masked = (byte)(MASK & flags);
+            for (final Target target : VALUES) {
+                if (target.flagMask == masked) {
+                    return target;
+                }
+            }
+            throw new IllegalArgumentException("No valid target in flags: " + flags);
+        }
+
+        public byte flags(final TimeMetric... metrics) {
+            byte flags = flagMask;
+            for (final TimeMetric metric : metrics) {
+                if (this == metric.target()) {
+                    flags |= metric.flagBit;
+                }
+            }
+            return flags;
+        }
+
+        public short flags(final Set<TimeMetric> metrics) {
+            byte flags = flagMask;
+            for (final TimeMetric metric : TimeMetric.VALUES) {
+                if (this == metric.target() && metrics.contains(metric)) {
+                    flags |= metric.flagBit;
+                }
+            }
+            return flags;
         }
     }
 
     private static final TimeMetric[] VALUES = values();
 
-    public static byte flags(final Target target, final TimeMetric... metrics) {
-        byte flags = target.flagMask;
-        for (final TimeMetric metric : metrics) {
-            if (target == metric.target()) {
-                flags |= metric.ordinal();
-            }
-        }
-        return flags;
-    }
-
-    public static short flags(final Target target, final Set<TimeMetric> metrics) {
-        byte flags = target.flagMask;
-        for (final TimeMetric metric : VALUES) {
-            if (target == metric.target() && metrics.contains(metric)) {
-                flags |= metric.ordinal();
-            }
-        }
-        return flags;
-    }
 }
