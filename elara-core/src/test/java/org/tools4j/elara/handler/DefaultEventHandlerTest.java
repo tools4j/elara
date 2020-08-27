@@ -48,10 +48,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit test for {@link EventHandler}
+ * Unit test for {@link DefaultEventHandler}
  */
 @ExtendWith(MockitoExtension.class)
-public class EventHandlerTest {
+public class DefaultEventHandlerTest {
 
     @Mock
     private BaseState.Mutable baseState;
@@ -67,7 +67,7 @@ public class EventHandlerTest {
 
     @BeforeEach
     public void init() {
-        eventHandler = new EventHandler(baseState, eventApplier, exceptionHandler, duplicateHandler);
+        eventHandler = new DefaultEventHandler(baseState, eventApplier, exceptionHandler, duplicateHandler);
     }
 
     @Test

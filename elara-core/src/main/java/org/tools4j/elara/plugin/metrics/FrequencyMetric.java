@@ -28,17 +28,21 @@ import java.util.Set;
 public enum FrequencyMetric {
     /* duty cycle step invocation */
     DUTY_CYCLE_FREQUENCY,
-    EVENT_QUEUE_POLL_FREQUENCY,
-    COMMAND_QUEUE_POLL_FREQUENCY,
     INPUTS_POLL_FREQUENCY,
+    COMMAND_POLL_FREQUENCY,
+    EVENT_POLL_FREQUENCY,
+    OUTPUT_POLL_FREQUENCY,
     EXTRA_STEP_INVOCATION_FREQUENCY,
 
     /* duty cycle step performed work */
+    DUTY_CYCLE_PERFORMED_FREQUENCY,
     INPUT_RECEIVED_FREQUENCY,
     COMMAND_PROCESSED_FREQUENCY,
     EVENT_APPLIED_FREQUENCY,
     OUTPUT_PUBLISHED_FREQUENCY,
-    EXTRA_STEP_PERFORMED_FREQUENCY;
+    EXTRA_STEP_PERFORMED_FREQUENCY,
+
+    STEP_ERROR_FREQUENCY;
 
     private static final FrequencyMetric[] VALUES = values();
 
@@ -58,5 +62,13 @@ public enum FrequencyMetric {
             }
         }
         return choice;
+    }
+
+    public static int count() {
+        return VALUES.length;
+    }
+
+    public static FrequencyMetric byOrdinal(final int ordinal) {
+        return VALUES[ordinal];
     }
 }

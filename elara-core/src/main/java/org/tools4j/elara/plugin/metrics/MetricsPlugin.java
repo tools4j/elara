@@ -28,28 +28,41 @@ import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
-import org.tools4j.elara.plugin.api.Plugin.NullState;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.base.BaseState.Mutable;
+
+import java.util.EnumSet;
 
 import static java.util.Objects.requireNonNull;
 
 /**
  * A plugin that performs configurable measurements such as latencies.
  */
-public class MetricsPlugin implements Plugin<NullState> {
+public class MetricsPlugin implements Plugin<MetricsState> {
 
-    public MetricsPlugin(final TimeMetric... metrics) {
+    private final EnumSet<TimeMetric> timeMetrics;
+    private final EnumSet<FrequencyMetric> frequencyMetrics;
 
+    public MetricsPlugin(final TimeMetric... timeMetrics) {
+        this(EnumSet.of(timeMetrics[0], timeMetrics), EnumSet.noneOf(FrequencyMetric.class));
+    }
+
+    public MetricsPlugin(final FrequencyMetric... frequencyMetrics) {
+        this(EnumSet.noneOf(TimeMetric.class), EnumSet.of(frequencyMetrics[0], frequencyMetrics));
+    }
+
+    public MetricsPlugin(final EnumSet<TimeMetric> timeMetrics, final EnumSet<FrequencyMetric> frequencyMetrics) {
+        this.timeMetrics = requireNonNull(timeMetrics);
+        this.frequencyMetrics = requireNonNull(frequencyMetrics);
     }
 
     @Override
-    public NullState defaultPluginState() {
-        return NullState.NULL;
+    public MetricsState defaultPluginState() {
+        return new DefaultMetricsState(timeMetrics, frequencyMetrics);
     }
 
     @Override
-    public Configuration configuration(final org.tools4j.elara.init.Configuration appConfig, final NullState pluginState) {
+    public Configuration configuration(final org.tools4j.elara.init.Configuration appConfig, final MetricsState pluginState) {
         requireNonNull(appConfig);
         requireNonNull(pluginState);
         return new Configuration.Default() {

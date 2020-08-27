@@ -21,15 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.factory;
+package org.tools4j.elara.plugin.metrics;
 
-import org.tools4j.nobark.loop.LoopCondition;
-import org.tools4j.nobark.loop.Step;
+import java.util.Set;
 
-public interface RunnerFactory {
-    Runnable initStep();
-    LoopCondition runningCondition();
-    Step dutyCycleStep();
-    Step dutyCycleExtraStep();
-    Step[] dutyCycleWithExtraSteps();
+public interface MetricsState {
+    boolean capture(TimeMetric metric);
+    boolean capture(FrequencyMetric metric);
+    long time(TimeMetric metric);
+    long count(FrequencyMetric metric);
+    MetricsState time(TimeMetric metric, long time);
+    MetricsState count(FrequencyMetric metric, long add);
+    MetricsState clear(TimeMetric metric);
+    MetricsState clear(FrequencyMetric metric);
+    MetricsState clear();
+
 }

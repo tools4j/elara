@@ -48,6 +48,10 @@ public class DelegateSingletons implements Singletons {
         this.delegate = requireNonNull(delegate);
     }
 
+    protected Singletons singletons() {
+        return singletons();
+    }
+
     @Override
     public Receiver receiver() {
         return delegate.receiver();
@@ -141,6 +145,11 @@ public class DelegateSingletons implements Singletons {
     @Override
     public Step dutyCycleStep() {
         return delegate.dutyCycleStep();
+    }
+
+    @Override
+    public Step dutyCycleExtraStep() {
+        return delegate.dutyCycleExtraStep();
     }
 
     @Override

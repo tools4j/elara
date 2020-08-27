@@ -23,13 +23,21 @@
  */
 package org.tools4j.elara.factory;
 
-import org.tools4j.nobark.loop.LoopCondition;
-import org.tools4j.nobark.loop.Step;
+import org.tools4j.elara.plugin.api.Plugin.Configuration;
 
-public interface RunnerFactory {
-    Runnable initStep();
-    LoopCondition runningCondition();
-    Step dutyCycleStep();
-    Step dutyCycleExtraStep();
-    Step[] dutyCycleWithExtraSteps();
+public class InterceptableSingletons extends DelegateSingletons {
+
+    public InterceptableSingletons(final Singletons delegate) {
+        super(delegate);
+    }
+
+    @Override
+    protected final Singletons singletons() {
+        return super.singletons();
+    }
+
+    @Override
+    public final Configuration[] plugins() {
+        return super.plugins();
+    }
 }

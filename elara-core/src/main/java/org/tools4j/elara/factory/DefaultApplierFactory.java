@@ -25,6 +25,7 @@ package org.tools4j.elara.factory;
 
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.event.CompositeEventApplier;
+import org.tools4j.elara.handler.DefaultEventHandler;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.loop.EventPollerStep;
@@ -72,7 +73,7 @@ public class DefaultApplierFactory implements ApplierFactory {
 
     @Override
     public EventHandler eventHandler() {
-        return new EventHandler(
+        return new DefaultEventHandler(
                 singletons.baseState(),
                 singletons.eventApplier(),
                 configuration.exceptionHandler(),

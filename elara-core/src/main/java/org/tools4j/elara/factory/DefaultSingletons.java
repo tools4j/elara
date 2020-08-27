@@ -55,7 +55,7 @@ public class DefaultSingletons implements Singletons {
     private final OutputFactory outputFactory;
     private final PluginFactory pluginFactory;
 
-    private final Map<Object, Map<Class<?>, Object>> singletonsForFactory = new Object2ObjectHashMap<>(16, DEFAULT_LOAD_FACTOR);
+    private final Map<String, Object> instanceByName = new Object2ObjectHashMap<>(64, DEFAULT_LOAD_FACTOR);
 
     public DefaultSingletons(final Configuration configuration) {
         this(configuration, DefaultRunnerFactory::new, DefaultInputFactory::new, DefaultProcessorFactory::new,
@@ -78,14 +78,10 @@ public class DefaultSingletons implements Singletons {
         this.pluginFactory = pluginFactorySupplier.supply(configuration, this);
     }
 
-    private <T,S> T getOrCreate(final Class<T> type, S source, final Function<? super S, ? extends T> factory) {
-        Map<Class<?>, Object> singletons = singletonsForFactory.get(source);
-        if (singletons == null) {
-            singletonsForFactory.put(source, singletons = new Object2ObjectHashMap<>(16, DEFAULT_LOAD_FACTOR));
-        }
-        Object value = singletons.get(type);
+    private <T,S> T getOrCreate(final String name, final Class<T> type, final S source, final Function<? super S, ? extends T> factory) {
+        Object value = instanceByName.get(name);
         if (value == null) {
-            singletons.put(type, value = factory.apply(source));
+            instanceByName.put(name, value = factory.apply(source));
         }
         return type.cast(value);
     }
@@ -94,111 +90,116 @@ public class DefaultSingletons implements Singletons {
 
     @Override
     public Runnable initStep() {
-        return getOrCreate(Runnable.class, runnerFactory, RunnerFactory::initStep);
+        return getOrCreate("initStep", Runnable.class, runnerFactory, RunnerFactory::initStep);
     }
 
     @Override
     public LoopCondition runningCondition() {
-        return getOrCreate(LoopCondition.class, runnerFactory, RunnerFactory::runningCondition);
+        return getOrCreate("runningCondition", LoopCondition.class, runnerFactory, RunnerFactory::runningCondition);
     }
 
     @Override
     public Step dutyCycleStep() {
-        return getOrCreate(Step.class, runnerFactory, RunnerFactory::dutyCycleStep);
+        return getOrCreate("dutyCycleStep", Step.class, runnerFactory, RunnerFactory::dutyCycleStep);
+    }
+
+    @Override
+    public Step dutyCycleExtraStep() {
+        return getOrCreate("dutyCycleExtraStep", Step.class, runnerFactory, RunnerFactory::dutyCycleExtraStep);
     }
 
     @Override
     public Step[] dutyCycleWithExtraSteps() {
-        return getOrCreate(Step[].class, runnerFactory, RunnerFactory::dutyCycleWithExtraSteps);
+        return getOrCreate("dutyCycleWithExtraSteps", Step[].class, runnerFactory, RunnerFactory::dutyCycleWithExtraSteps);
     }
 
     //InputFactory
 
-
     @Override
     public Receiver receiver() {
-        return getOrCreate(Receiver.class, inputFactory, InputFactory::receiver);
+        return getOrCreate("receiver", Receiver.class, inputFactory, InputFactory::receiver);
     }
 
     @Override
     public Input[] inputs() {
-        return getOrCreate(Input[].class, inputFactory, InputFactory::inputs);
+        return getOrCreate("inputs", Input[].class, inputFactory, InputFactory::inputs);
     }
 
     @Override
     public Step sequencerStep() {
-        return getOrCreate(Step.class, inputFactory, InputFactory::sequencerStep);
+        return getOrCreate("sequencerStep", Step.class, inputFactory, InputFactory::sequencerStep);
     }
 
     //ProcessorFactory
 
     @Override
     public CommandProcessor commandProcessor() {
-        return getOrCreate(CommandProcessor.class, processorFactory, ProcessorFactory::commandProcessor);
+        return getOrCreate("commandProcessor", CommandProcessor.class, processorFactory, ProcessorFactory::commandProcessor);
     }
 
     @Override
     public CommandHandler commandHandler() {
-        return getOrCreate(CommandHandler.class, processorFactory, ProcessorFactory::commandHandler);
+        return getOrCreate("commandHandler", CommandHandler.class, processorFactory, ProcessorFactory::commandHandler);
     }
 
     @Override
     public Step commandPollerStep() {
-        return getOrCreate(Step.class, processorFactory, ProcessorFactory::commandPollerStep);
+        return getOrCreate("commandPollerStep", Step.class, processorFactory, ProcessorFactory::commandPollerStep);
     }
 
     //ApplierFactory
 
     @Override
     public EventApplier eventApplier() {
-        return getOrCreate(EventApplier.class, applierFactory, ApplierFactory::eventApplier);
+        return getOrCreate("eventApplier", EventApplier.class, applierFactory, ApplierFactory::eventApplier);
     }
 
     @Override
     public EventHandler eventHandler() {
-        return getOrCreate(EventHandler.class, applierFactory, ApplierFactory::eventHandler);
+        return getOrCreate("eventHandler", EventHandler.class, applierFactory, ApplierFactory::eventHandler);
     }
 
     @Override
     public Step eventPollerStep() {
-        return getOrCreate(Step.class, applierFactory, ApplierFactory::eventPollerStep);
+        return getOrCreate("eventPollerStep", Step.class, applierFactory, ApplierFactory::eventPollerStep);
     }
 
     //OutputFactory
 
     @Override
     public Output output() {
-        return getOrCreate(Output.class, outputFactory, OutputFactory::output);
+        return getOrCreate("output", Output.class, outputFactory, OutputFactory::output);
     }
 
     @Override
     public SequenceGenerator loopbackSequenceGenerator() {
-        return getOrCreate(SequenceGenerator.class, outputFactory, OutputFactory::loopbackSequenceGenerator);
+        return getOrCreate("loopbackSequenceGenerator", SequenceGenerator.class, outputFactory, OutputFactory::loopbackSequenceGenerator);
     }
 
     @Override
     public CommandLoopback commandLoopback() {
-        return getOrCreate(CommandLoopback.class, outputFactory, OutputFactory::commandLoopback);
+        return getOrCreate("commandLoopback", CommandLoopback.class, outputFactory, OutputFactory::commandLoopback);
     }
 
     @Override
     public OutputHandler outputHandler() {
-        return getOrCreate(OutputHandler.class, outputFactory, OutputFactory::outputHandler);
+        return getOrCreate("outputHandler", OutputHandler.class, outputFactory, OutputFactory::outputHandler);
     }
 
     @Override
     public Step outputStep() {
-        return getOrCreate(Step.class, outputFactory, OutputFactory::outputStep);
+        return getOrCreate("outputStep", Step.class, outputFactory, OutputFactory::outputStep);
     }
 
     //PluginFactory
+
     @Override
     public Mutable baseState() {
-        return getOrCreate(Mutable.class, pluginFactory, PluginFactory::baseState);
+        return getOrCreate("baseState", Mutable.class, pluginFactory, PluginFactory::baseState);
     }
 
     @Override
     public Plugin.Configuration[] plugins() {
-        return getOrCreate(Plugin.Configuration[].class, pluginFactory, PluginFactory::plugins);
+        return getOrCreate("plugins", Plugin.Configuration[].class, pluginFactory, PluginFactory::plugins);
     }
 }

@@ -24,6 +24,7 @@
 package org.tools4j.elara.factory;
 
 import org.tools4j.elara.init.Configuration;
+import org.tools4j.elara.plugin.api.Plugin;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.init.Configuration.validate;
@@ -34,12 +35,23 @@ public class DefaultElaraFactory implements ElaraFactory {
     private final Singletons singletons;
 
     public DefaultElaraFactory(final Configuration configuration) {
-        this(configuration, new DefaultSingletons(configuration));
+        this(configuration, intercept(new DefaultSingletons(configuration)));
     }
 
     public DefaultElaraFactory(final Configuration configuration, final Singletons singletons) {
         this.configuration = validate(configuration);
         this.singletons = requireNonNull(singletons);
+    }
+
+    private static Singletons intercept(final Singletons singletons) {
+        Singletons interceptedOrNot = requireNonNull(singletons);
+        for (final Plugin.Configuration pluginConfig : singletons.plugins()) {
+            final InterceptableSingletons intercepted = pluginConfig.interceptOrNull(singletons);
+            if (intercepted != null) {
+                interceptedOrNot = intercepted;
+            }
+        }
+        return interceptedOrNot;
     }
 
     @Override

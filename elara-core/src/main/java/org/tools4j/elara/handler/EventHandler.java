@@ -23,58 +23,14 @@
  */
 package org.tools4j.elara.handler;
 
-import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.plugin.base.BaseState;
-
-import static java.util.Objects.requireNonNull;
 
 /**
- * Event handler that appends and outputs outputs events.
+ * Event handler invoking an event applier.  It has the same API as an event applier but
+ * performs housekeeping tasks around the event applier.
  */
-public class EventHandler implements EventApplier {
-
-    private final BaseState.Mutable baseState;
-    private final EventApplier eventApplier;
-    private final ExceptionHandler exceptionHandler;
-    private final DuplicateHandler duplicateHandler;
-
-    public EventHandler(final BaseState.Mutable baseState,
-                        final EventApplier eventApplier,
-                        final ExceptionHandler exceptionHandler,
-                        final DuplicateHandler duplicateHandler) {
-        this.baseState = requireNonNull(baseState);
-        this.eventApplier = requireNonNull(eventApplier);
-        this.exceptionHandler = requireNonNull(exceptionHandler);
-        this.duplicateHandler = requireNonNull(duplicateHandler);
-    }
-
+public interface EventHandler extends EventApplier {
     @Override
-    public void onEvent(final Event event) {
-        if (baseState.eventApplied(event.id())) {
-            skipEvent(event);
-        } else {
-            applyEvent(event);
-            baseState.eventApplied(event);
-        }
-    }
-
-    private void applyEvent(final Event event) {
-        try {
-            eventApplier.onEvent(event);
-        } catch (final Throwable t) {
-            exceptionHandler.handleEventApplierException(event, t);
-        }
-    }
-
-    private void skipEvent(final Event event) {
-        try {
-            duplicateHandler.skipEventApplying(event);
-        } catch (final Throwable t) {
-            exceptionHandler.handleEventApplierException(event, t);
-        }
-    }
-
+    void onEvent(Event event);
 }
