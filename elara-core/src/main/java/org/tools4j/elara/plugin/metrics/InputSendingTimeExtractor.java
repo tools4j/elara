@@ -23,14 +23,9 @@
  */
 package org.tools4j.elara.plugin.metrics;
 
-public interface MetricsState {
-    long time(TimeMetric metric);
-    long counter(FrequencyMetric metric);
-    MetricsState time(TimeMetric metric, long time);
-    MetricsState counter(FrequencyMetric metric, long add);
-    MetricsState clear(TimeMetric metric);
-    MetricsState clearTimeMetrics();
-    MetricsState clear(FrequencyMetric metric);
-    MetricsState clearFrequencyMetrics();
-    MetricsState clear();
+import org.agrona.DirectBuffer;
+
+@FunctionalInterface
+public interface InputSendingTimeExtractor {
+    long sendingTime(int source, long sequence, int type, DirectBuffer buffer, int offset, int length);
 }

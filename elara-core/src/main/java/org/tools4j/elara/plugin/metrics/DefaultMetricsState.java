@@ -24,31 +24,11 @@
 package org.tools4j.elara.plugin.metrics;
 
 import java.util.Arrays;
-import java.util.Set;
-
-import static java.util.Objects.requireNonNull;
 
 public class DefaultMetricsState implements MetricsState {
 
-    private final Set<TimeMetric> timeMetrics;
-    private final Set<FrequencyMetric> frequencyMetrics;
     private final long[] times = new long[TimeMetric.count()];
-    private final long[] counts = new long[FrequencyMetric.count()];
-
-    public DefaultMetricsState(final Set<TimeMetric> timeMetrics, final Set<FrequencyMetric> frequencyMetrics) {
-        this.timeMetrics = requireNonNull(timeMetrics);
-        this.frequencyMetrics = requireNonNull(frequencyMetrics);
-    }
-
-    @Override
-    public boolean capture(final TimeMetric metric) {
-        return timeMetrics.contains(metric);
-    }
-
-    @Override
-    public boolean capture(final FrequencyMetric metric) {
-        return frequencyMetrics.contains(metric);
-    }
+    private final long[] counters = new long[FrequencyMetric.count()];
 
     @Override
     public long time(final TimeMetric metric) {
@@ -56,8 +36,8 @@ public class DefaultMetricsState implements MetricsState {
     }
 
     @Override
-    public long count(final FrequencyMetric metric) {
-        return counts[metric.ordinal()];
+    public long counter(final FrequencyMetric metric) {
+        return counters[metric.ordinal()];
     }
 
     @Override
@@ -67,8 +47,8 @@ public class DefaultMetricsState implements MetricsState {
     }
 
     @Override
-    public MetricsState count(final FrequencyMetric metric, final long add) {
-        counts[metric.ordinal()] += add;
+    public MetricsState counter(final FrequencyMetric metric, final long add) {
+        counters[metric.ordinal()] += add;
         return this;
     }
 
@@ -80,14 +60,26 @@ public class DefaultMetricsState implements MetricsState {
 
     @Override
     public MetricsState clear(final FrequencyMetric metric) {
-        counts[metric.ordinal()] = 0;
+        counters[metric.ordinal()] = 0;
+        return this;
+    }
+
+    @Override
+    public MetricsState clearTimeMetrics() {
+        Arrays.fill(times, 0);
+        return this;
+    }
+
+    @Override
+    public MetricsState clearFrequencyMetrics() {
+        Arrays.fill(counters, 0);
         return this;
     }
 
     @Override
     public MetricsState clear() {
-        Arrays.fill(times, 0);
-        Arrays.fill(counts, 0);
+        clearTimeMetrics();
+        clearFrequencyMetrics();
         return this;
     }
 }

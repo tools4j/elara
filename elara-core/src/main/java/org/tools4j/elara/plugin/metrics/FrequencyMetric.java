@@ -45,11 +45,15 @@ public enum FrequencyMetric {
     STEP_ERROR_FREQUENCY;
 
     private static final FrequencyMetric[] VALUES = values();
+    private static final short ALL_FLAGS = (short)((1 << VALUES.length) - 1);
+    static {
+        assert VALUES.length == Integer.bitCount(ALL_FLAGS);
+    }
 
     public static short choice(final FrequencyMetric... metrics) {
         short choice = 0;
         for (final FrequencyMetric metric : metrics) {
-            choice |= metric.ordinal();
+            choice |= (1 << metric.ordinal());
         }
         return choice;
     }
@@ -58,10 +62,29 @@ public enum FrequencyMetric {
         short choice = 0;
         for (final FrequencyMetric metric : VALUES) {
             if (metrics.contains(metric)) {
-                choice |= metric.ordinal();
+                choice |= (1 << metric.ordinal());
             }
         }
         return choice;
+    }
+
+    public static int count(final short choice) {
+        return Integer.bitCount(ALL_FLAGS & choice);
+    }
+
+    public static FrequencyMetric metric(final short choice, final int index) {
+        int c = ALL_FLAGS & choice;
+        int count = 0;
+        for (int i = 0; i < VALUES.length && c != 0; i++) {
+            if ((c & 0x1) != 0) {
+                if (count == index) {
+                    return VALUES[i];
+                }
+                count++;
+            }
+            c >>>= 1;
+        }
+        return null;
     }
 
     public static int count() {

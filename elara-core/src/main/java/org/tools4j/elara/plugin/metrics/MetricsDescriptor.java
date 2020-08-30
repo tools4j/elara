@@ -63,7 +63,7 @@ public enum MetricsDescriptor {
 
     public static final byte VERSION = 1;
 
-    private static final byte FLAGS_NONE = 0;
+    static final byte FLAGS_NONE = 0;
 
     public static final int VERSION_OFFSET = 0;
     public static final int VERSION_LENGTH = Byte.BYTES;

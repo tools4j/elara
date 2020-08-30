@@ -37,6 +37,7 @@ import org.tools4j.elara.input.Receiver.ReceivingContext;
 import org.tools4j.elara.log.MessageLog.Handler.Result;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.output.Output.Ack;
+import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.time.TimeSource;
@@ -69,27 +70,49 @@ import static org.tools4j.elara.plugin.metrics.TimeMetric.PROCESSING_END_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.PROCESSING_START_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_END_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_START_TIME;
+import static org.tools4j.elara.plugin.metrics.TimeMetric.Target.COMMAND;
+import static org.tools4j.elara.plugin.metrics.TimeMetric.Target.EVENT;
+import static org.tools4j.elara.plugin.metrics.TimeMetric.Target.OUTPUT;
 
-public class MetricsInterceptor extends InterceptableSingletons {
+public class MetricsCapturingInterceptor extends InterceptableSingletons {
 
     private final TimeSource timeSource;
+    private final Configuration configuration;
     private final MetricsState state;
+    private final TimeMetricsLogger logger;
 
-    public MetricsInterceptor(final Singletons delegate, final TimeSource timeSource, final MetricsState state) {
+    public MetricsCapturingInterceptor(final Singletons delegate,
+                                       final TimeSource timeSource,
+                                       final Configuration configuration,
+                                       final MetricsState state) {
         super(delegate);
         this.timeSource = requireNonNull(timeSource);
+        this.configuration = requireNonNull(configuration);
         this.state = requireNonNull(state);
+        this.logger = new TimeMetricsLogger(timeSource, configuration, state);
+    }
+
+    private boolean shouldCapture(final TimeMetric metric) {
+        return configuration.timeMetrics().contains(metric);
+    }
+
+    private boolean shouldCapture(final FrequencyMetric metric) {
+        return configuration.frequencyMetrics().contains(metric);
+    }
+
+    private boolean shouldCaptureAnyOf(final Target target) {
+        return target.anyOf(configuration.timeMetrics());
     }
 
     private void captureTime(final TimeMetric metric) {
-        if (state.capture(metric)) {
+        if (shouldCapture(metric)) {
             state.time(metric, timeSource.currentTime());
         }
     }
 
     private void captureCount(final FrequencyMetric metric) {
-        if (state.capture(metric)) {
-            state.count(metric, 1);
+        if (shouldCapture(metric)) {
+            state.counter(metric, 1);
         }
     }
 
@@ -97,8 +120,8 @@ public class MetricsInterceptor extends InterceptableSingletons {
                              final FrequencyMetric performedMetric,
                              final Step step) {
         requireNonNull(step);
-        if (state.capture(STEP_ERROR_FREQUENCY)) {
-            if (state.capture(invokedMetric) || state.capture(performedMetric)) {
+        if (shouldCapture(STEP_ERROR_FREQUENCY)) {
+            if (shouldCapture(invokedMetric) || shouldCapture(performedMetric)) {
                 return () -> {
                     try {
                         final boolean result = step.perform();
@@ -122,7 +145,7 @@ public class MetricsInterceptor extends InterceptableSingletons {
                 }
             };
         }
-        if (state.capture(invokedMetric) || state.capture(performedMetric)) {
+        if (shouldCapture(invokedMetric) || shouldCapture(performedMetric)) {
             return () -> {
                 final boolean result = step.perform();
                 captureCount(invokedMetric);
@@ -168,7 +191,7 @@ public class MetricsInterceptor extends InterceptableSingletons {
     @Override
     public Receiver receiver() {
         final Receiver receiver = requireNonNull(singletons().receiver());
-        if (state.capture(INPUT_POLLING_TIME) || state.capture(COMMAND_APPENDING_TIME)) {
+        if (shouldCapture(INPUT_POLLING_TIME) || shouldCapture(COMMAND_APPENDING_TIME)) {
             return timedReceiver(receiver);
         }
         return receiver;
@@ -177,11 +200,12 @@ public class MetricsInterceptor extends InterceptableSingletons {
     @Override
     public CommandHandler commandHandler() {
         final CommandHandler commandHandler = requireNonNull(singletons().commandHandler());
-        if (state.capture(COMMAND_POLLING_TIME) || state.capture(PROCESSING_END_TIME)) {
+        if (shouldCaptureAnyOf(COMMAND)) {//includes COMMAND_POLLING_TIME and PROCESSING_END_TIME
             return command -> {
                 captureTime(COMMAND_POLLING_TIME);
                 final Result result = commandHandler.onCommand(command);
                 captureTime(PROCESSING_END_TIME);
+                logger.logMetrics(command);
                 return result;
             };
         }
@@ -191,9 +215,9 @@ public class MetricsInterceptor extends InterceptableSingletons {
     @Override
     public CommandProcessor commandProcessor() {
         final CommandProcessor commandProcessor = requireNonNull(singletons().commandProcessor());
-        if (state.capture(PROCESSING_START_TIME) || state.capture(ROUTING_START_TIME) || state.capture(ROUTING_END_TIME)) {
+        if (shouldCapture(PROCESSING_START_TIME) || shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME)) {
             return (command, router) -> {
-                final EventRouter eventRouter = state.capture(ROUTING_START_TIME) || state.capture(ROUTING_END_TIME) ?
+                final EventRouter eventRouter = shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME) ?
                         timedEventRouter(router) : router;
                 captureTime(PROCESSING_START_TIME);
                 commandProcessor.onCommand(command, eventRouter);
@@ -206,11 +230,12 @@ public class MetricsInterceptor extends InterceptableSingletons {
     @Override
     public EventApplier eventApplier() {
         final EventApplier eventApplier = requireNonNull(singletons().eventApplier());
-        if (state.capture(APPLYING_START_TIME) || state.capture(APPLYING_END_TIME)) {
+        if (shouldCaptureAnyOf(EVENT)) {//includes APPLYING_START_TIME and APPLYING_END_TIME
             return event -> {
                 captureTime(APPLYING_START_TIME);
                 eventApplier.onEvent(event);
                 captureTime(APPLYING_END_TIME);
+                logger.logMetrics(EVENT, event);
             };
         }
         return eventApplier;
@@ -219,7 +244,7 @@ public class MetricsInterceptor extends InterceptableSingletons {
     @Override
     public EventHandler eventHandler() {
         final EventHandler eventHandler = requireNonNull(singletons().eventHandler());
-        if (state.capture(EVENT_POLLING_TIME)) {
+        if (shouldCapture(EVENT_POLLING_TIME)) {
             return event -> {
                 captureTime(EVENT_POLLING_TIME);
                 eventHandler.onEvent(event);
@@ -231,7 +256,7 @@ public class MetricsInterceptor extends InterceptableSingletons {
     @Override
     public OutputHandler outputHandler() {
         final OutputHandler outputHandler = requireNonNull(singletons().outputHandler());
-        if (state.capture(OUTPUT_POLLING_TIME)) {
+        if (shouldCapture(OUTPUT_POLLING_TIME)) {
             return (event, replay, retry) -> {
                 captureTime(OUTPUT_POLLING_TIME);
                 return outputHandler.publish(event, replay, retry);
@@ -243,11 +268,12 @@ public class MetricsInterceptor extends InterceptableSingletons {
     @Override
     public Output output() {
         final Output output = requireNonNull(singletons().output());
-        if (state.capture(OUTPUT_START_TIME) || state.capture(OUTPUT_END_TIME)) {
+        if (shouldCaptureAnyOf(OUTPUT)) {//includes OUTPUT_START_TIME and OUTPUT_END_TIME
             return (event, replay, retry, loopback) -> {
                 captureTime(OUTPUT_START_TIME);
                 final Ack ack = output.publish(event, replay, retry, loopback);
                 captureTime(OUTPUT_END_TIME);
+                logger.logMetrics(OUTPUT, event);
                 return ack;
             };
         }
@@ -354,7 +380,7 @@ public class MetricsInterceptor extends InterceptableSingletons {
     private Receiver timedReceiver(final Receiver receiver) {
         requireNonNull(receiver);
         return new Receiver() {
-            final TimedReceivingContext context = state.capture(COMMAND_APPENDING_TIME) ?
+            final TimedReceivingContext context = shouldCapture(COMMAND_APPENDING_TIME) ?
                     new TimedReceivingContext() : null;
             ReceivingContext receivingContext(final ReceivingContext receivingContext) {
                 return context != null ? context.init(receivingContext) : receivingContext;

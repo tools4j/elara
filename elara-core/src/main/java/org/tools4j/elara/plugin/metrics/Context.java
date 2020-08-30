@@ -23,14 +23,18 @@
  */
 package org.tools4j.elara.plugin.metrics;
 
-public interface MetricsState {
-    long time(TimeMetric metric);
-    long counter(FrequencyMetric metric);
-    MetricsState time(TimeMetric metric, long time);
-    MetricsState counter(FrequencyMetric metric, long add);
-    MetricsState clear(TimeMetric metric);
-    MetricsState clearTimeMetrics();
-    MetricsState clear(FrequencyMetric metric);
-    MetricsState clearFrequencyMetrics();
-    MetricsState clear();
+import org.tools4j.elara.log.MessageLog;
+
+public interface Context extends Configuration {
+    Context timeMetric(TimeMetric metric);
+    Context frequencyMetric(FrequencyMetric metric);
+    Context inputSendingTimeExtractor(InputSendingTimeExtractor sendingTimeExtractor);
+    Context frequencyLogInterval(long timeInterval);
+    Context metricsLog(MessageLog metricLog);
+    Context timeMetricLog(MessageLog metricLog);
+    Context frequencyMetricLog(MessageLog metricLog);
+
+    static Context create() {
+        return new DefaultContext();
+    }
 }

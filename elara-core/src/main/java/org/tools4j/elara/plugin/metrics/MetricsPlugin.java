@@ -23,42 +23,29 @@
  */
 package org.tools4j.elara.plugin.metrics;
 
-import org.tools4j.elara.application.CommandProcessor;
-import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.input.Input;
-import org.tools4j.elara.output.Output;
+import org.tools4j.elara.factory.InterceptableSingletons;
+import org.tools4j.elara.factory.Singletons;
+import org.tools4j.elara.init.ExecutionType;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.elara.plugin.base.BaseState.Mutable;
-
-import java.util.EnumSet;
+import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * A plugin that performs configurable measurements such as latencies.
+ * A plugin that captures configurable measurements such as latencies or counts/frequencies.
  */
 public class MetricsPlugin implements Plugin<MetricsState> {
 
-    private final EnumSet<TimeMetric> timeMetrics;
-    private final EnumSet<FrequencyMetric> frequencyMetrics;
+    private final org.tools4j.elara.plugin.metrics.Configuration configuration;
 
-    public MetricsPlugin(final TimeMetric... timeMetrics) {
-        this(EnumSet.of(timeMetrics[0], timeMetrics), EnumSet.noneOf(FrequencyMetric.class));
-    }
-
-    public MetricsPlugin(final FrequencyMetric... frequencyMetrics) {
-        this(EnumSet.noneOf(TimeMetric.class), EnumSet.of(frequencyMetrics[0], frequencyMetrics));
-    }
-
-    public MetricsPlugin(final EnumSet<TimeMetric> timeMetrics, final EnumSet<FrequencyMetric> frequencyMetrics) {
-        this.timeMetrics = requireNonNull(timeMetrics);
-        this.frequencyMetrics = requireNonNull(frequencyMetrics);
+    public MetricsPlugin(final org.tools4j.elara.plugin.metrics.Configuration configuration) {
+        this.configuration = org.tools4j.elara.plugin.metrics.Configuration.validate(configuration);
     }
 
     @Override
     public MetricsState defaultPluginState() {
-        return new DefaultMetricsState(timeMetrics, frequencyMetrics);
+        return new DefaultMetricsState();
     }
 
     @Override
@@ -67,23 +54,16 @@ public class MetricsPlugin implements Plugin<MetricsState> {
         requireNonNull(pluginState);
         return new Configuration.Default() {
             @Override
-            public Input[] inputs(final BaseState baseState) {
-                return new Input[0];
+            public Step step(final BaseState baseState, final ExecutionType executionType) {
+                if (configuration.frequencyMetrics().isEmpty() || executionType != ExecutionType.ALWAYS) {
+                    return Step.NO_OP;
+                }
+                return new FrequencyMetricsLoggerStep(appConfig.timeSource(), configuration, pluginState);
             }
 
             @Override
-            public Output output(final BaseState baseState) {
-                return Output.NOOP;
-            }
-
-            @Override
-            public CommandProcessor commandProcessor(final BaseState baseState) {
-                return null;
-            }
-
-            @Override
-            public EventApplier eventApplier(final Mutable baseState) {
-                return EventApplier.NOOP;
+            public InterceptableSingletons interceptOrNull(final Singletons singletons) {
+                return new MetricsCapturingInterceptor(singletons, appConfig.timeSource(), configuration, pluginState);
             }
         };
     }

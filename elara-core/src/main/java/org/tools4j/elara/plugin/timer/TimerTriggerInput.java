@@ -73,6 +73,9 @@ public final class TimerTriggerInput implements Input {
             }
             return 1;
         }
+        //NOTE: - we did not poll anything but we always perform some work by checking the time
+        //      - as we are returning zero the idle strategy could kick in and force the duty cycle loop into a pause
+        //      - a reasonably configured idle strategy should never cause any serious problems for most timers
         return 0;
     }
 }

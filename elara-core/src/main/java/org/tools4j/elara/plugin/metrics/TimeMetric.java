@@ -83,24 +83,27 @@ public enum TimeMetric {
                 1, 2, 2, 3, 2, 3, 3, 4, //8-15
         };
 
-
+        private final byte allFlags;
         private final TimeMetric[] metrics;
         private final byte[] metricFlagByOrdinal = new byte[VALUES.length];
         Target(final TimeMetric... metrics) {
             this.metrics = requireNonNull(metrics);
+            byte all = 0;
             for (int i = 0; i < metrics.length; i++) {
                 final byte flag = (byte)(1 << i);
+                all |= flag;
                 metricFlagByOrdinal[metrics[i].ordinal()] = flag;
             }
+            this.allFlags = all;
         }
 
-        byte flag(final TimeMetric metric) {
+        public byte flag(final TimeMetric metric) {
             return metricFlagByOrdinal[metric.ordinal()];
         }
 
-        byte flags(final Set<TimeMetric> metrics) {
+        public byte flags(final Set<TimeMetric> metrics) {
             byte flags = this == OUTPUT ? OUTPUT_BIT : 0;
-            for (final TimeMetric metric : VALUES) {
+            for (final TimeMetric metric : metrics) {
                 if (metrics.contains(metric)) {
                     flags |= flag(metric);
                 }
@@ -108,16 +111,26 @@ public enum TimeMetric {
             return flags;
         }
 
-        boolean isMetric(final TimeMetric metric) {
+        public boolean isMetric(final TimeMetric metric) {
             return flag(metric) != 0;
         }
 
-        int count(final byte flags) {
-            return BIT_COUNT[0x0f & flags] + BIT_COUNT[0x0f & (flags >>> 4)];
+        public boolean anyOf(final Set<TimeMetric> metrics) {
+            for (final TimeMetric metric : metrics) {
+                if (metrics.contains(metric)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
-        TimeMetric metric(final byte flags, final int index) {
-            int f = 0xff & flags;
+        public int count(final byte flags) {
+            final int f = allFlags & flags;
+            return BIT_COUNT[0x0f & f] + BIT_COUNT[0x0f & (f >>> 4)];
+        }
+
+        public TimeMetric metric(final byte flags, final int index) {
+            int f = allFlags & flags;
             int count = 0;
             for (int i = 0; i < metrics.length && f != 0; i++) {
                 if ((f & 0x1) != 0) {
@@ -131,7 +144,7 @@ public enum TimeMetric {
             return null;
         }
 
-        static Target target(final byte flags, final int index) {
+        public static Target target(final byte flags, final int index) {
             if (index >= 0) {
                 //event or output
                 return (OUTPUT_BIT & flags) != 0 ? OUTPUT : EVENT;
