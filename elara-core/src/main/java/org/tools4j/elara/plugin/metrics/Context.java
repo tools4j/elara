@@ -25,14 +25,20 @@ package org.tools4j.elara.plugin.metrics;
 
 import org.tools4j.elara.log.MessageLog;
 
+import java.util.Set;
+
 public interface Context extends Configuration {
     Context timeMetric(TimeMetric metric);
+    Context timeMetrics(TimeMetric... metrics);
+    Context timeMetrics(Set<? extends TimeMetric> metrics);
     Context frequencyMetric(FrequencyMetric metric);
+    Context frequencyMetrics(FrequencyMetric... metrics);
+    Context frequencyMetrics(Set<? extends FrequencyMetric> metrics);
     Context inputSendingTimeExtractor(InputSendingTimeExtractor sendingTimeExtractor);
     Context frequencyLogInterval(long timeInterval);
     Context metricsLog(MessageLog metricLog);
-    Context timeMetricLog(MessageLog metricLog);
-    Context frequencyMetricLog(MessageLog metricLog);
+    Context timeMetricsLog(MessageLog metricLog);
+    Context frequencyMetricsLog(MessageLog metricLog);
 
     static Context create() {
         return new DefaultContext();

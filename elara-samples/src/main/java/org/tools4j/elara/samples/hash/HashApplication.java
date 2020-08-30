@@ -32,10 +32,15 @@ import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver.ReceivingContext;
 import org.tools4j.elara.log.InMemoryLog;
+import org.tools4j.elara.plugin.api.Plugins;
+import org.tools4j.elara.plugin.metrics.Configuration;
+import org.tools4j.elara.plugin.metrics.FrequencyMetric;
+import org.tools4j.elara.plugin.metrics.TimeMetric;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
 
+import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.Objects.requireNonNull;
@@ -155,6 +160,35 @@ public class HashApplication {
                 .input(input(input))
                 .commandLog(new ChronicleMessageLog(cq))
                 .eventLog(new ChronicleMessageLog(eq))
+        );
+    }
+
+    public static ElaraRunner chronicleQueueWithMetrics(final ModifiableState state, final AtomicLong input) {
+        final ChronicleQueue cq = ChronicleQueue.singleBuilder()
+                .path("build/chronicle/hash-metrics/cmd.cq4")
+                .wireType(WireType.BINARY_LIGHT)
+                .build();
+        final ChronicleQueue eq = ChronicleQueue.singleBuilder()
+                .path("build/chronicle/hash-metrics/evt.cq4")
+                .wireType(WireType.BINARY_LIGHT)
+                .build();
+        final ChronicleQueue mq = ChronicleQueue.singleBuilder()
+                .path("build/chronicle/hash-metrics/mtx.cq4")
+                .wireType(WireType.BINARY_LIGHT)
+                .build();
+        return Elara.launch(Context.create()
+                .commandProcessor(commandProcessor(state))
+                .eventApplier(eventApplier(state))
+                .input(input(input))
+                .commandLog(new ChronicleMessageLog(cq))
+                .eventLog(new ChronicleMessageLog(eq))
+                .plugin(Plugins.metricsPlugin(Configuration.configure()
+                    .timeMetrics(EnumSet.allOf(TimeMetric.class))
+                    .frequencyMetrics(EnumSet.allOf(FrequencyMetric.class))
+                    .frequencyLogInterval(1000)//ms
+                    .inputSendingTimeExtractor((source, sequence, type, buffer, offset, length) -> sequence)//for testing only
+                    .metricsLog(new ChronicleMessageLog(mq))
+                ))
         );
     }
 

@@ -27,14 +27,14 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.log.MessageLog.AppendingContext;
 import org.tools4j.elara.log.MessageLog.Appender;
+import org.tools4j.elara.log.MessageLog.AppendingContext;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.plugin.metrics.MetricsLogEntry.writeTime;
-import static org.tools4j.elara.plugin.metrics.MetricsLogEntry.writeTimeMetricsHeader;
+import static org.tools4j.elara.plugin.metrics.FlyweightMetricsLogEntry.writeTime;
+import static org.tools4j.elara.plugin.metrics.FlyweightMetricsLogEntry.writeTimeMetricsHeader;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.METRIC_APPENDING_TIME;
 
 public class TimeMetricsLogger {
@@ -79,7 +79,7 @@ public class TimeMetricsLogger {
         final long sequence = commandId.sequence();
         try (final AppendingContext context = appender.appending()) {
             final MutableDirectBuffer buffer = context.buffer();
-            final int headerLen = writeTimeMetricsHeader(flags, index, source, sequence, buffer, 0);
+            final int headerLen = writeTimeMetricsHeader(flags, index, source, sequence, timeSource.currentTime(), buffer, 0);
             int offset = headerLen;
             for (int i = 0; i < count; i++) {
                 final TimeMetric metric = target.metric(flags, i);

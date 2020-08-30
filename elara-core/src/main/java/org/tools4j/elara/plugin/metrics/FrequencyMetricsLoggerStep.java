@@ -24,14 +24,14 @@
 package org.tools4j.elara.plugin.metrics;
 
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.log.MessageLog.AppendingContext;
 import org.tools4j.elara.log.MessageLog.Appender;
+import org.tools4j.elara.log.MessageLog.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
 import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.plugin.metrics.MetricsLogEntry.writeCounter;
-import static org.tools4j.elara.plugin.metrics.MetricsLogEntry.writeFrequencyMetricsHeader;
+import static org.tools4j.elara.plugin.metrics.FlyweightMetricsLogEntry.writeCounter;
+import static org.tools4j.elara.plugin.metrics.FlyweightMetricsLogEntry.writeFrequencyMetricsHeader;
 
 public class FrequencyMetricsLoggerStep implements Step {
 
@@ -87,7 +87,7 @@ public class FrequencyMetricsLoggerStep implements Step {
         try (final AppendingContext context = appender.appending()) {
             final MutableDirectBuffer buffer = context.buffer();
             //NOTE: our repetition is intentionally a long so we can also use the sign bit before overflow
-            final int headerLen = writeFrequencyMetricsHeader(choice, (int)repetition, time, buffer, 0);
+            final int headerLen = writeFrequencyMetricsHeader(choice, (int)repetition, logInterval, time, buffer, 0);
             int offset = headerLen;
             for (int i = 0; i < count; i++) {
                 final FrequencyMetric metric = FrequencyMetric.metric(choice, i);

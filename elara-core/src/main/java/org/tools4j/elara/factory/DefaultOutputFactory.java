@@ -38,6 +38,7 @@ import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.nobark.loop.Step;
 
 import java.util.Arrays;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.loop.OutputStep.DEFAULT_POLLER_ID;
@@ -45,20 +46,20 @@ import static org.tools4j.elara.loop.OutputStep.DEFAULT_POLLER_ID;
 public class DefaultOutputFactory implements OutputFactory {
 
     private final Configuration configuration;
-    private final Singletons singletons;
+    private final Supplier<? extends Singletons> singletons;
 
-    public DefaultOutputFactory(final Configuration configuration, final Singletons singletons) {
+    public DefaultOutputFactory(final Configuration configuration, final Supplier<? extends Singletons> singletons) {
         this.configuration = requireNonNull(configuration);
         this.singletons = requireNonNull(singletons);
     }
 
     @Override
     public Output output() {
-        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = singletons.plugins();
+        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = singletons.get().plugins();
         if (plugins.length == 0) {
             return configuration.output();
         }
-        final BaseState baseState = singletons.baseState();
+        final BaseState baseState = singletons.get().baseState();
         final Output[] outputs = new Output[plugins.length + 1];
         int count = 0;
         for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
@@ -87,13 +88,15 @@ public class DefaultOutputFactory implements OutputFactory {
         return new DefaultCommandLoopback(
                 configuration.commandLog().appender(),
                 configuration.timeSource(),
-                singletons.loopbackSequenceGenerator()
+                singletons.get().loopbackSequenceGenerator()
         );
     }
 
     @Override
     public OutputHandler outputHandler() {
-        return new DefaultOutputHandler(singletons.output(), singletons.commandLoopback(), configuration.exceptionHandler());
+        return new DefaultOutputHandler(
+                singletons.get().output(), singletons.get().commandLoopback(), configuration.exceptionHandler()
+        );
     }
 
     @Override
@@ -101,7 +104,7 @@ public class DefaultOutputFactory implements OutputFactory {
         if (configuration.output() == Output.NOOP) {
             return Step.NO_OP;
         }
-        final OutputHandler outputHandler = singletons.outputHandler();
+        final OutputHandler outputHandler = singletons.get().outputHandler();
         try {
             return new OutputStep(outputHandler, configuration.eventLog(), DEFAULT_POLLER_ID);
         } catch (final UnsupportedOperationException e) {

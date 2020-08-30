@@ -31,11 +31,7 @@ import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.Header;
 
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
-import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.format.Hex.hex;
 
 /**
@@ -126,29 +122,4 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
         }
     }
 
-    /**
-     * Replaces values for the specified placeholders with the given space char for the length of the original value's
-     * string representation.
-     *
-     * @param formatter             original formatter to get the value
-     * @param spaceChar             the space character
-     * @param placeholderToSpaceOut the place holders for which to replace value with space chars
-     * @return formatter that spaces out some of the values
-     */
-    static DataFrameFormatter spacer(final DataFrameFormatter formatter, final char spaceChar, final String... placeholderToSpaceOut) {
-        requireNonNull(formatter);
-        final Set<String> spaceOut = new HashSet<>(Arrays.asList(placeholderToSpaceOut));
-        return new DataFrameFormatter() {
-            @Override
-            public Object value(final String placeholder, final long line, final long entryId, final DataFrame frame) {
-                final Object value = formatter.value(placeholder, line, entryId, frame);
-                if (spaceOut.contains(placeholder)) {
-                    final char[] chars = String.valueOf(value).toCharArray();
-                    Arrays.fill(chars, spaceChar);
-                    return String.valueOf(chars);
-                }
-                return value;
-            }
-        };
-    }
 }

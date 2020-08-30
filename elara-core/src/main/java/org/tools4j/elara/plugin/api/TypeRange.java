@@ -33,7 +33,6 @@ public enum TypeRange {
 //    LIVELINESS(-30, -39),
 //    HEARTBEAT(-40, -49),
 //    CONTROL(-50, -59),
-//    METRICS(-60, -69),
     //..
     REPLICATION(-90, -99);
 

@@ -77,8 +77,36 @@ public class DefaultContext implements Context {
     }
 
     @Override
+    public Context timeMetrics(final TimeMetric... metrics) {
+        for (final TimeMetric metric : metrics) {
+            timeMetrics.add(metric);
+        }
+        return this;
+    }
+
+    @Override
+    public Context timeMetrics(final Set<? extends TimeMetric> metrics) {
+        timeMetrics.addAll(metrics);
+        return this;
+    }
+
+    @Override
     public Context frequencyMetric(final FrequencyMetric metric) {
         frequencyMetrics.add(metric);
+        return this;
+    }
+
+    @Override
+    public Context frequencyMetrics(final FrequencyMetric... metrics) {
+        for (final FrequencyMetric metric : metrics) {
+            frequencyMetrics.add(metric);
+        }
+        return this;
+    }
+
+    @Override
+    public Context frequencyMetrics(final Set<? extends FrequencyMetric> metrics) {
+        frequencyMetrics.addAll(metrics);
         return this;
     }
 
@@ -106,13 +134,13 @@ public class DefaultContext implements Context {
     }
 
     @Override
-    public Context timeMetricLog(final MessageLog metricLog) {
+    public Context timeMetricsLog(final MessageLog metricLog) {
         this.timeMetricsLog = requireNonNull(metricLog);
         return this;
     }
 
     @Override
-    public Context frequencyMetricLog(final MessageLog metricLog) {
+    public Context frequencyMetricsLog(final MessageLog metricLog) {
         this.frequencyMetricsLog = requireNonNull(metricLog);
         return this;
     }

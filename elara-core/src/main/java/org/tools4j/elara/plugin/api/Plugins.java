@@ -26,7 +26,7 @@ package org.tools4j.elara.plugin.api;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.plugin.base.BasePlugin;
 import org.tools4j.elara.plugin.boot.BootPlugin;
-import org.tools4j.elara.plugin.replication.Configuration;
+import org.tools4j.elara.plugin.metrics.MetricsPlugin;
 import org.tools4j.elara.plugin.replication.ReplicationPlugin;
 import org.tools4j.elara.plugin.timer.TimerPlugin;
 
@@ -50,7 +50,11 @@ public enum Plugins {
         return new BootPlugin(commandSource, sequenceGenerator);
     }
 
-    public static ReplicationPlugin replicationPlugin(final Configuration configuration) {
+    public static MetricsPlugin metricsPlugin(final org.tools4j.elara.plugin.metrics.Configuration configuration) {
+        return new MetricsPlugin(configuration);
+    }
+
+    public static ReplicationPlugin replicationPlugin(final org.tools4j.elara.plugin.replication.Configuration configuration) {
         return new ReplicationPlugin(configuration);
     }
 }

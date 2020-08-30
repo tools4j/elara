@@ -35,6 +35,7 @@ import org.tools4j.nobark.loop.Step;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.api.Plugin.NO_INPUTS;
@@ -42,9 +43,9 @@ import static org.tools4j.elara.plugin.api.Plugin.NO_INPUTS;
 public class DefaultInputFactory implements InputFactory {
 
     private final Configuration configuration;
-    private final Singletons singletons;
+    private final Supplier<? extends Singletons> singletons;
 
-    public DefaultInputFactory(final Configuration configuration, final Singletons singletons) {
+    public DefaultInputFactory(final Configuration configuration, final Supplier<? extends Singletons> singletons) {
         this.configuration = requireNonNull(configuration);
         this.singletons = requireNonNull(singletons);
     }
@@ -52,11 +53,11 @@ public class DefaultInputFactory implements InputFactory {
     @Override
     public Input[] inputs() {
         final List<Input> inputs = configuration.inputs();
-        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = singletons.plugins();
+        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = singletons.get().plugins();
         if (plugins.length == 0) {
             return inputs.toArray(NO_INPUTS);
         }
-        final BaseState baseState = singletons.baseState();
+        final BaseState baseState = singletons.get().baseState();
         final List<Input> allInputs = new ArrayList<>(inputs.size() + 3 * plugins.length);
         allInputs.addAll(inputs);
         for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
@@ -73,7 +74,7 @@ public class DefaultInputFactory implements InputFactory {
 
     @Override
     public Step sequencerStep() {
-        return new SequencerStep(singletons.receiver(), singletons.inputs());
+        return new SequencerStep(singletons.get().receiver(), singletons.get().inputs());
     }
 
 }

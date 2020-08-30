@@ -29,7 +29,7 @@ import org.agrona.DirectBuffer;
  * Descriptor of frame layout for time and frequency counter metrics.
  * <pre>
 
-                           Time metric frame
+                           Time metrics frame
 
      0         1         2         3         4         5         6
      0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
@@ -38,17 +38,21 @@ import org.agrona.DirectBuffer;
      +-------+-------+-------+-------+-------+-------+-------+-------+
      |                           Sequence                            |
      +-------+-------+-------+-------+-------+-------+-------+-------+
+     |                             Time                              |
+     +-------+-------+-------+-------+-------+-------+-------+-------+
      |                            Time 0                             |
      |                            Time 1                             |
      |                             ...                               |
 
 
-                     Frequency counter metric frame
+                     Frequency counter metrics frame
 
      0         1         2         3         4         5         6
      0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
      |Version|Flags=0|    Choice     |          Repetition           |
+     +-------+-------+-------+-------+-------+-------+-------+-------+
+     |                           Interval                            |
      +-------+-------+-------+-------+-------+-------+-------+-------+
      |                             Time                              |
      +-------+-------+-------+-------+-------+-------+-------+-------+
@@ -75,16 +79,18 @@ public enum MetricsDescriptor {
     public static final int SOURCE_LENGTH = Integer.BYTES;
     public static final int SEQUENCE_OFFSET = SOURCE_OFFSET + SOURCE_LENGTH;
     public static final int SEQUENCE_LENGTH = Long.BYTES;
+    public static final int TIME_OFFSET = SEQUENCE_OFFSET + SEQUENCE_LENGTH;
+    public static final int TIME_LENGTH = Long.BYTES;
 
     public static final int CHOICE_OFFSET = FLAGS_OFFSET + FLAGS_LENGTH;
     public static final int CHOICE_LENGTH = Short.BYTES;
     public static final int REPETITION_OFFSET = CHOICE_OFFSET + CHOICE_LENGTH;
     public static final int REPETITION_LENGTH = Integer.BYTES;
-    public static final int TIME_OFFSET = REPETITION_OFFSET + REPETITION_LENGTH;
-    public static final int TIME_LENGTH = Long.BYTES;
+    public static final int INTERVAL_OFFSET = REPETITION_OFFSET + REPETITION_LENGTH;
+    public static final int INTERVAL_LENGTH = Long.BYTES;
 
     public static final int HEADER_OFFSET = 0;
-    public static final int HEADER_LENGTH = SEQUENCE_OFFSET + SEQUENCE_LENGTH;// == TIME_OFFSET + TIME_LENGTH
+    public static final int HEADER_LENGTH = TIME_OFFSET + TIME_LENGTH;
 
     public static final int PAYLOAD_OFFSET = HEADER_OFFSET + HEADER_LENGTH;
 
@@ -104,8 +110,8 @@ public enum MetricsDescriptor {
         return FLAGS_NONE == flags(buffer);
     }
 
-    public static int index(final DirectBuffer buffer) {
-        return 0x0000ffff & buffer.getShort(INDEX_OFFSET);
+    public static short index(final DirectBuffer buffer) {
+        return buffer.getShort(INDEX_OFFSET);
     }
 
     public static int source(final DirectBuffer buffer) {
@@ -116,6 +122,10 @@ public enum MetricsDescriptor {
         return buffer.getLong(SEQUENCE_OFFSET);
     }
 
+    public static long time(final DirectBuffer buffer) {
+        return buffer.getLong(TIME_OFFSET);
+    }
+
     public static short choice(final DirectBuffer buffer) {
         return buffer.getShort(CHOICE_OFFSET);
     }
@@ -124,8 +134,8 @@ public enum MetricsDescriptor {
         return buffer.getInt(REPETITION_OFFSET);
     }
 
-    public static long time(final DirectBuffer buffer) {
-        return buffer.getLong(TIME_OFFSET);
+    public static long interval(final DirectBuffer buffer) {
+        return buffer.getInt(INTERVAL_OFFSET);
     }
 
     public static long time(int index, final DirectBuffer buffer) {

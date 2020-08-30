@@ -21,43 +21,36 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.factory;
+package org.tools4j.elara.format;
 
-import org.tools4j.elara.init.Configuration;
-import org.tools4j.elara.plugin.api.Plugin;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.init.Configuration.validate;
 
-public class DefaultElaraFactory implements ElaraFactory {
-
-    private final Configuration configuration;
-    private final Singletons singletons;
-
-    public DefaultElaraFactory(final Configuration configuration) {
-        this.configuration = validate(configuration);
-        this.singletons = intercept(new DefaultSingletons(configuration, this::singletons));
-    }
-
-    private static Singletons intercept(final Singletons singletons) {
-        Singletons interceptedOrNot = requireNonNull(singletons);
-        for (final Plugin.Configuration pluginConfig : singletons.plugins()) {
-            final InterceptableSingletons intercepted = pluginConfig.interceptOrNull(singletons);
-            if (intercepted != null) {
-                interceptedOrNot = intercepted;
+enum Spacer {
+    ;
+    /**
+     * Replaces values for the specified placeholders with the given space char for the length of the original value's
+     * string representation.
+     *
+     * @param formatter             original formatter to get the value
+     * @param spaceChar             the space character
+     * @param placeholderToSpaceOut the place holders for which to replace value with space chars
+     * @return formatter that spaces out some of the values
+     */
+    static <M> ValueFormatter<M> spacer(final ValueFormatter<M> formatter, final char spaceChar, final String... placeholderToSpaceOut) {
+        requireNonNull(formatter);
+        final Set<String> spaceOut = new HashSet<>(Arrays.asList(placeholderToSpaceOut));
+        return (placeholder, line, entryId, message) -> {
+            final Object value = formatter.value(placeholder, line, entryId, message);
+            if (spaceOut.contains(placeholder)) {
+                final char[] chars = String.valueOf(value).toCharArray();
+                Arrays.fill(chars, spaceChar);
+                return String.valueOf(chars);
             }
-        }
-        return interceptedOrNot;
+            return value;
+        };
     }
-
-    @Override
-    public Configuration configuration() {
-        return configuration;
-    }
-
-    @Override
-    public Singletons singletons() {
-        return singletons;
-    }
-
 }

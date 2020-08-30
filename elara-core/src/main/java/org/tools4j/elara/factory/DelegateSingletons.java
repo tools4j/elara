@@ -49,7 +49,7 @@ public class DelegateSingletons implements Singletons {
     }
 
     protected Singletons singletons() {
-        return singletons();
+        return delegate;
     }
 
     @Override

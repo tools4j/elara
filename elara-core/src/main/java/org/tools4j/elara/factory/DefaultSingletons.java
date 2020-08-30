@@ -42,6 +42,7 @@ import org.tools4j.nobark.loop.Step;
 
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
 import static org.tools4j.elara.init.Configuration.validate;
@@ -57,12 +58,14 @@ public class DefaultSingletons implements Singletons {
 
     private final Map<String, Object> instanceByName = new Object2ObjectHashMap<>(64, DEFAULT_LOAD_FACTOR);
 
-    public DefaultSingletons(final Configuration configuration) {
-        this(configuration, DefaultRunnerFactory::new, DefaultInputFactory::new, DefaultProcessorFactory::new,
-                DefaultApplierFactory::new, DefaultOutputFactory::new, DefaultPluginFactory::new);
+    public DefaultSingletons(final Configuration configuration, final Supplier<? extends Singletons> singletonsSupplier) {
+        this(configuration, singletonsSupplier, DefaultRunnerFactory::new, DefaultInputFactory::new,
+                DefaultProcessorFactory::new, DefaultApplierFactory::new, DefaultOutputFactory::new,
+                DefaultPluginFactory::new);
     }
 
     public DefaultSingletons(final Configuration configuration,
+                             final Supplier<? extends Singletons> singletonsSupplier,
                              final FactorySupplier<? extends RunnerFactory> runnerFactorySupplier,
                              final FactorySupplier<? extends InputFactory> inputFactorySupplier,
                              final FactorySupplier<? extends ProcessorFactory> processorFactorySupplier,
@@ -70,12 +73,12 @@ public class DefaultSingletons implements Singletons {
                              final FactorySupplier<? extends OutputFactory> outputFactorySupplier,
                              final FactorySupplier<? extends PluginFactory> pluginFactorySupplier) {
         validate(configuration);
-        this.runnerFactory = runnerFactorySupplier.supply(configuration, this);
-        this.inputFactory = inputFactorySupplier.supply(configuration, this);
-        this.processorFactory = processorFactorySupplier.supply(configuration, this);
-        this.applierFactory = applierFactorySupplier.supply(configuration, this);
-        this.outputFactory = outputFactorySupplier.supply(configuration, this);
-        this.pluginFactory = pluginFactorySupplier.supply(configuration, this);
+        this.runnerFactory = runnerFactorySupplier.supply(configuration, singletonsSupplier);
+        this.inputFactory = inputFactorySupplier.supply(configuration, singletonsSupplier);
+        this.processorFactory = processorFactorySupplier.supply(configuration, singletonsSupplier);
+        this.applierFactory = applierFactorySupplier.supply(configuration, singletonsSupplier);
+        this.outputFactory = outputFactorySupplier.supply(configuration, singletonsSupplier);
+        this.pluginFactory = pluginFactorySupplier.supply(configuration, singletonsSupplier);
     }
 
     private <T,S> T getOrCreate(final String name, final Class<T> type, final S source, final Function<? super S, ? extends T> factory) {

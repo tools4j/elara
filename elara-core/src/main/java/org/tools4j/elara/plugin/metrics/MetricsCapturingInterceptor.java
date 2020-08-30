@@ -160,7 +160,7 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
 
     @Override
     public Step dutyCycleStep() {
-        return counterStep(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, singletons().sequencerStep());
+        return counterStep(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, singletons().dutyCycleStep());
     }
 
     @Override
@@ -185,7 +185,7 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
 
     @Override
     public Step dutyCycleExtraStep() {
-        return counterStep(EXTRA_STEP_INVOCATION_FREQUENCY, EXTRA_STEP_PERFORMED_FREQUENCY, singletons().outputStep());
+        return counterStep(EXTRA_STEP_INVOCATION_FREQUENCY, EXTRA_STEP_PERFORMED_FREQUENCY, singletons().dutyCycleExtraStep());
     }
 
     @Override

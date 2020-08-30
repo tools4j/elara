@@ -23,62 +23,47 @@
  */
 package org.tools4j.elara.plugin.metrics;
 
-import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 
-import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.CHOICE_OFFSET;
-import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.FLAGS_NONE;
-import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.FLAGS_OFFSET;
-import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.HEADER_LENGTH;
-import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.INDEX_OFFSET;
-import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.REPETITION_OFFSET;
-import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.SEQUENCE_OFFSET;
-import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.SOURCE_OFFSET;
-import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.TIME_OFFSET;
-import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.VERSION;
-import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.VERSION_OFFSET;
+/**
+ * An entry of a metrics log as described by {@link MetricsDescriptor}.
+ */
+public interface MetricsLogEntry {
 
-public enum MetricsLogEntry {
-    ;
-
-    public static int writeTimeMetricsHeader(final byte flags,
-                                             final short index,
-                                             final int source,
-                                             final long sequence,
-                                             final MutableDirectBuffer dst,
-                                             final int dstOffset) {
-        dst.putByte(dstOffset + VERSION_OFFSET, VERSION);
-        dst.putByte(dstOffset + FLAGS_OFFSET, flags);
-        dst.putShort(dstOffset + INDEX_OFFSET, index);
-        dst.putInt(dstOffset + SOURCE_OFFSET, source);
-        dst.putLong(dstOffset + SEQUENCE_OFFSET, sequence);
-        return HEADER_LENGTH;
+    enum Type {
+        TIME,
+        FREQUENCY
     }
 
-    public static int writeTime(final long time,
-                                final MutableDirectBuffer dst,
-                                final int dstOffset) {
-        dst.putLong(dstOffset, time);
-        return Long.BYTES;
-    }
+    short version();
 
-    public static int writeFrequencyMetricsHeader(final short choice,
-                                                  final int repetition,
-                                                  final long time,
-                                                  final MutableDirectBuffer dst,
-                                                  final int dstOffset) {
-        dst.putByte(dstOffset + VERSION_OFFSET, VERSION);
-        dst.putByte(dstOffset + FLAGS_OFFSET, FLAGS_NONE);
-        dst.putShort(dstOffset + CHOICE_OFFSET, choice);
-        dst.putInt(dstOffset + REPETITION_OFFSET, repetition);
-        dst.putLong(dstOffset + TIME_OFFSET, time);
-        return HEADER_LENGTH;
-    }
+    byte flags();
 
-    public static int writeCounter(final long counter,
-                                   final MutableDirectBuffer dst,
-                                   final int dstOffset) {
-        dst.putLong(dstOffset, counter);
-        return Long.BYTES;
-    }
+    Type type();
 
+    long time();
+
+    int count();
+
+    // TimeMetric
+
+    Target target();
+
+    short index();
+
+    int source();
+
+    long sequence();
+
+    long time(int index);
+
+    // Frequency Metric
+
+    short choice();
+
+    int repetition();
+
+    long interval();
+
+    long counter(int index);
 }

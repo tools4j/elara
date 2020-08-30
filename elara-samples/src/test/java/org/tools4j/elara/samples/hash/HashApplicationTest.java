@@ -75,6 +75,24 @@ public class HashApplicationTest {
         assertEquals(expected, state.hash(), "state.hash(" + n + ")");
     }
 
+    @Test
+    public void chronicleQueueWithMetrics() throws Exception {
+        //given
+        final int n = 5000;
+        final AtomicLong input = new AtomicLong(NULL_VALUE);
+        final ModifiableState state = new DefaultState();
+        final Random random = new Random(123);
+        final long expected = -6817377618556807803L;
+
+        //when
+        try (final ElaraRunner runner = HashApplication.chronicleQueueWithMetrics(state, input)) {
+            runHashApp(n, random, input, runner);
+        }
+
+        //then
+        assertEquals(expected, state.hash(), "state.hash(" + n + ")");
+    }
+
     private static void runHashApp(final int n,
                                    final Random random,
                                    final AtomicLong input,

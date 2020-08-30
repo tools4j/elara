@@ -33,6 +33,7 @@ import org.tools4j.nobark.loop.Step;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.init.ExecutionType.ALWAYS;
@@ -44,9 +45,9 @@ import static org.tools4j.nobark.loop.Step.NO_OP;
 public class DefaultRunnerFactory implements RunnerFactory {
 
     private final Configuration configuration;
-    private final org.tools4j.elara.factory.Singletons singletons;
+    private final Supplier<? extends Singletons> singletons;
 
-    public DefaultRunnerFactory(final Configuration configuration, final org.tools4j.elara.factory.Singletons singletons) {
+    public DefaultRunnerFactory(final Configuration configuration, final Supplier<? extends Singletons> singletons) {
         this.configuration = requireNonNull(configuration);
         this.singletons = requireNonNull(singletons);
     }
@@ -66,8 +67,8 @@ public class DefaultRunnerFactory implements RunnerFactory {
 
     @Override
     public Step dutyCycleStep() {
-        return new DutyCycleStep(singletons.sequencerStep(), singletons.commandPollerStep(),
-                singletons.eventPollerStep(), singletons.outputStep(), singletons.dutyCycleExtraStep());
+        return new DutyCycleStep(singletons.get().sequencerStep(), singletons.get().commandPollerStep(),
+                singletons.get().eventPollerStep(), singletons.get().outputStep(), singletons.get().dutyCycleExtraStep());
     }
 
     @Override
@@ -82,7 +83,7 @@ public class DefaultRunnerFactory implements RunnerFactory {
         final List<Step> pluginStepsAlways = pluginSteps(ALWAYS);
         final List<Step> extraStepsAlways = configuration.dutyCycleExtraSteps(ALWAYS);
         final Step[] dutyCycle = new Step[1 + pluginStepsAlways.size() + extraStepsAlways.size()];
-        dutyCycle[0] = singletons.dutyCycleStep();
+        dutyCycle[0] = singletons.get().dutyCycleStep();
         int offset = 1;
         for (int i = 0; i < pluginStepsAlways.size(); i++) {
             dutyCycle[offset + i] = pluginStepsAlways.get(i);
@@ -95,11 +96,11 @@ public class DefaultRunnerFactory implements RunnerFactory {
     }
 
     private List<Step> pluginSteps(final ExecutionType executionType) {
-        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = singletons.plugins();
+        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = singletons.get().plugins();
         if (plugins.length == 0) {
             return Collections.emptyList();
         }
-        final BaseState baseState = singletons.baseState();
+        final BaseState baseState = singletons.get().baseState();
         final List<Step> steps = new ArrayList<>(plugins.length);
         for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
             steps.add(plugin.step(baseState, executionType));

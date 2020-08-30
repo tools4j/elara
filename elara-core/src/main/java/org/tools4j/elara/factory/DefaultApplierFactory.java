@@ -33,15 +33,16 @@ import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.nobark.loop.Step;
 
 import java.util.Arrays;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
 public class DefaultApplierFactory implements ApplierFactory {
 
     private final Configuration configuration;
-    private final Singletons singletons;
+    private final Supplier<? extends Singletons> singletons;
 
-    public DefaultApplierFactory(final Configuration configuration, final Singletons singletons) {
+    public DefaultApplierFactory(final Configuration configuration, final Supplier<? extends Singletons> singletons) {
         this.configuration = requireNonNull(configuration);
         this.singletons = requireNonNull(singletons);
     }
@@ -49,11 +50,11 @@ public class DefaultApplierFactory implements ApplierFactory {
     @Override
     public EventApplier eventApplier() {
         final EventApplier eventApplier = configuration.eventApplier();
-        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = singletons.plugins();
+        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = singletons.get().plugins();
         if (plugins.length == 0) {
             return eventApplier;
         }
-        final BaseState.Mutable baseState = singletons.baseState();
+        final BaseState.Mutable baseState = singletons.get().baseState();
         final EventApplier[] appliers = new EventApplier[plugins.length + 1];
         int count = 0;
         for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
@@ -74,8 +75,8 @@ public class DefaultApplierFactory implements ApplierFactory {
     @Override
     public EventHandler eventHandler() {
         return new DefaultEventHandler(
-                singletons.baseState(),
-                singletons.eventApplier(),
+                singletons.get().baseState(),
+                singletons.get().eventApplier(),
                 configuration.exceptionHandler(),
                 configuration.duplicateHandler()
         );
@@ -83,6 +84,6 @@ public class DefaultApplierFactory implements ApplierFactory {
 
     @Override
     public Step eventPollerStep() {
-        return new EventPollerStep(configuration.eventLog().poller(), singletons.eventHandler());
+        return new EventPollerStep(configuration.eventLog().poller(), singletons.get().eventHandler());
     }
 }

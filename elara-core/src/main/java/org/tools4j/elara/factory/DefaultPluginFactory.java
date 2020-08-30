@@ -30,6 +30,7 @@ import org.tools4j.elara.plugin.base.BasePlugin.BaseConfiguration;
 import org.tools4j.elara.plugin.base.BaseState;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -38,9 +39,9 @@ public class DefaultPluginFactory implements PluginFactory {
     private static final Plugin.Configuration[] EMPTY_PLUGIN_CONFIGURATIONS = {};
 
     private final Configuration configuration;
-    private final Singletons singletons;
+    private final Supplier<? extends Singletons> singletons;
 
-    public DefaultPluginFactory(final Configuration configuration, final Singletons singletons) {
+    public DefaultPluginFactory(final Configuration configuration, final Supplier<? extends Singletons> singletons) {
         this.configuration = requireNonNull(configuration);
         this.singletons = requireNonNull(singletons);
     }
@@ -65,7 +66,7 @@ public class DefaultPluginFactory implements PluginFactory {
 
     @Override
     public BaseState.Mutable baseState() {
-        for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : singletons.plugins()) {
+        for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : singletons.get().plugins()) {
             if (plugin instanceof BaseConfiguration) {
                 return ((BaseConfiguration)plugin).baseState();
             }

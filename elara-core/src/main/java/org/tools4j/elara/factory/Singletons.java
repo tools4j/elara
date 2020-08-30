@@ -25,6 +25,8 @@ package org.tools4j.elara.factory;
 
 import org.tools4j.elara.init.Configuration;
 
+import java.util.function.Supplier;
+
 /**
  * Proxy over all factories that delegates to the underlying factories for object creation once and then returns a
  * single cached instance per factory and object type.
@@ -32,6 +34,6 @@ import org.tools4j.elara.init.Configuration;
 public interface Singletons extends InputFactory, ProcessorFactory, ApplierFactory, OutputFactory, PluginFactory, RunnerFactory {
     @FunctionalInterface
     interface FactorySupplier<T> {
-        T supply(Configuration configuration, Singletons singletons);
+        T supply(Configuration configuration, Supplier<? extends Singletons> singletons);
     }
 }

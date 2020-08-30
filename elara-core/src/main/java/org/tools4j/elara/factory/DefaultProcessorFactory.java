@@ -26,8 +26,8 @@ package org.tools4j.elara.factory;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.command.CompositeCommandProcessor;
 import org.tools4j.elara.handler.CommandHandler;
-import org.tools4j.elara.handler.DefaultCommandHandler;
 import org.tools4j.elara.handler.CommandPollerHandler;
+import org.tools4j.elara.handler.DefaultCommandHandler;
 import org.tools4j.elara.init.CommandLogMode;
 import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.log.MessageLog.Poller;
@@ -37,15 +37,16 @@ import org.tools4j.elara.route.DefaultEventRouter;
 import org.tools4j.nobark.loop.Step;
 
 import java.util.Arrays;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
 public class DefaultProcessorFactory implements ProcessorFactory {
 
     private final Configuration configuration;
-    private final Singletons singletons;
+    private final Supplier<? extends Singletons> singletons;
 
-    public DefaultProcessorFactory(final Configuration configuration, final Singletons singletons) {
+    public DefaultProcessorFactory(final Configuration configuration, final Supplier<? extends Singletons> singletons) {
         this.configuration = requireNonNull(configuration);
         this.singletons = requireNonNull(singletons);
     }
@@ -53,11 +54,11 @@ public class DefaultProcessorFactory implements ProcessorFactory {
     @Override
     public CommandProcessor commandProcessor() {
         final CommandProcessor commandProcessor = configuration.commandProcessor();
-        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = singletons.plugins();
+        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = singletons.get().plugins();
         if (plugins.length == 0) {
             return commandProcessor;
         }
-        final BaseState baseState = singletons.baseState();
+        final BaseState baseState = singletons.get().baseState();
         final CommandProcessor[] processors = new CommandProcessor[plugins.length + 1];
         int count = 1;
         for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
@@ -78,9 +79,9 @@ public class DefaultProcessorFactory implements ProcessorFactory {
     @Override
     public CommandHandler commandHandler() {
         return new DefaultCommandHandler(
-                singletons.baseState(),
-                new DefaultEventRouter(configuration.eventLog().appender(), singletons.eventHandler()),
-                singletons.commandProcessor(),
+                singletons.get().baseState(),
+                new DefaultEventRouter(configuration.eventLog().appender(), singletons.get().eventHandler()),
+                singletons.get().commandProcessor(),
                 configuration.exceptionHandler(),
                 configuration.duplicateHandler()
         );
@@ -103,7 +104,7 @@ public class DefaultProcessorFactory implements ProcessorFactory {
             default:
                 throw new IllegalArgumentException("Unsupported command log mode: " + configuration.commandLogMode());
         }
-        return new CommandPollerStep(commandLogPoller, new CommandPollerHandler(singletons.commandHandler()));
+        return new CommandPollerStep(commandLogPoller, new CommandPollerHandler(singletons.get().commandHandler()));
     }
 
 
