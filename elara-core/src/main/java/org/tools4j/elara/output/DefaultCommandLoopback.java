@@ -30,7 +30,7 @@ import org.tools4j.elara.flyweight.FlyweightHeader;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.log.ExpandableDirectBuffer;
 import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.log.MessageLog.AppendContext;
+import org.tools4j.elara.log.MessageLog.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
@@ -64,9 +64,9 @@ public class DefaultCommandLoopback implements CommandLoopback.Default {
     private final class EnqueuingContext implements CommandLoopback.EnqueuingContext {
 
         final ExpandableDirectBuffer buffer = new ExpandableDirectBuffer();
-        AppendContext context;
+        AppendingContext context;
 
-        EnqueuingContext init(final int type, final AppendContext context) {
+        EnqueuingContext init(final int type, final AppendingContext context) {
             if (this.context != null) {
                 abort();
                 throw new IllegalStateException("Enqueuing context not closed");
@@ -81,7 +81,7 @@ public class DefaultCommandLoopback implements CommandLoopback.Default {
             return this;
         }
 
-        AppendContext unclosedContext() {
+        AppendingContext unclosedContext() {
             if (context != null) {
                 return context;
             }
@@ -100,7 +100,7 @@ public class DefaultCommandLoopback implements CommandLoopback.Default {
                 throw new IllegalArgumentException("Length cannot be negative: " + length);
             }
             buffer.unwrap();
-            try (final AppendContext ac = unclosedContext()) {
+            try (final AppendingContext ac = unclosedContext()) {
                 if (length > 0) {
                     ac.buffer().putInt(PAYLOAD_SIZE_OFFSET, length);
                 }

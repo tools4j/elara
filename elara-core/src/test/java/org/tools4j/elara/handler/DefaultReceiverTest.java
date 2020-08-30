@@ -35,7 +35,7 @@ import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.input.DefaultReceiver;
-import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.log.MessageLog.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.ArrayList;
@@ -63,7 +63,7 @@ public class DefaultReceiverTest {
     @BeforeEach
     public void init() {
         commandLog = new ArrayList<>();
-        defaultReceiver = new DefaultReceiver(timeSource, () -> new MessageLog.AppendContext() {
+        defaultReceiver = new DefaultReceiver(timeSource, () -> new AppendingContext() {
             MutableDirectBuffer buffer = new ExpandableArrayBuffer();
             @Override
             public MutableDirectBuffer buffer() {

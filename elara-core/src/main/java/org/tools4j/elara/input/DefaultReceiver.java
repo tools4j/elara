@@ -29,7 +29,7 @@ import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FlyweightHeader;
 import org.tools4j.elara.log.ExpandableDirectBuffer;
 import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.log.MessageLog.AppendContext;
+import org.tools4j.elara.log.MessageLog.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
@@ -57,9 +57,9 @@ public final class DefaultReceiver implements Receiver.Default {
     private final class ReceivingContext implements Receiver.ReceivingContext {
 
         final ExpandableDirectBuffer buffer = new ExpandableDirectBuffer();
-        AppendContext context;
+        AppendingContext context;
 
-        ReceivingContext init(final int source, final long sequence, final int type, final AppendContext context) {
+        ReceivingContext init(final int source, final long sequence, final int type, final AppendingContext context) {
             if (this.context != null) {
                 abort();
                 throw new IllegalStateException("Receiving context not closed");
@@ -73,7 +73,7 @@ public final class DefaultReceiver implements Receiver.Default {
             return this;
         }
 
-        AppendContext unclosedContext() {
+        AppendingContext unclosedContext() {
             if (context != null) {
                 return context;
             }
@@ -92,7 +92,7 @@ public final class DefaultReceiver implements Receiver.Default {
                 throw new IllegalArgumentException("Length cannot be negative: " + length);
             }
             buffer.unwrap();
-            try (final AppendContext ac = unclosedContext()) {
+            try (final AppendingContext ac = unclosedContext()) {
                 if (length > 0) {
                     ac.buffer().putInt(PAYLOAD_SIZE_OFFSET, length);
                 }

@@ -26,7 +26,7 @@ package org.tools4j.elara.plugin.replication;
 import org.agrona.collections.IntHashSet;
 import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.FlyweightHeader;
-import org.tools4j.elara.log.MessageLog.AppendContext;
+import org.tools4j.elara.log.MessageLog.AppendingContext;
 import org.tools4j.elara.log.MessageLog.Appender;
 import org.tools4j.elara.logging.ElaraLogger;
 import org.tools4j.elara.logging.Logger.Factory;
@@ -89,7 +89,7 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
             return;
         }
         final int nextTerm = 1 + state.currentTerm();
-        try (final AppendContext context = eventLogAppender.appending()) {
+        try (final AppendingContext context = eventLogAppender.appending()) {
             FlyweightHeader.writeTo(
                     source, LEADER_ENFORCED, sequence, timeSource.currentTime(), Flags.COMMIT, (short)0, PAYLOAD_LENGTH,
                     context.buffer(), HEADER_OFFSET

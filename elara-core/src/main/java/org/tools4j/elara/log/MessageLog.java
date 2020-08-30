@@ -36,15 +36,15 @@ public interface MessageLog extends AutoCloseable {
     @FunctionalInterface
     interface Appender {
         default void append(DirectBuffer buffer, int offset, int length) {
-            try (final AppendContext ctxt = appending()) {
+            try (final AppendingContext ctxt = appending()) {
                 ctxt.buffer().putBytes(0, buffer, offset, length);
                 ctxt.commit(length);
             }
         }
-        AppendContext appending();
+        AppendingContext appending();
     }
 
-    interface AppendContext extends AutoCloseable {
+    interface AppendingContext extends AutoCloseable {
         MutableDirectBuffer buffer();
 
         void commit(int length);

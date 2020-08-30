@@ -31,7 +31,7 @@ import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.flyweight.FlyweightHeader;
 import org.tools4j.elara.log.ExpandableDirectBuffer;
-import org.tools4j.elara.log.MessageLog.AppendContext;
+import org.tools4j.elara.log.MessageLog.AppendingContext;
 import org.tools4j.elara.log.MessageLog.Appender;
 
 import static java.util.Objects.requireNonNull;
@@ -146,9 +146,9 @@ public class DefaultEventRouter implements EventRouter.Default {
 
         final FlyweightEvent flyweightEvent = new FlyweightEvent();
         final ExpandableDirectBuffer buffer = new ExpandableDirectBuffer();
-        AppendContext context;
+        AppendingContext context;
 
-        RoutingContext init(final int type, final AppendContext context) {
+        RoutingContext init(final int type, final AppendingContext context) {
             if (this.context != null) {
                 abort();
                 throw new IllegalStateException("Routing context not closed");
@@ -164,7 +164,7 @@ public class DefaultEventRouter implements EventRouter.Default {
         }
 
         void commit(final byte flags) {
-            try (final AppendContext ac = unclosedContext()) {
+            try (final AppendingContext ac = unclosedContext()) {
                 if (flags != Flags.NONE) {
                     ac.buffer().putByte(FLAGS_OFFSET, flags);
                 }
@@ -175,7 +175,7 @@ public class DefaultEventRouter implements EventRouter.Default {
             }
         }
 
-        AppendContext unclosedContext() {
+        AppendingContext unclosedContext() {
             if (context != null) {
                 return context;
             }
@@ -199,7 +199,7 @@ public class DefaultEventRouter implements EventRouter.Default {
             if (length < 0) {
                 throw new IllegalArgumentException("Length cannot be negative: " + length);
             }
-            final AppendContext ac = unclosedContext();
+            final AppendingContext ac = unclosedContext();
             buffer.unwrap();
             if (length > 0) {
                 ac.buffer().putInt(PAYLOAD_SIZE_OFFSET, length);

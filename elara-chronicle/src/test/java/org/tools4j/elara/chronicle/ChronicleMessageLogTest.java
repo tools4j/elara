@@ -30,7 +30,7 @@ import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import org.tools4j.elara.log.MessageLog.AppendContext;
+import org.tools4j.elara.log.MessageLog.AppendingContext;
 import org.tools4j.elara.log.MessageLog.Appender;
 import org.tools4j.elara.log.MessageLog.Handler;
 import org.tools4j.elara.log.MessageLog.Poller;
@@ -209,7 +209,7 @@ class ChronicleMessageLogTest {
 
         //when
         for (final DirectBuffer message : messages) {
-            try (final AppendContext context = appender.appending()) {
+            try (final AppendingContext context = appender.appending()) {
                 context.buffer().putBytes(0, message, 0, message.capacity());
                 context.commit(message.capacity());
             }
@@ -234,7 +234,7 @@ class ChronicleMessageLogTest {
         //when
         for (int i = 0; i < messages.length; i++) {
             final DirectBuffer message = messages[i];
-            try (final AppendContext context = appender.appending()) {
+            try (final AppendingContext context = appender.appending()) {
                 context.buffer().putBytes(0, message, 0, message.capacity());
                 if (i % 2 == 0) {
                     context.commit(message.capacity());

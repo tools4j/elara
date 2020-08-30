@@ -27,7 +27,7 @@ import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.event.Event.Flags;
 import org.tools4j.elara.flyweight.FlyweightEvent;
-import org.tools4j.elara.log.MessageLog.AppendContext;
+import org.tools4j.elara.log.MessageLog.AppendingContext;
 import org.tools4j.elara.log.MessageLog.Handler.Result;
 import org.tools4j.elara.log.MessageLog.Poller;
 import org.tools4j.elara.plugin.base.BaseEvents;
@@ -77,7 +77,7 @@ public class EventLogRepairer {
                 //should not get here since we checked on init
                 throw new RuntimeException("Event index " + nextIndex + " exceeds max allowed " + MAX_EVENT_INDEX);
             }
-            try (final AppendContext context = eventLog.appender().appending()) {
+            try (final AppendingContext context = eventLog.appender().appending()) {
                 BaseEvents.rollback(event, context.buffer(), 0, event.source(), event.sequence(),
                         (short)nextIndex, event.time());
                 context.commit(HEADER_LENGTH);

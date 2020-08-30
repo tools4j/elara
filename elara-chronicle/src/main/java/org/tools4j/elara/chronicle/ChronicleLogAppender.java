@@ -39,7 +39,7 @@ public class ChronicleLogAppender implements MessageLog.Appender {
 
     private final ExcerptAppender appender;
     private final UnsafeBuffer bytesWrapper = new UnsafeBuffer(0, 0);
-    private final AppendContext appendContext = new AppendContext();
+    private final AppendingContext appendContext = new AppendingContext();
 
     public ChronicleLogAppender(final ChronicleQueue queue) {
         this(queue.acquireAppender());
@@ -95,15 +95,15 @@ public class ChronicleLogAppender implements MessageLog.Appender {
     }
 
     @Override
-    public MessageLog.AppendContext appending() {
+    public MessageLog.AppendingContext appending() {
         return appendContext.init(appender.writingDocument());
     }
 
-    private static class AppendContext implements MessageLog.AppendContext {
+    private static class AppendingContext implements MessageLog.AppendingContext {
         private final BytesDirectBuffer buffer = new BytesDirectBuffer();
         private DocumentContext context;
 
-        AppendContext init(final DocumentContext context) {
+        AppendingContext init(final DocumentContext context) {
             if (this.context != null) {
                 abort();
                 throw new IllegalStateException("Aborted unclosed append context");

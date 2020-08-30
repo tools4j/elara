@@ -68,7 +68,7 @@ public class InMemoryLog implements MessageLog {
     public Appender appender() {
         ensureMessageLogNotClosed();
         return new Appender() {
-            final AppendContext appendContext = new AppendContext();
+            final AppendingContext appendContext = new AppendingContext();
             @Override
             public void append(final DirectBuffer buffer, final int offset, final int length) {
                 ensureMessageLogNotClosed();
@@ -104,12 +104,12 @@ public class InMemoryLog implements MessageLog {
             }
 
             @Override
-            public AppendContext appending() {
+            public AppendingContext appending() {
                 ensureMessageLogNotClosed();
                 return appendContext.init();
             }
 
-            final class AppendContext implements MessageLog.AppendContext {
+            final class AppendingContext implements MessageLog.AppendingContext {
 
                 MutableDirectBuffer buffer;
                 int index = -1;
@@ -119,7 +119,7 @@ public class InMemoryLog implements MessageLog {
                     index = -1;
                 }
 
-                AppendContext init() {
+                AppendingContext init() {
                     if (buffer != null) {
                         abort();
                         throw new IllegalStateException("Aborted unclosed append context");

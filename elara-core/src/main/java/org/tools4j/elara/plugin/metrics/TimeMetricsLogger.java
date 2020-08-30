@@ -27,7 +27,7 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.log.MessageLog.AppendContext;
+import org.tools4j.elara.log.MessageLog.AppendingContext;
 import org.tools4j.elara.log.MessageLog.Appender;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 import org.tools4j.elara.time.TimeSource;
@@ -77,7 +77,7 @@ public class TimeMetricsLogger {
         }
         final int source = commandId.source();
         final long sequence = commandId.sequence();
-        try (final AppendContext context = appender.appending()) {
+        try (final AppendingContext context = appender.appending()) {
             final MutableDirectBuffer buffer = context.buffer();
             final int headerLen = writeTimeMetricsHeader(flags, index, source, sequence, buffer, 0);
             int offset = headerLen;
