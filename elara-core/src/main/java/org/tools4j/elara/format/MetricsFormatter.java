@@ -84,9 +84,9 @@ public interface MetricsFormatter extends ValueFormatter<MetricsLogEntry> {
         final Type type = entry.type();
         switch (entry.type()) {
             case TIME:
-                return "T";
+                return "TIME";
             case FREQUENCY:
-                return "F";
+                return "FREQ";
         }
         return type;
     }

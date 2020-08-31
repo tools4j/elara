@@ -46,12 +46,12 @@ public enum MessagePrinters {
     public static final String COMMAND_FORMAT           = "{time} | {line} - cmd={source}:{sequence} | type={type}, payload({payload-size})={payload}{nl}";
     public static final String EVENT_FORMAT_0           = "{time} | {line} - evt={source}:{sequence}.{index} | type={type}, payload({payload-size})={payload}{nl}";
     public static final String EVENT_FORMAT_N           = "{time} | {line} - evt={source}.{sequence}.{index} | type={type}, payload({payload-size})={payload}{nl}";
-    public static final String METRICS_COMMAND_FORMAT   = "{time} | {line} - cmd={source}:{sequence} | {metrics-values}{nl}";
-    public static final String METRICS_EVENT_FORMAT_0   = "{time} | {line} - evt={source}:{sequence}.{index} | {metrics-values}{nl}";
-    public static final String METRICS_EVENT_FORMAT_N   = "{time} | {line} - evt={source}.{sequence}.{index} | {metrics-values}{nl}";
+    public static final String METRICS_COMMAND_FORMAT   = "{time} | {line} - {type} cmd={source}:{sequence}   | {metrics-values}{nl}";
+    public static final String METRICS_EVENT_FORMAT_0   = "{time} | {line} - {type} evt={source}:{sequence}.{index} | {metrics-values}{nl}";
+    public static final String METRICS_EVENT_FORMAT_N   = "{time} | {line} - {type} evt={source}.{sequence}.{index} | {metrics-values}{nl}";
     public static final String METRICS_OUTPUT_FORMAT_0  = METRICS_EVENT_FORMAT_0;
     public static final String METRICS_OUTPUT_FORMAT_N  = METRICS_EVENT_FORMAT_N;
-    public static final String METRICS_FREQUENCY_FORMAT = "{time} | {line} - rep={repetition} | {metrics-values}{nl}";
+    public static final String METRICS_FREQUENCY_FORMAT = "{time} | {line} - {type} rep={repetition}, intvl={interval} | {metrics-values}{nl}";
     public static final String METRICS_VALUE_FORMAT_0   = "{metric-name}={metric-value}";
     public static final String METRICS_VALUE_FORMAT_N   = ", {metric-name}={metric-value}";
 

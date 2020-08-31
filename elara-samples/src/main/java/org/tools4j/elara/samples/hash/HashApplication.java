@@ -25,6 +25,7 @@ package org.tools4j.elara.samples.hash;
 
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.wire.WireType;
+import org.agrona.concurrent.BusySpinIdleStrategy;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.chronicle.ChronicleMessageLog;
@@ -39,11 +40,25 @@ import org.tools4j.elara.plugin.metrics.TimeMetric;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
+import org.tools4j.elara.time.TimeSource;
 
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.plugin.metrics.FrequencyMetric.COMMAND_PROCESSED_FREQUENCY;
+import static org.tools4j.elara.plugin.metrics.FrequencyMetric.DUTY_CYCLE_FREQUENCY;
+import static org.tools4j.elara.plugin.metrics.FrequencyMetric.DUTY_CYCLE_PERFORMED_FREQUENCY;
+import static org.tools4j.elara.plugin.metrics.FrequencyMetric.EVENT_APPLIED_FREQUENCY;
+import static org.tools4j.elara.plugin.metrics.FrequencyMetric.INPUT_RECEIVED_FREQUENCY;
+import static org.tools4j.elara.plugin.metrics.FrequencyMetric.OUTPUT_PUBLISHED_FREQUENCY;
+import static org.tools4j.elara.plugin.metrics.TimeMetric.APPLYING_END_TIME;
+import static org.tools4j.elara.plugin.metrics.TimeMetric.APPLYING_START_TIME;
+import static org.tools4j.elara.plugin.metrics.TimeMetric.INPUT_POLLING_TIME;
+import static org.tools4j.elara.plugin.metrics.TimeMetric.PROCESSING_END_TIME;
+import static org.tools4j.elara.plugin.metrics.TimeMetric.PROCESSING_START_TIME;
+import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_END_TIME;
+import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_START_TIME;
 
 /**
  * Rules:
@@ -176,18 +191,32 @@ public class HashApplication {
                 .path("build/chronicle/hash-metrics/mtx.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
+        final ChronicleQueue tq = ChronicleQueue.singleBuilder()
+                .path("build/chronicle/hash-metrics/mtm.cq4")
+                .wireType(WireType.BINARY_LIGHT)
+                .build();
+        final ChronicleQueue fq = ChronicleQueue.singleBuilder()
+                .path("build/chronicle/hash-metrics/mfq.cq4")
+                .wireType(WireType.BINARY_LIGHT)
+                .build();
         return Elara.launch(Context.create()
                 .commandProcessor(commandProcessor(state))
                 .eventApplier(eventApplier(state))
                 .input(input(input))
                 .commandLog(new ChronicleMessageLog(cq))
                 .eventLog(new ChronicleMessageLog(eq))
+                .timeSource(new PseudoNanoClock())
+                .idleStrategy(BusySpinIdleStrategy.INSTANCE)
                 .plugin(Plugins.metricsPlugin(Configuration.configure()
-                    .timeMetrics(EnumSet.allOf(TimeMetric.class))
-                    .frequencyMetrics(EnumSet.allOf(FrequencyMetric.class))
-                    .frequencyLogInterval(1000)//ms
+//                    .timeMetrics(EnumSet.allOf(TimeMetric.class))
+//                    .frequencyMetrics(EnumSet.allOf(FrequencyMetric.class))
+                    .timeMetrics(EnumSet.of(INPUT_POLLING_TIME, PROCESSING_START_TIME, PROCESSING_END_TIME, ROUTING_START_TIME, APPLYING_START_TIME, APPLYING_END_TIME, ROUTING_END_TIME))
+                    .frequencyMetrics(EnumSet.of(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, EVENT_APPLIED_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY))
+                    .frequencyLogInterval(100_000_000)//nanos
                     .inputSendingTimeExtractor((source, sequence, type, buffer, offset, length) -> sequence)//for testing only
-                    .metricsLog(new ChronicleMessageLog(mq))
+//                    .metricsLog(new ChronicleMessageLog(mq))
+                    .timeMetricsLog(new ChronicleMessageLog(tq))
+                    .frequencyMetricsLog(new ChronicleMessageLog(fq))
                 ))
         );
     }
