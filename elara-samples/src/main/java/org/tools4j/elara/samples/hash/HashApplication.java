@@ -35,14 +35,10 @@ import org.tools4j.elara.input.Receiver.ReceivingContext;
 import org.tools4j.elara.log.InMemoryLog;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.plugin.metrics.Configuration;
-import org.tools4j.elara.plugin.metrics.FrequencyMetric;
-import org.tools4j.elara.plugin.metrics.TimeMetric;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
-import org.tools4j.elara.time.TimeSource;
 
-import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.Objects.requireNonNull;
@@ -55,6 +51,7 @@ import static org.tools4j.elara.plugin.metrics.FrequencyMetric.OUTPUT_PUBLISHED_
 import static org.tools4j.elara.plugin.metrics.TimeMetric.APPLYING_END_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.APPLYING_START_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.INPUT_POLLING_TIME;
+import static org.tools4j.elara.plugin.metrics.TimeMetric.INPUT_SENDING_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.PROCESSING_END_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.PROCESSING_START_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_END_TIME;
@@ -187,10 +184,10 @@ public class HashApplication {
                 .path("build/chronicle/hash-metrics/evt.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
-        final ChronicleQueue mq = ChronicleQueue.singleBuilder()
-                .path("build/chronicle/hash-metrics/mtx.cq4")
-                .wireType(WireType.BINARY_LIGHT)
-                .build();
+//        final ChronicleQueue mq = ChronicleQueue.singleBuilder()
+//                .path("build/chronicle/hash-metrics/mtx.cq4")
+//                .wireType(WireType.BINARY_LIGHT)
+//                .build();
         final ChronicleQueue tq = ChronicleQueue.singleBuilder()
                 .path("build/chronicle/hash-metrics/mtm.cq4")
                 .wireType(WireType.BINARY_LIGHT)
@@ -210,10 +207,10 @@ public class HashApplication {
                 .plugin(Plugins.metricsPlugin(Configuration.configure()
 //                    .timeMetrics(EnumSet.allOf(TimeMetric.class))
 //                    .frequencyMetrics(EnumSet.allOf(FrequencyMetric.class))
-                    .timeMetrics(EnumSet.of(INPUT_POLLING_TIME, PROCESSING_START_TIME, PROCESSING_END_TIME, ROUTING_START_TIME, APPLYING_START_TIME, APPLYING_END_TIME, ROUTING_END_TIME))
-                    .frequencyMetrics(EnumSet.of(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, EVENT_APPLIED_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY))
+                    .timeMetrics(INPUT_SENDING_TIME, INPUT_POLLING_TIME, PROCESSING_START_TIME, PROCESSING_END_TIME, ROUTING_START_TIME, APPLYING_START_TIME, APPLYING_END_TIME, ROUTING_END_TIME)
+                    .frequencyMetrics(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, EVENT_APPLIED_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY)
                     .frequencyLogInterval(100_000_000)//nanos
-                    .inputSendingTimeExtractor((source, sequence, type, buffer, offset, length) -> sequence)//for testing only
+                    .inputSendingTimeExtractor((source, sequence, type, buffer, offset, length) -> ((0xffffffffL & source) << 32) | (0xffffffffL & sequence))//for testing only
 //                    .metricsLog(new ChronicleMessageLog(mq))
                     .timeMetricsLog(new ChronicleMessageLog(tq))
                     .frequencyMetricsLog(new ChronicleMessageLog(fq))
