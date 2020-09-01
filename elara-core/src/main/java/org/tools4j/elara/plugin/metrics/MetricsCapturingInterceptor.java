@@ -292,41 +292,16 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
         return output;
     }
 
-    private EventRouter timedEventRouter(final EventRouter router) {
-        requireNonNull(router);
-        return new EventRouter() {
+    private EventRouter timedEventRouter(final EventRouter eventRouter) {
+        requireNonNull(eventRouter);
+        return new EventRouter.Default() {
+            final EventRouter router = eventRouter;
             final TimedRoutingContext context = new TimedRoutingContext();
-            @Override
-            public RoutingContext routingEvent() {
-                captureTime(ROUTING_START_TIME);
-                return context.init(router.routingEvent());
-            }
 
             @Override
             public RoutingContext routingEvent(final int type) {
                 captureTime(ROUTING_START_TIME);
                 return context.init(router.routingEvent(type));
-            }
-
-            @Override
-            public void routeEvent(final DirectBuffer buffer, final int offset, final int length) {
-                captureTime(ROUTING_START_TIME);
-                router.routeEvent(buffer, offset, length);
-                captureTime(ROUTING_END_TIME);
-            }
-
-            @Override
-            public void routeEvent(final int type, final DirectBuffer buffer, final int offset, final int length) {
-                captureTime(ROUTING_START_TIME);
-                router.routeEvent(type, buffer, offset, length);
-                captureTime(ROUTING_END_TIME);
-            }
-
-            @Override
-            public void routeEventWithoutPayload(final int type) {
-                captureTime(ROUTING_START_TIME);
-                router.routeEventWithoutPayload(type);
-                captureTime(ROUTING_END_TIME);
             }
 
             @Override
@@ -372,9 +347,9 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
 
         @Override
         public void route(final int length) {
+            captureTime(ROUTING_END_TIME);
             unclosedContext().route(length);
             context = null;
-            captureTime(ROUTING_END_TIME);
         }
 
         @Override

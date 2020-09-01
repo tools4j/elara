@@ -46,6 +46,8 @@ public enum MessagePrinters {
     public static final String COMMAND_FORMAT           = "{time} | {line} - cmd={source}:{sequence} | type={type}, payload({payload-size})={payload}{nl}";
     public static final String EVENT_FORMAT_0           = "{time} | {line} - evt={source}:{sequence}.{index} | type={type}, payload({payload-size})={payload}{nl}";
     public static final String EVENT_FORMAT_N           = "{time} | {line} - evt={source}.{sequence}.{index} | type={type}, payload({payload-size})={payload}{nl}";
+
+    public static final String METRICS_VERSION_LINE     = "(elara metrics log format V{version}){nl}";
     public static final String METRICS_COMMAND_FORMAT   = "{time} | {line} - {type} cmd={source}:{sequence}   | {metrics-values}{nl}";
     public static final String METRICS_EVENT_FORMAT_0   = "{time} | {line} - {type} evt={source}:{sequence}.{index} | {metrics-values}{nl}";
     public static final String METRICS_EVENT_FORMAT_N   = "{time} | {line} - {type} evt={source}.{sequence}.{index} | {metrics-values}{nl}";
@@ -113,14 +115,14 @@ public enum MessagePrinters {
                             throw new IllegalArgumentException("Invalid target: " + target);
                     }
                 },
-                parameterized(VERSION_LINE + METRICS_COMMAND_FORMAT, formatter0),
+                parameterized(METRICS_VERSION_LINE + METRICS_COMMAND_FORMAT, formatter0),
                 parameterized(METRICS_COMMAND_FORMAT, formatter0),
-                parameterized(VERSION_LINE + METRICS_EVENT_FORMAT_0, formatter0),
+                parameterized(METRICS_VERSION_LINE + METRICS_EVENT_FORMAT_0, formatter0),
                 parameterized(METRICS_EVENT_FORMAT_0, formatter0),
-                parameterized(METRICS_EVENT_FORMAT_N, formatter0),
-                parameterized(VERSION_LINE + METRICS_OUTPUT_FORMAT_0, formatter0),
+                parameterized(METRICS_EVENT_FORMAT_N, formatterN),
+                parameterized(METRICS_VERSION_LINE + METRICS_OUTPUT_FORMAT_0, formatter0),
                 parameterized(METRICS_OUTPUT_FORMAT_0, formatter0),
-                parameterized(METRICS_OUTPUT_FORMAT_N, formatter0)
+                parameterized(METRICS_OUTPUT_FORMAT_N, formatterN)
         );
     }
 
@@ -128,7 +130,7 @@ public enum MessagePrinters {
         requireNonNull(formatter);
         return composite(
                 (line, entryId, frame) -> line == 0 ? 0 : 1,
-                parameterized(VERSION_LINE + METRICS_FREQUENCY_FORMAT, formatter),
+                parameterized(METRICS_VERSION_LINE + METRICS_FREQUENCY_FORMAT, formatter),
                 parameterized(METRICS_FREQUENCY_FORMAT, formatter)
         );
     }

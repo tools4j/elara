@@ -185,15 +185,15 @@ public class HashApplication {
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
 //        final ChronicleQueue mq = ChronicleQueue.singleBuilder()
-//                .path("build/chronicle/hash-metrics/mtx.cq4")
+//                .path("build/chronicle/hash-metrics/met.cq4")
 //                .wireType(WireType.BINARY_LIGHT)
 //                .build();
         final ChronicleQueue tq = ChronicleQueue.singleBuilder()
-                .path("build/chronicle/hash-metrics/mtm.cq4")
+                .path("build/chronicle/hash-metrics/tim.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         final ChronicleQueue fq = ChronicleQueue.singleBuilder()
-                .path("build/chronicle/hash-metrics/mfq.cq4")
+                .path("build/chronicle/hash-metrics/frq.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         return Elara.launch(Context.create()
