@@ -55,13 +55,13 @@ Timers are tricky with event sourcing.  Elara provides timers through the [timer
 <dependency>
         <groupId>org.tools4j</groupId>
         <artifactId>elara-core</artifactId>
-        <version>1.6</version>
+        <version>1.7</version>
 </dependency>
 ```
 
 #### Gradle
 ```
-api "org.tools4j:elara-core:1.6'
+api "org.tools4j:elara-core:1.7'
 ```
 
 ### Download
