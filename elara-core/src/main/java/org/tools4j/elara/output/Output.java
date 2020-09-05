@@ -27,11 +27,15 @@ import org.tools4j.elara.event.Event;
 
 @FunctionalInterface
 public interface Output {
-    Output NOOP = (event, replay, retry, loopback) -> Ack.COMMIT;
+    Output NOOP = (event, replay, retry, loopback) -> Ack.IGNORED;
 
     enum Ack {
+        /** The event is committed after successful or attempted publication */
         COMMIT,
-        RETRY
+        /** The event will be retried and passed to the Output again */
+        RETRY,
+        /** The event was ignored; output metrics will not reflect such events */
+        IGNORED
     }
 
     Ack publish(Event event, boolean replay, int retry, CommandLoopback loopback);

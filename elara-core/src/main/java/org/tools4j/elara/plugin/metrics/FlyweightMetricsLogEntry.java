@@ -187,7 +187,8 @@ public class FlyweightMetricsLogEntry implements MetricsLogEntry, Flyweight<Flyw
 
     public static void validateVersion(final short version) {
         if (version != VERSION) {
-            throw new IllegalArgumentException("Version " + version + " is not compatible with current version " + VERSION);
+            throw new IllegalArgumentException("Metric version " + version +
+                    " is not compatible with current version " + VERSION);
         }
     }
 

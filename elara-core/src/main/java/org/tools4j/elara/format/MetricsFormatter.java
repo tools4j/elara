@@ -167,7 +167,7 @@ public interface MetricsFormatter extends ValueFormatter<MetricsLogEntry> {
                     case APPLYING_START_TIME: return "evt-apy";
                     case APPLYING_END_TIME: return "evt-end";
                     case PROCESSING_END_TIME: return "cmd-end";
-                    case OUTPUT_START_TIME: return "out-pub";
+                    case OUTPUT_START_TIME: return "out-beg";
                     case OUTPUT_END_TIME: return "out-end";
                     case METRIC_APPENDING_TIME: return "met-apd";
                 }
@@ -184,6 +184,7 @@ public interface MetricsFormatter extends ValueFormatter<MetricsLogEntry> {
                     case INPUT_RECEIVED_FREQUENCY: return "inp-rcv";
                     case COMMAND_PROCESSED_FREQUENCY: return "cmd-prc";
                     case EVENT_APPLIED_FREQUENCY: return "evt-apy";
+                    case OUTPUT_POLLED_FREQUENCY: return "out-pol";
                     case OUTPUT_PUBLISHED_FREQUENCY: return "out-pub";
                     case EXTRA_STEP_PERFORMED_FREQUENCY: return "xta-prf";
                     case STEP_ERROR_FREQUENCY: return "stp-err";

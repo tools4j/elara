@@ -192,7 +192,7 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
 
     @Override
     public Step outputStep() {
-        return counterStep(OUTPUT_POLL_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY, singletons().outputStep());
+        return counterStep(OUTPUT_POLL_FREQUENCY, OUTPUT_POLL_FREQUENCY, singletons().outputStep());
     }
 
     @Override
@@ -284,8 +284,13 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
             return (event, replay, retry, loopback) -> {
                 captureTime(OUTPUT_START_TIME);
                 final Ack ack = output.publish(event, replay, retry, loopback);
-                captureTime(OUTPUT_END_TIME);
-                logger.logMetrics(OUTPUT, event);
+                if (ack == Ack.IGNORED) {
+                    state.clear(OUTPUT_START_TIME);
+                } else {
+                    captureTime(OUTPUT_END_TIME);
+                    captureCount(OUTPUT_PUBLISHED_FREQUENCY);
+                    logger.logMetrics(OUTPUT, event);
+                }
                 return ack;
             };
         }

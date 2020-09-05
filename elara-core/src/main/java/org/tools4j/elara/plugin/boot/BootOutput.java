@@ -36,7 +36,8 @@ public class BootOutput implements Output {
     public Ack publish(final Event event, final boolean replay, final int retry, final CommandLoopback loopback) {
         if (!replay && retry == 0 && event.type() == APP_INITIALISATION_STARTED) {
             loopback.enqueueCommandWithoutPayload(SIGNAL_APP_INITIALISATION_COMPLETE);
+            return Ack.COMMIT;
         }
-        return Ack.COMMIT;
+        return Ack.IGNORED;
     }
 }

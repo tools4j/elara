@@ -40,10 +40,13 @@ public class CompositeOutput implements Output {
 
     @Override
     public Ack publish(final Event event, final boolean replay, final int retry, final CommandLoopback loopback) {
-        Ack ack = Ack.COMMIT;
+        Ack ack = Ack.IGNORED;
         for (final Output output : outputs) {
             try {
-                if (Ack.RETRY == output.publish(event, replay, retry, loopback)) {
+                final Ack cur = output.publish(event, replay, retry, loopback);
+                if (cur == Ack.COMMIT && ack == Ack.IGNORED) {
+                    ack = Ack.COMMIT;
+                } else if (cur == Ack.RETRY) {
                     ack = Ack.RETRY;
                 }
             } catch (final Throwable t) {

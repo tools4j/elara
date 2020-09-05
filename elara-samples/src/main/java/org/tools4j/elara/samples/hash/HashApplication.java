@@ -33,6 +33,7 @@ import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver.ReceivingContext;
 import org.tools4j.elara.log.InMemoryLog;
+import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.plugin.metrics.Configuration;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
@@ -52,6 +53,8 @@ import static org.tools4j.elara.plugin.metrics.TimeMetric.APPLYING_END_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.APPLYING_START_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.INPUT_POLLING_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.INPUT_SENDING_TIME;
+import static org.tools4j.elara.plugin.metrics.TimeMetric.OUTPUT_END_TIME;
+import static org.tools4j.elara.plugin.metrics.TimeMetric.OUTPUT_START_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.PROCESSING_END_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.PROCESSING_START_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_END_TIME;
@@ -202,12 +205,14 @@ public class HashApplication {
                 .input(input(input))
                 .commandLog(new ChronicleMessageLog(cq))
                 .eventLog(new ChronicleMessageLog(eq))
+                /* trigger capturing of output metrics approximately every second time */
+                .output((event, replay, retry, loopback) -> (event.payload().getLong(0) & 0x1) == 0 ? Ack.COMMIT : Ack.IGNORED)
                 .timeSource(new PseudoNanoClock())
                 .idleStrategy(BusySpinIdleStrategy.INSTANCE)
                 .plugin(Plugins.metricsPlugin(Configuration.configure()
 //                    .timeMetrics(EnumSet.allOf(TimeMetric.class))
 //                    .frequencyMetrics(EnumSet.allOf(FrequencyMetric.class))
-                    .timeMetrics(INPUT_SENDING_TIME, INPUT_POLLING_TIME, PROCESSING_START_TIME, PROCESSING_END_TIME, ROUTING_START_TIME, APPLYING_START_TIME, APPLYING_END_TIME, ROUTING_END_TIME)
+                    .timeMetrics(INPUT_SENDING_TIME, INPUT_POLLING_TIME, PROCESSING_START_TIME, PROCESSING_END_TIME, ROUTING_START_TIME, APPLYING_START_TIME, APPLYING_END_TIME, ROUTING_END_TIME, OUTPUT_START_TIME, OUTPUT_END_TIME)
                     .frequencyMetrics(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, EVENT_APPLIED_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY)
                     .frequencyLogInterval(100_000_000)//nanos
                     .inputSendingTimeExtractor((source, sequence, type, buffer, offset, length) -> ((0xffffffffL & source) << 32) | (0xffffffffL & sequence))//for testing only

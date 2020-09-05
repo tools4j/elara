@@ -82,7 +82,8 @@ public class OutputStep implements Step {
     private Result onMessage(final DirectBuffer message, final boolean replay) {
         flyweightEvent.init(message, 0);
         try {
-            if (Ack.COMMIT == handler.publish(flyweightEvent, replay, retry)) {
+            final Ack ack = handler.publish(flyweightEvent, replay, retry);
+            if (Ack.RETRY != ack) {
                 retry = 0;
                 return Result.POLL;
             }

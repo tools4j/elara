@@ -39,9 +39,11 @@ public enum FrequencyMetric {
     INPUT_RECEIVED_FREQUENCY,
     COMMAND_PROCESSED_FREQUENCY,
     EVENT_APPLIED_FREQUENCY,
-    OUTPUT_PUBLISHED_FREQUENCY,
+    OUTPUT_POLLED_FREQUENCY,
     EXTRA_STEP_PERFORMED_FREQUENCY,
 
+    /* some other special ones*/
+    OUTPUT_PUBLISHED_FREQUENCY,//only those where Output did not return IGNORED
     STEP_ERROR_FREQUENCY;
 
     private static final FrequencyMetric[] VALUES = values();
