@@ -43,9 +43,10 @@ import static org.tools4j.elara.format.MessagePrinters.metrics;
 public class NanoChronicleLogPrinter {
 
     public static void main(String[] args) {
+        //System.out.println(System.getProperty("java.class.path"));
         final boolean metrics = args.length == 2 && ("-m".equals(args[0]) || "--metrics".equals(args[0]));
         if (args.length < 1 || args.length > 2 || (args.length == 2 && !metrics)) {
-            System.err.println("usage: " + ChronicleLogPrinter.class.getSimpleName() + "[-m|--metrics] <file>");
+            System.err.println("usage: " + NanoChronicleLogPrinter.class.getSimpleName() + "[-m|--metrics] <file>");
             System.exit(1);
         }
         final String fileName = metrics ? args[1] : args[0];

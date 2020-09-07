@@ -109,6 +109,7 @@ public class MessageLogPrinter implements AutoCloseable {
             final long line = linePtr[0]++;
             if (filter.test(msg)) {
                 printer.print(line, poller.entryId(), msg, printWriter);
+                flush();
             }
             return Result.POLL;
         };
@@ -116,7 +117,6 @@ public class MessageLogPrinter implements AutoCloseable {
         do {
             workDone = poller.poll(handler) > 0;
         } while (loopCondition.loopAgain(workDone));
-        flush();
     }
 
     public <M> ThreadLike printInBackground(final MessageLog.Poller poller,
