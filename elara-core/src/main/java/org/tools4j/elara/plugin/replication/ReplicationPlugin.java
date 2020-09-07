@@ -33,6 +33,7 @@ import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.replication.Connection.Handler;
+import org.tools4j.elara.time.TimeSource;
 import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
@@ -44,8 +45,7 @@ import static java.util.Objects.requireNonNull;
 public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable> {
 
     private static final Dependency<?>[] DEPENDENCIES = {
-            Dependency.of(Plugins.basePlugin(), baseState -> baseState.processCommands(false)),
-            Dependency.of(Plugins.bootPlugin())
+            Dependency.of(Plugins.basePlugin(), baseState -> baseState.processCommands(false))
     };
     private final org.tools4j.elara.plugin.replication.Configuration configuration;
 
@@ -104,7 +104,7 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
 
             @Override
             public CommandProcessor commandProcessor(final BaseState baseState) {
-                return new ReplicationCommandProcessor(appConfig.loggerFactory(), configuration, replicationState);
+                return new ReplicationCommandProcessor(appConfig.loggerFactory(), appConfig.timeSource(), configuration, replicationState);
             }
 
             @Override

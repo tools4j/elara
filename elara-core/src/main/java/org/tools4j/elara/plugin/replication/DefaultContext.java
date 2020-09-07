@@ -32,12 +32,14 @@ import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;
 
 final class DefaultContext implements Context {
     public static final int DEFAULT_INITIAL_SEND_BUFFER_CAPACITY = 1024;
+    public static final long DEFAULT_LEADER_LOCKDOWN_PERIOD_AFTER_CHANGE = 5000;//5s if millis
     private static final EnforceLeaderInput NULL_INPUT = receiver -> 0;
 
     private int serverId = NULL_SERVER;
     private final IntArrayList serverIds = new IntArrayList();
     private EnforceLeaderInput enforceLeaderInput = NULL_INPUT;
     private final Int2ObjectHashMap<Connection> connectionByServerId = new Int2ObjectHashMap<>();
+    private long leaderLockdownPeriodAfterChange = DEFAULT_LEADER_LOCKDOWN_PERIOD_AFTER_CHANGE;
     private int initialSendBufferCapacity = DEFAULT_INITIAL_SEND_BUFFER_CAPACITY;
 
     @Override
@@ -95,13 +97,30 @@ final class DefaultContext implements Context {
     }
 
     @Override
+    public long leaderLockdownPeriodAfterChange() {
+        return leaderLockdownPeriodAfterChange;
+    }
+
+    @Override
+    public Context leaderLockdownPeriodAfterChange(final long period) {
+        if (period < 0) {
+            throw new IllegalArgumentException("Period cannot be negative: " + period);
+        }
+        this.leaderLockdownPeriodAfterChange = period;
+        return this;
+    }
+
+    @Override
     public int initialSendBufferCapacity() {
         return initialSendBufferCapacity;
     }
 
     @Override
-    public Context initialSendBufferCapacity(final int size) {
-        this.initialSendBufferCapacity = size;
+    public Context initialSendBufferCapacity(final int capacity) {
+        if (capacity < 0) {
+            throw new IllegalArgumentException("Initial buffer capacity cannot be negative: " + capacity);
+        }
+        this.initialSendBufferCapacity = capacity;
         return this;
     }
 

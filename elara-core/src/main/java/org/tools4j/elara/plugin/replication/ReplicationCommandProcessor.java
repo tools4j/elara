@@ -23,63 +23,100 @@
  */
 package org.tools4j.elara.plugin.replication;
 
+import org.agrona.collections.IntHashSet;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.logging.ElaraLogger;
 import org.tools4j.elara.logging.Logger;
-import org.tools4j.elara.plugin.boot.BootCommands;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
+import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.replication.ReplicationCommands.replicationCommandName;
+import static org.tools4j.elara.plugin.replication.ReplicationEvents.leaderConfirmed;
 import static org.tools4j.elara.plugin.replication.ReplicationEvents.leaderElected;
+import static org.tools4j.elara.plugin.replication.ReplicationEvents.leaderRejected;
 import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;
 
 public class ReplicationCommandProcessor implements CommandProcessor {
 
     private final ElaraLogger logger;
+    private final TimeSource timeSource;
     private final Configuration configuration;
+    private final IntHashSet serverIds;
     private final ReplicationState replicationState;
 
     public ReplicationCommandProcessor(final Logger.Factory loggerFactory,
+                                       final TimeSource timeSource,
                                        final Configuration configuration,
                                        final ReplicationState replicationState) {
         this.logger = ElaraLogger.create(loggerFactory, getClass());
+        this.timeSource = requireNonNull(timeSource);
         this.configuration = requireNonNull(configuration);
+        this.serverIds = new IntHashSet(NULL_SERVER);
         this.replicationState = requireNonNull(replicationState);
+        for (final int serverId : configuration.serverIds()) {
+            serverIds.add(serverId);
+        }
     }
 
     @Override
     public void onCommand(final Command command, final EventRouter router) {
-        if (command.type() == BootCommands.SIGNAL_APP_INITIALISATION_START) {
-            if (isLeader()) {
-                //step down
-                try (final RoutingContext context = router.routingEvent(ReplicationEvents.LEADER_ELECTED)) {
-                    final int length = ReplicationEvents.leaderElected(context.buffer(), 0,
-                            replicationState.currentTerm() + 1, NULL_SERVER);
-                    context.route(length);
-                }
-            }
-        } else if (command.type() == ReplicationCommands.PROPOSE_LEADER) {
+        if (command.type() == ReplicationCommands.PROPOSE_LEADER) {
             final String commandName = replicationCommandName(command);
             final int serverId = configuration.serverId();
             final int candidateId = ReplicationCommands.candidateId(command);
             final int leaderId = replicationState.leaderId();
-            if (candidateId != leaderId) {
-                final int nextTerm = replicationState.currentTerm() + 1;
-                logger.info("Server {} processing {}: electing candidate {} to replace current leader {} for next term {}")
-                        .replace(serverId).replace(commandName).replace(candidateId)
-                        .replace(leaderId).replace(nextTerm).format();
-                try (final RoutingContext context = router.routingEvent(ReplicationEvents.LEADER_ELECTED)) {
-                    final int length = leaderElected(context.buffer(), 0, nextTerm, candidateId);
+            final int currentTerm = replicationState.currentTerm();
+            if (candidateId == leaderId) {
+                logger.info("Server {} processing {}: leader confirmed since proposed candidate {} is already leader")
+                        .replace(serverId).replace(commandName).replace(candidateId).format();
+                try (final RoutingContext context = router.routingEvent(ReplicationEvents.LEADER_CONFIRMED)) {
+                    final int length = leaderConfirmed(context.buffer(), 0, currentTerm, candidateId);
                     context.route(length);
                 }
-            } else {
-                logger.info("Server {} processing {}: ignored since proposed candidate {} is already leader")
+                return;
+            }
+            final long time = timeSource.currentTime();
+            boolean reject = false;
+            if (isCommandExpired(time, command)) {
+                logger.info("Server {} processing {}: rejected since command is expired")
+                        .replace(serverId).replace(commandName).format();
+                reject = true;
+            } else if (isLockdownPeriod(time)) {
+                logger.info("Server {} processing {}: rejected since we are in leader lockdown period")
+                        .replace(serverId).replace(commandName).format();
+                reject = true;
+            } else if (!serverIds.contains(candidateId)) {
+                logger.info("Server {} processing {}: rejected since candidate ID {} is invalid")
                         .replace(serverId).replace(commandName).replace(candidateId).format();
+                reject = true;
+            }
+            if (reject) {
+                try (final RoutingContext context = router.routingEvent(ReplicationEvents.LEADER_REJECTED)) {
+                    final int length = leaderRejected(context.buffer(), 0, currentTerm, candidateId);
+                    context.route(length);
+                }
+                return;
+            }
+            final int nextTerm = currentTerm + 1;
+            logger.info("Server {} processing {}: electing candidate {} to replace current leader {} for next term {}")
+                    .replace(serverId).replace(commandName).replace(candidateId)
+                    .replace(leaderId).replace(nextTerm).format();
+            try (final RoutingContext context = router.routingEvent(ReplicationEvents.LEADER_ELECTED)) {
+                final int length = leaderElected(context.buffer(), 0, nextTerm, candidateId);
+                context.route(length);
             }
         }
+    }
+
+    private boolean isCommandExpired(final long time, final Command command) {
+        return LockdownPeriod.isCommandExpired(time, command, configuration);
+    }
+
+    private boolean isLockdownPeriod(final long time) {
+        return LockdownPeriod.isLockdownPeriod(time, replicationState, configuration);
     }
 
     private boolean isLeader() {

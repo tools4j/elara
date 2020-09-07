@@ -28,6 +28,7 @@ public interface Configuration {
     int[] serverIds();
     EnforceLeaderInput enforceLeaderInput();
     Connection connection(int serverId);
+    long leaderLockdownPeriodAfterChange();
     int initialSendBufferCapacity();
 
     static Context configure() {

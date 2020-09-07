@@ -56,6 +56,10 @@ public class ReplicationEventApplier implements EventApplier {
             case ReplicationEvents.LEADER_ENFORCED:
                 updateLeader(event);
                 break;
+            case ReplicationEvents.LEADER_CONFIRMED://same for both
+            case ReplicationEvents.LEADER_REJECTED:
+                //no op
+                break;
         }
         replicationState.eventApplied(event);
     }
@@ -63,16 +67,13 @@ public class ReplicationEventApplier implements EventApplier {
     private void updateLeader(final Event event) {
         final int leaderId = ReplicationEvents.leaderId(event);
         final int term = ReplicationEvents.term(event);
-        updateLeader(replicationEventName(event), term, leaderId);
+        updateLeader(replicationEventName(event), term, leaderId, event.time());
     }
 
-    private void updateLeader(final String eventName, final int term, final int leaderId) {
+    private void updateLeader(final String eventName, final int term, final int leaderId, final long time) {
         final int serverId = configuration.serverId();
-        baseState.processCommands(leaderId == serverId);
-        replicationState
-                .leaderId(leaderId)
-                .currentTerm(term)
-        ;
+        baseState.processCommands(leaderId == serverId && !isCommandExpired(timeSource.currentTime()));
+        replicationState.leaderElected(term, leaderId, time);
         logger.info("Server {} applied {}: Updating leader to {} for term {}")
                 .replace(serverId).replace(eventName).replace(leaderId).replace(term).format();
     }

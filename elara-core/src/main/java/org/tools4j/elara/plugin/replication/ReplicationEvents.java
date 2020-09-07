@@ -27,6 +27,7 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.flyweight.Frame;
 
+import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.CANDIDATE_ID_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.FLAGS_NONE;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.FLAGS_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.LEADER_ID_OFFSET;
@@ -42,7 +43,27 @@ import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.
  */
 public enum ReplicationEvents {
     ;
+    /**
+     * Leader change occurred and a new term has started in response to a
+     * {@link org.tools4j.elara.plugin.replication.ReplicationCommands#PROPOSE_LEADER PROPOSE_LEADER} command
+     */
     public static final short LEADER_ELECTED = -90;
+    /**
+     * A leader was proposed or enforced but was already leader at the time or processing the command or input.
+     */
+    public static final short LEADER_CONFIRMED = -91;
+    /**
+     * A leader was proposed or attempted to be enforced but was rejected because either<ol>
+     *      <li>the candidate ID was invalid</li>
+     *      <li>the PROPOSE_LEADER command was expired at the time of processing, or</li>
+     *      <li>the command or enforce-leader input was received within the leader lockdown period after a prior leader change</li>
+     * </ol>
+     */
+    public static final short LEADER_REJECTED = -92;
+    /**
+     * Leader change occurred and a new term has started in response an enforce-leader input received via
+     * {@link EnforceLeaderInput}.
+     */
     public static final short LEADER_ENFORCED = -99;
 
     public static int leaderElected(final MutableDirectBuffer buffer, final int offset,
@@ -53,6 +74,28 @@ public enum ReplicationEvents {
         buffer.putShort(offset + TYPE_OFFSET, LEADER_ELECTED);
         buffer.putInt(offset + PAYLOAD_SIZE_OFFSET, 0);
         buffer.putInt(offset + LEADER_ID_OFFSET, leaderId);
+        buffer.putInt(offset + TERM_OFFSET, term);
+        return PAYLOAD_LENGTH;
+    }
+
+    public static int leaderConfirmed(final MutableDirectBuffer buffer, final int offset,
+                                      final int term,
+                                      final int leaderId) {
+        buffer.putByte(offset + FLAGS_OFFSET, FLAGS_NONE);
+        buffer.putShort(offset + TYPE_OFFSET, LEADER_CONFIRMED);
+        buffer.putInt(offset + PAYLOAD_SIZE_OFFSET, 0);
+        buffer.putInt(offset + LEADER_ID_OFFSET, leaderId);
+        buffer.putInt(offset + TERM_OFFSET, term);
+        return PAYLOAD_LENGTH;
+    }
+
+    public static int leaderRejected(final MutableDirectBuffer buffer, final int offset,
+                                     final int term,
+                                     final int candidateId) {
+        buffer.putByte(offset + FLAGS_OFFSET, FLAGS_NONE);
+        buffer.putShort(offset + TYPE_OFFSET, LEADER_REJECTED);
+        buffer.putInt(offset + PAYLOAD_SIZE_OFFSET, 0);
+        buffer.putInt(offset + CANDIDATE_ID_OFFSET, candidateId);
         buffer.putInt(offset + TERM_OFFSET, term);
         return PAYLOAD_LENGTH;
     }
@@ -87,6 +130,8 @@ public enum ReplicationEvents {
     public static boolean isReplicationEventType(final int eventType) {
         switch (eventType) {
             case LEADER_ELECTED://fallthrough
+            case LEADER_CONFIRMED://fallthrough
+            case LEADER_REJECTED://fallthrough
             case LEADER_ENFORCED://fallthrough
                 return true;
             default:
@@ -106,6 +151,10 @@ public enum ReplicationEvents {
         switch (eventType) {
             case LEADER_ELECTED:
                 return "LEADER_ELECTED";
+            case LEADER_CONFIRMED:
+                return "LEADER_CONFIRMED";
+            case LEADER_REJECTED:
+                return "LEADER_REJECTED";
             case LEADER_ENFORCED:
                 return "LEADER_ENFORCED";
             default:

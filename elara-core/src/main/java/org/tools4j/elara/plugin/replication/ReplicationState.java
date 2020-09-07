@@ -30,6 +30,7 @@ public interface ReplicationState {
 
     int currentTerm();
     int leaderId();
+    long leaderElectionTime();
     long eventLogSize();
     long nextEventLogIndex(int serverId);
     long confirmedEventLogIndex(int serverId);
@@ -43,8 +44,7 @@ public interface ReplicationState {
     }
 
     interface Mutable extends ReplicationState.Volatile {
-        Mutable currentTerm(int term);
-        Mutable leaderId(int leaderId);
+        Mutable leaderElected(int term, int leaderId, long time);
         Mutable eventApplied(Event event);
     }
 }

@@ -29,7 +29,8 @@ public interface Context extends Configuration {
     Context serverIds(int... serverIds);
     Context enforceLeaderInput(EnforceLeaderInput input);
     Context connection(int serverId, Connection connection);
-    Context initialSendBufferCapacity(int size);
+    Context leaderLockdownPeriodAfterChange(long period);
+    Context initialSendBufferCapacity(int capacity);
 
     static Context create() {
         return new DefaultContext();

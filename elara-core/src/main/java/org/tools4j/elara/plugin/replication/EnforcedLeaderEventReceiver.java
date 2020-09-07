@@ -26,8 +26,8 @@ package org.tools4j.elara.plugin.replication;
 import org.agrona.collections.IntHashSet;
 import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.FlyweightHeader;
-import org.tools4j.elara.log.MessageLog.AppendingContext;
 import org.tools4j.elara.log.MessageLog.Appender;
+import org.tools4j.elara.log.MessageLog.AppendingContext;
 import org.tools4j.elara.logging.ElaraLogger;
 import org.tools4j.elara.logging.Logger.Factory;
 import org.tools4j.elara.plugin.replication.EnforceLeaderInput.EnforceLeaderReceiver;
@@ -37,7 +37,9 @@ import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_OFFSET;
+import static org.tools4j.elara.plugin.replication.ReplicationEvents.LEADER_CONFIRMED;
 import static org.tools4j.elara.plugin.replication.ReplicationEvents.LEADER_ENFORCED;
+import static org.tools4j.elara.plugin.replication.ReplicationEvents.LEADER_REJECTED;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.PAYLOAD_LENGTH;
 import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;
 
@@ -45,6 +47,7 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
 
     private final ElaraLogger logger;
     private final TimeSource timeSource;
+    private final Configuration configuration;
     private final int serverId;
     private final IntHashSet serverIds;
     private final ReplicationState state;
@@ -57,6 +60,7 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
                                 final Appender eventLogAppender) {
         this.logger = ElaraLogger.create(loggerFactory, getClass());
         this.timeSource = requireNonNull(timeSource);
+        this.configuration = requireNonNull(configuration);
         this.serverIds = new IntHashSet(NULL_SERVER);
         this.state = requireNonNull(state);
         this.eventLogAppender = requireNonNull(eventLogAppender);
@@ -83,12 +87,45 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
 
     @Override
     public void enforceLeader(final int source, final long sequence, final int leaderId) {
-        if (!isValidLeaderId(leaderId)) {
-            logger.warn("Server {}: Ignoring enforce-leader request {}:{} due to invalid leader ID {}")
-                    .replace(serverId).replace(source).replace(sequence).replace(leaderId).format();
+        final long time = timeSource.currentTime();
+        final int currentTerm = state.currentTerm();
+        if (leaderId == state.leaderId()) {
+            logger.info("Server {} processing enforce-leader request: leader confirmed since attempted enforced leader {} is already leader")
+                    .replace(serverId).replace(leaderId).format();
+            try (final AppendingContext context = eventLogAppender.appending()) {
+                FlyweightHeader.writeTo(
+                        source, LEADER_CONFIRMED, sequence, time, Flags.COMMIT, (short)0, PAYLOAD_LENGTH,
+                        context.buffer(), HEADER_OFFSET
+                );
+                ReplicationEvents.leaderConfirmed(context.buffer(), PAYLOAD_OFFSET, currentTerm, leaderId);
+                context.commit(HEADER_LENGTH + PAYLOAD_LENGTH);
+            }
             return;
         }
-        final int nextTerm = 1 + state.currentTerm();
+        boolean reject = false;
+        if (LockdownPeriod.isLockdownPeriod(time, state, configuration)) {
+            logger.info("Server {} processing enforce-leader request: rejected since we are in leader lockdown period")
+                    .replace(serverId).format();
+            reject = true;
+        } else if (!serverIds.contains(leaderId)) {
+            logger.info("Server {} processing enforce-leader request: rejected since leader ID {} is invalid")
+                    .replace(serverId).replace(leaderId).format();
+            reject = true;
+        }
+        if (reject) {
+            try (final AppendingContext context = eventLogAppender.appending()) {
+                FlyweightHeader.writeTo(
+                        source, LEADER_REJECTED, sequence, time, Flags.COMMIT, (short)0, PAYLOAD_LENGTH,
+                        context.buffer(), HEADER_OFFSET
+                );
+                ReplicationEvents.leaderRejected(context.buffer(), PAYLOAD_OFFSET, currentTerm, leaderId);
+                context.commit(HEADER_LENGTH + PAYLOAD_LENGTH);
+            }
+            return;
+        }
+        final int nextTerm = currentTerm + 1;
+        logger.info("Server {} processing enforce-leader request: enforcing leader {} to replace current leader {} for next term {}")
+                .replace(serverId).replace(leaderId).replace(state.leaderId()).replace(nextTerm).format();
         try (final AppendingContext context = eventLogAppender.appending()) {
             FlyweightHeader.writeTo(
                     source, LEADER_ENFORCED, sequence, timeSource.currentTime(), Flags.COMMIT, (short)0, PAYLOAD_LENGTH,
@@ -97,19 +134,5 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
             ReplicationEvents.leaderEnforced(context.buffer(), PAYLOAD_OFFSET, nextTerm, leaderId);
             context.commit(HEADER_LENGTH + PAYLOAD_LENGTH);
         }
-    }
-
-    private boolean isValidLeaderId(final int leaderId) {
-        if (leaderId == state.leaderId()) {
-            logger.warn("Server {}: Ignoring enforce-leader input: enforced leader {} is already the current leader")
-                    .replace(serverId).replace(leaderId).format();
-            return false;
-        }
-        if (!serverIds.contains(leaderId)) {
-            logger.warn("Server {}: Ignoring enforce-leader input: server ID {} is invalid")
-                    .replace(serverId).replace(leaderId).format();
-            return false;
-        }
-        return true;
     }
 }
