@@ -61,7 +61,11 @@ final class FlyweightPlaceholderReplacer implements PlaceholderReplacer {
         final int index = message.indexOf(PLACEHOLDER, start);
         if (index >= 0) {
             temp.append(message, start, index);
-            temp.append(arg);
+            if (arg instanceof CharSequence) {
+                temp.append((CharSequence) arg);
+            } else {
+                temp.append(arg);
+            }
             start = index + PLACEHOLDER.length();
         }
         return this;

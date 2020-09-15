@@ -32,7 +32,7 @@ import org.agrona.DirectBuffer;
      0         1         2         3         4         5         6
      0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-     |Version| Flags |     Type      |      Payload Size = 0         |
+     |Version| Flags |     Type      |         Data Size = 0         |
      +-------+-------+-------+-------+-------+-------+-------+-------+
      |      Candidate/Leader ID      |             Term              |
      +-------+-------+-------+-------+-------+-------+-------+-------+
@@ -51,9 +51,9 @@ public enum ReplicationPayloadDescriptor {
     public static final int FLAGS_LENGTH = Byte.BYTES;
     public static final int TYPE_OFFSET = FLAGS_OFFSET + FLAGS_LENGTH;
     public static final int TYPE_LENGTH = Short.BYTES;
-    public static final int PAYLOAD_SIZE_OFFSET = TYPE_OFFSET + TYPE_LENGTH;
-    public static final int PAYLOAD_SIZE_LENGTH = Integer.BYTES;
-    public static final int CANDIDATE_ID_OFFSET = PAYLOAD_SIZE_OFFSET + PAYLOAD_SIZE_LENGTH;
+    public static final int DATA_SIZE_OFFSET = TYPE_OFFSET + TYPE_LENGTH;
+    public static final int DATA_SIZE_LENGTH = Integer.BYTES;
+    public static final int CANDIDATE_ID_OFFSET = DATA_SIZE_OFFSET + DATA_SIZE_LENGTH;
     public static final int CANDIDATE_ID_LENGTH = Integer.BYTES;
     public static final int TERM_OFFSET = CANDIDATE_ID_OFFSET + CANDIDATE_ID_LENGTH;
     public static final int TERM_LENGTH = Integer.BYTES;
@@ -76,8 +76,8 @@ public enum ReplicationPayloadDescriptor {
         return payload.getInt(TYPE_OFFSET);
     }
 
-    public static int payloadSize(final DirectBuffer payload) {
-        return payload.getInt(PAYLOAD_SIZE_OFFSET);
+    public static int dataSize(final DirectBuffer payload) {
+        return payload.getInt(DATA_SIZE_OFFSET);
     }
 
     public static int candidateId(final DirectBuffer payload) {

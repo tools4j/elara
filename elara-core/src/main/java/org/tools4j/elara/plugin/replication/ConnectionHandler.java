@@ -116,7 +116,7 @@ final class ConnectionHandler implements Connection.Handler {
 
     private void handleAppendRequest(final int senderServerId, final DirectBuffer buffer) {
         final int senderTerm = term(buffer);
-        final int currentTerm = state.currentTerm();
+        final int currentTerm = state.term();
         if (senderTerm < currentTerm) {
             logger.warn("Server {}: Ignoring append-request message in follower mode: term {} of sender {} is lower than current term {}")
                     .replace(serverId).replace(senderTerm).replace(senderServerId).replace(currentTerm).format();
@@ -169,7 +169,7 @@ final class ConnectionHandler implements Connection.Handler {
     private boolean sendAppendResponse(final int targetServerId,
                                        final long nextEventLogIndex,
                                        final boolean success) {
-        final int length = ReplicationMessages.appendResponse(sendBuffer, 0, state.currentTerm(),
+        final int length = ReplicationMessages.appendResponse(sendBuffer, 0, state.term(),
                 state.leaderId(), nextEventLogIndex, success);
         if (!responseSender.publish(targetServerId, sendBuffer, 0, length)) {
             logger.warn("Server {}: Sending append response to {} for next event log index {} failed")

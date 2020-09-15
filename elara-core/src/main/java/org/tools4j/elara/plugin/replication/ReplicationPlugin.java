@@ -25,15 +25,15 @@ package org.tools4j.elara.plugin.replication;
 
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
+import org.tools4j.elara.factory.InterceptableSingletons;
+import org.tools4j.elara.factory.Singletons;
 import org.tools4j.elara.init.ExecutionType;
 import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.log.MessageLog.Appender;
-import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.replication.Connection.Handler;
-import org.tools4j.elara.time.TimeSource;
 import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
@@ -44,9 +44,6 @@ import static java.util.Objects.requireNonNull;
  */
 public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable> {
 
-    private static final Dependency<?>[] DEPENDENCIES = {
-            Dependency.of(Plugins.basePlugin(), baseState -> baseState.processCommands(false))
-    };
     private final org.tools4j.elara.plugin.replication.Configuration configuration;
 
     public ReplicationPlugin(final org.tools4j.elara.plugin.replication.Configuration configuration) {
@@ -65,11 +62,6 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
     @Override
     public ReplicationState.Mutable defaultPluginState() {
         return new DefaultReplicationState();
-    }
-
-    @Override
-    public Dependency<?>[] dependencies() {
-        return DEPENDENCIES;
     }
 
     @Override
@@ -104,12 +96,17 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
 
             @Override
             public CommandProcessor commandProcessor(final BaseState baseState) {
-                return new ReplicationCommandProcessor(appConfig.loggerFactory(), appConfig.timeSource(), configuration, replicationState);
+                return new ReplicationCommandProcessor(appConfig.loggerFactory(), configuration, replicationState);
             }
 
             @Override
             public EventApplier eventApplier(final BaseState.Mutable baseState) {
-                return new ReplicationEventApplier(appConfig.loggerFactory(), configuration, baseState, replicationState);
+                return new ReplicationEventApplier(appConfig.loggerFactory(), configuration, replicationState);
+            }
+
+            @Override
+            public InterceptableSingletons interceptOrNull(final Singletons singletons) {
+                return new ReplicationInterceptor(singletons, appConfig, configuration, replicationState);
             }
         };
     }

@@ -28,23 +28,25 @@ import org.tools4j.elara.event.Event;
 public interface ReplicationState {
     int NULL_SERVER = -1;
 
-    int currentTerm();
+    int term();
     int leaderId();
-    long leaderElectionTime();
-    long eventLogSize();
-    long nextEventLogIndex(int serverId);
-    long confirmedEventLogIndex(int serverId);
-    long committedEventLogIndex(int serverCount);
-    long nextNotBefore(int serverId);
+    long lastAppliedEventTime();
 
     interface Volatile extends ReplicationState {
+        long eventLogSize();
+        long nextEventLogIndex(int serverId);
+        long confirmedEventLogIndex(int serverId);
+        long committedEventLogIndex(int serverCount);
+        long nextNotBefore(int serverId);
+
         Volatile nextEventLogIndex(int serverId, long index);
         Volatile confirmedEventLogIndex(int serverId, long index);
         Volatile nextNotBefore(int serverId, long time);
     }
 
-    interface Mutable extends ReplicationState.Volatile {
-        Mutable leaderElected(int term, int leaderId, long time);
+    interface Mutable extends Volatile {
+        Mutable term(int term);
+        Mutable leaderId(int leaderId);
         Mutable eventApplied(Event event);
     }
 }

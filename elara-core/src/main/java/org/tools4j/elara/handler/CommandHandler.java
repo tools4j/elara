@@ -26,7 +26,6 @@ package org.tools4j.elara.handler;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.log.MessageLog.Handler.Result;
 
-@FunctionalInterface
 public interface CommandHandler {
     Result onCommand(Command command);
 }

@@ -32,7 +32,7 @@ import org.agrona.DirectBuffer;
      0         1         2         3         4         5         6
      0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-     |Version| Flags |     Type      |         Payload Size          |
+     |Version| Flags |     Type      |           Data Size           |
      +-------+-------+-------+-------+-------+-------+-------+-------+
      |      Candidate/Leader ID      |             Term              |
      +-------+-------+-------+-------+-------+-------+-------+-------+
@@ -40,8 +40,8 @@ import org.agrona.DirectBuffer;
      +-------+-------+-------+-------+-------+-------+-------+-------+
      |                      Committed Log Index                      |
      +-------+-------+-------+-------+-------+-------+-------+-------+
-     |                           Payload                             |
-     |                             ...                               |
+     |                             Data                              |
+     |                             ....                              |
 
  * </pre>
  */
@@ -57,9 +57,9 @@ public enum ReplicationMessageDescriptor {
     public static final int FLAGS_LENGTH = Byte.BYTES;
     public static final int TYPE_OFFSET = FLAGS_OFFSET + FLAGS_LENGTH;
     public static final int TYPE_LENGTH = Short.BYTES;
-    public static final int PAYLOAD_SIZE_OFFSET = TYPE_OFFSET + TYPE_LENGTH;
-    public static final int PAYLOAD_SIZE_LENGTH = Integer.BYTES;
-    public static final int CANDIDATE_ID_OFFSET = PAYLOAD_SIZE_OFFSET + PAYLOAD_SIZE_LENGTH;
+    public static final int DATA_SIZE_OFFSET = TYPE_OFFSET + TYPE_LENGTH;
+    public static final int DATA_SIZE_LENGTH = Integer.BYTES;
+    public static final int CANDIDATE_ID_OFFSET = DATA_SIZE_OFFSET + DATA_SIZE_LENGTH;
     public static final int CANDIDATE_ID_LENGTH = Integer.BYTES;
     public static final int TERM_OFFSET = CANDIDATE_ID_OFFSET + CANDIDATE_ID_LENGTH;
     public static final int TERM_LENGTH = Integer.BYTES;
@@ -108,7 +108,7 @@ public enum ReplicationMessageDescriptor {
         return buffer.getInt(COMMITTED_LOG_INDEX_OFFSET);
     }
 
-    public static int payloadSize(final DirectBuffer buffer) {
-        return buffer.getInt(PAYLOAD_SIZE_OFFSET);
+    public static int dataSize(final DirectBuffer buffer) {
+        return buffer.getInt(DATA_SIZE_OFFSET);
     }
 }

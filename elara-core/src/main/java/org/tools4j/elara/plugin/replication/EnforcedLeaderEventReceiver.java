@@ -47,7 +47,6 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
 
     private final ElaraLogger logger;
     private final TimeSource timeSource;
-    private final Configuration configuration;
     private final int serverId;
     private final IntHashSet serverIds;
     private final ReplicationState state;
@@ -60,7 +59,6 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
                                 final Appender eventLogAppender) {
         this.logger = ElaraLogger.create(loggerFactory, getClass());
         this.timeSource = requireNonNull(timeSource);
-        this.configuration = requireNonNull(configuration);
         this.serverIds = new IntHashSet(NULL_SERVER);
         this.state = requireNonNull(state);
         this.eventLogAppender = requireNonNull(eventLogAppender);
@@ -76,8 +74,8 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
     }
 
     @Override
-    public int currentTerm() {
-        return state.currentTerm();
+    public int term() {
+        return state.term();
     }
 
     @Override
@@ -88,7 +86,7 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
     @Override
     public void enforceLeader(final int source, final long sequence, final int leaderId) {
         final long time = timeSource.currentTime();
-        final int currentTerm = state.currentTerm();
+        final int currentTerm = state.term();
         if (leaderId == state.leaderId()) {
             logger.info("Server {} processing enforce-leader request: leader confirmed since attempted enforced leader {} is already leader")
                     .replace(serverId).replace(leaderId).format();
@@ -102,17 +100,9 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
             }
             return;
         }
-        boolean reject = false;
-        if (LockdownPeriod.isLockdownPeriod(time, state, configuration)) {
-            logger.info("Server {} processing enforce-leader request: rejected since we are in leader lockdown period")
-                    .replace(serverId).format();
-            reject = true;
-        } else if (!serverIds.contains(leaderId)) {
+        if (!serverIds.contains(leaderId)) {
             logger.info("Server {} processing enforce-leader request: rejected since leader ID {} is invalid")
                     .replace(serverId).replace(leaderId).format();
-            reject = true;
-        }
-        if (reject) {
             try (final AppendingContext context = eventLogAppender.appending()) {
                 FlyweightHeader.writeTo(
                         source, LEADER_REJECTED, sequence, time, Flags.COMMIT, (short)0, PAYLOAD_LENGTH,

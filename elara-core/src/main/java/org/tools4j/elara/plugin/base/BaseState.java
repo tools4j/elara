@@ -27,14 +27,11 @@ import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 
 public interface BaseState {
-    boolean processCommands();
 
     boolean allEventsAppliedFor(Command.Id id);
-
     boolean eventApplied(Event.Id id);
 
     interface Mutable extends BaseState {
-        Mutable processCommands(boolean newValue);
         Mutable eventApplied(Event event);
     }
 }

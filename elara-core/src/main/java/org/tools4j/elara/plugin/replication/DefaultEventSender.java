@@ -90,7 +90,7 @@ final class DefaultEventSender implements EventSender {
 
         @Override
         public Result onMessage(final DirectBuffer message) {
-            final int length = ReplicationMessages.appendRequest(sendBuffer, 0, state.currentTerm(),
+            final int length = ReplicationMessages.appendRequest(sendBuffer, 0, state.term(),
                     state.leaderId(), eventLogIndex, message, 0, message.capacity());
             if (publisher.publish(targetServerId, sendBuffer, 0, length)) {
                 return Result.POLL;

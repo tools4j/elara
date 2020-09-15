@@ -61,6 +61,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  * Unit test running the {@link HashApplication} on multiple nodes and threads using the
@@ -118,6 +119,7 @@ public class ReplicatedHashApplicationTest {
             System.out.println("server-" + serverIds.idByIndex(i) + ": count=" + state.count() + ", hash=" + state.hash());
         }
         final State refState = appStates[0];
+        assertNotEquals(0, refState.count(), "refState.count");
         for (int i = 1; i < servers; i++) {
             final State state = appStates[i];
             if (networkConfig.isReliable()) {

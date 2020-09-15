@@ -27,11 +27,13 @@ import org.agrona.collections.Long2LongHashMap;
 import org.agrona.collections.Long2LongHashMap.ValueIterator;
 import org.agrona.collections.LongArrayList;
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.time.TimeSource;
 
 public class DefaultReplicationState implements ReplicationState.Mutable {
 
-    private int currentTerm;
+    private int term;
     private int leaderId = NULL_SERVER;
+    private long lastAppliedEventTime = TimeSource.BIG_BANG;
     private long eventLogSize;
     private final Long2LongHashMap nextEventLogIndexByServerId = new Long2LongHashMap(0);
     private final Long2LongHashMap confirmedEventLogIndexByServerId = new Long2LongHashMap(0);
@@ -39,13 +41,13 @@ public class DefaultReplicationState implements ReplicationState.Mutable {
     private final LongArrayList temp = new LongArrayList();
 
     @Override
-    public int currentTerm() {
-        return currentTerm;
+    public int term() {
+        return term;
     }
 
     @Override
-    public Mutable currentTerm(final int term) {
-        currentTerm = term;
+    public Mutable term(final int term) {
+        this.term = term;
         return this;
     }
 
@@ -61,12 +63,18 @@ public class DefaultReplicationState implements ReplicationState.Mutable {
     }
 
     @Override
+    public long lastAppliedEventTime() {
+        return lastAppliedEventTime;
+    }
+
+    @Override
     public long eventLogSize() {
         return eventLogSize;
     }
 
     @Override
     public Mutable eventApplied(final Event event) {
+        lastAppliedEventTime = event.time();
         eventLogSize++;
         return this;
     }
@@ -135,11 +143,14 @@ public class DefaultReplicationState implements ReplicationState.Mutable {
     @Override
     public String toString() {
         return "DefaultReplicationState{" +
-                "currentTerm=" + currentTerm +
+                "term=" + term +
                 ", leaderId=" + leaderId +
+                ", lastAppliedEventTime=" + lastAppliedEventTime +
                 ", eventLogSize=" + eventLogSize +
                 ", nextEventLogIndexByServerId=" + nextEventLogIndexByServerId +
+                ", confirmedEventLogIndexByServerId=" + confirmedEventLogIndexByServerId +
                 ", nextNotBefore=" + nextNotBefore +
+                ", temp=" + temp +
                 '}';
     }
 }

@@ -23,13 +23,14 @@
  */
 package org.tools4j.elara.plugin.replication;
 
+@FunctionalInterface
 public interface EnforceLeaderInput {
     int poll(EnforceLeaderReceiver receiver);
 
     interface EnforceLeaderReceiver {
         int serverId();
         int leaderId();
-        int currentTerm();
+        int term();
 
         void enforceLeader(int source, long sequence, int leaderId);
     }

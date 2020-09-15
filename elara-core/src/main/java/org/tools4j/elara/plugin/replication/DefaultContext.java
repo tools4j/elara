@@ -32,14 +32,18 @@ import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;
 
 final class DefaultContext implements Context {
     public static final int DEFAULT_INITIAL_SEND_BUFFER_CAPACITY = 1024;
-    public static final long DEFAULT_LEADER_LOCKDOWN_PERIOD_AFTER_CHANGE = 5000;//5s if millis
+    public static final long DEFAULT_HEARTBEAT_INTERVAL = 10000;//10s if millis
+    public static final long DEFAULT_LEADER_TIMEOUT = 20000;//20s if millis
+    public static final long DEFAULT_SERVER_REPLAY_TIMEOUT = 20000;//20s if millis
     private static final EnforceLeaderInput NULL_INPUT = receiver -> 0;
 
     private int serverId = NULL_SERVER;
     private final IntArrayList serverIds = new IntArrayList();
     private EnforceLeaderInput enforceLeaderInput = NULL_INPUT;
     private final Int2ObjectHashMap<Connection> connectionByServerId = new Int2ObjectHashMap<>();
-    private long leaderLockdownPeriodAfterChange = DEFAULT_LEADER_LOCKDOWN_PERIOD_AFTER_CHANGE;
+    private long heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
+    private long leaderTimeout = DEFAULT_LEADER_TIMEOUT;
+    private long serverReplayTimeout = DEFAULT_SERVER_REPLAY_TIMEOUT;
     private int initialSendBufferCapacity = DEFAULT_INITIAL_SEND_BUFFER_CAPACITY;
 
     @Override
@@ -97,16 +101,44 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public long leaderLockdownPeriodAfterChange() {
-        return leaderLockdownPeriodAfterChange;
+    public long heartbeatInterval() {
+        return heartbeatInterval;
     }
 
     @Override
-    public Context leaderLockdownPeriodAfterChange(final long period) {
-        if (period < 0) {
-            throw new IllegalArgumentException("Period cannot be negative: " + period);
+    public Context heartbeatInterval(final long interval) {
+        if (interval < 0) {
+            throw new IllegalArgumentException("Heartbeat interval cannot be negative: " + interval);
         }
-        this.leaderLockdownPeriodAfterChange = period;
+        this.heartbeatInterval = interval;
+        return this;
+    }
+
+    @Override
+    public long leaderTimeout() {
+        return leaderTimeout;
+    }
+
+    @Override
+    public Context leaderTimeout(final long timeout) {
+        if (timeout < 0) {
+            throw new IllegalArgumentException("Leader timeout cannot be negative: " + timeout);
+        }
+        this.leaderTimeout = timeout;
+        return this;
+    }
+
+    @Override
+    public long serverReplyTimeout() {
+        return serverReplayTimeout;
+    }
+
+    @Override
+    public Context serverReplyTimeout(final long timeout) {
+        if (timeout < 0) {
+            throw new IllegalArgumentException("Server replay timeout cannot be negative: " + timeout);
+        }
+        this.serverReplayTimeout = timeout;
         return this;
     }
 

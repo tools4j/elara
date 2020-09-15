@@ -30,7 +30,6 @@ import org.tools4j.elara.logging.ElaraLogger;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
-import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.replication.ReplicationCommands.replicationCommandName;
@@ -42,17 +41,14 @@ import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;
 public class ReplicationCommandProcessor implements CommandProcessor {
 
     private final ElaraLogger logger;
-    private final TimeSource timeSource;
     private final Configuration configuration;
     private final IntHashSet serverIds;
     private final ReplicationState replicationState;
 
     public ReplicationCommandProcessor(final Logger.Factory loggerFactory,
-                                       final TimeSource timeSource,
                                        final Configuration configuration,
                                        final ReplicationState replicationState) {
         this.logger = ElaraLogger.create(loggerFactory, getClass());
-        this.timeSource = requireNonNull(timeSource);
         this.configuration = requireNonNull(configuration);
         this.serverIds = new IntHashSet(NULL_SERVER);
         this.replicationState = requireNonNull(replicationState);
@@ -68,7 +64,7 @@ public class ReplicationCommandProcessor implements CommandProcessor {
             final int serverId = configuration.serverId();
             final int candidateId = ReplicationCommands.candidateId(command);
             final int leaderId = replicationState.leaderId();
-            final int currentTerm = replicationState.currentTerm();
+            final int currentTerm = replicationState.term();
             if (candidateId == leaderId) {
                 logger.info("Server {} processing {}: leader confirmed since proposed candidate {} is already leader")
                         .replace(serverId).replace(commandName).replace(candidateId).format();
@@ -78,22 +74,9 @@ public class ReplicationCommandProcessor implements CommandProcessor {
                 }
                 return;
             }
-            final long time = timeSource.currentTime();
-            boolean reject = false;
-            if (isCommandExpired(time, command)) {
-                logger.info("Server {} processing {}: rejected since command is expired")
-                        .replace(serverId).replace(commandName).format();
-                reject = true;
-            } else if (isLockdownPeriod(time)) {
-                logger.info("Server {} processing {}: rejected since we are in leader lockdown period")
-                        .replace(serverId).replace(commandName).format();
-                reject = true;
-            } else if (!serverIds.contains(candidateId)) {
+            if (!serverIds.contains(candidateId)) {
                 logger.info("Server {} processing {}: rejected since candidate ID {} is invalid")
                         .replace(serverId).replace(commandName).replace(candidateId).format();
-                reject = true;
-            }
-            if (reject) {
                 try (final RoutingContext context = router.routingEvent(ReplicationEvents.LEADER_REJECTED)) {
                     final int length = leaderRejected(context.buffer(), 0, currentTerm, candidateId);
                     context.route(length);
@@ -109,17 +92,5 @@ public class ReplicationCommandProcessor implements CommandProcessor {
                 context.route(length);
             }
         }
-    }
-
-    private boolean isCommandExpired(final long time, final Command command) {
-        return LockdownPeriod.isCommandExpired(time, command, configuration);
-    }
-
-    private boolean isLockdownPeriod(final long time) {
-        return LockdownPeriod.isLockdownPeriod(time, replicationState, configuration);
-    }
-
-    private boolean isLeader() {
-        return configuration.serverId() == replicationState.leaderId();
     }
 }

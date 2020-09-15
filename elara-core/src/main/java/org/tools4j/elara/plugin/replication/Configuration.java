@@ -28,7 +28,11 @@ public interface Configuration {
     int[] serverIds();
     EnforceLeaderInput enforceLeaderInput();
     Connection connection(int serverId);
-    long leaderLockdownPeriodAfterChange();
+
+    long heartbeatInterval();
+    long leaderTimeout();
+    long serverReplyTimeout();
+
     int initialSendBufferCapacity();
 
     static Context configure() {

@@ -21,37 +21,40 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.handler;
+package org.tools4j.elara.plugin.replication;
 
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
+import org.tools4j.elara.handler.DefaultCommandHandler;
 import org.tools4j.elara.log.MessageLog.Handler.Result;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.route.DefaultEventRouter;
+import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.log.MessageLog.Handler.Result.PEEK;
 import static org.tools4j.elara.log.MessageLog.Handler.Result.POLL;
 
-public class DefaultCommandHandler implements CommandHandler {
+public class ReplicationCommandHandler extends DefaultCommandHandler {
 
-    private final BaseState baseState;
-    private final DefaultEventRouter eventRouter;
-    private final CommandProcessor commandProcessor;
-    private final ExceptionHandler exceptionHandler;
-    private final DuplicateHandler duplicateHandler;
+    private final TimeSource timeSource;
+    private final Configuration configuration;
+    private final ReplicationState state;
 
-    public DefaultCommandHandler(final BaseState baseState,
-                                 final DefaultEventRouter eventRouter,
-                                 final CommandProcessor commandProcessor,
-                                 final ExceptionHandler exceptionHandler,
-                                 final DuplicateHandler duplicateHandler) {
-        this.baseState = requireNonNull(baseState);
-        this.eventRouter = requireNonNull(eventRouter);
-        this.commandProcessor = requireNonNull(commandProcessor);
-        this.exceptionHandler = requireNonNull(exceptionHandler);
-        this.duplicateHandler = requireNonNull(duplicateHandler);
+    public ReplicationCommandHandler(final TimeSource timeSource,
+                                     final Configuration configuration,
+                                     final BaseState baseState,
+                                     final ReplicationState state,
+                                     final DefaultEventRouter eventRouter,
+                                     final CommandProcessor commandProcessor,
+                                     final ExceptionHandler exceptionHandler,
+                                     final DuplicateHandler duplicateHandler) {
+        super(baseState, eventRouter, commandProcessor, exceptionHandler, duplicateHandler);
+        this.timeSource = requireNonNull(timeSource);
+        this.configuration = requireNonNull(configuration);
+        this.state = requireNonNull(state);
     }
 
     @Override
@@ -60,29 +63,20 @@ public class DefaultCommandHandler implements CommandHandler {
             skipCommand(command);
             return POLL;
         }
-        return processCommand(command);
-    }
-
-    protected boolean allEventsAppliedFor(final Command command) {
-        return baseState.allEventsAppliedFor(command.id());
-    }
-
-    protected Result processCommand(final Command command) {
-        eventRouter.start(command);
-        try {
-            commandProcessor.onCommand(command, eventRouter);
-        } catch (final Throwable t) {
-            exceptionHandler.handleCommandProcessorException(command, t);
+        if (isLeader()) {
+            processCommand(command);
+            return POLL;
         }
-        eventRouter.complete();
-        return POLL;
+        return PEEK;
     }
 
-    protected void skipCommand(final Command command) {
-        try {
-            duplicateHandler.skipCommandProcessing(command);
-        } catch (final Throwable t) {
-            exceptionHandler.handleCommandProcessorException(command, t);
+    private boolean isLeader() {
+        if (state.leaderId() == configuration.serverId()) {
+            final long time = timeSource.currentTime();
+            if (time - state.lastAppliedEventTime() <= configuration.leaderTimeout()) {
+                return true;
+            }
         }
+        return false;
     }
 }

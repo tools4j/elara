@@ -28,11 +28,11 @@ import org.tools4j.elara.event.Event;
 import org.tools4j.elara.flyweight.Frame;
 
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.CANDIDATE_ID_OFFSET;
+import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.DATA_SIZE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.FLAGS_NONE;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.FLAGS_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.LEADER_ID_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.PAYLOAD_LENGTH;
-import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.PAYLOAD_SIZE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.TERM_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.TYPE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.VERSION;
@@ -44,27 +44,39 @@ import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.
 public enum ReplicationEvents {
     ;
     /**
+     * A leader has triggered a heartbeat event to prevent timeouts.
+     */
+    public static final short LEADER_HEARTBEAT = -90;
+    /**
      * Leader change occurred and a new term has started in response to a
      * {@link org.tools4j.elara.plugin.replication.ReplicationCommands#PROPOSE_LEADER PROPOSE_LEADER} command
      */
-    public static final short LEADER_ELECTED = -90;
+    public static final short LEADER_ELECTED = -91;
     /**
      * A leader was proposed or enforced but was already leader at the time or processing the command or input.
      */
-    public static final short LEADER_CONFIRMED = -91;
+    public static final short LEADER_CONFIRMED = -92;
     /**
-     * A leader was proposed or attempted to be enforced but was rejected because either<ol>
-     *      <li>the candidate ID was invalid</li>
-     *      <li>the PROPOSE_LEADER command was expired at the time of processing, or</li>
-     *      <li>the command or enforce-leader input was received within the leader lockdown period after a prior leader change</li>
-     * </ol>
+     * A leader was proposed or attempted to be enforced but was rejected because the candidate ID was invalid.
      */
-    public static final short LEADER_REJECTED = -92;
+    public static final short LEADER_REJECTED = -93;
     /**
      * Leader change occurred and a new term has started in response an enforce-leader input received via
      * {@link EnforceLeaderInput}.
      */
     public static final short LEADER_ENFORCED = -99;
+
+    public static int leaderHeartbeat(final MutableDirectBuffer buffer, final int offset,
+                                      final int term,
+                                      final int leaderId) {
+        buffer.putByte(offset + VERSION_OFFSET, VERSION);
+        buffer.putByte(offset + FLAGS_OFFSET, FLAGS_NONE);
+        buffer.putShort(offset + TYPE_OFFSET, LEADER_HEARTBEAT);
+        buffer.putInt(offset + DATA_SIZE_OFFSET, 0);
+        buffer.putInt(offset + LEADER_ID_OFFSET, leaderId);
+        buffer.putInt(offset + TERM_OFFSET, term);
+        return PAYLOAD_LENGTH;
+    }
 
     public static int leaderElected(final MutableDirectBuffer buffer, final int offset,
                                     final int term,
@@ -72,7 +84,7 @@ public enum ReplicationEvents {
         buffer.putByte(offset + VERSION_OFFSET, VERSION);
         buffer.putByte(offset + FLAGS_OFFSET, FLAGS_NONE);
         buffer.putShort(offset + TYPE_OFFSET, LEADER_ELECTED);
-        buffer.putInt(offset + PAYLOAD_SIZE_OFFSET, 0);
+        buffer.putInt(offset + DATA_SIZE_OFFSET, 0);
         buffer.putInt(offset + LEADER_ID_OFFSET, leaderId);
         buffer.putInt(offset + TERM_OFFSET, term);
         return PAYLOAD_LENGTH;
@@ -83,7 +95,7 @@ public enum ReplicationEvents {
                                       final int leaderId) {
         buffer.putByte(offset + FLAGS_OFFSET, FLAGS_NONE);
         buffer.putShort(offset + TYPE_OFFSET, LEADER_CONFIRMED);
-        buffer.putInt(offset + PAYLOAD_SIZE_OFFSET, 0);
+        buffer.putInt(offset + DATA_SIZE_OFFSET, 0);
         buffer.putInt(offset + LEADER_ID_OFFSET, leaderId);
         buffer.putInt(offset + TERM_OFFSET, term);
         return PAYLOAD_LENGTH;
@@ -94,7 +106,7 @@ public enum ReplicationEvents {
                                      final int candidateId) {
         buffer.putByte(offset + FLAGS_OFFSET, FLAGS_NONE);
         buffer.putShort(offset + TYPE_OFFSET, LEADER_REJECTED);
-        buffer.putInt(offset + PAYLOAD_SIZE_OFFSET, 0);
+        buffer.putInt(offset + DATA_SIZE_OFFSET, 0);
         buffer.putInt(offset + CANDIDATE_ID_OFFSET, candidateId);
         buffer.putInt(offset + TERM_OFFSET, term);
         return PAYLOAD_LENGTH;
@@ -105,7 +117,7 @@ public enum ReplicationEvents {
                                      final int leaderId) {
         buffer.putByte(offset + FLAGS_OFFSET, FLAGS_NONE);
         buffer.putShort(offset + TYPE_OFFSET, LEADER_ENFORCED);
-        buffer.putInt(offset + PAYLOAD_SIZE_OFFSET, 0);
+        buffer.putInt(offset + DATA_SIZE_OFFSET, 0);
         buffer.putInt(offset + LEADER_ID_OFFSET, leaderId);
         buffer.putInt(offset + TERM_OFFSET, term);
         return PAYLOAD_LENGTH;

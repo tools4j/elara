@@ -30,8 +30,9 @@ import org.tools4j.elara.flyweight.Frame;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.CANDIDATE_ID_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.FLAGS_NONE;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.FLAGS_OFFSET;
+import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.LEADER_ID_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.PAYLOAD_LENGTH;
-import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.PAYLOAD_SIZE_OFFSET;
+import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.DATA_SIZE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.TERM_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.TYPE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.VERSION;
@@ -42,15 +43,38 @@ import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.
  */
 public enum ReplicationCommands {
     ;
-    public static final short PROPOSE_LEADER = -90;
+    /**
+     * Command issued to trigger a LEADER_HEARTBEAT event.
+     */
+    public static final short TRIGGER_HEARTBEAT = -90;
+    /**
+     * Command to propose a new leader.
+     */
+    public static final short PROPOSE_LEADER = -91;
 
-    public static int proposeLeader(final MutableDirectBuffer buffer, final int offset, final int candidateId) {
+    public static int triggerHeartbeat(final MutableDirectBuffer buffer,
+                                       final int offset,
+                                       final int term,
+                                       final int leaderId) {
+        buffer.putByte(offset + VERSION_OFFSET, VERSION);
+        buffer.putByte(offset + FLAGS_OFFSET, FLAGS_NONE);
+        buffer.putShort(offset + TYPE_OFFSET, TRIGGER_HEARTBEAT);
+        buffer.putInt(offset + DATA_SIZE_OFFSET, 0);
+        buffer.putInt(offset + LEADER_ID_OFFSET, leaderId);
+        buffer.putInt(offset + TERM_OFFSET, term);
+        return PAYLOAD_LENGTH;
+    }
+
+    public static int proposeLeader(final MutableDirectBuffer buffer,
+                                    final int offset,
+                                    final int term,
+                                    final int candidateId) {
         buffer.putByte(offset + VERSION_OFFSET, VERSION);
         buffer.putByte(offset + FLAGS_OFFSET, FLAGS_NONE);
         buffer.putShort(offset + TYPE_OFFSET, PROPOSE_LEADER);
-        buffer.putInt(offset + PAYLOAD_SIZE_OFFSET, 0);
+        buffer.putInt(offset + DATA_SIZE_OFFSET, 0);
         buffer.putInt(offset + CANDIDATE_ID_OFFSET, candidateId);
-        buffer.putInt(offset + TERM_OFFSET, 0);
+        buffer.putInt(offset + TERM_OFFSET, term);
         return PAYLOAD_LENGTH;
     }
 

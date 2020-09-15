@@ -30,7 +30,6 @@ import org.tools4j.elara.event.Event;
 public class DefaultBaseState implements BaseState.Mutable {
 
     private final Long2ObjectHashMap<AppliedEventState> sourceToAppliedEventState = new Long2ObjectHashMap<>();
-    private boolean processCommands;
 
     private static final class AppliedEventState {
         long sequence;
@@ -42,25 +41,6 @@ public class DefaultBaseState implements BaseState.Mutable {
             index = id.index();
             isFinal = event.flags().isFinal();
         }
-    }
-
-    public DefaultBaseState() {
-        this(true);
-    }
-
-    public DefaultBaseState(final boolean processCommands) {
-        this.processCommands = processCommands;
-    }
-
-    @Override
-    public boolean processCommands() {
-        return processCommands;
-    }
-
-    @Override
-    public Mutable processCommands(final boolean newValue) {
-        this.processCommands = newValue;
-        return this;
     }
 
     @Override

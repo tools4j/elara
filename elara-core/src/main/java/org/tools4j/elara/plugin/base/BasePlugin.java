@@ -50,9 +50,7 @@ public enum BasePlugin implements SystemPlugin<Mutable> {
                                            final BaseState.Mutable baseState) {
         requireNonNull(appConfig);
         requireNonNull(baseState);
-        if (baseState.processCommands()) {
-            repairEventLogIfNeeded(appConfig);
-        }
+        repairEventLogIfNeeded(appConfig);
         return () -> baseState;
     }
 

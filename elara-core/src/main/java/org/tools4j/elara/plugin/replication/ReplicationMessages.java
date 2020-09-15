@@ -33,7 +33,7 @@ import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.LEADER_ID_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.LOG_INDEX_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.PAYLOAD_OFFSET;
-import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.PAYLOAD_SIZE_OFFSET;
+import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.DATA_SIZE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.TERM_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.TYPE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.VERSION;
@@ -56,17 +56,17 @@ public enum ReplicationMessages {
                                     final long logIndex,
                                     final DirectBuffer payload,
                                     final int payloadOffset,
-                                    final int payloadSize) {
+                                    final int dataSize) {
         buffer.putByte(offset + VERSION_OFFSET, VERSION);
         buffer.putByte(offset + FLAGS_OFFSET, FLAGS_NONE);
         buffer.putShort(offset + TYPE_OFFSET, APPEND_REQUEST);
-        buffer.putInt(offset + PAYLOAD_SIZE_OFFSET, payloadSize);
+        buffer.putInt(offset + DATA_SIZE_OFFSET, dataSize);
         buffer.putInt(offset + LEADER_ID_OFFSET, leaderId);
         buffer.putInt(offset + TERM_OFFSET, term);
         buffer.putLong(offset + LOG_INDEX_OFFSET, logIndex);
         buffer.putLong(offset + COMMITTED_LOG_INDEX_OFFSET, 0);//TODO commit log
-        buffer.putBytes(offset + PAYLOAD_OFFSET, payload, payloadOffset, payloadSize);
-        return HEADER_LENGTH + payloadSize;
+        buffer.putBytes(offset + PAYLOAD_OFFSET, payload, payloadOffset, dataSize);
+        return HEADER_LENGTH + dataSize;
     }
 
     public static int appendResponse(final MutableDirectBuffer buffer, final int offset,
@@ -77,7 +77,7 @@ public enum ReplicationMessages {
         buffer.putByte(offset + VERSION_OFFSET, VERSION);
         buffer.putByte(offset + FLAGS_OFFSET, success ? FLAG_APPEND_SUCCESS : FLAGS_NONE);
         buffer.putShort(offset + TYPE_OFFSET, APPEND_RESPONSE);
-        buffer.putInt(offset + PAYLOAD_SIZE_OFFSET, 0);
+        buffer.putInt(offset + DATA_SIZE_OFFSET, 0);
         buffer.putInt(offset + LEADER_ID_OFFSET, leaderId);
         buffer.putInt(offset + TERM_OFFSET, term);
         buffer.putLong(offset + LOG_INDEX_OFFSET, nextEventLogIndex);
@@ -122,7 +122,7 @@ public enum ReplicationMessages {
     }
 
     public static int payloadSize(final DirectBuffer buffer) {
-        return ReplicationMessageDescriptor.payloadSize(buffer);
+        return ReplicationMessageDescriptor.dataSize(buffer);
     }
 
     public static boolean isReplicationMessageType(final int type) {
