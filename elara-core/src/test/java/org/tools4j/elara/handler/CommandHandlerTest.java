@@ -102,7 +102,6 @@ public class CommandHandlerTest {
         final int source = 1;
         final long seq = 22;
         final Command command = command(source, seq);
-        when(baseState.processCommands()).thenReturn(true);
         final InOrder inOrder = inOrder(commandProcessor, duplicateHandler);
         Result result;
 
@@ -118,34 +117,12 @@ public class CommandHandlerTest {
     }
 
     @Test
-    public void commandPeekedIfCommandProcessingIsDisabled() {
-        //given
-        final int source = 1;
-        final long seq = 22;
-        final Command command = command(source, seq);
-        when(baseState.processCommands()).thenReturn(false);
-        final InOrder inOrder = inOrder(commandProcessor, duplicateHandler);
-        Result result;
-
-        //when
-        when(baseState.allEventsAppliedFor(notNull())).thenReturn(false);
-        result = commandHandler.onCommand(command);
-
-        //then
-        assertEquals(Result.PEEK, result, "result");
-        inOrder.verify(commandProcessor, never()).onCommand(any(), any());
-        inOrder.verify(duplicateHandler, never()).skipCommandProcessing(any());
-        inOrder.verifyNoMoreInteractions();
-    }
-
-    @Test
     public void commandProcessorExceptionInvokesErrorHandler() {
         //given
         final int source = 1;
         final long seq = 22;
         final Command command = command(source, seq);
         final RuntimeException testException = new RuntimeException("test command processor exception");
-        when(baseState.processCommands()).thenReturn(true);
         final InOrder inOrder = inOrder(commandProcessor, exceptionHandler);
         Result result;
 

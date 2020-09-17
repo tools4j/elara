@@ -29,6 +29,7 @@ import org.tools4j.elara.chronicle.ChronicleLogPrinter;
 import org.tools4j.elara.flyweight.DataFrame;
 import org.tools4j.elara.flyweight.FlyweightDataFrame;
 import org.tools4j.elara.format.DataFrameFormatter;
+import org.tools4j.elara.format.LatencyFormatter;
 import org.tools4j.elara.format.MetricsFormatter;
 import org.tools4j.elara.plugin.metrics.FlyweightMetricsLogEntry;
 import org.tools4j.elara.plugin.metrics.MetricsLogEntry;
@@ -45,17 +46,25 @@ public class NanoChronicleLogPrinter {
     public static void main(String[] args) {
         //System.out.println(System.getProperty("java.class.path"));
         final boolean metrics = args.length == 2 && ("-m".equals(args[0]) || "--metrics".equals(args[0]));
-        if (args.length < 1 || args.length > 2 || (args.length == 2 && !metrics)) {
-            System.err.println("usage: " + NanoChronicleLogPrinter.class.getSimpleName() + "[-m|--metrics] <file>");
+        final boolean latencies = args.length == 2 && ("-l".equals(args[0]) || "--latencies".equals(args[0]));
+        if (args.length < 1 || args.length > 2 || (args.length == 2 && !metrics && !latencies)) {
+            System.err.println("usage: " + NanoChronicleLogPrinter.class.getSimpleName() + "[-m|--metrics|-l|--latencies] <file>");
             System.exit(1);
         }
-        final String fileName = metrics ? args[1] : args[0];
+        final String fileName = metrics || latencies ? args[1] : args[0];
         final ChronicleQueue queue = ChronicleQueue.singleBuilder()
                 .path(fileName)
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         if (metrics) {
             new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), metrics(new MetricsFormatter() {
+                @Override
+                public Object time(final long line, final long entryId, final MetricsLogEntry entry) {
+                    return instantOfEpochNanos(entry.time());
+                }
+            }));
+        } else if (latencies) {
+            new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), metrics(new LatencyFormatter() {
                 @Override
                 public Object time(final long line, final long entryId, final MetricsLogEntry entry) {
                     return instantOfEpochNanos(entry.time());

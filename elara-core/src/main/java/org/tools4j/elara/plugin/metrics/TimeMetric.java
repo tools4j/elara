@@ -115,9 +115,12 @@ public enum TimeMetric {
             return flag(metric) != 0;
         }
 
-        public boolean anyOf(final Set<TimeMetric> metrics) {
+        public boolean both(final TimeMetric first, final TimeMetric second) {
+            return isMetric(first) && isMetric(second);
+        }
+        public boolean anyOf(final Set<TimeMetric> set) {
             for (final TimeMetric metric : metrics) {
-                if (metrics.contains(metric)) {
+                if (set.contains(metric)) {
                     return true;
                 }
             }
@@ -127,6 +130,11 @@ public enum TimeMetric {
         public int count(final byte flags) {
             final int f = allFlags & flags;
             return BIT_COUNT[0x0f & f] + BIT_COUNT[0x0f & (f >>> 4)];
+        }
+
+        public boolean contains(final byte flags, final TimeMetric metric) {
+            final int f = allFlags & flags;
+            return (f & metricFlagByOrdinal[metric.ordinal()]) != 0;
         }
 
         public TimeMetric metric(final byte flags, final int index) {

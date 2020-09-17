@@ -67,6 +67,7 @@ public enum MessagePrinters {
     public static final MessagePrinter<DataFrame> FRAME = frame(DataFrameFormatter.DEFAULT);
 
     public static final MessagePrinter<MetricsLogEntry> METRICS = metrics(MetricsFormatter.DEFAULT);
+    public static final MessagePrinter<MetricsLogEntry> LATENCIES = metrics(LatencyFormatter.DEFAULT);
 
     public static MessagePrinter<DataFrame> command(final DataFrameFormatter formatter) {
         requireNonNull(formatter);

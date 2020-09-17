@@ -111,6 +111,25 @@ public class DefaultContext implements Context {
     }
 
     @Override
+    public Context latencyMetric(final LatencyMetric metric) {
+        return timeMetric(metric.start()).timeMetric(metric.end());
+    }
+
+    @Override
+    public Context latencyMetrics(final LatencyMetric... metrics) {
+        for (final LatencyMetric metric : metrics) {
+            latencyMetric(metric);
+        }
+        return this;
+    }
+
+    @Override
+    public Context latencyMetrics(final Set<? extends LatencyMetric> metrics) {
+        metrics.forEach(this::latencyMetric);
+        return this;
+    }
+
+    @Override
     public Context inputSendingTimeExtractor(final InputSendingTimeExtractor sendingTimeExtractor) {
         this.inputSendingTimeExtractor = requireNonNull(sendingTimeExtractor);
         return this;

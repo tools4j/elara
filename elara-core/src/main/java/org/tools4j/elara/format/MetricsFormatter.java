@@ -24,6 +24,7 @@
 package org.tools4j.elara.format;
 
 import org.tools4j.elara.plugin.metrics.FrequencyMetric;
+import org.tools4j.elara.plugin.metrics.LatencyMetric;
 import org.tools4j.elara.plugin.metrics.MetricsLogEntry;
 import org.tools4j.elara.plugin.metrics.MetricsLogEntry.Type;
 import org.tools4j.elara.plugin.metrics.TimeMetric;
@@ -188,6 +189,22 @@ public interface MetricsFormatter extends ValueFormatter<MetricsLogEntry> {
                     case OUTPUT_PUBLISHED_FREQUENCY: return "out-pub";
                     case EXTRA_STEP_PERFORMED_FREQUENCY: return "xta-prf";
                     case STEP_ERROR_FREQUENCY: return "stp-err";
+                }
+            } else if (name instanceof LatencyMetric) {
+                switch ((LatencyMetric)name) {
+                    case INPUT_RECEIVING_LATENCY: return "inp-rcv";
+                    case COMMAND_POLLING_LATENCY: return "cmd-pol";
+                    case COMMAND_QUEUING_LATENCY: return "cmd-que";
+                    case COMMAND_PROCESSING_LATENCY: return "cmd-prc";
+                    case COMMAND_HANDLING_LATENCY: return "cmd-tot";
+                    case EVENT_ROUTING_LATENCY: return "evt-rte";
+                    case EVENT_APPLYING_LATENCY: return "evt-apy";
+                    case EVENT_QUEUING_LATENCY: return "evt-que";
+                    case EVENT_HANDLING_LATENCY: return "evt-tot";
+                    case OUTPUT_PUBLICATION_LATENCY: return "out-pub";
+                    case EVENT_PUBLICATION_LATENCY: return "out-evt";
+                    case COMMAND_TO_OUTPUT_LATENCY: return "out-cmd";
+                    case INPUT_TO_OUTPUT_LATENCY: return "out-inp";
                 }
             }
             return name;

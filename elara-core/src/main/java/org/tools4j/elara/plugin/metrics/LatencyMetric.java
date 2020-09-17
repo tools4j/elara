@@ -28,13 +28,14 @@ import static org.tools4j.elara.plugin.metrics.TimeMetric.APPLYING_END_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.APPLYING_START_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.COMMAND_APPENDING_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.COMMAND_POLLING_TIME;
-import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_END_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.EVENT_POLLING_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.INPUT_POLLING_TIME;
+import static org.tools4j.elara.plugin.metrics.TimeMetric.INPUT_SENDING_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.OUTPUT_END_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.OUTPUT_START_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.PROCESSING_END_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.PROCESSING_START_TIME;
+import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_END_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_START_TIME;
 
 /**
@@ -43,11 +44,13 @@ import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_START_TIME;
  *                                                        `--> Event.1 --> (_) +-> State
  *                                                                             `---------> Output
  *
+ *  (input receiving latency)  <--->
  *  (command polling latency)       <------->
  *  (command queuing latency)           <--->
  *  (command processing latency)                <--------+
  *                                                       `----------------------------->
- *  (command handling latency)               <----------------------------------------->
+ *  (command handling latency)               <-----------+
+ *                                                       `----------------------------->
  *  (event routing latency)                                   <---------->
  *  (event applying latency)                                                       <--->
  *  (event queuing latency)                                               <--->
@@ -60,6 +63,7 @@ import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_START_TIME;
  * }</pre>
  */
 public enum LatencyMetric {
+    INPUT_RECEIVING_LATENCY(INPUT_SENDING_TIME, INPUT_POLLING_TIME),
     COMMAND_POLLING_LATENCY(INPUT_POLLING_TIME, COMMAND_POLLING_TIME),
     COMMAND_QUEUING_LATENCY(COMMAND_APPENDING_TIME, COMMAND_POLLING_TIME),
     COMMAND_PROCESSING_LATENCY(PROCESSING_START_TIME, PROCESSING_END_TIME),
@@ -79,5 +83,27 @@ public enum LatencyMetric {
     LatencyMetric(final TimeMetric start, final TimeMetric end) {
         this.start = requireNonNull(start);
         this.end = requireNonNull(end);
+    }
+
+    public TimeMetric start() {
+        return start;
+    }
+
+    public TimeMetric end() {
+        return end;
+    }
+
+    public boolean involves(final TimeMetric timeMetric) {
+        return timeMetric == start || timeMetric == end;
+    }
+
+    private static final LatencyMetric[] VALUES = values();
+
+    public static int count() {
+        return VALUES.length;
+    }
+
+    public static LatencyMetric byOrdinal(final int ordinal) {
+        return VALUES[ordinal];
     }
 }

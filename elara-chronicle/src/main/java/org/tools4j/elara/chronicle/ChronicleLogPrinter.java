@@ -112,17 +112,20 @@ public class ChronicleLogPrinter implements AutoCloseable {
 
     public static void main(final String... args) {
         final boolean metrics = args.length == 2 && ("-m".equals(args[0]) || "--metrics".equals(args[0]));
-        if (args.length < 1 || args.length > 2 || (args.length == 2 && !metrics)) {
-            System.err.println("usage: " + ChronicleLogPrinter.class.getSimpleName() + "[-m|--metrics] <file>");
+        final boolean latencies = args.length == 2 && ("-l".equals(args[0]) || "--latencies".equals(args[0]));
+        if (args.length < 1 || args.length > 2 || (args.length == 2 && !metrics && !latencies)) {
+            System.err.println("usage: " + ChronicleLogPrinter.class.getSimpleName() + "[-m|--metrics|-l|--latencies] <file>");
             System.exit(1);
         }
-        final String fileName = metrics ? args[1] : args[0];
+        final String fileName = metrics || latencies ? args[1] : args[0];
         final ChronicleQueue queue = ChronicleQueue.singleBuilder()
                 .path(fileName)
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         if (metrics) {
             new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), MessagePrinters.METRICS);
+        } else if (latencies) {
+            new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), MessagePrinters.LATENCIES);
         } else {
             new ChronicleLogPrinter().print(queue, new FlyweightDataFrame(), MessagePrinters.FRAME);
         }

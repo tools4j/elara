@@ -34,6 +34,9 @@ public interface Context extends Configuration {
     Context frequencyMetric(FrequencyMetric metric);
     Context frequencyMetrics(FrequencyMetric... metrics);
     Context frequencyMetrics(Set<? extends FrequencyMetric> metrics);
+    Context latencyMetric(LatencyMetric metric);
+    Context latencyMetrics(LatencyMetric... metrics);
+    Context latencyMetrics(Set<? extends LatencyMetric> metrics);
     Context inputSendingTimeExtractor(InputSendingTimeExtractor sendingTimeExtractor);
     Context frequencyLogInterval(long timeInterval);
     Context metricsLog(MessageLog metricLog);
