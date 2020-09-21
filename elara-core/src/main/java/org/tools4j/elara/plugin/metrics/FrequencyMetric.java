@@ -25,26 +25,49 @@ package org.tools4j.elara.plugin.metrics;
 
 import java.util.Set;
 
-public enum FrequencyMetric {
+import static java.util.Objects.requireNonNull;
+
+/**
+ * Frequency metrics are counters for actions inside the elara engine over a configurable duration.  Some counters are
+ * directly associated with application objects such as the number of commands or events processed over a certain period
+ * while other metrics reflect intrinsic measurements like the number of duty cycle loop invocations.
+ */
+public enum FrequencyMetric implements Metric {
     /* duty cycle step invocation */
-    DUTY_CYCLE_FREQUENCY,
-    INPUTS_POLL_FREQUENCY,
-    COMMAND_POLL_FREQUENCY,
-    EVENT_POLL_FREQUENCY,
-    OUTPUT_POLL_FREQUENCY,
-    EXTRA_STEP_INVOCATION_FREQUENCY,
+    DUTY_CYCLE_FREQUENCY("cyc-all"),
+    INPUTS_POLL_FREQUENCY("inp-all"),
+    COMMAND_POLL_FREQUENCY("cmd-all"),
+    EVENT_POLL_FREQUENCY("evt-all"),
+    OUTPUT_POLL_FREQUENCY("out-all"),
+    EXTRA_STEP_INVOCATION_FREQUENCY("xtr-all"),
 
     /* duty cycle step performed work */
-    DUTY_CYCLE_PERFORMED_FREQUENCY,
-    INPUT_RECEIVED_FREQUENCY,
-    COMMAND_PROCESSED_FREQUENCY,
-    EVENT_APPLIED_FREQUENCY,
-    OUTPUT_POLLED_FREQUENCY,
-    EXTRA_STEP_PERFORMED_FREQUENCY,
+    DUTY_CYCLE_PERFORMED_FREQUENCY("cyc-prf"),
+    INPUT_RECEIVED_FREQUENCY("inp-rcv"),
+    COMMAND_PROCESSED_FREQUENCY("cmd-prc"),
+    EVENT_APPLIED_FREQUENCY("evt-apy"),
+    OUTPUT_POLLED_FREQUENCY("out-pol"),
+    EXTRA_STEP_PERFORMED_FREQUENCY("xtr-prf"),
 
     /* some other special ones*/
-    OUTPUT_PUBLISHED_FREQUENCY,//only those where Output did not return IGNORED
-    STEP_ERROR_FREQUENCY;
+    OUTPUT_PUBLISHED_FREQUENCY("out-pub"),//only those where Output did not return IGNORED
+    STEP_ERROR_FREQUENCY("stp-err");
+
+    private final String displayName;
+
+    FrequencyMetric(final String displayName) {
+        this.displayName = requireNonNull(displayName);
+    }
+
+    @Override
+    public String displayName() {
+        return displayName;
+    }
+
+    @Override
+    public Type type() {
+        return Type.FREQUENCY;
+    }
 
     private static final FrequencyMetric[] VALUES = values();
     private static final short ALL_FLAGS = (short)((1 << VALUES.length) - 1);

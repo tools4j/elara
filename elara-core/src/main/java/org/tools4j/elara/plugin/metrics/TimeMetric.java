@@ -28,19 +28,24 @@ import java.util.Set;
 import static java.util.Objects.requireNonNull;
 
 /**
+ * Time metrics measure single points in time along processing of input, command, event and output flows. Each time
+ * metric is associated with a command or event ID.
+ * <p></p>
+ * The different time metrics are defined as follows:
+ *
  * <pre>{@code
  *                             Input --> (_) --> Command -+--> Event.0 --> (_) +-> State
  *                                                        `--> Event.1 --> (_) +-> State
  *                                                                             `---------> Output
  *
- *                            ^     ^   ^   ^   ^             ^       ^        ^   ^   ^           ^
- *  (input sending time)......'     |   |   |   |             |       |        |   |   |^          ^
- *  (input polling time)............'   |   |   |             |       |        |^  |   ||  ^    ^  ^
- *  (command appending time)............'   |   |             |       |        ||  |   ||  |    |  |
- *  (command polling time)..................'   |             |       |        ||  |   ||  |    |  |
- *  (processing start time).....................'             |       |        ||  |   ||  |    |  |
- *  (routing start time)......................................'       |        ||  |   ||  |    |  |
- *  (routing end time)................................................'        ||  |   ||  |    |  |
+ *                            ^     ^   ^   ^   ^             ^        ^       ^   ^   ^           ^
+ *  (input sending time)......'     |   |   |   |             |        |       |   |   |^          ^
+ *  (input polling time)............'   |   |   |             |        |       |^  |   ||  ^    ^  ^
+ *  (command appending time)............'   |   |             |        |       ||  |   ||  |    |  |
+ *  (command polling time)..................'   |             |        |       ||  |   ||  |    |  |
+ *  (processing start time).....................'             |        |       ||  |   ||  |    |  |
+ *  (routing start time)......................................'        |       ||  |   ||  |    |  |
+ *  (routing end time).................................................'       ||  |   ||  |    |  |
  *  (event polling time).......................................................'|  |   ||  |    |  |
  *  (output polling time).......................................................'  |   ||  |    |  |
  *  (applying start time)..........................................................'   ||  |    |  |
@@ -52,22 +57,38 @@ import static java.util.Objects.requireNonNull;
  *
  * }</pre>
  */
-public enum TimeMetric {
-    INPUT_SENDING_TIME,
-    INPUT_POLLING_TIME,
-    COMMAND_APPENDING_TIME,
-    COMMAND_POLLING_TIME,
-    PROCESSING_START_TIME,
-    ROUTING_START_TIME,
-    ROUTING_END_TIME,
-    EVENT_POLLING_TIME,
-    OUTPUT_POLLING_TIME,
-    APPLYING_START_TIME,
-    APPLYING_END_TIME,
-    PROCESSING_END_TIME,
-    OUTPUT_START_TIME,
-    OUTPUT_END_TIME,
-    METRIC_APPENDING_TIME;
+public enum TimeMetric implements Metric {
+    INPUT_SENDING_TIME("inp-snd"),
+    INPUT_POLLING_TIME("inp-rcv"),
+    COMMAND_APPENDING_TIME("cmd-apd"),
+    COMMAND_POLLING_TIME("cmd-pol"),
+    PROCESSING_START_TIME("cmd-beg"),
+    ROUTING_START_TIME("evt-beg"),
+    ROUTING_END_TIME("evt-rte"),
+    EVENT_POLLING_TIME("evt-pol"),
+    OUTPUT_POLLING_TIME("out-pol"),
+    APPLYING_START_TIME("evt-apy"),
+    APPLYING_END_TIME("evt-end"),
+    PROCESSING_END_TIME("cmd-end"),
+    OUTPUT_START_TIME("out-beg"),
+    OUTPUT_END_TIME("out-end"),
+    METRIC_APPENDING_TIME("met-apd");
+
+    private final String displayName;
+
+    TimeMetric(final String displayName) {
+        this.displayName = requireNonNull(displayName);
+    }
+
+    @Override
+    public String displayName() {
+        return displayName;
+    }
+
+    @Override
+    public Type type() {
+        return Type.TIME;
+    }
 
     public enum Target {
         COMMAND(INPUT_SENDING_TIME, INPUT_POLLING_TIME, COMMAND_APPENDING_TIME, COMMAND_POLLING_TIME,

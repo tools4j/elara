@@ -149,7 +149,7 @@ public interface LatencyFormatter extends MetricsFormatter {
         return metricValue(line, entryId, entry, metric, index);
     }
 
-    default MetricValue metricValue(final long line, final long entryId, final MetricsLogEntry entry, final LatencyMetric name, final int index) {
+    default MetricValue metricValue(final long line, final long entryId, final MetricsLogEntry entry, final LatencyMetric metric, final int index) {
         final Target target = entry.target();
         final ToLongFunction<TimeMetric> timeLookup = timeMetric -> {
             final long commandTime = commandTimes.get()[timeMetric.ordinal()];
@@ -169,30 +169,10 @@ public interface LatencyFormatter extends MetricsFormatter {
             }
             return 0;
         };
-        final long start = timeLookup.applyAsLong(name.start());
-        final long end = timeLookup.applyAsLong(name.end());
+        final long start = timeLookup.applyAsLong(metric.start());
+        final long end = timeLookup.applyAsLong(metric.end());
         final long value = start != 0 && end != 0 ? end - start : 0;
-        return new MetricValue() {
-            @Override
-            public Enum<?> name() {
-                return name;
-            }
-
-            @Override
-            public long value() {
-                return value;
-            }
-
-            @Override
-            public int index() {
-                return index;
-            }
-
-            @Override
-            public String toString() {
-                return "MetricValue{name=" + name + ", value=" + value + ", index=" + index + "}";
-            }
-        };
+        return new DefaultMetricValue(metric, value, index);
     }
 
 }

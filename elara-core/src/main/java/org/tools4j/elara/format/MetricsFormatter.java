@@ -24,10 +24,9 @@
 package org.tools4j.elara.format;
 
 import org.tools4j.elara.plugin.metrics.FrequencyMetric;
-import org.tools4j.elara.plugin.metrics.LatencyMetric;
+import org.tools4j.elara.plugin.metrics.Metric;
 import org.tools4j.elara.plugin.metrics.MetricsLogEntry;
 import org.tools4j.elara.plugin.metrics.MetricsLogEntry.Type;
-import org.tools4j.elara.plugin.metrics.TimeMetric;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -45,7 +44,7 @@ public interface MetricsFormatter extends ValueFormatter<MetricsLogEntry> {
     MetricsFormatter DEFAULT = new MetricsFormatter() {};
 
     interface MetricValue {
-        Enum<?> name();
+        Metric metric();
         long value();
         int index();
     }
@@ -153,61 +152,7 @@ public interface MetricsFormatter extends ValueFormatter<MetricsLogEntry> {
         default Object line(long line, long entryId, MetricValue value) {return line;}
         default Object entryId(long line, long entryId, MetricValue value) {return entryId;}
         default Object metricName(long line, long entryId, MetricValue value) {
-            final Enum<?> name = value.name();
-            if (name instanceof TimeMetric) {
-                switch ((TimeMetric)name) {
-                    case INPUT_SENDING_TIME: return "inp-snd";
-                    case INPUT_POLLING_TIME: return "inp-rcv";
-                    case COMMAND_APPENDING_TIME: return "cmd-apd";
-                    case COMMAND_POLLING_TIME: return "cmd-pol";
-                    case PROCESSING_START_TIME: return "cmd-beg";
-                    case ROUTING_START_TIME: return "evt-beg";
-                    case ROUTING_END_TIME: return "evt-rte";
-                    case EVENT_POLLING_TIME: return "evt-pol";
-                    case OUTPUT_POLLING_TIME: return "out-pol";
-                    case APPLYING_START_TIME: return "evt-apy";
-                    case APPLYING_END_TIME: return "evt-end";
-                    case PROCESSING_END_TIME: return "cmd-end";
-                    case OUTPUT_START_TIME: return "out-beg";
-                    case OUTPUT_END_TIME: return "out-end";
-                    case METRIC_APPENDING_TIME: return "met-apd";
-                }
-            } else if (name instanceof FrequencyMetric) {
-                switch ((FrequencyMetric)name) {
-                    case DUTY_CYCLE_FREQUENCY: return "cyc-all";
-                    case INPUTS_POLL_FREQUENCY: return "inp-all";
-                    case COMMAND_POLL_FREQUENCY: return "cmd-all";
-                    case EVENT_POLL_FREQUENCY: return "evt-all";
-                    case OUTPUT_POLL_FREQUENCY: return "out-all";
-                    case EXTRA_STEP_INVOCATION_FREQUENCY: return "xta-all";
-
-                    case DUTY_CYCLE_PERFORMED_FREQUENCY: return "cyc-prf";
-                    case INPUT_RECEIVED_FREQUENCY: return "inp-rcv";
-                    case COMMAND_PROCESSED_FREQUENCY: return "cmd-prc";
-                    case EVENT_APPLIED_FREQUENCY: return "evt-apy";
-                    case OUTPUT_POLLED_FREQUENCY: return "out-pol";
-                    case OUTPUT_PUBLISHED_FREQUENCY: return "out-pub";
-                    case EXTRA_STEP_PERFORMED_FREQUENCY: return "xta-prf";
-                    case STEP_ERROR_FREQUENCY: return "stp-err";
-                }
-            } else if (name instanceof LatencyMetric) {
-                switch ((LatencyMetric)name) {
-                    case INPUT_RECEIVING_LATENCY: return "inp-rcv";
-                    case COMMAND_POLLING_LATENCY: return "cmd-pol";
-                    case COMMAND_QUEUING_LATENCY: return "cmd-que";
-                    case COMMAND_PROCESSING_LATENCY: return "cmd-prc";
-                    case COMMAND_HANDLING_LATENCY: return "cmd-tot";
-                    case EVENT_ROUTING_LATENCY: return "evt-rte";
-                    case EVENT_APPLYING_LATENCY: return "evt-apy";
-                    case EVENT_QUEUING_LATENCY: return "evt-que";
-                    case EVENT_HANDLING_LATENCY: return "evt-tot";
-                    case OUTPUT_PUBLICATION_LATENCY: return "out-pub";
-                    case EVENT_PUBLICATION_LATENCY: return "out-evt";
-                    case COMMAND_TO_OUTPUT_LATENCY: return "out-cmd";
-                    case INPUT_TO_OUTPUT_LATENCY: return "out-inp";
-                }
-            }
-            return name;
+            return value.metric().displayName();
         }
         default Object metricValue(long line, long entryId, MetricValue value) {return value.value();}
         default Object metricIndex(long line, long entryId, MetricValue value) {return value.index();}
@@ -239,29 +184,10 @@ public interface MetricsFormatter extends ValueFormatter<MetricsLogEntry> {
 
     default MetricValue metricValue(final long line, final long entryId, final MetricsLogEntry entry, final int index) {
         final Type type = entry.type();
-        final Enum<?> name = type == Type.TIME ? entry.target().metric(entry.flags(), index) :
+        final Metric metric = type == Type.TIME ? entry.target().metric(entry.flags(), index) :
                 FrequencyMetric.metric(entry.choice(), index);
         final long value = type == Type.TIME ? entry.time(index) : entry.counter(index);
-        return new MetricValue() {
-            @Override
-            public Enum<?> name() {
-                return name;
-            }
-
-            @Override
-            public long value() {
-                return value;
-            }
-
-            @Override
-            public int index() {
-                return index;
-            }
-
-            @Override
-            public String toString() {
-                return "MetricValue{name=" + name + ", value=" + value + ", index=" + index + "}";
-            }
-        };
+        return new DefaultMetricValue(metric, value, index);
     }
+
 }
