@@ -32,6 +32,30 @@ There are excellent introductions to event sourcing out there.  Some of our favo
 * **Command Processor:** handles command messages and has read-only access to application state; routes events
 * **Event Applier:** triggered by events (routed or replayed); modifies the application state according to the event instruction
 
+### Plugins
+Plugins are optional features that can be configured when defining the application context.  Third party plugins can be
+provided by implementing the plugin API.  
+
+Plugins can define their own state and applications can optionally access plugin state when defining the plugins in the
+elara context.  By convention plugins define commands and events with negative types which marks them as 'admin' types 
+so that they can be easily distinguished from non-negative application types.
+
+Elara provides the following default plugins:
+
+* **base:** a plugin that is implicitly added and defines the base state required for all elara applications
+* **boot:** a plugin that issues commands and events indicating that an elara application has been started and initialised
+* **timer:** a plugin that allows routing of events to start and stop simple and periodic timers;  the plugin injects
+             commands to fire or expire timers which are then removed from the timer state through an event 
+             (see samples section for examples) 
+* **metrics:** plugin to capture time and frequency metrics of the running application;  a running application 
+               efficiently captures metrics in a message log file that can be inspected with the log printer tool  
+* **replication:** *[experimental]* plugin to replicate events from a leader elara instance to follower instances that 
+                   are applying events but do not process commands;  follower instances have identical state as the 
+                   leader (after applying all events and assuming deterministic application logic);  together with the
+                   provided leader change commands applications can use this plugin to support rolling upgrades or 
+                   implement manual or automatic fail-over strategies
+ 
+
 ### Samples
 
 #### Banking application

@@ -30,7 +30,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Time metrics measure single points in time along processing of input, command, event and output flows. Each time
  * metric is associated with a command or event ID.
- * <p></p>
+ * <p>
  * The different time metrics are defined as follows:
  *
  * <pre>{@code

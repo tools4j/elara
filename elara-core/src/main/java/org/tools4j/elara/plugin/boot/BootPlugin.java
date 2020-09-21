@@ -40,8 +40,8 @@ import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.boot.BootCommands.SIGNAL_APP_INITIALISATION_START;
 
 /**
- * A plugin that issues a commands and events related to booting an elara application to indicate that the application
- * has been started and initialised.
+ * A plugin that issues commands and events related to booting an elara application to indicate that the application has
+ * been started and initialised.
  */
 public class BootPlugin implements SystemPlugin<NullState> {
 
