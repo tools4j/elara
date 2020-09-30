@@ -25,6 +25,12 @@ package org.tools4j.elara.factory;
 
 import org.tools4j.elara.plugin.api.Plugin.Configuration;
 
+/**
+ * Proxy forwarding all calls to a delegate {@link Singletons} instance.  Plugins can replace selected methods and proxy
+ * or replace certain objects at initialisation.
+ * 
+ * @see org.tools4j.elara.plugin.api.Plugin.Configuration#interceptOrNull(Singletons)
+ */
 public class InterceptableSingletons extends DelegateSingletons {
 
     public InterceptableSingletons(final Singletons delegate) {

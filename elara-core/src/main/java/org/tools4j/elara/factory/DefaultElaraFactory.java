@@ -42,8 +42,11 @@ public class DefaultElaraFactory implements ElaraFactory {
     private static Singletons intercept(final Singletons singletons) {
         Singletons interceptedOrNot = requireNonNull(singletons);
         for (final Plugin.Configuration pluginConfig : singletons.plugins()) {
-            final InterceptableSingletons intercepted = pluginConfig.interceptOrNull(singletons);
+            final InterceptableSingletons intercepted = pluginConfig.interceptOrNull(interceptedOrNot);
             if (intercepted != null) {
+                if (intercepted.singletons() != interceptedOrNot) {
+                    throw new IllegalStateException("Illegal interception through plugin " + pluginConfig);
+                }
                 interceptedOrNot = intercepted;
             }
         }
