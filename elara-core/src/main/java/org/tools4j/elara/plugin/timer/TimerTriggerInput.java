@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2020 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2021 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -43,6 +43,7 @@ public final class TimerTriggerInput implements Input {
     private final SequenceGenerator sequenceGenerator = new SimpleSequenceGenerator();
 
     private boolean timerTriggerPending;
+
 
     public TimerTriggerInput(final int source, final TimeSource timeSource, final TimerState timerState) {
         if (source == LOOPBACK_SOURCE) {
