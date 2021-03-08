@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2021 tools4j.org (Marco Terzer, Anton Anufriev)
