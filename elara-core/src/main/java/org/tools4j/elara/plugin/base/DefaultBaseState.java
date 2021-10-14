@@ -23,13 +23,13 @@
  */
 package org.tools4j.elara.plugin.base;
 
-import org.agrona.collections.Long2ObjectHashMap;
+import org.agrona.collections.Int2ObjectHashMap;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 
 public class DefaultBaseState implements BaseState.Mutable {
 
-    private final Long2ObjectHashMap<AppliedEventState> sourceToAppliedEventState = new Long2ObjectHashMap<>();
+    private final Int2ObjectHashMap<AppliedEventState> sourceToAppliedEventState = new Int2ObjectHashMap<>();
 
     private static final class AppliedEventState {
         long sequence;

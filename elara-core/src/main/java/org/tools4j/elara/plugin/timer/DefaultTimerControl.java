@@ -45,7 +45,7 @@ import static java.util.Objects.requireNonNull;
  * Other initialisation alternatives are
  * <pre>
  *     DefaultTimerControl timerControl = new DefaultTimerControl(new DeadlineHeapTimerState());
- *     Configuration.configure().plugin(Plugins.timerPlugin(), timerControl.timerState);
+ *     Configuration.configure().plugin(Plugins.timerPlugin(), timerControl.timerState());
  * </pre>
  * or also
  * <pre>

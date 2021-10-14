@@ -122,10 +122,10 @@ public enum TimeMetric implements Metric {
             return metricFlagByOrdinal[metric.ordinal()];
         }
 
-        public byte flags(final Set<TimeMetric> metrics) {
+        public byte flags(final Set<TimeMetric> set) {
             byte flags = this == OUTPUT ? OUTPUT_BIT : 0;
             for (final TimeMetric metric : metrics) {
-                if (metrics.contains(metric)) {
+                if (set.contains(metric)) {
                     flags |= flag(metric);
                 }
             }
