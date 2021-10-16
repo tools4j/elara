@@ -28,8 +28,8 @@ import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.junit.jupiter.api.Test;
-import org.tools4j.elara.log.MessageLog.AppendingContext;
 import org.tools4j.elara.log.MessageLog.Appender;
+import org.tools4j.elara.log.MessageLog.AppendingContext;
 import org.tools4j.elara.log.MessageLog.Handler;
 import org.tools4j.elara.log.MessageLog.Poller;
 

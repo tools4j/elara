@@ -64,7 +64,7 @@ public interface MessageLog extends AutoCloseable {
          * Returns the current entry ID of this poller.
          * <p>
          * It returns the entry ID of the message currently polled if invoked while polling a message.
-         * Otherwise it returns the entry ID of the next message to be polled.
+         * Otherwise, it returns the entry ID of the next message to be polled.
          * <p>
          * The index is monotonically increasing but not necessarily gap free;  for instance for a chronicle message log
          * the entry ID consists of cycle and the sequence number within that cycle.
@@ -84,9 +84,9 @@ public interface MessageLog extends AutoCloseable {
     @FunctionalInterface
     interface Handler {
         enum Result {
-            /** Mark message as peeked only so it is revisited when polling again */
+            /** Marks message as peeked so that it will be revisited when polling again */
             PEEK,
-            /** Mark message as consumed and aim for the next one when polling again */
+            /** Marks message as consumed so that the next message is returned when polling again */
             POLL
         }
         Result onMessage(DirectBuffer message);

@@ -27,13 +27,13 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.COMMITTED_LOG_INDEX_OFFSET;
+import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.DATA_SIZE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.FLAGS_NONE;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.FLAGS_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.HEADER_LENGTH;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.LEADER_ID_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.LOG_INDEX_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.PAYLOAD_OFFSET;
-import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.DATA_SIZE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.TERM_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.TYPE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.VERSION;
