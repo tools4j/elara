@@ -73,6 +73,7 @@ import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_START_TIME;
  */
 public class HashApplication {
 
+    public static final int MESSAGE_LENGTH = 5 * Long.BYTES;
     public static final long NULL_VALUE = Long.MIN_VALUE;
     public static final int DEFAULT_SOURCE = 42;
 
@@ -113,8 +114,10 @@ public class HashApplication {
                 final long commandValue = command.payload().getLong(0);
                 final long eventValue = isEven(state.hash()) ? commandValue : ~commandValue;
                 try (final RoutingContext context = router.routingEvent()) {
-                    context.buffer().putLong(0, eventValue);
-                    context.route(Long.BYTES);
+                    for (int pos = 0; pos < MESSAGE_LENGTH; pos += Long.BYTES) {
+                        context.buffer().putLong(pos, eventValue);
+                    }
+                    context.route(MESSAGE_LENGTH);
                 }
             }
         };
@@ -142,8 +145,10 @@ public class HashApplication {
             if (value != NULL_VALUE) {
                 final long seq = seqNo.incrementAndGet();
                 try (final ReceivingContext context = receiver.receivingMessage(source, seq)) {
-                    context.buffer().putLong(0, value);
-                    context.receive(Long.BYTES);
+                    for (int pos = 0; pos < MESSAGE_LENGTH; pos += Long.BYTES) {
+                        context.buffer().putLong(pos, value);
+                    }
+                    context.receive(MESSAGE_LENGTH);
                 }
                 return 1;
             }
@@ -202,26 +207,58 @@ public class HashApplication {
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         return Elara.launch(Context.create()
-                .commandProcessor(commandProcessor(state))
-                .eventApplier(eventApplier(state))
-                .input(input(input))
-                .commandLog(new ChronicleMessageLog(cq))
-                .eventLog(new ChronicleMessageLog(eq))
-                /* trigger capturing of output metrics approximately every second time */
-                .output((event, replay, retry, loopback) -> (event.payload().getLong(0) & 0x1) == 0 ? Ack.COMMIT : Ack.IGNORED)
-                .timeSource(pseudoNanoClock)
-                .idleStrategy(BusySpinIdleStrategy.INSTANCE)
-                .plugin(Plugins.metricsPlugin(Configuration.configure()
+                        .commandProcessor(commandProcessor(state))
+                        .eventApplier(eventApplier(state))
+                        .input(input(input))
+                        .commandLog(new ChronicleMessageLog(cq))
+                        .eventLog(new ChronicleMessageLog(eq))
+                        /* trigger capturing of output metrics approximately every second time */
+                        .output((event, replay, retry, loopback) -> (event.payload().getLong(0) & 0x1) == 0 ? Ack.COMMIT : Ack.IGNORED)
+                        .timeSource(pseudoNanoClock)
+                        .idleStrategy(BusySpinIdleStrategy.INSTANCE)
+                        .plugin(Plugins.metricsPlugin(Configuration.configure()
 //                    .timeMetrics(EnumSet.allOf(TimeMetric.class))
 //                    .frequencyMetrics(EnumSet.allOf(FrequencyMetric.class))
-                    .timeMetrics(INPUT_SENDING_TIME, INPUT_POLLING_TIME, PROCESSING_START_TIME, PROCESSING_END_TIME, ROUTING_START_TIME, APPLYING_START_TIME, APPLYING_END_TIME, ROUTING_END_TIME, OUTPUT_START_TIME, OUTPUT_END_TIME)
-                    .frequencyMetrics(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, EVENT_APPLIED_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY)
-                    .frequencyLogInterval(100_000_000)//nanos
-                    .inputSendingTimeExtractor((source, sequence, type, buffer, offset, length) -> pseudoNanoClock.currentTime() - 100_000)//for testing only
+                                        .timeMetrics(INPUT_SENDING_TIME, INPUT_POLLING_TIME, PROCESSING_START_TIME, PROCESSING_END_TIME, ROUTING_START_TIME, APPLYING_START_TIME, APPLYING_END_TIME, ROUTING_END_TIME, OUTPUT_START_TIME, OUTPUT_END_TIME)
+                                        .frequencyMetrics(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, EVENT_APPLIED_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY)
+                                        .frequencyLogInterval(100_000_000)//nanos
+                                        .inputSendingTimeExtractor((source, sequence, type, buffer, offset, length) -> pseudoNanoClock.currentTime() - 100_000)//for testing only
 //                    .metricsLog(new ChronicleMessageLog(mq))
-                    .timeMetricsLog(new ChronicleMessageLog(tq))
-                    .frequencyMetricsLog(new ChronicleMessageLog(fq))
-                ))
+                                        .timeMetricsLog(new ChronicleMessageLog(tq))
+                                        .frequencyMetricsLog(new ChronicleMessageLog(fq))
+                        ))
+        );
+    }
+
+    public static ElaraRunner chronicleQueueWithFreqMetrics(final ModifiableState state, final AtomicLong input) {
+        final TimeSource pseudoNanoClock = new PseudoNanoClock();
+        final ChronicleQueue cq = ChronicleQueue.singleBuilder()
+                .path("build/chronicle/hash-metrics/cmd.cq4")
+                .wireType(WireType.BINARY_LIGHT)
+                .build();
+        final ChronicleQueue eq = ChronicleQueue.singleBuilder()
+                .path("build/chronicle/hash-metrics/evt.cq4")
+                .wireType(WireType.BINARY_LIGHT)
+                .build();
+        final ChronicleQueue fq = ChronicleQueue.singleBuilder()
+                .path("build/chronicle/hash-metrics/frq.cq4")
+                .wireType(WireType.BINARY_LIGHT)
+                .build();
+        return Elara.launch(Context.create()
+                        .commandProcessor(commandProcessor(state))
+                        .eventApplier(eventApplier(state))
+                        .input(input(input))
+                        .commandLog(new ChronicleMessageLog(cq))
+                        .eventLog(new ChronicleMessageLog(eq))
+                        /* trigger capturing of output metrics approximately every second time */
+                        .output((event, replay, retry, loopback) -> (event.payload().getLong(0) & 0x1) == 0 ? Ack.COMMIT : Ack.IGNORED)
+                        .timeSource(pseudoNanoClock)
+                        .idleStrategy(BusySpinIdleStrategy.INSTANCE)
+                        .plugin(Plugins.metricsPlugin(Configuration.configure()
+                                        .frequencyMetrics(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, EVENT_APPLIED_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY)
+                                        .frequencyLogInterval(100_000_000)//nanos
+                                        .frequencyMetricsLog(new ChronicleMessageLog(fq))
+                        ))
         );
     }
 
