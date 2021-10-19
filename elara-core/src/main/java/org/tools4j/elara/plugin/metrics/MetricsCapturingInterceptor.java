@@ -93,7 +93,7 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
         this.timeSource = requireNonNull(timeSource);
         this.configuration = requireNonNull(configuration);
         this.state = requireNonNull(state);
-        this.logger = new TimeMetricsLogger(timeSource, configuration, state);
+        this.logger = configuration.timeMetrics().isEmpty() ? null : new TimeMetricsLogger(timeSource, configuration, state);
     }
 
     private boolean shouldCapture(final TimeMetric metric) {
@@ -249,7 +249,9 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
                 eventApplier.onEvent(event);
                 captureTime(APPLYING_END_TIME);
                 captureCount(EVENT_APPLIED_FREQUENCY);
-                logger.logMetrics(EVENT, event);
+                if (logger != null) {
+                    logger.logMetrics(EVENT, event);
+                }
             };
         }
         return eventApplier;
