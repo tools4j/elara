@@ -32,9 +32,11 @@ import org.tools4j.elara.format.DataFrameFormatter;
 import org.tools4j.elara.format.LatencyFormatter;
 import org.tools4j.elara.format.MetricsFormatter;
 import org.tools4j.elara.plugin.metrics.FlyweightMetricsLogEntry;
+import org.tools4j.elara.plugin.metrics.Metric.Type;
 import org.tools4j.elara.plugin.metrics.MetricsLogEntry;
 
 import java.time.Instant;
+import java.time.ZoneOffset;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -58,16 +60,43 @@ public class NanoChronicleLogPrinter {
                 .build();
         if (metrics) {
             new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), metrics(new MetricsFormatter() {
+                final ValueFormatter VALUE_FORMATTER = new ValueFormatter() {
+                    @Override
+                    public Object metricValue(final long line, final long entryId, final MetricValue value) {
+                        if (value.metric().type() == Type.TIME) {
+                            return instantOfEpochNanos(value.value()).atOffset(ZoneOffset.UTC).toLocalTime();
+                        }
+                        return value.value();
+                    }
+                };
                 @Override
                 public Object time(final long line, final long entryId, final MetricsLogEntry entry) {
                     return instantOfEpochNanos(entry.time());
                 }
+
+                @Override
+                public ValueFormatter metricValueFormatter(final long line, final long entryId, final MetricsLogEntry entry, final int index) {
+                    return VALUE_FORMATTER;
+                }
             }));
         } else if (latencies) {
             new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), metrics(new LatencyFormatter() {
+                final ValueFormatter VALUE_FORMATTER = new ValueFormatter() {
+                    @Override
+                    public Object metricValue(final long line, final long entryId, final MetricValue value) {
+                        if (value.metric().type() == Type.LATENCY) {
+                            return value.value() + "ns";
+                        }
+                        return value.value();
+                    }
+                };
                 @Override
                 public Object time(final long line, final long entryId, final MetricsLogEntry entry) {
                     return instantOfEpochNanos(entry.time());
+                }
+                @Override
+                public ValueFormatter metricValueFormatter(final long line, final long entryId, final MetricsLogEntry entry, final int index) {
+                    return VALUE_FORMATTER;
                 }
             }));
         } else {

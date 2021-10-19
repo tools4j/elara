@@ -45,11 +45,12 @@ public enum FrequencyMetric implements Metric {
     DUTY_CYCLE_PERFORMED_FREQUENCY("cyc-prf"),
     INPUT_RECEIVED_FREQUENCY("inp-rcv"),
     COMMAND_PROCESSED_FREQUENCY("cmd-prc"),
-    EVENT_APPLIED_FREQUENCY("evt-apy"),
+    EVENT_POLLED_FREQUENCY("evt-pol"),
     OUTPUT_POLLED_FREQUENCY("out-pol"),
     EXTRA_STEP_PERFORMED_FREQUENCY("xtr-prf"),
 
     /* some other special ones*/
+    EVENT_APPLIED_FREQUENCY("evt-apy"),
     OUTPUT_PUBLISHED_FREQUENCY("out-pub"),//only those where Output did not return IGNORED
     STEP_ERROR_FREQUENCY("stp-err");
 

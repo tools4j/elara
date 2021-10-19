@@ -97,7 +97,7 @@ public enum TimeMetric implements Metric {
                 APPLYING_START_TIME, APPLYING_END_TIME, METRIC_APPENDING_TIME),
         OUTPUT(OUTPUT_POLLING_TIME, OUTPUT_START_TIME, OUTPUT_END_TIME, METRIC_APPENDING_TIME);
 
-        private static final byte OUTPUT_BIT = 0b1000000;
+        private static final byte OUTPUT_BIT = Byte.MIN_VALUE;//0x80
         private static final int[] BIT_COUNT = {
                 0, 1, 1, 2, //0-3
                 1, 2, 2, 3, //4-7
@@ -139,6 +139,7 @@ public enum TimeMetric implements Metric {
         public boolean both(final TimeMetric first, final TimeMetric second) {
             return isMetric(first) && isMetric(second);
         }
+
         public boolean anyOf(final Set<TimeMetric> set) {
             for (final TimeMetric metric : metrics) {
                 if (set.contains(metric)) {
@@ -146,6 +147,10 @@ public enum TimeMetric implements Metric {
                 }
             }
             return false;
+        }
+
+        public int count() {
+            return metrics.length;
         }
 
         public int count(final byte flags) {

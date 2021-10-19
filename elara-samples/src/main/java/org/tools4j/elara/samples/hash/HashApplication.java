@@ -39,6 +39,7 @@ import org.tools4j.elara.plugin.metrics.Configuration;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
+import org.tools4j.elara.time.TimeSource;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -179,6 +180,7 @@ public class HashApplication {
     }
 
     public static ElaraRunner chronicleQueueWithMetrics(final ModifiableState state, final AtomicLong input) {
+        final TimeSource pseudoNanoClock = new PseudoNanoClock();
         final ChronicleQueue cq = ChronicleQueue.singleBuilder()
                 .path("build/chronicle/hash-metrics/cmd.cq4")
                 .wireType(WireType.BINARY_LIGHT)
@@ -207,7 +209,7 @@ public class HashApplication {
                 .eventLog(new ChronicleMessageLog(eq))
                 /* trigger capturing of output metrics approximately every second time */
                 .output((event, replay, retry, loopback) -> (event.payload().getLong(0) & 0x1) == 0 ? Ack.COMMIT : Ack.IGNORED)
-                .timeSource(new PseudoNanoClock())
+                .timeSource(pseudoNanoClock)
                 .idleStrategy(BusySpinIdleStrategy.INSTANCE)
                 .plugin(Plugins.metricsPlugin(Configuration.configure()
 //                    .timeMetrics(EnumSet.allOf(TimeMetric.class))
@@ -215,7 +217,7 @@ public class HashApplication {
                     .timeMetrics(INPUT_SENDING_TIME, INPUT_POLLING_TIME, PROCESSING_START_TIME, PROCESSING_END_TIME, ROUTING_START_TIME, APPLYING_START_TIME, APPLYING_END_TIME, ROUTING_END_TIME, OUTPUT_START_TIME, OUTPUT_END_TIME)
                     .frequencyMetrics(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, EVENT_APPLIED_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY)
                     .frequencyLogInterval(100_000_000)//nanos
-                    .inputSendingTimeExtractor((source, sequence, type, buffer, offset, length) -> ((0xffffffffL & source) << 32) | (0xffffffffL & sequence))//for testing only
+                    .inputSendingTimeExtractor((source, sequence, type, buffer, offset, length) -> pseudoNanoClock.currentTime() - 100_000)//for testing only
 //                    .metricsLog(new ChronicleMessageLog(mq))
                     .timeMetricsLog(new ChronicleMessageLog(tq))
                     .frequencyMetricsLog(new ChronicleMessageLog(fq))

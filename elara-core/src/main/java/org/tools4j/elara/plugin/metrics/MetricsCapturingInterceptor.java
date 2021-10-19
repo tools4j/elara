@@ -51,6 +51,7 @@ import static org.tools4j.elara.plugin.metrics.FrequencyMetric.COMMAND_PROCESSED
 import static org.tools4j.elara.plugin.metrics.FrequencyMetric.DUTY_CYCLE_FREQUENCY;
 import static org.tools4j.elara.plugin.metrics.FrequencyMetric.DUTY_CYCLE_PERFORMED_FREQUENCY;
 import static org.tools4j.elara.plugin.metrics.FrequencyMetric.EVENT_APPLIED_FREQUENCY;
+import static org.tools4j.elara.plugin.metrics.FrequencyMetric.EVENT_POLLED_FREQUENCY;
 import static org.tools4j.elara.plugin.metrics.FrequencyMetric.EVENT_POLL_FREQUENCY;
 import static org.tools4j.elara.plugin.metrics.FrequencyMetric.EXTRA_STEP_INVOCATION_FREQUENCY;
 import static org.tools4j.elara.plugin.metrics.FrequencyMetric.EXTRA_STEP_PERFORMED_FREQUENCY;
@@ -187,7 +188,7 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
 
     @Override
     public Step eventPollerStep() {
-        return counterStep(EVENT_POLL_FREQUENCY, EVENT_APPLIED_FREQUENCY, singletons().eventPollerStep());
+        return counterStep(EVENT_POLL_FREQUENCY, EVENT_POLLED_FREQUENCY, singletons().eventPollerStep());
     }
 
     @Override
@@ -242,11 +243,12 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
     @Override
     public EventApplier eventApplier() {
         final EventApplier eventApplier = requireNonNull(singletons().eventApplier());
-        if (shouldCaptureAnyOf(EVENT)) {//includes APPLYING_START_TIME and APPLYING_END_TIME
+        if (shouldCapture(EVENT_APPLIED_FREQUENCY) || shouldCaptureAnyOf(EVENT)) {//includes APPLYING_START_TIME and APPLYING_END_TIME
             return event -> {
                 captureTime(APPLYING_START_TIME);
                 eventApplier.onEvent(event);
                 captureTime(APPLYING_END_TIME);
+                captureCount(EVENT_APPLIED_FREQUENCY);
                 logger.logMetrics(EVENT, event);
             };
         }

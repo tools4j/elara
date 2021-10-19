@@ -28,7 +28,7 @@ import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.init.Context;
+import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.log.InMemoryLog;
@@ -48,7 +48,7 @@ public class SimpleStringApplication {
     private static final int TYPE_STRING = 1;
 
     public ElaraRunner launch(final Queue<String> inputQueue) {
-        return Elara.launch(Context.create()
+        return Elara.launch(Configuration.configure()
                 .commandProcessor(this::process)
                 .eventApplier(this::apply)
                 .input(new StringInput(inputQueue))

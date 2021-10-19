@@ -65,7 +65,7 @@ import org.agrona.DirectBuffer;
 public enum MetricsDescriptor {
     ;
 
-    public static final byte VERSION = 2;
+    public static final byte VERSION = 3;
 
     static final byte FLAGS_NONE = 0;
 

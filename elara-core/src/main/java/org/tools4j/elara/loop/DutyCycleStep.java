@@ -66,7 +66,7 @@ public class DutyCycleStep implements Step {
         //   2. we don't poll inputs when there are commands to poll since
         //       (i) commands should be processed as fast as possible
         //      (ii) command time more accurately reflects real time, even if app latency is now reflected as 'transfer' time
-        //     (iii) input back pressure is better than falling behind and the problem becomes visible to sender
+        //     (iii) we prefer input back pressure over falling behind as it makes the problem visible and signals it to senders
         return outputStep.perform() | extraStep.perform() | sequencerStep.perform();
     }
 }

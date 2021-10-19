@@ -30,7 +30,10 @@ import org.tools4j.elara.samples.hash.HashApplication.ModifiableState;
 
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.LockSupport;
 
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.tools4j.elara.samples.hash.HashApplication.NULL_VALUE;
 
@@ -46,11 +49,12 @@ public class HashApplicationTest {
         final AtomicLong input = new AtomicLong(NULL_VALUE);
         final ModifiableState state = new DefaultState();
         final Random random = new Random(123);
+        final long sleepNanos = MILLISECONDS.toNanos(1);
         final long expected = 6244545253611137478L;
 
         //when
         try (final ElaraRunner runner = HashApplication.inMemory(state, input)) {
-            runHashApp(n, random, input, runner);
+            runHashApp(n, random, sleepNanos, input, runner);
         }
 
         //then
@@ -64,11 +68,12 @@ public class HashApplicationTest {
         final AtomicLong input = new AtomicLong(NULL_VALUE);
         final ModifiableState state = new DefaultState();
         final Random random = new Random(123);
+        final long sleepNanos = MILLISECONDS.toNanos(1);
         final long expected = 6244545253611137478L;
 
         //when
         try (final ElaraRunner runner = HashApplication.chronicleQueue(state, input)) {
-            runHashApp(n, random, input, runner);
+            runHashApp(n, random, sleepNanos, input, runner);
         }
 
         //then
@@ -82,11 +87,13 @@ public class HashApplicationTest {
         final AtomicLong input = new AtomicLong(NULL_VALUE);
         final ModifiableState state = new DefaultState();
         final Random random = new Random(123);
-        final long expected = -6817377618556807803L;
+        final long sleepNanos = MICROSECONDS.toNanos(100);
+        final long expected = -6817377618556807803L;//5000
+        //final long expected = 8951308420835593941L;//500000
 
         //when
         try (final ElaraRunner runner = HashApplication.chronicleQueueWithMetrics(state, input)) {
-            runHashApp(n, random, input, runner);
+            runHashApp(n, random, sleepNanos, input, runner);
         }
 
         //then
@@ -95,6 +102,7 @@ public class HashApplicationTest {
 
     private static void runHashApp(final int n,
                                    final Random random,
+                                   final long sleepNanos,
                                    final AtomicLong input,
                                    final ElaraRunner runner) throws InterruptedException {
         long value = random.nextLong();
@@ -103,7 +111,9 @@ public class HashApplicationTest {
                 value = random.nextLong();
                 i++;
             }
-            Thread.sleep(1);
+            if (sleepNanos > 0) {
+                LockSupport.parkNanos(sleepNanos);
+            }
         }
         while (input.get() != NULL_VALUE) {
             Thread.sleep(50);
