@@ -141,7 +141,7 @@ public class ExpandableDirectBuffer implements MutableDirectBuffer {
 
     @Override
     public long addressOffset() {
-        return buffer == null ? null : buffer.addressOffset() + offset;
+        return buffer == null ? 0 : buffer.addressOffset() + offset;
     }
 
     @Override
@@ -349,105 +349,156 @@ public class ExpandableDirectBuffer implements MutableDirectBuffer {
         buffer.putBytes(index + offset, srcBuffer, srcIndex, length);
     }
 
+    @Override
     public void putBytes(int index, DirectBuffer srcBuffer, int srcIndex, int length) {
         ensureCapacity(index, length);
         buffer.putBytes(index + offset, srcBuffer, srcIndex, length);
     }
 
+    @Override
     public char getChar(int index, ByteOrder byteOrder) {
         return buffer.getChar(index + offset, byteOrder);
     }
 
+    @Override
     public void putChar(int index, char value, ByteOrder byteOrder) {
         ensureCapacity(index, 2);
         buffer.putChar(index + offset, value, byteOrder);
     }
 
+    @Override
     public char getChar(int index) {
         return buffer.getChar(index + offset);
     }
 
+    @Override
     public void putChar(int index, char value) {
         ensureCapacity(index, 2);
         buffer.putChar(index + offset, value);
     }
 
+    @Override
     public String getStringAscii(int index) {
         return buffer.getStringAscii(index + offset);
     }
 
+    @Override
     public int getStringAscii(int index, Appendable appendable) {
         return buffer.getStringAscii(index + offset, appendable);
     }
 
+    @Override
     public String getStringAscii(int index, ByteOrder byteOrder) {
         return buffer.getStringAscii(index + offset, byteOrder);
     }
 
+    @Override
     public int getStringAscii(int index, Appendable appendable, ByteOrder byteOrder) {
         return buffer.getStringAscii(index + offset, appendable, byteOrder);
     }
 
+    @Override
     public String getStringAscii(int index, int length) {
         return buffer.getStringAscii(index + offset, length);
     }
 
+    @Override
     public int getStringAscii(int index, int length, Appendable appendable) {
         return buffer.getStringAscii(index + offset, length, appendable);
     }
 
+    @Override
     public int putStringAscii(int index, String value) {
         final int length = value != null ? value.length() : 0;
         ensureCapacity(index, length + 4);
         return buffer.putStringAscii(index + offset, value);
     }
 
+    @Override
+    public int putStringAscii(int index, CharSequence value) {
+        final int length = value != null ? value.length() : 0;
+        ensureCapacity(index, length + 4);
+        return buffer.putStringAscii(index + offset, value);
+    }
+
+    @Override
     public int putStringAscii(int index, String value, ByteOrder byteOrder) {
         final int length = value != null ? value.length() : 0;
         ensureCapacity(index, length + 4);
         return buffer.putStringAscii(index + offset, value, byteOrder);
     }
 
+    @Override
+    public int putStringAscii(int index, CharSequence value, ByteOrder byteOrder) {
+        final int length = value != null ? value.length() : 0;
+        ensureCapacity(index, length + 4);
+        return buffer.putStringAscii(index + offset, value, byteOrder);
+    }
+
+    @Override
     public String getStringWithoutLengthAscii(int index, int length) {
         return buffer.getStringWithoutLengthAscii(index + offset, length);
     }
 
+    @Override
     public int getStringWithoutLengthAscii(int index, int length, Appendable appendable) {
         return buffer.getStringWithoutLengthAscii(index + offset, length, appendable);
     }
 
+    @Override
     public int putStringWithoutLengthAscii(int index, String value) {
         final int length = value != null ? value.length() : 0;
         ensureCapacity(index, length);
         return buffer.putStringWithoutLengthAscii(index + offset, value);
     }
 
+    @Override
+    public int putStringWithoutLengthAscii(int index, CharSequence value) {
+        final int length = value != null ? value.length() : 0;
+        ensureCapacity(index, length);
+        return buffer.putStringWithoutLengthAscii(index + offset, value);
+    }
+
+    @Override
     public int putStringWithoutLengthAscii(int index, String value, int valueOffset, int length) {
         final int len = value != null ? Math.min(value.length() - valueOffset, length) : 0;
         ensureCapacity(index, len);
         return buffer.putStringWithoutLengthAscii(index + offset, value, valueOffset, length);
     }
 
+    @Override
+    public int putStringWithoutLengthAscii(int index, CharSequence value, int valueOffset, int length) {
+        final int len = value != null ? Math.min(value.length() - valueOffset, length) : 0;
+        ensureCapacity(index, len);
+        return buffer.putStringWithoutLengthAscii(index + offset, value, valueOffset, length);
+    }
+
+    @Override
     public String getStringUtf8(int index) {
         return buffer.getStringUtf8(index + offset);
     }
 
+    @Override
     public String getStringUtf8(int index, ByteOrder byteOrder) {
         return buffer.getStringUtf8(index + offset, byteOrder);
     }
 
+    @Override
     public String getStringUtf8(int index, int length) {
         return buffer.getStringUtf8(index + offset, length);
     }
 
+    @Override
     public int putStringUtf8(int index, String value) {
         return putStringUtf8(index, value, 2147483647);
     }
 
+    @Override
     public int putStringUtf8(int index, String value, ByteOrder byteOrder) {
         return putStringUtf8(index, value, byteOrder, 2147483647);
     }
 
+    @Override
     public int putStringUtf8(int index, String value, int maxEncodedLength) {
         final byte[] bytes = value != null ? value.getBytes(StandardCharsets.UTF_8) : BufferUtil.NULL_BYTES;
         if (bytes.length > maxEncodedLength) {
@@ -460,6 +511,7 @@ public class ExpandableDirectBuffer implements MutableDirectBuffer {
         }
     }
 
+    @Override
     public int putStringUtf8(int index, String value, ByteOrder byteOrder, int maxEncodedLength) {
         final byte[] bytes = value != null ? value.getBytes(StandardCharsets.UTF_8) : BufferUtil.NULL_BYTES;
         if (bytes.length > maxEncodedLength) {
@@ -476,10 +528,12 @@ public class ExpandableDirectBuffer implements MutableDirectBuffer {
         }
     }
 
+    @Override
     public String getStringWithoutLengthUtf8(int index, int length) {
         return buffer.getStringWithoutLengthUtf8(index + offset, length);
     }
 
+    @Override
     public int putStringWithoutLengthUtf8(int index, String value) {
         final byte[] bytes = value != null ? value.getBytes(StandardCharsets.UTF_8) : BufferUtil.NULL_BYTES;
         ensureCapacity(index, bytes.length);
@@ -507,6 +561,7 @@ public class ExpandableDirectBuffer implements MutableDirectBuffer {
         return buffer.parseLongAscii(index + offset, length);
     }
 
+    @Override
     public int putIntAscii(int index, int value) {
         if (value == 0) {
             putByte(index, (byte)'0');
@@ -525,7 +580,7 @@ public class ExpandableDirectBuffer implements MutableDirectBuffer {
                 quotient = -value;
             }
 
-            int i = AsciiEncoding.endOffset(quotient);
+            int i = AsciiEncoding.digitCount(quotient) - 1;
             length += i;
             ensureCapacity(index, length);
 
@@ -540,12 +595,13 @@ public class ExpandableDirectBuffer implements MutableDirectBuffer {
         }
     }
 
+    @Override
     public int putNaturalIntAscii(int index, int value) {
         if (value == 0) {
             putByte(index, (byte)'0');
             return 1;
         } else {
-            int i = AsciiEncoding.endOffset(value);
+            int i = AsciiEncoding.digitCount(value) - 1;
             int length = i + 1;
             ensureCapacity(index, length);
 
@@ -559,6 +615,7 @@ public class ExpandableDirectBuffer implements MutableDirectBuffer {
         }
     }
 
+    @Override
     public void putNaturalPaddedIntAscii(int offset, int length, int value) {
         final int end = offset + length;
         int remainder = value;
@@ -574,6 +631,7 @@ public class ExpandableDirectBuffer implements MutableDirectBuffer {
         }
     }
 
+    @Override
     public int putNaturalIntAsciiFromEnd(int value, int endExclusive) {
         int remainder = value;
         int index = endExclusive;
@@ -588,12 +646,13 @@ public class ExpandableDirectBuffer implements MutableDirectBuffer {
         return index;
     }
 
+    @Override
     public int putNaturalLongAscii(int index, long value) {
         if (value == 0L) {
             putByte(index, (byte)'0');
             return 1;
         } else {
-            int i = AsciiEncoding.endOffset(value);
+            int i = AsciiEncoding.digitCount(value) - 1;
             int length = i + 1;
             ensureCapacity(index, length);
 
@@ -607,6 +666,7 @@ public class ExpandableDirectBuffer implements MutableDirectBuffer {
         }
     }
 
+    @Override
     public int putLongAscii(int index, long value) {
         if (value == 0L) {
             putByte(index, (byte)48);
@@ -625,7 +685,7 @@ public class ExpandableDirectBuffer implements MutableDirectBuffer {
                 quotient = -value;
             }
 
-            int i = AsciiEncoding.endOffset(quotient);
+            int i = AsciiEncoding.digitCount(quotient) - 1;
             length += i;
             ensureCapacity(index, length);
 

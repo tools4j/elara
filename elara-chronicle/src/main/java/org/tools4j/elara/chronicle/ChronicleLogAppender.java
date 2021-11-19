@@ -131,7 +131,7 @@ public class ChronicleLogAppender implements MessageLog.Appender {
                     try {
                         final Bytes<?> bytes = dc.wire().bytes();
                         bytes.ensureCapacity(length);
-                        bytes.writeSkip(-4);
+                        bytes.writePosition(bytes.writePosition() - 4);
                         bytes.writeInt(length);
                         bytes.writeSkip(length);
                     } catch (final Throwable t) {

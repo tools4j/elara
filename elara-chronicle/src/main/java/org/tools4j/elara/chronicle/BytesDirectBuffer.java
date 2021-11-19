@@ -305,105 +305,156 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
         ub.putBytes(index, srcBuffer, srcIndex, length);
     }
 
+    @Override
     public void putBytes(int index, DirectBuffer srcBuffer, int srcIndex, int length) {
         ensureCapacity(index, length);
         ub.putBytes(index, srcBuffer, srcIndex, length);
     }
 
+    @Override
     public char getChar(int index, ByteOrder byteOrder) {
         return ub.getChar(index, byteOrder);
     }
 
+    @Override
     public void putChar(int index, char value, ByteOrder byteOrder) {
         ensureCapacity(index, 2);
         ub.putChar(index, value, byteOrder);
     }
 
+    @Override
     public char getChar(int index) {
         return ub.getChar(index);
     }
 
+    @Override
     public void putChar(int index, char value) {
         ensureCapacity(index, 2);
         ub.putChar(index, value);
     }
 
+    @Override
     public String getStringAscii(int index) {
         return ub.getStringAscii(index);
     }
 
+    @Override
     public int getStringAscii(int index, Appendable appendable) {
         return ub.getStringAscii(index, appendable);
     }
 
+    @Override
     public String getStringAscii(int index, ByteOrder byteOrder) {
         return ub.getStringAscii(index, byteOrder);
     }
 
+    @Override
     public int getStringAscii(int index, Appendable appendable, ByteOrder byteOrder) {
         return ub.getStringAscii(index, appendable, byteOrder);
     }
 
+    @Override
     public String getStringAscii(int index, int length) {
         return ub.getStringAscii(index, length);
     }
 
+    @Override
     public int getStringAscii(int index, int length, Appendable appendable) {
         return ub.getStringAscii(index, length, appendable);
     }
 
+    @Override
     public int putStringAscii(int index, String value) {
         final int length = value != null ? value.length() : 0;
         ensureCapacity(index, length + 4);
         return ub.putStringAscii(index, value);
     }
 
+    @Override
+    public int putStringAscii(int index, CharSequence value) {
+        final int length = value != null ? value.length() : 0;
+        ensureCapacity(index, length + 4);
+        return ub.putStringAscii(index, value);
+    }
+
+    @Override
     public int putStringAscii(int index, String value, ByteOrder byteOrder) {
         final int length = value != null ? value.length() : 0;
         ensureCapacity(index, length + 4);
         return ub.putStringAscii(index, value, byteOrder);
     }
 
+    @Override
+    public int putStringAscii(int index, CharSequence value, ByteOrder byteOrder) {
+        final int length = value != null ? value.length() : 0;
+        ensureCapacity(index, length + 4);
+        return ub.putStringAscii(index, value, byteOrder);
+    }
+
+    @Override
     public String getStringWithoutLengthAscii(int index, int length) {
         return ub.getStringWithoutLengthAscii(index, length);
     }
 
+    @Override
     public int getStringWithoutLengthAscii(int index, int length, Appendable appendable) {
         return ub.getStringWithoutLengthAscii(index, length, appendable);
     }
 
+    @Override
     public int putStringWithoutLengthAscii(int index, String value) {
         final int length = value != null ? value.length() : 0;
         ensureCapacity(index, length);
         return ub.putStringWithoutLengthAscii(index, value);
     }
 
+    @Override
+    public int putStringWithoutLengthAscii(int index, CharSequence value) {
+        final int length = value != null ? value.length() : 0;
+        ensureCapacity(index, length);
+        return ub.putStringWithoutLengthAscii(index, value);
+    }
+
+    @Override
     public int putStringWithoutLengthAscii(int index, String value, int valueOffset, int length) {
         final int len = value != null ? Math.min(value.length() - valueOffset, length) : 0;
         ensureCapacity(index, len);
         return ub.putStringWithoutLengthAscii(index, value, valueOffset, length);
     }
 
+    @Override
+    public int putStringWithoutLengthAscii(int index, CharSequence value, int valueOffset, final int length) {
+        final int len = value != null ? Math.min(value.length() - valueOffset, length) : 0;
+        ensureCapacity(index, len);
+        return ub.putStringWithoutLengthAscii(index, value, valueOffset, length);
+    }
+
+    @Override
     public String getStringUtf8(int index) {
         return ub.getStringUtf8(index);
     }
 
+    @Override
     public String getStringUtf8(int index, ByteOrder byteOrder) {
         return ub.getStringUtf8(index, byteOrder);
     }
 
+    @Override
     public String getStringUtf8(int index, int length) {
         return ub.getStringUtf8(index, length);
     }
 
+    @Override
     public int putStringUtf8(int index, String value) {
         return putStringUtf8(index, value, 2147483647);
     }
 
+    @Override
     public int putStringUtf8(int index, String value, ByteOrder byteOrder) {
         return putStringUtf8(index, value, byteOrder, 2147483647);
     }
 
+    @Override
     public int putStringUtf8(int index, String value, int maxEncodedLength) {
         final byte[] bytes = value != null ? value.getBytes(StandardCharsets.UTF_8) : BufferUtil.NULL_BYTES;
         if (bytes.length > maxEncodedLength) {
@@ -416,6 +467,7 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
         }
     }
 
+    @Override
     public int putStringUtf8(int index, String value, ByteOrder byteOrder, int maxEncodedLength) {
         final byte[] bytes = value != null ? value.getBytes(StandardCharsets.UTF_8) : BufferUtil.NULL_BYTES;
         if (bytes.length > maxEncodedLength) {
@@ -432,10 +484,12 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
         }
     }
 
+    @Override
     public String getStringWithoutLengthUtf8(int index, int length) {
         return ub.getStringWithoutLengthUtf8(index, length);
     }
 
+    @Override
     public int putStringWithoutLengthUtf8(int index, String value) {
         final byte[] bytes = value != null ? value.getBytes(StandardCharsets.UTF_8) : BufferUtil.NULL_BYTES;
         ensureCapacity(index, bytes.length);
@@ -463,6 +517,7 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
         return ub.parseLongAscii(index, length);
     }
 
+    @Override
     public int putIntAscii(int index, int value) {
         if (value == 0) {
             putByte(index, (byte)'0');
@@ -481,7 +536,7 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
                 quotient = -value;
             }
 
-            int i = AsciiEncoding.endOffset(quotient);
+            int i = AsciiEncoding.digitCount(quotient) - 1;
             length += i;
             ensureCapacity(index, length);
 
@@ -496,12 +551,13 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
         }
     }
 
+    @Override
     public int putNaturalIntAscii(int index, int value) {
         if (value == 0) {
             putByte(index, (byte)'0');
             return 1;
         } else {
-            int i = AsciiEncoding.endOffset(value);
+            int i = AsciiEncoding.digitCount(value) - 1;
             int length = i + 1;
             ensureCapacity(index, length);
 
@@ -515,6 +571,7 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
         }
     }
 
+    @Override
     public void putNaturalPaddedIntAscii(int offset, int length, int value) {
         final int end = offset + length;
         int remainder = value;
@@ -530,6 +587,7 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
         }
     }
 
+    @Override
     public int putNaturalIntAsciiFromEnd(int value, int endExclusive) {
         int remainder = value;
         int index = endExclusive;
@@ -544,12 +602,13 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
         return index;
     }
 
+    @Override
     public int putNaturalLongAscii(int index, long value) {
         if (value == 0L) {
             putByte(index, (byte)'0');
             return 1;
         } else {
-            int i = AsciiEncoding.endOffset(value);
+            int i = AsciiEncoding.digitCount(value) - 1;
             int length = i + 1;
             ensureCapacity(index, length);
 
@@ -563,6 +622,7 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
         }
     }
 
+    @Override
     public int putLongAscii(int index, long value) {
         if (value == 0L) {
             putByte(index, (byte)48);
@@ -581,7 +641,7 @@ public class BytesDirectBuffer implements MutableDirectBuffer {
                 quotient = -value;
             }
 
-            int i = AsciiEncoding.endOffset(quotient);
+            int i = AsciiEncoding.digitCount(quotient) - 1;
             length += i;
             ensureCapacity(index, length);
 
