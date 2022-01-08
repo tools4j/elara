@@ -1,6 +1,6 @@
 The MIT License (MIT)
 
-Copyright (c) 2020-2021 tools4j.org (Marco Terzer, Anton Anufriev)
+Copyright (c) 2020-2022 tools4j.org (Marco Terzer, Anton Anufriev)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
