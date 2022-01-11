@@ -41,11 +41,11 @@ def projGroup = 'org.tools4j'
 def projVersion = file('version.txt').text.trim()
 
 def nobarkVersion = '1.5'
-def agronaVersion = '1.13.0'
-def chronicleVersion = '5.21.93'
+def agronaVersion = '1.14.0'
+def chronicleVersion = '5.21.94'
 def slf4jVersion = '1.7.32'
-def junitVersion = '5.8.1'
-def mockitoVersion = '4.0.0'
+def junitVersion = '5.8.2'
+def mockitoVersion = '4.2.0'
 def hdrHistogramVersion = '2.1.12'
 
 ext {
