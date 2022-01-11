@@ -89,6 +89,24 @@ public interface EventRouter {
     void routeEvent(int type, DirectBuffer buffer, int offset, int length);
 
     /***
+     * Routes an event that carries the same payload data as the command;  the {@link Command#type() command type} is
+     * used as event type.
+     *
+     * @throws IllegalStateException if this command has been {@link #isSkipped() skipped}, or if the command's type is
+     *                               equal to {@link EventType#COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
+     */
+    void routeEventWithCommandPayload();
+
+    /***
+     * Routes an event of the specified event {@code type} that carries the same payload data as the command.
+     *
+     * @param type the event type, typically non-negative for application events (plugins use negative event types)
+     * @throws IllegalArgumentException if type is {@link EventType#COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
+     * @throws IllegalStateException if this command has been {@link #isSkipped() skipped}
+     */
+    void routeEventWithCommandPayload(int type);
+
+    /***
      * Routes an event of the specified event {@code type} that carries no payload data.
      *
      * @param type the event type, typically non-negative for application events (plugins use negative event types)
@@ -127,6 +145,15 @@ public interface EventRouter {
      * @return true if this command is skipped
      */
     boolean isSkipped();
+
+    /**
+     * Returns the command currently associated with this even router.  Routed events are the result of processing this
+     * command and hence are associated with the command.
+     *
+     * @return the command currently associated with this event router
+     * @throws IllegalStateException if no command is currently associated with this event router
+     */
+    Command command();
 
     /**
      * Context object returned by {@link #routingEvent()} allowing for zero copy encoding of events directly into the
@@ -203,6 +230,23 @@ public interface EventRouter {
                 context.buffer().putBytes(0, buffer, offset, length);
                 context.route(length);
             }
+        }
+
+        @Override
+        default void routeEventWithCommandPayload() {
+            final Command command = command();
+            final int commandType = command().type();
+            if (commandType == EventType.COMMIT || commandType == EventType.ROLLBACK) {
+                throw new IllegalStateException("Command type cannot be used as event type: " + commandType);
+            }
+            final DirectBuffer payload = command.payload();
+            routeEvent(commandType, payload, 0, payload.capacity());
+        }
+
+        @Override
+        default void routeEventWithCommandPayload(final int type) {
+            final DirectBuffer payload = command().payload();
+            routeEvent(type, payload, 0, payload.capacity());
         }
 
         @Override

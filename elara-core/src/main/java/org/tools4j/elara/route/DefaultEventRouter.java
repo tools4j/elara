@@ -68,6 +68,7 @@ public class DefaultEventRouter implements EventRouter.Default {
     @Override
     public RoutingContext routingEvent(final int type) {
         checkEventType(type);
+        checkValidCommand();
         checkNotSkipped();
         checkEventLimit();
         return routingEvent0(type);
@@ -124,12 +125,23 @@ public class DefaultEventRouter implements EventRouter.Default {
         return nextIndex;
     }
 
+    @Override
+    public Command command() {
+        checkValidCommand();
+        return command;
+    }
+
     private static void checkEventType(final int eventType) {
         if (eventType == EventType.COMMIT || eventType == EventType.ROLLBACK) {
             throw new IllegalArgumentException("Illegal event type: " + eventType);
         }
     }
 
+    private void checkValidCommand() {
+        if (command == null) {
+            throw new IllegalStateException("No command is currently associated with this event router");
+        }
+    }
     private void checkNotSkipped() {
         if (skipped) {
             throw new IllegalStateException("Command has been skipped and event routing is not possible");

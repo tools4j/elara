@@ -28,6 +28,7 @@ import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
+import org.tools4j.elara.command.Command;
 import org.tools4j.elara.command.CommandType;
 import org.tools4j.elara.factory.InterceptableSingletons;
 import org.tools4j.elara.factory.Singletons;
@@ -229,9 +230,10 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
     public CommandProcessor commandProcessor() {
         final CommandProcessor commandProcessor = requireNonNull(singletons().commandProcessor());
         if (shouldCapture(PROCESSING_START_TIME) || shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME)) {
+            final TimedEventRouter timedEventRouter = shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME) ?
+                    new TimedEventRouter() : null;
             return (command, router) -> {
-                final EventRouter eventRouter = shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME) ?
-                        timedEventRouter(router) : router;
+                final EventRouter eventRouter = timedEventRouter != null ? timedEventRouter.init(router) : router;
                 captureTime(PROCESSING_START_TIME);
                 commandProcessor.onCommand(command, eventRouter);
                 //PROCESSING_END_TIME is measured in CommandHandler
@@ -301,33 +303,39 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
         return output;
     }
 
-    private EventRouter timedEventRouter(final EventRouter eventRouter) {
-        requireNonNull(eventRouter);
-        return new EventRouter.Default() {
-            final EventRouter router = eventRouter;
-            final TimedRoutingContext context = new TimedRoutingContext();
+    private final class TimedEventRouter implements EventRouter.Default {
+        final TimedRoutingContext context = new TimedRoutingContext();
+        EventRouter router;
+        TimedEventRouter init(final EventRouter router) {
+            this.router = requireNonNull(router);
+            return this;
+        }
 
-            @Override
-            public RoutingContext routingEvent(final int type) {
-                captureTime(ROUTING_START_TIME);
-                return context.init(router.routingEvent(type));
-            }
+        @Override
+        public RoutingContext routingEvent(final int type) {
+            captureTime(ROUTING_START_TIME);
+            return context.init(router.routingEvent(type));
+        }
 
-            @Override
-            public short nextEventIndex() {
-                return router.nextEventIndex();
-            }
+        @Override
+        public short nextEventIndex() {
+            return router.nextEventIndex();
+        }
 
-            @Override
-            public boolean skipCommand() {
-                return router.skipCommand();
-            }
+        @Override
+        public boolean skipCommand() {
+            return router.skipCommand();
+        }
 
-            @Override
-            public boolean isSkipped() {
-                return router.isSkipped();
-            }
-        };
+        @Override
+        public boolean isSkipped() {
+            return router.isSkipped();
+        }
+
+        @Override
+        public Command command() {
+            return router.command();
+        }
     }
 
     private final class TimedRoutingContext implements RoutingContext {
@@ -424,8 +432,8 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
             }
 
             DirectBuffer unwrap(final DirectBuffer buffer) {
-                empty.wrap(0, 0);
-                return empty;
+                buffer.wrap(0, 0);
+                return buffer;
             }
         };
     }
