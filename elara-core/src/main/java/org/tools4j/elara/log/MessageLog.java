@@ -33,8 +33,7 @@ public interface MessageLog extends AutoCloseable {
     @Override
     void close();
 
-    @FunctionalInterface
-    interface Appender {
+    interface Appender extends AutoCloseable {
         default void append(DirectBuffer buffer, int offset, int length) {
             try (final AppendingContext ctxt = appending()) {
                 ctxt.buffer().putBytes(0, buffer, offset, length);
@@ -42,6 +41,9 @@ public interface MessageLog extends AutoCloseable {
             }
         }
         AppendingContext appending();
+
+        @Override
+        void close();
     }
 
     interface AppendingContext extends AutoCloseable {
@@ -59,7 +61,7 @@ public interface MessageLog extends AutoCloseable {
         }
     }
 
-    interface Poller {
+    interface Poller extends AutoCloseable {
         /**
          * Returns the current entry ID of this poller.
          * <p>
@@ -79,6 +81,9 @@ public interface MessageLog extends AutoCloseable {
         Poller moveToStart();
         Poller moveToEnd();
         int poll(Handler handler);
+
+        @Override
+        void close();
     }
 
     @FunctionalInterface

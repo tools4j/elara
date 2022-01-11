@@ -35,6 +35,7 @@ import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.input.DefaultReceiver;
+import org.tools4j.elara.log.MessageLog.Appender;
 import org.tools4j.elara.log.MessageLog.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
 
@@ -63,29 +64,39 @@ public class DefaultReceiverTest {
     @BeforeEach
     public void init() {
         commandLog = new ArrayList<>();
-        defaultReceiver = new DefaultReceiver(timeSource, () -> new AppendingContext() {
-            MutableDirectBuffer buffer = new ExpandableArrayBuffer();
+        defaultReceiver = new DefaultReceiver(timeSource, new Appender() {
             @Override
-            public MutableDirectBuffer buffer() {
-                return buffer;
+            public AppendingContext appending() {
+                return new AppendingContext() {
+                    MutableDirectBuffer buffer = new ExpandableArrayBuffer();
+                    @Override
+                    public MutableDirectBuffer buffer() {
+                        return buffer;
+                    }
+
+                    @Override
+                    public void abort() {
+                        buffer = null;
+                    }
+
+                    @Override
+                    public void commit(final int length) {
+                        if (buffer != null) {
+                            commandLog.add(new FlyweightCommand().init(buffer, 0));
+                            buffer = null;
+                        }
+                    }
+
+                    @Override
+                    public boolean isClosed() {
+                        return buffer == null;
+                    }
+                };
             }
 
             @Override
-            public void abort() {
-                buffer = null;
-            }
-
-            @Override
-            public void commit(final int length) {
-                if (buffer != null) {
-                    commandLog.add(new FlyweightCommand().init(buffer, 0));
-                    buffer = null;
-                }
-            }
-
-            @Override
-            public boolean isClosed() {
-                return buffer == null;
+            public void close() {
+                //no op
             }
         });
     }

@@ -69,6 +69,7 @@ public class CommittedEventPoller implements Poller {
     }
 
     @Override
+    @SuppressWarnings("StatementWithEmptyBody")
     public Poller moveToEnd() {
         while (poll(event -> POLL) > 0);
         return this;
@@ -127,6 +128,12 @@ public class CommittedEventPoller implements Poller {
             aheadState.reset();
         }
         return aheadPoller.poll(aheadState);
+    }
+
+    @Override
+    public void close() {
+        aheadPoller.close();
+        eventPoller.close();
     }
 
     private static class LookAheadState implements MessageLog.Handler {

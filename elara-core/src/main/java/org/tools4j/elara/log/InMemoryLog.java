@@ -68,10 +68,11 @@ public class InMemoryLog implements MessageLog {
     public Appender appender() {
         ensureMessageLogNotClosed();
         return new Appender() {
+            boolean closed;
             final AppendingContext appendContext = new AppendingContext();
             @Override
             public void append(final DirectBuffer buffer, final int offset, final int length) {
-                ensureMessageLogNotClosed();
+                ensureNotClosed();
                 final int ix;
                 if (size < buffers.length) {
                     int index = start + size;
@@ -105,7 +106,7 @@ public class InMemoryLog implements MessageLog {
 
             @Override
             public AppendingContext appending() {
-                ensureMessageLogNotClosed();
+                ensureNotClosed();
                 return appendContext.init();
             }
 
@@ -169,7 +170,7 @@ public class InMemoryLog implements MessageLog {
                     if (index < 0) {
                         throw new IllegalStateException("Append context is closed");
                     }
-                    ensureMessageLogNotClosed();
+                    ensureNotClosed();
                     lengths[index] = length;
                     size++;
                     reset();
@@ -188,6 +189,18 @@ public class InMemoryLog implements MessageLog {
                     return buffer == null;
                 }
             }
+
+            void ensureNotClosed() {
+                if (closed) {
+                    throw new IllegalStateException("Appender is closed");
+                }
+                ensureMessageLogNotClosed();
+            }
+
+            @Override
+            public void close() {
+                closed = true;
+            }
         };
     }
 
@@ -195,6 +208,7 @@ public class InMemoryLog implements MessageLog {
     public MessageLog.Poller poller() {
         ensureMessageLogNotClosed();
         return new Poller() {
+            boolean closed;
             final MutableDirectBuffer message = new UnsafeBuffer(0, 0);
             int index = 0;
 
@@ -263,7 +277,7 @@ public class InMemoryLog implements MessageLog {
 
             @Override
             public int poll(final Handler handler) {
-                ensureMessageLogNotClosed();
+                ensureNotClosed();
                 if (index < size) {
                     final int pos = position();
                     final int length = lengths[pos];
@@ -281,6 +295,18 @@ public class InMemoryLog implements MessageLog {
                     //      better let the idle strategy do its job
                 }
                 return 0;
+            }
+
+            void ensureNotClosed() {
+                if (closed) {
+                    throw new IllegalStateException("Poller is closed");
+                }
+                ensureMessageLogNotClosed();
+            }
+
+            @Override
+            public void close() {
+                closed = true;
             }
         };
     }

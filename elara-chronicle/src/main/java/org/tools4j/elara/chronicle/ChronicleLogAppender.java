@@ -170,6 +170,12 @@ public class ChronicleLogAppender implements MessageLog.Appender {
     }
 
     @Override
+    public void close() {
+        appender.close();
+        bytesWrapper.wrap(0, 0);
+    }
+
+    @Override
     public String toString() {
         return "ChronicleLogAppender{" +
                 "appender=" + appender +

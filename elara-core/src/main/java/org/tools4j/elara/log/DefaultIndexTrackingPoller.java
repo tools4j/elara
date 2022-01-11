@@ -146,4 +146,9 @@ public class DefaultIndexTrackingPoller implements IndexTrackingPoller {
         }
         return 0;
     }
+
+    @Override
+    public void close() {
+        poller.close();
+    }
 }

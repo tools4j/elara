@@ -120,16 +120,18 @@ public class ChronicleLogPoller implements Poller {
     @Override
     public boolean moveToPrevious() {
         tailer.direction(TailerDirection.BACKWARD);
+        boolean moved;
         try {
-            return moveToNext();
+            moved = moveToNext();
         } finally {
             tailer.direction(TailerDirection.FORWARD);
             if (tailer.index() < tailer.queue().firstIndex()) {
                 //weirdly it moves before start when going from end one back with a single entry in the queue
                 tailer.toStart();
-                return false;
+                moved = false;
             }
         }
+        return moved;
     }
 
     @Override
@@ -155,6 +157,12 @@ public class ChronicleLogPoller implements Poller {
             }
             return 0;
         }
+    }
+
+    @Override
+    public void close() {
+        tailer.close();
+        buffer.wrap(0, 0);
     }
 
     @Override
