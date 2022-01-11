@@ -23,9 +23,9 @@
  */
 package org.tools4j.elara.plugin.replication;
 
+import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.plugin.replication.Connection.Handler;
 import org.tools4j.elara.plugin.replication.Connection.Poller;
-import org.tools4j.nobark.loop.Step;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -33,7 +33,7 @@ import java.util.Set;
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.replication.ConnectionHandler.RESEND_DELAY_NANOS;
 
-public class ReplicationPluginStep implements Step {
+public class ReplicationPluginStep implements AgentStep {
 
     private final int serverId;
     private final int[] serverIds;
@@ -60,29 +60,29 @@ public class ReplicationPluginStep implements Step {
     }
 
     @Override
-    public boolean perform() {
-        boolean workDone = false;
-        workDone |= pollEnforcedLeaderInput();
-        workDone |= pollConnections();
-        workDone |= updateFollowers();
+    public int doWork() {
+        int workDone = 0;
+        workDone += pollEnforcedLeaderInput();
+        workDone += pollConnections();
+        workDone += updateFollowers();
         return workDone;
     }
 
-    private boolean pollEnforcedLeaderInput() {
-        return enforceLeaderInput.poll(enforcedLeaderEventReceiver) > 0;
+    private int pollEnforcedLeaderInput() {
+        return enforceLeaderInput.poll(enforcedLeaderEventReceiver);
     }
 
-    private boolean pollConnections() {
+    private int pollConnections() {
         int polled = 0;
         for (final Poller poller : connectionPollers) {
             polled += poller.poll(connectionHandler);
         }
-        return polled > 0;
+        return polled;
     }
 
-    private boolean updateFollowers() {
+    private int updateFollowers() {
         if (isLeader()) {
-            boolean workDone = false;
+            int workDone = 0;
             final long eventStoreSize = replicationState.eventStoreSize();
             for (short server = 0; server < serverIds.length; server++) {
                 final int followerId = serverIds[server];
@@ -92,7 +92,7 @@ public class ReplicationPluginStep implements Step {
                         if (eventSender.sendEvent(followerId, nextEventStoreIndex)) {
                             replicationState.nextEventStoreIndex(followerId, nextEventStoreIndex + 1);
                         }
-                        workDone = true;//we have still some work done if we move the poller forward or backward
+                        workDone++;//we have still some work done if we move the poller forward or backward
                     } else {
                         final long confirmedEventStoreIndex = replicationState.confirmedEventStoreIndex(followerId);
                         if (confirmedEventStoreIndex < eventStoreSize) {
@@ -101,7 +101,7 @@ public class ReplicationPluginStep implements Step {
                             if (nextTime == 0 || nanoTime - nextTime >= 0) {
                                 replicationState.nextEventStoreIndex(followerId, confirmedEventStoreIndex + 1);
                                 replicationState.nextNotBefore(followerId, nanoTime + RESEND_DELAY_NANOS);
-                                workDone = true;
+                                workDone++;
                             }
                         }
                     }
@@ -109,7 +109,7 @@ public class ReplicationPluginStep implements Step {
             }
             return workDone;
         }
-        return false;
+        return 0;
     }
 
     private boolean isLeader() {

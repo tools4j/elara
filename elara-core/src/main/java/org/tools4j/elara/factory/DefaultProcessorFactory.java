@@ -30,11 +30,11 @@ import org.tools4j.elara.handler.CommandPollerHandler;
 import org.tools4j.elara.handler.DefaultCommandHandler;
 import org.tools4j.elara.init.CommandStreamMode;
 import org.tools4j.elara.init.Configuration;
+import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.loop.CommandPollerStep;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.route.DefaultEventRouter;
 import org.tools4j.elara.stream.MessageStream.Poller;
-import org.tools4j.nobark.loop.Step;
 
 import java.util.Arrays;
 import java.util.function.Supplier;
@@ -88,7 +88,7 @@ public class DefaultProcessorFactory implements ProcessorFactory {
     }
 
     @Override
-    public Step commandPollerStep() {
+    public AgentStep commandPollerStep() {
         final Poller commandStorePoller;
         switch (configuration.commandStreamMode()) {
             case REPLAY_ALL:

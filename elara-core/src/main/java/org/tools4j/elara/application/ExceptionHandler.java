@@ -23,13 +23,12 @@
  */
 package org.tools4j.elara.application;
 
+import org.agrona.ErrorHandler;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.nobark.loop.Loop;
-import org.tools4j.nobark.loop.Step;
 
 @FunctionalInterface
-public interface ExceptionHandler extends org.tools4j.nobark.loop.ExceptionHandler {
+public interface ExceptionHandler extends ErrorHandler {
 
     void handleException(String message, Throwable t);
 
@@ -46,8 +45,8 @@ public interface ExceptionHandler extends org.tools4j.nobark.loop.ExceptionHandl
     }
 
     @Override
-    default void handleException(final Loop loop, final Step step, final Throwable t) {
-        handleException("Unhandled exception when performing step [" + step + "], e=" + t, t);
+    default void onError(final Throwable t) {
+        handleException("Unhandled exception, e=" + t, t);
     }
 
     ExceptionHandler DEFAULT = (message, t) -> {

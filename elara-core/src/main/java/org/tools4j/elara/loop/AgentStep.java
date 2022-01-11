@@ -21,14 +21,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.factory;
+package org.tools4j.elara.loop;
 
-import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.handler.EventHandler;
-import org.tools4j.elara.loop.AgentStep;
+import org.agrona.concurrent.Agent;
 
-public interface ApplierFactory {
-    EventApplier eventApplier();
-    EventHandler eventHandler();
-    AgentStep eventPollerStep();
+import static java.util.Objects.requireNonNull;
+
+/**
+ * A step or part of an agent's {@link Agent#doWork()} method.
+ */
+@FunctionalInterface
+public interface AgentStep {
+    /**
+     * An agent step should implement this method to do its work.
+     * <p>
+     * The return value is used for implementing a backoff strategy that can be employed when no work is
+     * currently available for the agent to process.
+     *
+     * @return 0 to indicate no work was currently available, a positive value otherwise.
+     */
+    int doWork();
+
+    /** Do-nothing step */
+    AgentStep NO_OP = () -> 0;
+
+    static AgentStep composite(final AgentStep... steps) {
+        requireNonNull(steps);
+        return () -> {
+            int workDone = 0;
+            for (final AgentStep step : steps) {
+                workDone += step.doWork();
+            }
+            return workDone;
+        };
+    }
 }

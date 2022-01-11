@@ -24,6 +24,7 @@
 package org.tools4j.elara.factory;
 
 import org.agrona.collections.Object2ObjectHashMap;
+import org.agrona.concurrent.Agent;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.handler.CommandHandler;
@@ -33,12 +34,11 @@ import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.input.SequenceGenerator;
+import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState.Mutable;
-import org.tools4j.nobark.loop.LoopCondition;
-import org.tools4j.nobark.loop.Step;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -97,23 +97,18 @@ public class DefaultSingletons implements Singletons {
     }
 
     @Override
-    public LoopCondition runningCondition() {
-        return getOrCreate("runningCondition", LoopCondition.class, runnerFactory, RunnerFactory::runningCondition);
+    public AgentStep extraStepAlwaysWhenEventsApplied() {
+        return getOrCreate("extraStepAlwaysWhenEventsApplied", AgentStep.class, runnerFactory, RunnerFactory::extraStepAlwaysWhenEventsApplied);
     }
 
     @Override
-    public Step dutyCycleStep() {
-        return getOrCreate("dutyCycleStep", Step.class, runnerFactory, RunnerFactory::dutyCycleStep);
+    public AgentStep extraStepAlways() {
+        return getOrCreate("extraStepAlways", AgentStep.class, runnerFactory, RunnerFactory::extraStepAlways);
     }
 
     @Override
-    public Step dutyCycleExtraStep() {
-        return getOrCreate("dutyCycleExtraStep", Step.class, runnerFactory, RunnerFactory::dutyCycleExtraStep);
-    }
-
-    @Override
-    public Step[] dutyCycleWithExtraSteps() {
-        return getOrCreate("dutyCycleWithExtraSteps", Step[].class, runnerFactory, RunnerFactory::dutyCycleWithExtraSteps);
+    public Agent elaraAgent() {
+        return getOrCreate("elaraAgent", Agent.class, runnerFactory, RunnerFactory::elaraAgent);
     }
 
     //InputFactory
@@ -129,8 +124,8 @@ public class DefaultSingletons implements Singletons {
     }
 
     @Override
-    public Step sequencerStep() {
-        return getOrCreate("sequencerStep", Step.class, inputFactory, InputFactory::sequencerStep);
+    public AgentStep sequencerStep() {
+        return getOrCreate("sequencerStep", AgentStep.class, inputFactory, InputFactory::sequencerStep);
     }
 
     //ProcessorFactory
@@ -146,8 +141,8 @@ public class DefaultSingletons implements Singletons {
     }
 
     @Override
-    public Step commandPollerStep() {
-        return getOrCreate("commandPollerStep", Step.class, processorFactory, ProcessorFactory::commandPollerStep);
+    public AgentStep commandPollerStep() {
+        return getOrCreate("commandPollerStep", AgentStep.class, processorFactory, ProcessorFactory::commandPollerStep);
     }
 
     //ApplierFactory
@@ -163,8 +158,8 @@ public class DefaultSingletons implements Singletons {
     }
 
     @Override
-    public Step eventPollerStep() {
-        return getOrCreate("eventPollerStep", Step.class, applierFactory, ApplierFactory::eventPollerStep);
+    public AgentStep eventPollerStep() {
+        return getOrCreate("eventPollerStep", AgentStep.class, applierFactory, ApplierFactory::eventPollerStep);
     }
 
     //OutputFactory
@@ -190,8 +185,8 @@ public class DefaultSingletons implements Singletons {
     }
 
     @Override
-    public Step outputStep() {
-        return getOrCreate("outputStep", Step.class, outputFactory, OutputFactory::outputStep);
+    public AgentStep publisherStep() {
+        return getOrCreate("publisherStep", AgentStep.class, outputFactory, OutputFactory::publisherStep);
     }
 
     //PluginFactory

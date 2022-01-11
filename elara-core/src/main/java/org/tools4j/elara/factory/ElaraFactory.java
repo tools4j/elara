@@ -24,11 +24,12 @@
 package org.tools4j.elara.factory;
 
 import org.tools4j.elara.init.Configuration;
+import org.tools4j.elara.loop.ElaraFull;
 
 /**
  * Main elara factory to create and wire elara objects.  Singleton object instances are obtained via
- * {@link #singletons()} with the {@link Singletons#dutyCycleWithExtraSteps() dutyCycle} containing the
- * {@link org.tools4j.elara.loop.DutyCycleStep DutyCycleStep} as central object for
+ * {@link #singletons()} with the {@link Singletons#extraStepAlways() dutyCycle} containing the
+ * {@link ElaraFull DutyCycleStep} as central object for
  * {@link org.tools4j.elara.run.Elara Elara} to start the application.
  *
  * @see org.tools4j.elara.run.Elara

@@ -23,6 +23,7 @@
  */
 package org.tools4j.elara.factory;
 
+import org.agrona.concurrent.Agent;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.handler.CommandHandler;
@@ -31,12 +32,11 @@ import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.input.SequenceGenerator;
+import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin.Configuration;
 import org.tools4j.elara.plugin.base.BaseState.Mutable;
-import org.tools4j.nobark.loop.LoopCondition;
-import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
 
@@ -63,7 +63,7 @@ public class DelegateSingletons implements Singletons {
     }
 
     @Override
-    public Step sequencerStep() {
+    public AgentStep sequencerStep() {
         return delegate.sequencerStep();
     }
 
@@ -78,7 +78,7 @@ public class DelegateSingletons implements Singletons {
     }
 
     @Override
-    public Step commandPollerStep() {
+    public AgentStep commandPollerStep() {
         return delegate.commandPollerStep();
     }
 
@@ -93,7 +93,7 @@ public class DelegateSingletons implements Singletons {
     }
 
     @Override
-    public Step eventPollerStep() {
+    public AgentStep eventPollerStep() {
         return delegate.eventPollerStep();
     }
 
@@ -118,8 +118,8 @@ public class DelegateSingletons implements Singletons {
     }
 
     @Override
-    public Step outputStep() {
-        return delegate.outputStep();
+    public AgentStep publisherStep() {
+        return delegate.publisherStep();
     }
 
     @Override
@@ -138,22 +138,17 @@ public class DelegateSingletons implements Singletons {
     }
 
     @Override
-    public LoopCondition runningCondition() {
-        return delegate.runningCondition();
+    public Agent elaraAgent() {
+        return delegate.elaraAgent();
     }
 
     @Override
-    public Step dutyCycleStep() {
-        return delegate.dutyCycleStep();
+    public AgentStep extraStepAlwaysWhenEventsApplied() {
+        return delegate.extraStepAlwaysWhenEventsApplied();
     }
 
     @Override
-    public Step dutyCycleExtraStep() {
-        return delegate.dutyCycleExtraStep();
-    }
-
-    @Override
-    public Step[] dutyCycleWithExtraSteps() {
-        return delegate.dutyCycleWithExtraSteps();
+    public AgentStep extraStepAlways() {
+        return delegate.extraStepAlways();
     }
 }

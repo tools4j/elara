@@ -25,11 +25,13 @@ package org.tools4j.elara.loop;
 
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver;
-import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
 
-public final class SequencerStep implements Step {
+/**
+ * Polls all inputs and sequences received messages into the command log.
+ */
+public final class SequencerStep implements AgentStep {
 
     private final Receiver receiver;
     private final Input[] inputs;
@@ -42,15 +44,15 @@ public final class SequencerStep implements Step {
     }
 
     @Override
-    public boolean perform() {
+    public int doWork() {
         final int count = inputs.length;
         for (int i = 0; i < count; i++) {
             final int index = getAndIncrementRoundRobinIndex(count);
             if (inputs[index].poll(receiver) > 0) {
-                return true;
+                return 1;
             }
         }
-        return false;
+        return 0;
     }
 
     private int getAndIncrementRoundRobinIndex(final int count) {

@@ -28,13 +28,13 @@ import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.factory.InterceptableSingletons;
 import org.tools4j.elara.factory.Singletons;
 import org.tools4j.elara.init.ExecutionType;
+import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.replication.Connection.Handler;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.stream.MessageStream.Appender;
-import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
 
@@ -80,7 +80,7 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
 
         return new Configuration.Default() {
             @Override
-            public Step step(final BaseState baseState, final ExecutionType executionType) {
+            public AgentStep step(final BaseState baseState, final ExecutionType executionType) {
                 switch (executionType) {
                     case ALWAYS_WHEN_EVENTS_APPLIED:
                         final Handler connectionHandler = new ConnectionHandler(
@@ -90,7 +90,7 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
                                 configuration, replicationState, enforcedLeaderEventReceiver, connectionHandler, eventSender
                         );
                     default:
-                        return Step.NO_OP;
+                        return AgentStep.NO_OP;
                 }
             }
 

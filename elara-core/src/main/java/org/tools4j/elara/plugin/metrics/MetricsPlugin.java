@@ -26,9 +26,9 @@ package org.tools4j.elara.plugin.metrics;
 import org.tools4j.elara.factory.InterceptableSingletons;
 import org.tools4j.elara.factory.Singletons;
 import org.tools4j.elara.init.ExecutionType;
+import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
 
@@ -54,9 +54,9 @@ public class MetricsPlugin implements Plugin<MetricsState> {
         requireNonNull(pluginState);
         return new Configuration.Default() {
             @Override
-            public Step step(final BaseState baseState, final ExecutionType executionType) {
+            public AgentStep step(final BaseState baseState, final ExecutionType executionType) {
                 if (configuration.frequencyMetrics().isEmpty() || executionType != ExecutionType.ALWAYS) {
-                    return Step.NO_OP;
+                    return AgentStep.NO_OP;
                 }
                 return new FrequencyMetricsWriterStep(appConfig.timeSource(), configuration, pluginState);
             }

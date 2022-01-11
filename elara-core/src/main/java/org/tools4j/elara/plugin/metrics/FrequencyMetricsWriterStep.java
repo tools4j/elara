@@ -24,16 +24,16 @@
 package org.tools4j.elara.plugin.metrics;
 
 import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.stream.MessageStream.Appender;
 import org.tools4j.elara.stream.MessageStream.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
-import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.metrics.FlyweightMetricsStoreEntry.writeCounter;
 import static org.tools4j.elara.plugin.metrics.FlyweightMetricsStoreEntry.writeFrequencyMetricsHeader;
 
-public class FrequencyMetricsWriterStep implements Step {
+public class FrequencyMetricsWriterStep implements AgentStep {
 
     private final TimeSource timeSource;
     private final Configuration configuration;
@@ -61,11 +61,11 @@ public class FrequencyMetricsWriterStep implements Step {
     }
 
     @Override
-    public boolean perform() {
-        boolean performed = false;
+    public int doWork() {
+        int workDone = 0;
         if (repetition == 0) {
             state.clearFrequencyMetrics();
-            performed = true;
+            workDone++;
         }
         final long time = timeSource.currentTime();
         if (time - lastWriteTime >= interval || repetition == 0) {
@@ -73,12 +73,12 @@ public class FrequencyMetricsWriterStep implements Step {
             state.clearFrequencyMetrics();
             lastWriteTime = time;
             repetition++;
-            performed = true;
+            workDone++;
         }
         //NOTE: - we always perform some work by checking the time
         //      - returning always true would essentially enforce busy spinning and disable any idle strategy
-        //      - a reasonably configured idle strategy should never cause any serious metrics storing problems
-        return performed;
+        //      - a reasonably configured idle strategy should never cause any serious metrics logging problems
+        return workDone;
     }
 
     private void writeMetrics(final long time) {

@@ -30,12 +30,12 @@ import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.logging.Logger;
+import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.stream.MessageStream;
 import org.tools4j.elara.time.TimeSource;
-import org.tools4j.nobark.loop.Step;
 
 import java.util.Collection;
 import java.util.concurrent.ThreadFactory;
@@ -58,7 +58,7 @@ public interface Context extends Configuration {
     Context duplicateHandler(DuplicateHandler duplicateHandler);
     Context loggerFactory(Logger.Factory loggerFactory);
     Context idleStrategy(IdleStrategy idleStrategy);
-    Context dutyCycleExtraStep(Step step, ExecutionType executionType);
+    Context dutyCycleExtraStep(AgentStep step, ExecutionType executionType);
     Context threadFactory(String threadName);
     Context threadFactory(ThreadFactory threadFactory);
 

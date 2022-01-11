@@ -53,7 +53,6 @@ import org.tools4j.elara.samples.network.RingBuffer;
 import org.tools4j.elara.samples.network.ServerTopology;
 import org.tools4j.elara.samples.network.Transmitter;
 import org.tools4j.elara.samples.replication.NetworkConfig.LinkConfig;
-import org.tools4j.nobark.run.ThreadLike;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -67,6 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
  * Unit test running the {@link HashApplication} on multiple nodes and threads using the
  * {@link org.tools4j.elara.plugin.replication.ReplicationPlugin replication plugin}.
  */
+//@Disabled
 public class ReplicatedHashApplicationTest {
 
     private static final int SOURCE_OFFSET = 1000000000;
@@ -94,9 +94,9 @@ public class ReplicatedHashApplicationTest {
 
         //when
         final ElaraRunner[] runners = startServers(appStates, sourceIds, serverIds, serverTopology, sourceTopology, enforceLeaderInput);
-        final ThreadLike[] publishers = startSourcePublishers(commandsPerSource, sourceIds, sourceTopology);
+        final ElaraRunner[] publishers = startSourcePublishers(commandsPerSource, sourceIds, sourceTopology);
 
-        for (final ThreadLike publisher : publishers) {
+        for (final ElaraRunner publisher : publishers) {
             publisher.join(10000);
         }
         Thread.sleep(12000);
@@ -109,7 +109,7 @@ public class ReplicatedHashApplicationTest {
             scheduledExecutorService.shutdownNow();
         }
         for (final ElaraRunner runner : runners) {
-            runner.stop();
+            runner.close();
             runner.join(1000);
         }
 
@@ -150,11 +150,11 @@ public class ReplicatedHashApplicationTest {
         };
     }
 
-    private ThreadLike[] startSourcePublishers(final int commandsPerSource,
+    private ElaraRunner[] startSourcePublishers(final int commandsPerSource,
                                                final IdMapping sourceIds,
                                                final ServerTopology sourceTopology) {
         final int sources = sourceTopology.senders();
-        final ThreadLike[] publishers = new ThreadLike[sources];
+        final ElaraRunner[] publishers = new ElaraRunner[sources];
         for (int i = 0; i < sources; i++) {
             final int source = SOURCE_OFFSET + i;
             publishers[i] = MulticastSource.startRandom(source, sourceIds, commandsPerSource, sourceTopology);

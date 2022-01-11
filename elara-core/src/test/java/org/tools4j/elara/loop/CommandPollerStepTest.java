@@ -31,7 +31,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.store.MessageStore;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
@@ -63,19 +63,19 @@ public class CommandPollerStepTest {
 
         //when
         when(commandPoller.poll(any())).thenReturn(1);
-        final boolean performSome = step.perform();
+        final int doneSome = step.doWork();
 
         //then
-        assertTrue(performSome, "performSome");
+        assertTrue(doneSome > 0, "doneSome");
         inOrder.verify(commandPoller).poll(handler);
         inOrder.verifyNoMoreInteractions();
 
         //when
         when(commandPoller.poll(any())).thenReturn(0);
-        final boolean performNone = step.perform();
+        final int doneNothing = step.doWork();
 
         //then
-        assertFalse(performNone, "performNone");
+        assertEquals(0, doneNothing, "doneNothing");
         inOrder.verify(commandPoller).poll(handler);
         inOrder.verifyNoMoreInteractions();
     }

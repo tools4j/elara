@@ -21,14 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.factory;
+package org.tools4j.elara.loop;
 
-import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.handler.EventHandler;
-import org.tools4j.elara.loop.AgentStep;
-
-public interface ApplierFactory {
-    EventApplier eventApplier();
-    EventHandler eventHandler();
-    AgentStep eventPollerStep();
+public interface RunningCondition {
+    boolean keepRunning();
 }

@@ -25,11 +25,10 @@ package org.tools4j.elara.loop;
 
 import org.tools4j.elara.stream.MessageStream.Handler;
 import org.tools4j.elara.stream.MessageStream.Poller;
-import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
 
-public class CommandPollerStep implements Step {
+public class CommandPollerStep implements AgentStep {
 
     private final Poller commandPoller;
     private final Handler handler;
@@ -40,7 +39,7 @@ public class CommandPollerStep implements Step {
     }
 
     @Override
-    public boolean perform() {
-        return commandPoller.poll(handler) > 0;
+    public int doWork() {
+        return commandPoller.poll(handler);
     }
 }

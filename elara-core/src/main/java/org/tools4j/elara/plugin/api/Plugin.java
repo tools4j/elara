@@ -29,10 +29,10 @@ import org.tools4j.elara.factory.InterceptableSingletons;
 import org.tools4j.elara.factory.Singletons;
 import org.tools4j.elara.init.ExecutionType;
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.base.BaseState.Mutable;
-import org.tools4j.nobark.loop.Step;
 
 import java.util.function.Consumer;
 
@@ -56,7 +56,7 @@ public interface Plugin<P> {
     }
 
     interface Configuration {
-        Step step(BaseState baseState, ExecutionType executionType);
+        AgentStep step(BaseState baseState, ExecutionType executionType);
         Input[] inputs(BaseState baseState);
         Output output(BaseState baseState);
         CommandProcessor commandProcessor(BaseState baseState);
@@ -65,7 +65,7 @@ public interface Plugin<P> {
 
         interface Default extends Configuration {
             @Override
-            default Step step(final BaseState baseState, final ExecutionType executionType) {return Step.NO_OP;}
+            default AgentStep step(final BaseState baseState, final ExecutionType executionType) {return AgentStep.NO_OP;}
             @Override
             default Input[] inputs(final BaseState baseState) {return NO_INPUTS;}
             @Override
@@ -111,6 +111,6 @@ public interface Plugin<P> {
     }
 
     enum NullState {
-        NULL;
+        NULL
     }
 }

@@ -21,14 +21,35 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.factory;
+package org.tools4j.elara.loop;
 
-import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.handler.EventHandler;
-import org.tools4j.elara.loop.AgentStep;
+import org.agrona.concurrent.Agent;
+import org.tools4j.elara.store.CommittedEventPoller;
 
-public interface ApplierFactory {
-    EventApplier eventApplier();
-    EventHandler eventHandler();
-    AgentStep eventPollerStep();
+import static java.util.Objects.requireNonNull;
+
+/**
+ * Agent to poll and publish events.
+ * <p>
+ * The agent invokes the output handler with committed events and replay flag during replay.  A tracking poller is used
+ * to store the index of the last event passed to the handler.  A second poller is used to also pass replayed events to
+ * the output handler.  Using a {@link CommittedEventPoller} as tracking poller guarantees that only committed events
+ * are passed to the handler.
+ */
+public class ElaraPublisher implements Agent {
+    private final PublisherStep publisherStep;
+
+    public ElaraPublisher(final PublisherStep publisherStep) {
+        this.publisherStep = requireNonNull(publisherStep);
+    }
+
+    @Override
+    public int doWork() throws Exception {
+        return publisherStep.doWork();
+    }
+
+    @Override
+    public String roleName() {
+        return "elara-publisher";
+    }
 }

@@ -32,12 +32,12 @@ import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.logging.Logger.Factory;
+import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.stream.MessageStream;
 import org.tools4j.elara.time.TimeSource;
-import org.tools4j.nobark.loop.Step;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -69,7 +69,7 @@ final class DefaultContext implements Context {
     private DuplicateHandler duplicateHandler = DuplicateHandler.DEFAULT;
     private IdleStrategy idleStrategy = new BackoffIdleStrategy(
             100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100));
-    private final EnumMap<ExecutionType, List<Step>> extraSteps = new EnumMap<>(ExecutionType.class);
+    private final EnumMap<ExecutionType, List<AgentStep>> extraSteps = new EnumMap<>(ExecutionType.class);
     private ThreadFactory threadFactory;
     private final PluginContext plugins = new PluginContext();
 
@@ -228,12 +228,12 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public List<Step> dutyCycleExtraSteps(final ExecutionType executionType) {
+    public List<AgentStep> dutyCycleExtraSteps(final ExecutionType executionType) {
         return extraSteps.getOrDefault(executionType, Collections.emptyList());
     }
 
     @Override
-    public Context dutyCycleExtraStep(final Step step, final ExecutionType executionType) {
+    public Context dutyCycleExtraStep(final AgentStep step, final ExecutionType executionType) {
         requireNonNull(step);
         requireNonNull(executionType);
         extraSteps.computeIfAbsent(executionType, k -> new ArrayList<>()).add(step);

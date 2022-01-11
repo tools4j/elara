@@ -25,6 +25,7 @@ package org.tools4j.elara.plugin.metrics;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
+import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
@@ -37,6 +38,7 @@ import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.input.Receiver.ReceivingContext;
+import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
@@ -44,7 +46,6 @@ import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.stream.MessageStream.Handler.Result;
 import org.tools4j.elara.time.TimeSource;
-import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.metrics.FrequencyMetric.COMMAND_POLL_FREQUENCY;
@@ -130,20 +131,59 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
         }
     }
 
-    private Step counterStep(final FrequencyMetric invokedMetric,
-                             final FrequencyMetric performedMetric,
-                             final Step step) {
+    private Agent counterAgent(final FrequencyMetric invokedMetric,
+                               final FrequencyMetric performedMetric,
+                               final Agent agent) {
+        requireNonNull(invokedMetric);
+        requireNonNull(performedMetric);
+        requireNonNull(agent);
+        if (shouldCapture(invokedMetric) || shouldCapture(performedMetric)) {
+            return new Agent() {
+                @Override
+                public void onStart() {
+                    agent.onStart();
+                }
+
+                @Override
+                public int doWork() throws Exception {
+                    final int workDone = agent.doWork();
+                    captureCount(invokedMetric);
+                    if (workDone > 0) {
+                        captureCount(performedMetric);
+                    }
+                    return workDone;
+                }
+
+                @Override
+                public void onClose() {
+                    agent.onClose();
+                }
+
+                @Override
+                public String roleName() {
+                    return agent.roleName();
+                }
+            };
+        }
+        return agent;
+    }
+
+    private AgentStep counterStep(final FrequencyMetric invokedMetric,
+                                  final FrequencyMetric performedMetric,
+                                  final AgentStep step) {
+        requireNonNull(invokedMetric);
+        requireNonNull(performedMetric);
         requireNonNull(step);
         if (shouldCapture(STEP_ERROR_FREQUENCY)) {
             if (shouldCapture(invokedMetric) || shouldCapture(performedMetric)) {
                 return () -> {
                     try {
-                        final boolean result = step.perform();
+                        final int workDone = step.doWork();
                         captureCount(invokedMetric);
-                        if (result) {
+                        if (workDone > 0) {
                             captureCount(performedMetric);
                         }
-                        return result;
+                        return workDone;
                     } catch (final Throwable t) {
                         captureCount(STEP_ERROR_FREQUENCY);
                         throw t;
@@ -152,7 +192,7 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
             }
             return () -> {
                 try {
-                    return step.perform();
+                    return step.doWork();
                 } catch (final Throwable t) {
                     captureCount(STEP_ERROR_FREQUENCY);
                     throw t;
@@ -161,45 +201,45 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
         }
         if (shouldCapture(invokedMetric) || shouldCapture(performedMetric)) {
             return () -> {
-                final boolean result = step.perform();
+                final int workDone = step.doWork();
                 captureCount(invokedMetric);
-                if (result) {
+                if (workDone > 0) {
                     captureCount(performedMetric);
                 }
-                return result;
+                return workDone;
             };
         }
         return step;
     }
 
     @Override
-    public Step dutyCycleStep() {
-        return counterStep(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, singletons().dutyCycleStep());
+    public Agent elaraAgent() {
+        return counterAgent(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, singletons().elaraAgent());
     }
 
     @Override
-    public Step sequencerStep() {
+    public AgentStep sequencerStep() {
         return counterStep(INPUTS_POLL_FREQUENCY, INPUT_RECEIVED_FREQUENCY, singletons().sequencerStep());
     }
 
     @Override
-    public Step commandPollerStep() {
+    public AgentStep commandPollerStep() {
         return counterStep(COMMAND_POLL_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, singletons().commandPollerStep());
     }
 
     @Override
-    public Step eventPollerStep() {
+    public AgentStep eventPollerStep() {
         return counterStep(EVENT_POLL_FREQUENCY, EVENT_POLLED_FREQUENCY, singletons().eventPollerStep());
     }
 
     @Override
-    public Step outputStep() {
-        return counterStep(OUTPUT_POLL_FREQUENCY, OUTPUT_POLL_FREQUENCY, singletons().outputStep());
+    public AgentStep publisherStep() {
+        return counterStep(OUTPUT_POLL_FREQUENCY, OUTPUT_POLL_FREQUENCY, singletons().publisherStep());
     }
 
     @Override
-    public Step dutyCycleExtraStep() {
-        return counterStep(EXTRA_STEP_INVOCATION_FREQUENCY, EXTRA_STEP_PERFORMED_FREQUENCY, singletons().dutyCycleExtraStep());
+    public AgentStep extraStepAlwaysWhenEventsApplied() {
+        return counterStep(EXTRA_STEP_INVOCATION_FREQUENCY, EXTRA_STEP_PERFORMED_FREQUENCY, singletons().extraStepAlwaysWhenEventsApplied());
     }
 
     @Override

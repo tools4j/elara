@@ -24,11 +24,12 @@
 package org.tools4j.elara.samples.replication;
 
 import org.agrona.MutableDirectBuffer;
+import org.agrona.concurrent.Agent;
+import org.agrona.concurrent.AgentRunner;
+import org.agrona.concurrent.BackoffIdleStrategy;
 import org.agrona.concurrent.UnsafeBuffer;
+import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.samples.network.ServerTopology;
-import org.tools4j.nobark.run.RunnableFactory.RunningCondition;
-import org.tools4j.nobark.run.StoppableThread;
-import org.tools4j.nobark.run.ThreadLike;
 
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.LongSupplier;
@@ -55,48 +56,68 @@ public class MulticastSource {
         this.topology = requireNonNull(topology);
     }
 
-    public static ThreadLike startRandom(final int source,
-                                         final IdMapping sourceIds,
-                                         final int nValues,
-                                         final ServerTopology topology) {
+    public static ElaraRunner startRandom(final int source,
+                                          final IdMapping sourceIds,
+                                          final int nValues,
+                                          final ServerTopology topology) {
         return start(source, sourceIds, randomValueSupplier(), nValues, topology);
     }
 
-    public static ThreadLike start(final int source,
-                                   final IdMapping sourceIds,
-                                   final LongSupplier valueSource,
-                                   final int nValues,
-                                   final ServerTopology topology) {
+    public static ElaraRunner start(final int source,
+                                    final IdMapping sourceIds,
+                                    final LongSupplier valueSource,
+                                    final int nValues,
+                                    final ServerTopology topology) {
         if (sourceIds.count() != topology.senders()) {
             throw new IllegalArgumentException("Sources are senders, but " + sourceIds.count() + " is not equal to " +
                     topology.senders());
         }
         final MulticastSource ms = new MulticastSource(sourceIds.indexById(source), valueSource, topology);
-        return StoppableThread.start(runningCondition -> () -> ms.run(runningCondition, nValues),
-                r -> new Thread(null, r, "source-" + source));
+        final AgentRunner agentRunner = ms.agentRunner("source-" + source, nValues);
+        return ElaraRunner.startOnThread(agentRunner);
     }
 
-    private void run(final RunningCondition runningCondition, final int n) {
-        for (int i = 0; i < n; i++) {
-            if (!runningCondition.keepRunning()) {
-                return;
-            }
-            buffer.putLong(0, valueSource.getAsLong());
-            for (int receiver = 0; receiver < topology.receivers(); receiver++) {
-                while (!topology.transmit(sourceIndex, receiver, buffer, 0, Long.BYTES)) {
-                    if (!runningCondition.keepRunning()) {
-                        return;
+    private AgentRunner agentRunner(final String roleName, final int n) {
+        requireNonNull(roleName);
+        final AgentRunner[] runnerPtr = new AgentRunner[1];
+        final Agent agent = new Agent() {
+            int index = 0;
+            int receiver = topology.receivers();
+
+            @Override
+            public int doWork() {
+                int workDone = 0;
+                while (receiver < topology.receivers()) {
+                    if (!topology.transmit(sourceIndex, receiver, buffer, 0, Long.BYTES)) {
+                        return workDone;
                     }
+                    workDone++;
+                    receiver++;
                 }
+                if (index < n) {
+                    buffer.putLong(0, valueSource.getAsLong());
+                    index++;
+                    receiver = 0;
+                    workDone++;
+                } else {
+                    runnerPtr[0].close();
+                }
+                return workDone;
             }
-        }
+
+            @Override
+            public String roleName() {
+                return roleName;
+            }
+        };
+        return runnerPtr[0] = new AgentRunner(new BackoffIdleStrategy(), Throwable::printStackTrace, null, agent);
     }
 
     private static LongSupplier randomValueSupplier() {
         return () -> {
             long value;
             do {
-                value = ThreadLocalRandom.current().nextLong();;
+                value = ThreadLocalRandom.current().nextLong();
             } while (value == NULL_VALUE);
             return value;
         };

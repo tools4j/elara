@@ -32,7 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.store.MessageStore;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.notNull;
@@ -62,23 +62,23 @@ public class EventPollerStepTest {
     public void pollIfSomethingToPoll() {
         //given
         final InOrder inOrder = inOrder(eventPoller);
-        boolean performed;
+        int performed;
 
         //when
         when(eventPoller.poll(any())).thenReturn(1);
-        performed = step.perform();
+        performed = step.doWork();
 
         //then
-        assertTrue(performed, "performed");
+        assertTrue(performed > 0, "performed");
         inOrder.verify(eventPoller).poll(notNull());
         inOrder.verifyNoMoreInteractions();
 
         //when
         when(eventPoller.poll(any())).thenReturn(2);
-        performed = step.perform();
+        performed = step.doWork();
 
         //then
-        assertTrue(performed, "performed");
+        assertTrue(performed > 0, "performed");
         inOrder.verify(eventPoller).poll(notNull());
         inOrder.verifyNoMoreInteractions();
     }
@@ -88,21 +88,21 @@ public class EventPollerStepTest {
         //given
         when(eventPoller.poll(any())).thenReturn(0);
         final InOrder inOrder = inOrder(eventPoller);
-        boolean performed;
+        int workDone;
 
         //when
-        performed = step.perform();
+        workDone = step.doWork();
 
         //then
-        assertFalse(performed, "performed");
+        assertEquals(0, workDone, "workDone");
         inOrder.verify(eventPoller).poll(notNull());
         inOrder.verifyNoMoreInteractions();
 
         //when
-        performed = step.perform();
+        workDone = step.doWork();
 
         //then
-        assertFalse(performed, "performed");
+        assertEquals(0, workDone, "workDone");
         inOrder.verify(eventPoller).poll(notNull());
         inOrder.verifyNoMoreInteractions();
     }

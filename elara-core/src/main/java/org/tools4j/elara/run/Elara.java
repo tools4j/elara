@@ -23,13 +23,10 @@
  */
 package org.tools4j.elara.run;
 
-import org.agrona.concurrent.IdleStrategy;
+import org.agrona.concurrent.AgentRunner;
 import org.tools4j.elara.factory.ElaraFactory;
 import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.init.Context;
-import org.tools4j.elara.loop.ElaraLoop;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * Starts an elara application.
@@ -47,36 +44,7 @@ public enum Elara {
 
     public static ElaraRunner launch(final ElaraFactory elaraFactory) {
         final Configuration configuration = elaraFactory.configuration();
-        return new ElaraRunner(ElaraLoop.start(
-                nobarkIdleStrategy(configuration.idleStrategy()),
-                configuration.exceptionHandler(),
-                configuration.threadFactory(),
-                elaraFactory.singletons()
-        ));
-    }
-
-    private static org.tools4j.nobark.loop.IdleStrategy nobarkIdleStrategy(final IdleStrategy idleStrategy) {
-        requireNonNull(idleStrategy);
-        return new org.tools4j.nobark.loop.IdleStrategy() {
-            @Override
-            public void idle() {
-                idleStrategy.idle();
-            }
-
-            @Override
-            public void reset() {
-                idleStrategy.reset();
-            }
-
-            @Override
-            public void idle(final boolean workDone) {
-                idleStrategy.idle(workDone ? 1 : 0);
-            }
-
-            @Override
-            public String toString() {
-                return idleStrategy.toString();
-            }
-        };
+        return ElaraRunner.startOnThread(new AgentRunner(configuration.idleStrategy(), configuration.exceptionHandler(),
+            null, elaraFactory.singletons().elaraAgent()));
     }
 }

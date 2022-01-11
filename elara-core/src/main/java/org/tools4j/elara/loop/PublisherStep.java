@@ -32,19 +32,20 @@ import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.store.MessageStore.Poller;
 import org.tools4j.elara.stream.MessageStream.Handler;
 import org.tools4j.elara.stream.MessageStream.Handler.Result;
-import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Step that invokes output handler with committed events and replay flag during replay.  A tracking poller is used to
- * store the index of the last event passed to the handler.  A second poller is used to also pass replayed events to the
- * output handler.  Using a {@link CommittedEventPoller} as tracking poller guarantees that only committed events are
- * passed to the handler.
+ * Agent to poll and publish events.
+ * <p>
+ * The agent invokes the output handler with committed events and replay flag during replay.  A tracking poller is used
+ * to store the index of the last event passed to the handler.  A second poller is used to also pass replayed events to
+ * the output handler.  Using a {@link CommittedEventPoller} as tracking poller guarantees that only committed events
+ * are passed to the handler.
  */
-public class OutputStep implements Step {
+public class PublisherStep implements AgentStep {
 
-    public static final String DEFAULT_POLLER_ID = "elara-out";
+    public static final String DEFAULT_POLLER_ID = "elara-publisher";
 
     private final OutputHandler handler;
     private final Poller poller;
@@ -54,29 +55,29 @@ public class OutputStep implements Step {
     private Poller replayPoller;
     private int retry;
 
-    public OutputStep(final OutputHandler handler, final MessageStore messageStore) {
+    public PublisherStep(final OutputHandler handler, final MessageStore messageStore) {
         this(handler, new CommittedEventPoller(messageStore), null);
     }
 
-    public OutputStep(final OutputHandler handler, final MessageStore messageStore, final String id) {
+    public PublisherStep(final OutputHandler handler, final MessageStore messageStore, final String id) {
         this(handler, new CommittedEventPoller(messageStore, id), messageStore.poller());
     }
 
-    private OutputStep(final OutputHandler handler, final Poller poller, final Poller replayPoller) {
+    private PublisherStep(final OutputHandler handler, final Poller poller, final Poller replayPoller) {
         this.handler = requireNonNull(handler);
         this.poller = requireNonNull(poller);
         this.replayPoller = replayPoller;//nullable
     }
 
     @Override
-    public boolean perform() {
+    public int doWork() {
         if (replayPoller != null) {
             if (replayPoller.entryId() < poller.entryId()) {
-                return replayPoller.poll(replayHandler) > 0;
+                return replayPoller.poll(replayHandler);
             }
             replayPoller = null;
         }
-        return poller.poll(defaultHandler) > 0;
+        return poller.poll(defaultHandler);
     }
 
     private Result onMessage(final DirectBuffer message, final boolean replay) {

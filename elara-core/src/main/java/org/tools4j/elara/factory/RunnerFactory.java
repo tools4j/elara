@@ -23,13 +23,12 @@
  */
 package org.tools4j.elara.factory;
 
-import org.tools4j.nobark.loop.LoopCondition;
-import org.tools4j.nobark.loop.Step;
+import org.agrona.concurrent.Agent;
+import org.tools4j.elara.loop.AgentStep;
 
 public interface RunnerFactory {
     Runnable initStep();
-    LoopCondition runningCondition();
-    Step dutyCycleStep();
-    Step dutyCycleExtraStep();
-    Step[] dutyCycleWithExtraSteps();
+    AgentStep extraStepAlwaysWhenEventsApplied();
+    AgentStep extraStepAlways();
+    Agent elaraAgent();
 }

@@ -25,10 +25,10 @@ package org.tools4j.elara.factory;
 
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver;
-import org.tools4j.nobark.loop.Step;
+import org.tools4j.elara.loop.AgentStep;
 
 public interface InputFactory {
     Receiver receiver();
     Input[] inputs();
-    Step sequencerStep();
+    AgentStep sequencerStep();
 }

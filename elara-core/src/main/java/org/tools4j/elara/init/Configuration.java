@@ -30,12 +30,12 @@ import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.logging.Logger;
+import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.stream.MessageStream;
 import org.tools4j.elara.time.TimeSource;
-import org.tools4j.nobark.loop.Step;
 
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
@@ -53,7 +53,7 @@ public interface Configuration {
     DuplicateHandler duplicateHandler();
     Logger.Factory loggerFactory();
     IdleStrategy idleStrategy();
-    List<Step> dutyCycleExtraSteps(ExecutionType executionType);
+    List<AgentStep> dutyCycleExtraSteps(ExecutionType executionType);
     ThreadFactory threadFactory();
     List<Plugin.Configuration> plugins();
 

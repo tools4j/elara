@@ -23,41 +23,55 @@
  */
 package org.tools4j.elara.loop;
 
-import org.tools4j.nobark.loop.Step;
+import org.agrona.concurrent.Agent;
 
 import static java.util.Objects.requireNonNull;
 
-public class DutyCycleStep implements Step {
+/**
+ * Agent for running all elara tasks including {@link SequencerStep},
+ * {@link ElaraCore} and {@link PublisherStep}
+ */
+public class ElaraFull implements Agent {
 
-    private final Step sequencerStep;
-    private final Step commandPollerStep;
-    private final Step eventPollerStep;
-    private final Step outputStep;
-    private final Step extraStep;
+    private final AgentStep sequencerStep;
+    private final AgentStep commandStep;
+    private final AgentStep eventStep;
+    private final AgentStep publisherStep;
+    private final AgentStep extraStepAlways;
+    private final AgentStep extraStepAlwaysWhenEventsApplied;
 
-    public DutyCycleStep(final Step sequencerStep,
-                         final Step commandPollerStep,
-                         final Step eventPollerStep,
-                         final Step outputStep,
-                         final Step extraStep) {
+    public ElaraFull(final AgentStep sequencerStep,
+                     final AgentStep commandStep,
+                     final AgentStep eventStep,
+                     final AgentStep publisherStep,
+                     final AgentStep extraStepAlwaysWhenEventsApplied,
+                     final AgentStep extraStepAlways) {
         this.sequencerStep = requireNonNull(sequencerStep);
-        this.commandPollerStep = requireNonNull(commandPollerStep);
-        this.eventPollerStep = requireNonNull(eventPollerStep);
-        this.outputStep = requireNonNull(outputStep);
-        this.extraStep = requireNonNull(extraStep);
+        this.commandStep = requireNonNull(commandStep);
+        this.eventStep = requireNonNull(eventStep);
+        this.publisherStep = requireNonNull(publisherStep);
+        this.extraStepAlways = requireNonNull(extraStepAlways);
+        this.extraStepAlwaysWhenEventsApplied = requireNonNull(extraStepAlwaysWhenEventsApplied);
     }
 
+    @Override
+    public String roleName() {
+        return "elara-full";
+    }
 
     @Override
-    public boolean perform() {
-        if (eventPollerStep.perform()) {
-            outputStep.perform();
-            return true;
+    public int doWork() {
+        int workDone;
+        if ((workDone = eventStep.doWork()) > 0) {
+            workDone += publisherStep.doWork();
+            workDone += extraStepAlways.doWork();
+            return workDone;
         }
-        if (commandPollerStep.perform()) {
-            outputStep.perform();
-            extraStep.perform();
-            return true;
+        if ((workDone = commandStep.doWork()) > 0) {
+            workDone += publisherStep.doWork();
+            workDone += extraStepAlwaysWhenEventsApplied.doWork();
+            workDone += extraStepAlways.doWork();
+            return workDone;
         }
         //NOTES:
         //   1. we don't poll inputs during replay since
@@ -67,6 +81,6 @@ public class DutyCycleStep implements Step {
         //       (i) commands should be processed as fast as possible
         //      (ii) command time more accurately reflects real time, even if app latency is now reflected as 'transfer' time
         //     (iii) we prefer input back pressure over falling behind as it makes the problem visible and signals it to senders
-        return outputStep.perform() | extraStep.perform() | sequencerStep.perform();
+        return publisherStep.doWork() + sequencerStep.doWork() + extraStepAlwaysWhenEventsApplied.doWork() + extraStepAlways.doWork();
     }
 }

@@ -23,38 +23,72 @@
  */
 package org.tools4j.elara.run;
 
-import org.tools4j.nobark.run.ThreadLike;
+import org.agrona.concurrent.AgentRunner;
+
+import java.lang.Thread.State;
+import java.util.concurrent.locks.LockSupport;
 
 import static java.util.Objects.requireNonNull;
 
 /**
  * Running java app returned by launch methods of {@link Elara}.
  */
-public class ElaraRunner implements ThreadLike {
+public class ElaraRunner implements AutoCloseable {
 
-    private final ThreadLike threadLike;
+    public static final int START_TIMEOUT_MILLIS = 5000;
 
-    public ElaraRunner(final ThreadLike threadLike) {
-        this.threadLike = requireNonNull(threadLike);
+    private final AgentRunner agentRunner;
+
+    public ElaraRunner(final AgentRunner agentRunner) {
+        this.agentRunner = requireNonNull(agentRunner);
     }
 
-    @Override
+    public static ElaraRunner startOnThread(final AgentRunner agentRunner) {
+        if (agentRunner.isClosed()) {
+            throw new IllegalStateException("agent runner is already closed");
+        }
+        if (agentRunner.isClosed() || agentRunner.thread() != null) {
+            throw new IllegalStateException("agent runner is running already");
+        }
+
+        final long endWait = System.currentTimeMillis() + START_TIMEOUT_MILLIS;
+        final Thread thread = AgentRunner.startOnThread(agentRunner);
+        while (agentRunner.thread() != thread) {
+            LockSupport.parkNanos(10_000_000);
+            if (System.currentTimeMillis() > endWait) {
+                throw new RuntimeException(agentRunner + " has not started on thread after " + START_TIMEOUT_MILLIS + " millis");
+            }
+        }
+        return new ElaraRunner(agentRunner);
+    }
+
+    public Thread thread() {
+        return agentRunner.thread();
+    }
+
     public Thread.State threadState() {
-        return threadLike.threadState();
+        final Thread thread = thread();
+        return thread != null ? thread.getState() : (agentRunner.isClosed() ? State.TERMINATED : State.NEW);
     }
 
-    @Override
     public void join(final long millis) {
-        threadLike.join(millis);
+        final Thread thread = thread();
+        if (thread != null) {
+            try {
+                thread.join(millis);
+            } catch (final InterruptedException e) {
+                throw new IllegalStateException("Join interrupted for thread " + thread);
+            }
+        }
     }
 
     @Override
-    public void stop() {
-        threadLike.stop();
+    public void close() {
+        agentRunner.close();
     }
 
     @Override
     public String toString() {
-        return threadLike.toString();
+        return agentRunner.agent().roleName();
     }
 }

@@ -25,14 +25,14 @@ package org.tools4j.elara.chronicle;
 
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.wire.WireType;
+import org.agrona.concurrent.Agent;
+import org.agrona.concurrent.AgentRunner;
 import org.tools4j.elara.flyweight.Flyweight;
 import org.tools4j.elara.flyweight.FlyweightDataFrame;
 import org.tools4j.elara.format.MessagePrinter;
 import org.tools4j.elara.format.MessagePrinters;
 import org.tools4j.elara.plugin.metrics.FlyweightMetricsStoreEntry;
 import org.tools4j.elara.store.MessageStorePrinter;
-import org.tools4j.nobark.loop.LoopCondition;
-import org.tools4j.nobark.run.ThreadLike;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -97,18 +97,15 @@ public class ChronicleMessageStorePrinter implements AutoCloseable {
         messageStorePrinter.print(new ChroniclePoller(queue), flyweight, filter, printer);
     }
 
-    public <M> void print(final ChronicleQueue queue,
-                          final Flyweight<M> flyweight,
-                          final Predicate<? super M> filter,
-                          final MessagePrinter<? super M> printer,
-                          final LoopCondition loopCondition) {
-        messageStorePrinter.print(new ChroniclePoller(queue), flyweight, filter, printer, loopCondition);
+    public <M> Agent printAgent(final ChronicleQueue queue, final Flyweight<M> flyweight, final Predicate<? super M> filter, final MessagePrinter<? super M> printer) {
+        return messageStorePrinter.printAgent(new ChroniclePoller(queue), flyweight, filter, printer);
     }
 
-    public <M> ThreadLike printInBackground(final ChronicleQueue queue,
-                                            final Flyweight<M> flyweight,
-                                            final Predicate<? super M> filter,
-                                            final MessagePrinter<? super M> printer) {
+    public <M> AgentRunner agentRunner(final ChronicleQueue queue, final Flyweight<M> flyweight, final Predicate<? super M> filter, final MessagePrinter<? super M> printer) {
+        return messageStorePrinter.agentRunner(new ChroniclePoller(queue), flyweight, filter, printer);
+    }
+
+    public <M> Thread printInBackground(final ChronicleQueue queue, final Flyweight<M> flyweight, final Predicate<? super M> filter, final MessagePrinter<? super M> printer) {
         return messageStorePrinter.printInBackground(new ChroniclePoller(queue), flyweight, filter, printer);
     }
 

@@ -25,14 +25,14 @@ package org.tools4j.elara.factory;
 
 import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.input.SequenceGenerator;
+import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.Output;
-import org.tools4j.nobark.loop.Step;
 
 public interface OutputFactory {
     Output output();
     SequenceGenerator loopbackSequenceGenerator();
     CommandLoopback commandLoopback();
     OutputHandler outputHandler();
-    Step outputStep();
+    AgentStep publisherStep();
 }

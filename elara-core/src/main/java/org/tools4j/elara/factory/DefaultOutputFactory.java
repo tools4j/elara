@@ -23,25 +23,24 @@
  */
 package org.tools4j.elara.factory;
 
-import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.handler.DefaultOutputHandler;
 import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.input.SimpleSequenceGenerator;
-import org.tools4j.elara.loop.OutputStep;
+import org.tools4j.elara.loop.AgentStep;
+import org.tools4j.elara.loop.PublisherStep;
 import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.CompositeOutput;
 import org.tools4j.elara.output.DefaultCommandLoopback;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.nobark.loop.Step;
 
 import java.util.Arrays;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.loop.OutputStep.DEFAULT_POLLER_ID;
+import static org.tools4j.elara.loop.PublisherStep.DEFAULT_POLLER_ID;
 
 public class DefaultOutputFactory implements OutputFactory {
 
@@ -64,7 +63,7 @@ public class DefaultOutputFactory implements OutputFactory {
         int count = 0;
         for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
             outputs[count] = plugin.output(baseState);
-            if (outputs[count] != EventApplier.NOOP) {
+            if (outputs[count] != Output.NOOP) {
                 count++;
             }
         }
@@ -100,17 +99,14 @@ public class DefaultOutputFactory implements OutputFactory {
     }
 
     @Override
-    public Step outputStep() {
-        if (configuration.output() == Output.NOOP) {
-            return Step.NO_OP;
-        }
+    public AgentStep publisherStep() {
         final OutputHandler outputHandler = singletons.get().outputHandler();
         try {
-            return new OutputStep(outputHandler, configuration.eventStore(), DEFAULT_POLLER_ID);
+            return new PublisherStep(outputHandler, configuration.eventStore(), DEFAULT_POLLER_ID);
         } catch (final UnsupportedOperationException e) {
             //ignore, use non-tracking below
         }
-        return new OutputStep(outputHandler, configuration.eventStore());
+        return new PublisherStep(outputHandler, configuration.eventStore());
     }
 
 }

@@ -25,10 +25,10 @@ package org.tools4j.elara.factory;
 
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.handler.CommandHandler;
-import org.tools4j.nobark.loop.Step;
+import org.tools4j.elara.loop.AgentStep;
 
 public interface ProcessorFactory {
     CommandProcessor commandProcessor();
     CommandHandler commandHandler();
-    Step commandPollerStep();
+    AgentStep commandPollerStep();
 }

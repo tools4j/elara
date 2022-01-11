@@ -27,30 +27,41 @@ import org.agrona.DirectBuffer;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.store.MessageStore;
+import org.tools4j.elara.stream.MessageStream;
 import org.tools4j.elara.stream.MessageStream.Handler.Result;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Polls all events and invokes the event handler;  usually only used in follower mode.
- * @see EventReplayStep
+ * Polls all events and invokes the event handler until reaching the end of the event log.  When the end of the event
+ * log is reached, the poller is closed and the step turns into a no-op.
+ * @see EventPollerStep
  */
-public class EventPollerStep implements AgentStep {
+public class EventReplayStep implements AgentStep {
 
     private final MessageStore.Poller eventPoller;
     private final EventHandler eventHandler;
 
-    private final MessageStore.Handler pollerHandler = this::onEvent;
+    private final MessageStream.Handler pollerHandler = this::onEvent;
     private final FlyweightEvent flyweightEvent = new FlyweightEvent();
+    private boolean replayed;
 
-    public EventPollerStep(final MessageStore.Poller eventPoller, final EventHandler eventHandler) {
+    public EventReplayStep(final MessageStore.Poller eventPoller, final EventHandler eventHandler) {
         this.eventPoller = requireNonNull(eventPoller);
         this.eventHandler = requireNonNull(eventHandler);
     }
 
     @Override
     public int doWork() {
-        return eventPoller.poll(pollerHandler);
+        if (replayed) {
+            return 0;
+        }
+        final int polled = eventPoller.poll(pollerHandler);
+        if (polled == 0) {
+            eventPoller.close();
+            replayed = true;
+        }
+        return polled;
     }
 
     private Result onEvent(final DirectBuffer event) {

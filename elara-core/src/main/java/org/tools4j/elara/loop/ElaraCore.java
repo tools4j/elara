@@ -21,14 +21,41 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.factory;
+package org.tools4j.elara.loop;
 
-import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.handler.EventHandler;
-import org.tools4j.elara.loop.AgentStep;
+import org.agrona.concurrent.Agent;
 
-public interface ApplierFactory {
-    EventApplier eventApplier();
-    EventHandler eventHandler();
-    AgentStep eventPollerStep();
+import static java.util.Objects.requireNonNull;
+
+/**
+ * Agent for running the elara core tasks.  Core tasks are polling (or replaying) events applying events and processing
+ * commands.
+ */
+public class ElaraCore implements Agent {
+
+    private final AgentStep commandStep;
+    private final AgentStep eventStep;
+    private final AgentStep extraStepAlwaysWhenEventsApplied;
+
+    public ElaraCore(final AgentStep commandStep,
+                     final AgentStep eventStep,
+                     final AgentStep extraStepAlwaysWhenEventsApplied) {
+        this.commandStep = requireNonNull(commandStep);
+        this.eventStep = requireNonNull(eventStep);
+        this.extraStepAlwaysWhenEventsApplied = requireNonNull(extraStepAlwaysWhenEventsApplied);
+    }
+
+    @Override
+    public String roleName() {
+        return "elara-core";
+    }
+
+    @Override
+    public int doWork() {
+        final int workDone = eventStep.doWork();
+        if (workDone > 0) {
+            return workDone;
+        }
+        return commandStep.doWork() + extraStepAlwaysWhenEventsApplied.doWork();
+    }
 }
