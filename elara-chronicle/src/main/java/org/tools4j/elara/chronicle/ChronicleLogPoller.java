@@ -140,7 +140,7 @@ public class ChronicleLogPoller implements Poller {
             if (context.isData()) {
                 final Bytes<?> bytes = context.wire().bytes();
                 final int size = bytes.readInt();
-                final int offset = (int) bytes.readPosition();
+                final long offset = bytes.readPosition();
                 final long addr = bytes.addressForRead(offset);
                 buffer.wrap(addr, size);
                 final Result result = handler.onMessage(buffer);
