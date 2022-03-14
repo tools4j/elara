@@ -30,6 +30,7 @@ import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.loop.EventPollerStep;
+import org.tools4j.elara.loop.EventReplayStep;
 import org.tools4j.elara.plugin.base.BaseState;
 
 import java.util.Arrays;
