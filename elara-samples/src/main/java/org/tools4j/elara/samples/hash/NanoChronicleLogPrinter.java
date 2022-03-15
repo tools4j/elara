@@ -57,6 +57,7 @@ public class NanoChronicleLogPrinter {
         final ChronicleQueue queue = ChronicleQueue.singleBuilder()
                 .path(fileName)
                 .wireType(WireType.BINARY_LIGHT)
+                .readOnly(true)
                 .build();
         if (metrics) {
             new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), metrics(new MetricsFormatter() {

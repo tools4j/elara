@@ -121,6 +121,7 @@ public class ChronicleLogPrinter implements AutoCloseable {
         final ChronicleQueue queue = ChronicleQueue.singleBuilder()
                 .path(fileName)
                 .wireType(WireType.BINARY_LIGHT)
+                .readOnly(true)
                 .build();
         if (metrics) {
             new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), MessagePrinters.METRICS);
