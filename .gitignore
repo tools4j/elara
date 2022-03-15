@@ -12,3 +12,4 @@ build
 out
 *.jfc
 *.jfr
+.DS_Store
