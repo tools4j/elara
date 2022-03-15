@@ -29,6 +29,7 @@ import org.tools4j.elara.chronicle.ChronicleLogPrinter;
 import org.tools4j.elara.flyweight.DataFrame;
 import org.tools4j.elara.flyweight.FlyweightDataFrame;
 import org.tools4j.elara.format.DataFrameFormatter;
+import org.tools4j.elara.format.HistogramFormatter;
 import org.tools4j.elara.format.LatencyFormatter;
 import org.tools4j.elara.format.MetricsFormatter;
 import org.tools4j.elara.plugin.metrics.FlyweightMetricsLogEntry;
@@ -41,6 +42,7 @@ import java.time.ZoneOffset;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.tools4j.elara.format.MessagePrinters.frame;
+import static org.tools4j.elara.format.MessagePrinters.latencyHistogram;
 import static org.tools4j.elara.format.MessagePrinters.metrics;
 
 public class NanoChronicleLogPrinter {
@@ -49,11 +51,12 @@ public class NanoChronicleLogPrinter {
         //System.out.println(System.getProperty("java.class.path"));
         final boolean metrics = args.length == 2 && ("-m".equals(args[0]) || "--metrics".equals(args[0]));
         final boolean latencies = args.length == 2 && ("-l".equals(args[0]) || "--latencies".equals(args[0]));
-        if (args.length < 1 || args.length > 2 || (args.length == 2 && !metrics && !latencies)) {
+        final boolean histograms = args.length == 2 && ("-h".equals(args[0]) || "--histograms".equals(args[0]));
+        if (args.length < 1 || args.length > 2 || (args.length == 2 && !metrics && !latencies && !histograms)) {
             System.err.println("usage: " + NanoChronicleLogPrinter.class.getSimpleName() + "[-m|--metrics|-l|--latencies] <file>");
             System.exit(1);
         }
-        final String fileName = metrics || latencies ? args[1] : args[0];
+        final String fileName = metrics || latencies || histograms ? args[1] : args[0];
         final ChronicleQueue queue = ChronicleQueue.singleBuilder()
                 .path(fileName)
                 .wireType(WireType.BINARY_LIGHT)
@@ -98,6 +101,40 @@ public class NanoChronicleLogPrinter {
                 @Override
                 public ValueFormatter metricValueFormatter(final long line, final long entryId, final MetricsLogEntry entry, final int index) {
                     return VALUE_FORMATTER;
+                }
+            }));
+        } else if (histograms) {
+            new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), latencyHistogram(new HistogramFormatter() {
+                @Override
+                public Object time(final long line, final long entryId, final MetricsLogEntry entry) {
+                    return instantOfEpochNanos(entry.time());
+                }
+
+                @Override
+                public long printInterval(long line, long entryId, MetricsLogEntry entry) {
+                    return 100_000_000;//every 100 millis
+                }
+
+                @Override
+                public HistogramValuesFormatter histogramValuesFormatter(final long line, final long entryId, final MetricsLogEntry entry, final int index) {
+                    final HistogramFormatter parentFormatter = this;
+                    final BucketValueFormatter bucketFormatter = new BucketValueFormatter() {
+                        @Override
+                        public Object bucketValue(final long line, final long entryId, final BucketValue value) {
+                            return value.bucketValue() + "ns";
+                        }
+                    };
+                    return new HistogramValuesFormatter() {
+                        @Override
+                        public HistogramFormatter parentFormatter() {
+                            return parentFormatter;
+                        }
+
+                        @Override
+                        public BucketValueFormatter bucketValueFormatter(final long line, final long entryId, final HistogramValues histogram, final int index) {
+                            return bucketFormatter;
+                        }
+                    };
                 }
             }));
         } else {

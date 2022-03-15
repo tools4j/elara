@@ -23,39 +23,38 @@
  */
 package org.tools4j.elara.format;
 
-import org.tools4j.elara.format.MetricsFormatter.MetricValue;
-import org.tools4j.elara.plugin.metrics.Metric;
+import org.tools4j.elara.format.HistogramFormatter.ReferenceEntry;
+import org.tools4j.elara.plugin.metrics.MetricsLogEntry;
 
-import static java.util.Objects.requireNonNull;
+final class DefaultReferenceEntry implements ReferenceEntry {
 
-final class DefaultMetricValue implements MetricValue {
-    private final Metric metric;
-    private final long value;
-    private final int index;
+    private final long line;
+    private final long entryId;
+    private final long time;
 
-    DefaultMetricValue(final Metric metric, final long value, final int index) {
-        this.metric = requireNonNull(metric);
-        this.value = value;
-        this.index = index;
+    DefaultReferenceEntry(final long line, final long entryId, final MetricsLogEntry entry) {
+        this.line = line;
+        this.entryId = entryId;
+        this.time = entry.time();
     }
 
     @Override
-    public Metric metric() {
-        return metric;
+    public long line() {
+        return line;
     }
 
     @Override
-    public long value() {
-        return value;
+    public long entryId() {
+        return entryId;
     }
 
     @Override
-    public int index() {
-        return index;
+    public long time() {
+        return time;
     }
 
     @Override
     public String toString() {
-        return "MetricValue{metric=" + metric.displayName() + ", value=" + value + ", index=" + index + "}";
+        return "ReferenceEntry{line=" + line + ", entryId=" + entryId + ", time=" + time + "}";
     }
 }

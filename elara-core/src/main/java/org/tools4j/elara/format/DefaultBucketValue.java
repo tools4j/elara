@@ -23,39 +23,53 @@
  */
 package org.tools4j.elara.format;
 
-import org.tools4j.elara.format.MetricsFormatter.MetricValue;
-import org.tools4j.elara.plugin.metrics.Metric;
+import org.tools4j.elara.format.HistogramFormatter.BucketValue;
+import org.tools4j.elara.format.HistogramFormatter.HistogramValues;
 
 import static java.util.Objects.requireNonNull;
 
-final class DefaultMetricValue implements MetricValue {
-    private final Metric metric;
-    private final long value;
+final class DefaultBucketValue implements BucketValue {
+    private final HistogramValues histogram;
+    private final String name;
     private final int index;
+    private final double percentile;
+    private final long value;
 
-    DefaultMetricValue(final Metric metric, final long value, final int index) {
-        this.metric = requireNonNull(metric);
-        this.value = value;
+    DefaultBucketValue(final HistogramValues histogram, final String name, final int index, final double percentile, final long value) {
+        this.histogram = requireNonNull(histogram);
+        this.name = requireNonNull(name);
         this.index = index;
+        this.percentile = percentile;
+        this.value = value;
     }
 
     @Override
-    public Metric metric() {
-        return metric;
+    public HistogramValues histogram() {
+        return histogram;
     }
 
     @Override
-    public long value() {
-        return value;
+    public String bucketName() {
+        return name;
     }
 
     @Override
-    public int index() {
+    public int bucketIndex() {
         return index;
     }
 
     @Override
+    public double percentile() {
+        return percentile;
+    }
+
+    @Override
+    public long bucketValue() {
+        return value;
+    }
+
+    @Override
     public String toString() {
-        return "MetricValue{metric=" + metric.displayName() + ", value=" + value + ", index=" + index + "}";
+        return "BucketValue{metric=" + histogram.metric().displayName() + ", name=" + name + ", index=" + index + ", value=" + value + "}";
     }
 }

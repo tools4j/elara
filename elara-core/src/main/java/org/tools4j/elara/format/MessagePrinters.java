@@ -32,6 +32,7 @@ import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.format.DataFrameFormatter.SEQUENCE;
 import static org.tools4j.elara.format.DataFrameFormatter.SOURCE;
+import static org.tools4j.elara.format.MessagePrinter.NOOP;
 import static org.tools4j.elara.format.MessagePrinter.composite;
 import static org.tools4j.elara.format.MessagePrinter.parameterized;
 
@@ -56,6 +57,10 @@ public enum MessagePrinters {
     public static final String METRICS_FREQUENCY_FORMAT = "{time} | {line} - {type} rep={repetition}, intvl={interval} | {metrics-values}{nl}";
     public static final String METRICS_VALUE_FORMAT_0   = "{metric-name}={metric-value}";
     public static final String METRICS_VALUE_FORMAT_N   = ", {metric-name}={metric-value}";
+    public static final String HISTOGRAM_FORMAT         = "{metrics-values}";
+    public static final String HISTOGRAM_VALUES_FORMAT  = "{time} | {line} - {type} rep={repetition}, intvl={interval} | {metric-name} - n={value-count}, {bucket-values}{nl}";
+    public static final String HISTOGRAM_BUCKET_VALUE_0 = "{bucket-name}={bucket-value}";
+    public static final String HISTOGRAM_BUCKET_VALUE_N = ", {bucket-name}={bucket-value}";
 
     public static final MessagePrinter<Object> GENERAL = parameterized(GENERAL_FORMAT, ValueFormatter.DEFAULT);
     public static final MessagePrinter<DataFrame> PIPE = parameterized(PIPE_FORMAT, DataFrameFormatter.DEFAULT);
@@ -68,6 +73,7 @@ public enum MessagePrinters {
 
     public static final MessagePrinter<MetricsLogEntry> METRICS = metrics(MetricsFormatter.DEFAULT);
     public static final MessagePrinter<MetricsLogEntry> LATENCIES = metrics(LatencyFormatter.DEFAULT);
+    public static final MessagePrinter<MetricsLogEntry> HISTOGRAMS = latencyHistogram(HistogramFormatter.DEFAULT);
 
     public static MessagePrinter<DataFrame> command(final DataFrameFormatter formatter) {
         requireNonNull(formatter);
@@ -130,16 +136,35 @@ public enum MessagePrinters {
     public static MessagePrinter<MetricsLogEntry> frequencyMetrics(final MetricsFormatter formatter) {
         requireNonNull(formatter);
         return composite(
-                (line, entryId, frame) -> line == 0 ? 0 : 1,
+                (line, entryId, entry) -> line == 0 ? 0 : 1,
                 parameterized(METRICS_VERSION_LINE + METRICS_FREQUENCY_FORMAT, formatter),
                 parameterized(METRICS_FREQUENCY_FORMAT, formatter)
         );
     }
+
     public static MessagePrinter<MetricsLogEntry> metrics(final MetricsFormatter formatter) {
         return composite(
                 (line, entryId, emtry) -> emtry.type() == Type.TIME ? 0 : 1,
                 timeMetrics(formatter),
                 frequencyMetrics(formatter)
+        );
+    }
+
+    public static MessagePrinter<MetricsLogEntry> latencyHistogram(final HistogramFormatter formatter) {
+        return composite(
+                (line, entryId, entry) -> {
+                    if (line == 0) {
+                        formatter.referenceEntry.remove();
+                        formatter.latencyHistograms.remove();
+                    }
+                    final boolean print = formatter.print(line, entryId, entry);
+                    formatter.capture(line, entryId, entry);
+                    return line == 0 ? (print ? 1 : 0) : (print ? 3 : 2);
+                },
+                parameterized(METRICS_VERSION_LINE + HISTOGRAM_FORMAT, formatter),
+                parameterized(METRICS_VERSION_LINE, formatter),
+                NOOP,
+                parameterized(HISTOGRAM_FORMAT, formatter)
         );
     }
 
