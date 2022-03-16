@@ -30,10 +30,10 @@ import org.tools4j.elara.plugin.metrics.MetricsLogEntry.Type;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.time.Instant;
 
-import static org.tools4j.elara.format.MessagePrinters.METRICS_VALUE_FORMAT_0;
-import static org.tools4j.elara.format.MessagePrinters.METRICS_VALUE_FORMAT_N;
+import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.format.DefaultMessagePrinters.METRICS_VALUE_FORMAT_0;
+import static org.tools4j.elara.format.DefaultMessagePrinters.METRICS_VALUE_FORMAT_N;
 
 /**
  * Formats value for {@link MessagePrinter} when printing lines containing metrics data produced by the
@@ -42,6 +42,16 @@ import static org.tools4j.elara.format.MessagePrinters.METRICS_VALUE_FORMAT_N;
 public interface MetricsFormatter extends ValueFormatter<MetricsLogEntry> {
 
     MetricsFormatter DEFAULT = new MetricsFormatter() {};
+
+    static MetricsFormatter create(final TimeFormatter timeFormatter) {
+        requireNonNull(timeFormatter);
+        return new MetricsFormatter() {
+            @Override
+            public TimeFormatter timeFormatter() {
+                return timeFormatter;
+            }
+        };
+    }
 
     interface MetricValue {
         Metric metric();
@@ -91,7 +101,9 @@ public interface MetricsFormatter extends ValueFormatter<MetricsLogEntry> {
         return type;
     }
     default Object target(long line, long entryId, MetricsLogEntry entry) {return entry.target();}
-    default Object time(long line, long entryId, MetricsLogEntry entry) {return Instant.ofEpochMilli(entry.time());}
+    default Object time(long line, long entryId, MetricsLogEntry entry) {
+        return timeFormatter().formatDateTime(entry.time());
+    }
     //time metrics
     default Object source(long line, long entryId, MetricsLogEntry entry) {return entry.source();}
     default Object sequence(long line, long entryId, MetricsLogEntry entry) {return entry.sequence();}
@@ -99,7 +111,9 @@ public interface MetricsFormatter extends ValueFormatter<MetricsLogEntry> {
     //frequency metrics
     default Object choice(long line, long entryId, MetricsLogEntry entry) {return entry.choice();}
     default Object repetition(long line, long entryId, MetricsLogEntry entry) {return entry.repetition();}
-    default Object interval(long line, long entryId, MetricsLogEntry entry) {return entry.interval();}
+    default Object interval(long line, long entryId, MetricsLogEntry entry) {
+        return timeFormatter().formatDuration(entry.interval());
+    }
 
     default Object metricsCount(long line, long entryId, MetricsLogEntry entry) {return entry.count();}
     default Object metricsValues(long line, long entryId, MetricsLogEntry entry) {
@@ -139,8 +153,8 @@ public interface MetricsFormatter extends ValueFormatter<MetricsLogEntry> {
         }
     }
 
-    interface ValueFormatter extends org.tools4j.elara.format.ValueFormatter<MetricValue> {
-        ValueFormatter DEFAULT = new ValueFormatter() {};
+    interface MetricValueFormatter extends ValueFormatter<MetricValue> {
+        MetricValueFormatter DEFAULT = new MetricValueFormatter() {};
 
         /** Placeholder in metrics-values string for the name of a metric */
         String METRIC_NAME = "{metric-name}";
@@ -170,16 +184,31 @@ public interface MetricsFormatter extends ValueFormatter<MetricsLogEntry> {
                 default: return placeholder;
             }
         }
+
+        default ValueFormatter<MetricValue> withTimeFormatter(final TimeFormatter timeFormatter) {
+            requireNonNull(timeFormatter);
+            return (placeholder, line, entryId, value) -> {
+                if (METRIC_VALUE.equals(placeholder)) {
+                    switch (value.metric().type()) {
+                        case TIME:
+                            return timeFormatter.formatTime(value.value());
+                        case LATENCY:
+                            return timeFormatter.formatDuration(value.value());
+                    }
+                }
+                return MetricValueFormatter.this.value(placeholder, line, entryId, value);
+            };
+        }
     }
 
     default MessagePrinter<MetricValue> metricValuePrinter(long line, long entryId, MetricsLogEntry entry, int index) {
         final String format = index == 0 ? METRICS_VALUE_FORMAT_0 : METRICS_VALUE_FORMAT_N;
-        final ValueFormatter formatter = metricValueFormatter(line, entryId, entry, index);
+        final ValueFormatter<MetricValue> formatter = metricValueFormatter(line, entryId, entry, index).withTimeFormatter(timeFormatter());
         return new ParameterizedMessagePrinter<>(format, formatter);
     }
 
-    default ValueFormatter metricValueFormatter(long line, long entryId, MetricsLogEntry entry, int index) {
-        return ValueFormatter.DEFAULT;
+    default MetricValueFormatter metricValueFormatter(long line, long entryId, MetricsLogEntry entry, int index) {
+        return MetricValueFormatter.DEFAULT;
     }
 
     default MetricValue metricValue(final long line, final long entryId, final MetricsLogEntry entry, final int index) {
@@ -190,4 +219,7 @@ public interface MetricsFormatter extends ValueFormatter<MetricsLogEntry> {
         return new DefaultMetricValue(metric, value, index);
     }
 
+    default TimeFormatter timeFormatter() {
+        return TimeFormatter.DEFAULT;
+    }
 }

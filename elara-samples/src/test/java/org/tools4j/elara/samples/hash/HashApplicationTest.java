@@ -83,15 +83,15 @@ public class HashApplicationTest {
     @Test
     public void chronicleQueueWithMetrics() throws Exception {
         //given
-        final int n = 500_000;
-//        final int n = 5_000_000;
+//        final int n = 500_000;
+        final int n = 5_000_000;
         final AtomicLong input = new AtomicLong(NULL_VALUE);
         final ModifiableState state = new DefaultState();
         final Random random = new Random(123);
         final long sleepNanos = MICROSECONDS.toNanos(0);
 //        final long expected = -6817377618556807803L;//     5_000
-        final long expected = 8951308420835593941L;//  500_000
-//        final long expected = -4253299023651259134L;//5_000_000
+//        final long expected = 8951308420835593941L;//  500_000
+        final long expected = -4253299023651259134L;//5_000_000
 
         //when
         try (final ElaraRunner runner = HashApplication.chronicleQueueWithMetrics(state, input)) {

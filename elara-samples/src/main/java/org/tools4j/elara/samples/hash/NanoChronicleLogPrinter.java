@@ -23,133 +23,49 @@
  */
 package org.tools4j.elara.samples.hash;
 
-import net.openhft.chronicle.queue.ChronicleQueue;
-import net.openhft.chronicle.wire.WireType;
 import org.tools4j.elara.chronicle.ChronicleLogPrinter;
-import org.tools4j.elara.flyweight.DataFrame;
-import org.tools4j.elara.flyweight.FlyweightDataFrame;
 import org.tools4j.elara.format.DataFrameFormatter;
+import org.tools4j.elara.format.DefaultMessagePrinters;
 import org.tools4j.elara.format.HistogramFormatter;
 import org.tools4j.elara.format.LatencyFormatter;
 import org.tools4j.elara.format.MetricsFormatter;
-import org.tools4j.elara.plugin.metrics.FlyweightMetricsLogEntry;
-import org.tools4j.elara.plugin.metrics.Metric.Type;
+import org.tools4j.elara.format.TimeFormatter;
 import org.tools4j.elara.plugin.metrics.MetricsLogEntry;
-
-import java.time.Instant;
-import java.time.ZoneOffset;
-
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.tools4j.elara.format.MessagePrinters.frame;
-import static org.tools4j.elara.format.MessagePrinters.latencyHistogram;
-import static org.tools4j.elara.format.MessagePrinters.metrics;
 
 public class NanoChronicleLogPrinter {
 
-    public static void main(String[] args) {
-        //System.out.println(System.getProperty("java.class.path"));
-        final boolean metrics = args.length == 2 && ("-m".equals(args[0]) || "--metrics".equals(args[0]));
-        final boolean latencies = args.length == 2 && ("-l".equals(args[0]) || "--latencies".equals(args[0]));
-        final boolean histograms = args.length == 2 && ("-h".equals(args[0]) || "--histograms".equals(args[0]));
-        if (args.length < 1 || args.length > 2 || (args.length == 2 && !metrics && !latencies && !histograms)) {
-            System.err.println("usage: " + NanoChronicleLogPrinter.class.getSimpleName() + "[-m|--metrics|-l|--latencies] <file>");
-            System.exit(1);
-        }
-        final String fileName = metrics || latencies || histograms ? args[1] : args[0];
-        final ChronicleQueue queue = ChronicleQueue.singleBuilder()
-                .path(fileName)
-                .wireType(WireType.BINARY_LIGHT)
-                .readOnly(true)
-                .build();
-        if (metrics) {
-            new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), metrics(new MetricsFormatter() {
-                final ValueFormatter VALUE_FORMATTER = new ValueFormatter() {
+    public static void main(final String... args) {
+        ChronicleLogPrinter.run(new DefaultMessagePrinters() {
+            @Override
+            public DataFrameFormatter dataFrameFormatter() {
+                return DataFrameFormatter.create(TimeFormatter.NANOS);
+            }
+
+            @Override
+            public MetricsFormatter metricsFormatter() {
+                return MetricsFormatter.create(TimeFormatter.NANOS);
+            }
+
+            @Override
+            public LatencyFormatter latencyFormatter() {
+                return LatencyFormatter.create(TimeFormatter.NANOS);
+            }
+
+            @Override
+            public HistogramFormatter histogramFormatter() {
+                return new HistogramFormatter() {
                     @Override
-                    public Object metricValue(final long line, final long entryId, final MetricValue value) {
-                        if (value.metric().type() == Type.TIME) {
-                            return instantOfEpochNanos(value.value()).atOffset(ZoneOffset.UTC).toLocalTime();
-                        }
-                        return value.value();
+                    public long intervalValue(final long line, final long entryId, final MetricsLogEntry entry) {
+                        return 100_000_000;
+                    }
+
+                    @Override
+                    public TimeFormatter timeFormatter() {
+                        return TimeFormatter.NANOS;
                     }
                 };
-                @Override
-                public Object time(final long line, final long entryId, final MetricsLogEntry entry) {
-                    return instantOfEpochNanos(entry.time());
-                }
-
-                @Override
-                public ValueFormatter metricValueFormatter(final long line, final long entryId, final MetricsLogEntry entry, final int index) {
-                    return VALUE_FORMATTER;
-                }
-            }));
-        } else if (latencies) {
-            new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), metrics(new LatencyFormatter() {
-                final ValueFormatter VALUE_FORMATTER = new ValueFormatter() {
-                    @Override
-                    public Object metricValue(final long line, final long entryId, final MetricValue value) {
-                        if (value.metric().type() == Type.LATENCY) {
-                            return value.value() + "ns";
-                        }
-                        return value.value();
-                    }
-                };
-                @Override
-                public Object time(final long line, final long entryId, final MetricsLogEntry entry) {
-                    return instantOfEpochNanos(entry.time());
-                }
-                @Override
-                public ValueFormatter metricValueFormatter(final long line, final long entryId, final MetricsLogEntry entry, final int index) {
-                    return VALUE_FORMATTER;
-                }
-            }));
-        } else if (histograms) {
-            new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), latencyHistogram(new HistogramFormatter() {
-                @Override
-                public Object time(final long line, final long entryId, final MetricsLogEntry entry) {
-                    return instantOfEpochNanos(entry.time());
-                }
-
-                @Override
-                public long printInterval(long line, long entryId, MetricsLogEntry entry) {
-                    return 100_000_000;//every 100 millis
-                }
-
-                @Override
-                public HistogramValuesFormatter histogramValuesFormatter(final long line, final long entryId, final MetricsLogEntry entry, final int index) {
-                    final HistogramFormatter parentFormatter = this;
-                    final BucketValueFormatter bucketFormatter = new BucketValueFormatter() {
-                        @Override
-                        public Object bucketValue(final long line, final long entryId, final BucketValue value) {
-                            return value.bucketValue() + "ns";
-                        }
-                    };
-                    return new HistogramValuesFormatter() {
-                        @Override
-                        public HistogramFormatter parentFormatter() {
-                            return parentFormatter;
-                        }
-
-                        @Override
-                        public BucketValueFormatter bucketValueFormatter(final long line, final long entryId, final HistogramValues histogram, final int index) {
-                            return bucketFormatter;
-                        }
-                    };
-                }
-            }));
-        } else {
-            new ChronicleLogPrinter().print(queue, new FlyweightDataFrame(), frame(new DataFrameFormatter() {
-                @Override
-                public Object time(final long line, final long entryId, final DataFrame frame) {
-                    return instantOfEpochNanos(frame.header().time());
-                }
-            }));
-        }
+            }
+        }, args);
     }
 
-    private static Instant instantOfEpochNanos(final long epochNanos) {
-        final long s = NANOSECONDS.toSeconds(epochNanos);
-        final long n = epochNanos - SECONDS.toNanos(s);
-        return Instant.ofEpochSecond(s, n);
-    }
 }

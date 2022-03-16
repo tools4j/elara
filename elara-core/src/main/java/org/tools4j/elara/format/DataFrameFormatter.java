@@ -30,8 +30,7 @@ import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.Header;
 
-import java.time.Instant;
-
+import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.format.Hex.hex;
 
 /**
@@ -40,6 +39,16 @@ import static org.tools4j.elara.format.Hex.hex;
 public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
 
     DataFrameFormatter DEFAULT = new DataFrameFormatter() {};
+
+    static DataFrameFormatter create(final TimeFormatter timeFormatter) {
+        requireNonNull(timeFormatter);
+        return new DataFrameFormatter() {
+            @Override
+            public TimeFormatter timeFormatter() {
+                return timeFormatter;
+            }
+        };
+    }
 
     /** Placeholder in format string for data frame itself */
     String FRAME = "{frame}";
@@ -91,7 +100,7 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
         return type;
     }
     default Object sequence(long line, long entryId, DataFrame frame) {return frame.header().sequence();}
-    default Object time(long line, long entryId, DataFrame frame) {return Instant.ofEpochMilli(frame.header().time());}
+    default Object time(long line, long entryId, DataFrame frame) {return timeFormatter().formatDateTime(frame.header().time());}
     default Object version(long line,long entryId,  DataFrame frame) {return frame.header().version();}
     default Object flags(long line,long entryId,  DataFrame frame) {return Flags.toString(frame.header().flags());}
     default Object index(long line, long entryId, DataFrame frame) {return frame.header().index();}
@@ -120,6 +129,10 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
             case PAYLOAD: return payload(entryId, entryId, frame);
             default: return placeholder;
         }
+    }
+
+    default TimeFormatter timeFormatter() {
+        return TimeFormatter.DEFAULT;
     }
 
 }

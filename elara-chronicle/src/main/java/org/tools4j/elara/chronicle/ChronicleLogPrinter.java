@@ -27,6 +27,7 @@ import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.wire.WireType;
 import org.tools4j.elara.flyweight.Flyweight;
 import org.tools4j.elara.flyweight.FlyweightDataFrame;
+import org.tools4j.elara.format.DefaultMessagePrinters;
 import org.tools4j.elara.format.MessagePrinter;
 import org.tools4j.elara.format.MessagePrinters;
 import org.tools4j.elara.log.MessageLogPrinter;
@@ -111,6 +112,10 @@ public class ChronicleLogPrinter implements AutoCloseable {
     }
 
     public static void main(final String... args) {
+        run(new DefaultMessagePrinters(), args);
+    }
+
+    public static void run(final MessagePrinters messagePrinters, final String... args) {
         final boolean metrics = args.length == 2 && ("-m".equals(args[0]) || "--metrics".equals(args[0]));
         final boolean latencies = args.length == 2 && ("-l".equals(args[0]) || "--latencies".equals(args[0]));
         final boolean histograms = args.length == 2 && ("-h".equals(args[0]) || "--histograms".equals(args[0]));
@@ -125,13 +130,13 @@ public class ChronicleLogPrinter implements AutoCloseable {
                 .readOnly(true)
                 .build();
         if (metrics) {
-            new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), MessagePrinters.METRICS);
+            new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), messagePrinters.metrics());
         } else if (latencies) {
-            new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), MessagePrinters.LATENCIES);
+            new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), messagePrinters.metricsWithLatencies());
         } else if (histograms) {
-            new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), MessagePrinters.HISTOGRAMS);
+            new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), messagePrinters.metricsWithLatencyHistogram());
         } else {
-            new ChronicleLogPrinter().print(queue, new FlyweightDataFrame(), MessagePrinters.FRAME);
+            new ChronicleLogPrinter().print(queue, new FlyweightDataFrame(), messagePrinters.frame());
         }
     }
 }

@@ -23,19 +23,21 @@
  */
 package org.tools4j.elara.format;
 
-import org.tools4j.elara.format.HistogramFormatter.ReferenceEntry;
+import org.tools4j.elara.format.HistogramFormatter.Progress;
 import org.tools4j.elara.plugin.metrics.MetricsLogEntry;
 
-final class DefaultReferenceEntry implements ReferenceEntry {
+final class DefaultProgress implements Progress {
 
     private final long line;
     private final long entryId;
     private final long time;
+    private final long repetition;
 
-    DefaultReferenceEntry(final long line, final long entryId, final MetricsLogEntry entry) {
+    DefaultProgress(final long line, final long entryId, final MetricsLogEntry entry, final long repetition) {
         this.line = line;
         this.entryId = entryId;
         this.time = entry.time();
+        this.repetition = repetition;
     }
 
     @Override
@@ -54,7 +56,12 @@ final class DefaultReferenceEntry implements ReferenceEntry {
     }
 
     @Override
+    public long repetition() {
+        return repetition;
+    }
+
+    @Override
     public String toString() {
-        return "ReferenceEntry{line=" + line + ", entryId=" + entryId + ", time=" + time + "}";
+        return "Progress{line=" + line + ", entryId=" + entryId + ", time=" + time + ", repetition=" + repetition + "}";
     }
 }

@@ -34,14 +34,16 @@ import static java.util.Objects.requireNonNull;
 final class DefaultHistogramValues implements HistogramValues {
     private final MetricsLogEntry entry;
     private final Metric metric;
+    private final TimeFormatter timeFormatter;
 
     private long[] values;
     private int count;
     private boolean sorted = true;
 
-    DefaultHistogramValues(final MetricsLogEntry entry, final Metric metric) {
+    DefaultHistogramValues(final MetricsLogEntry entry, final Metric metric, final TimeFormatter timeFormatter) {
         this.entry = requireNonNull(entry);
         this.metric = requireNonNull(metric);
+        this.timeFormatter = requireNonNull(timeFormatter);
     }
 
     @Override
@@ -55,6 +57,11 @@ final class DefaultHistogramValues implements HistogramValues {
     }
 
     @Override
+    public TimeFormatter timeFormatter() {
+        return timeFormatter;
+    }
+
+    @Override
     public void record(final long value) {
         if (values == null) {
             values = new long[1024];
@@ -63,7 +70,7 @@ final class DefaultHistogramValues implements HistogramValues {
             values = Arrays.copyOf(values, length(2 * count));
         }
         values[count] = value;
-        sorted = count == 0 || values[count - 1] <= value;
+        sorted = count == 0 || (sorted && values[count - 1] <= value);
         count++;
     }
 
@@ -101,11 +108,8 @@ final class DefaultHistogramValues implements HistogramValues {
         // Truncate to 0..100%, and remove 1 ulp to avoid roundoff overruns into next bucket when we
         // subsequently round up to the nearest integer:
         final double requestedPercentile =
-                Math.min(Math.max(Math.nextAfter(percentile, Double.NEGATIVE_INFINITY), 0.0D), 100.0D);
-        // derive the count at the requested percentile. We round up to nearest integer to ensure that the
-        // largest value that the requested percentile of overall recorded values is <= is actually included.
-        final double fpCountAtPercentile = (requestedPercentile * count) / 100.0D;
-        final int countAtPercentile = (int)(Math.ceil(fpCountAtPercentile)); // round up
+                Math.min(Math.max(Math.nextAfter(percentile, Double.NEGATIVE_INFINITY), 0.0D), 1.0);
+        final int countAtPercentile = (int)(Math.ceil(requestedPercentile * count)); // round up
         sort();
         return countAtPercentile == 0 ? 0 : values[countAtPercentile - 1];
     }

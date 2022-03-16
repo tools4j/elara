@@ -31,7 +31,7 @@ import java.io.PrintWriter;
 @FunctionalInterface
 public interface MessagePrinter<M> {
 
-    MessagePrinter<Object> DEFAULT = MessagePrinters.GENERAL;
+    MessagePrinter<Object> DEFAULT = parameterized("{line}: {message}{nl}", ValueFormatter.DEFAULT);
     MessagePrinter<Object> NOOP = (line, entryId, message, writer) -> {};
 
     void print(long line, long entryId, M message, PrintWriter writer);

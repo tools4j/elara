@@ -39,9 +39,21 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.ToLongFunction;
 
+import static java.util.Objects.requireNonNull;
+
 public interface LatencyFormatter extends MetricsFormatter {
 
     LatencyFormatter DEFAULT = new LatencyFormatter() {};
+
+    static LatencyFormatter create(final TimeFormatter timeFormatter) {
+        requireNonNull(timeFormatter);
+        return new LatencyFormatter() {
+            @Override
+            public TimeFormatter timeFormatter() {
+                return timeFormatter;
+            }
+        };
+    }
 
     ThreadLocal<long[]> commandTimes = ThreadLocal.withInitial(() -> new long[TimeMetric.count()]);
     ThreadLocal<long[]> eventTimes = ThreadLocal.withInitial(() -> new long[TimeMetric.count()]);
@@ -101,12 +113,11 @@ public interface LatencyFormatter extends MetricsFormatter {
         return twoSet;
     }
 
-    @Override
-    default Object metricsValues(long line, long entryId, MetricsLogEntry entry) {
+    default void cacheTimeValues(long line, long entryId, MetricsLogEntry entry) {
         if (entry.type() != Type.TIME) {
-            return MetricsFormatter.super.metricsValues(line, entryId, entry);
+            return;
         }
-        Consumer<long[]> cacher = times -> {
+        final Consumer<long[]> cacher = times -> {
             Arrays.fill(times, 0);
             final int count = entry.count();
             for (int i = 0; i < count; i++) {
@@ -125,6 +136,13 @@ public interface LatencyFormatter extends MetricsFormatter {
             default:
                 //nothing to cache
         }
+    }
+    @Override
+    default Object metricsValues(long line, long entryId, MetricsLogEntry entry) {
+        if (entry.type() != Type.TIME) {
+            return MetricsFormatter.super.metricsValues(line, entryId, entry);
+        }
+        cacheTimeValues(line, entryId, entry);
         final EnumSet<LatencyMetric> set = metricsSet(line, entryId, entry);
         final StringWriter sw = new StringWriter(set.size() * 16);
         final PrintWriter pw = new PrintWriter(sw);
