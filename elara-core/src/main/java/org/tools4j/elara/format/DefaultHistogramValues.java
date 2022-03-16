@@ -105,6 +105,12 @@ final class DefaultHistogramValues implements HistogramValues {
 
     @Override
     public long valueAtPercentile(final double percentile) {
+        if (percentile <= 0.0) {
+            return min();
+        }
+        if (percentile >= 1.0) {
+            return max();
+        }
         // Truncate to 0..100%, and remove 1 ulp to avoid roundoff overruns into next bucket when we
         // subsequently round up to the nearest integer:
         final double requestedPercentile =
