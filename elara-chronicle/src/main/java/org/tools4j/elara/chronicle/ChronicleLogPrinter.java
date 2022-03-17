@@ -27,7 +27,6 @@ import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.wire.WireType;
 import org.tools4j.elara.flyweight.Flyweight;
 import org.tools4j.elara.flyweight.FlyweightDataFrame;
-import org.tools4j.elara.format.DefaultMessagePrinters;
 import org.tools4j.elara.format.MessagePrinter;
 import org.tools4j.elara.format.MessagePrinters;
 import org.tools4j.elara.log.MessageLogPrinter;
@@ -38,9 +37,11 @@ import org.tools4j.nobark.run.ThreadLike;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class ChronicleLogPrinter implements AutoCloseable {
 
@@ -111,32 +112,116 @@ public class ChronicleLogPrinter implements AutoCloseable {
         return messageLogPrinter.printInBackground(new ChronicleLogPoller(queue), flyweight, filter, printer);
     }
 
-    public static void main(final String... args) {
-        run(new DefaultMessagePrinters(), args);
+    private static TimeUnit timeUnit(final int index, final String... args) {
+        if (index < args.length) {
+            switch (args[index]) {
+                case "ms":
+                    return MILLISECONDS;
+                case "us":
+                    return TimeUnit.MICROSECONDS;
+                case "ns":
+                    return TimeUnit.NANOSECONDS;
+            }
+        }
+        return null;
     }
 
-    public static void run(final MessagePrinters messagePrinters, final String... args) {
-        final boolean metrics = args.length == 2 && ("-m".equals(args[0]) || "--metrics".equals(args[0]));
-        final boolean latencies = args.length == 2 && ("-l".equals(args[0]) || "--latencies".equals(args[0]));
-        final boolean histograms = args.length == 2 && ("-h".equals(args[0]) || "--histograms".equals(args[0]));
-        if (args.length < 1 || args.length > 2 || (args.length == 2 && !metrics && !latencies && !histograms)) {
-            System.err.println("usage: " + ChronicleLogPrinter.class.getSimpleName() + "[-m|--metrics|-l|--latencies|-h|--histograms] <file>");
-            System.exit(1);
+    private static long interval(final int index, final String... args) {
+        try {
+            return Long.parseLong(args[index]);
+        } catch (final Exception e) {
+            return -1;
         }
-        final String fileName = metrics || latencies || histograms ? args[1] : args[0];
+    }
+
+    private static final int ERR_SYNTAX = 1;
+    private static final int ERR_TIME_UNIT = 2;
+    private static final int ERR_INTERVAL = 3;
+    private static final int ERR_EXTRA_ARGS = 4;
+
+    public static void main(final String... args) {
+        final int n = args.length;
+        TimeUnit timeUnit = null;
+        long interval = -1;
+        boolean metrics = false;
+        boolean latencies = false;
+        boolean histograms = false;
+        String file = null;
+        int index = 0;
+        do {
+            if (index >= n) {
+                printHelp();
+                System.exit(ERR_SYNTAX);
+            }
+            final String arg = args[index++];
+            switch (arg) {
+                case "-t":
+                case "--time":
+                    if (timeUnit != null || (timeUnit = timeUnit(index++, args)) == null) {
+                        printHelp();
+                        System.exit(ERR_TIME_UNIT);
+                    }
+                    break;
+                case "-i":
+                case "-interval":
+                    if (interval != -1 || (interval = interval(index++, args)) == -1) {
+                        printHelp();
+                        System.exit(ERR_INTERVAL);
+                    }
+                    break;
+                case "-m":
+                case "--metrics":
+                    metrics = true;
+                    break;
+                case "-l":
+                case "--latencies":
+                    latencies = true;
+                    break;
+                case "-h":
+                case "--histograms":
+                    histograms = true;
+                    break;
+                default:
+                    if (index < n) {
+                        printHelp();
+                        System.exit(ERR_EXTRA_ARGS);
+                    }
+                    file = arg;
+                    break;
+            }
+        } while (file == null);
+        if (metrics && latencies || metrics && histograms || latencies && histograms) {
+            printHelp();
+            System.exit(3);
+        }
         final ChronicleQueue queue = ChronicleQueue.singleBuilder()
-                .path(fileName)
+                .path(file)
                 .wireType(WireType.BINARY_LIGHT)
                 .readOnly(true)
                 .build();
+        final ChronicleLogPrinter logPrinter = new ChronicleLogPrinter();
+        final MessagePrinters msgPrinters = timeUnit == null ? MessagePrinters.defaults() :
+                MessagePrinters.defaults(timeUnit, interval >= 0 ? interval : timeUnit.convert(1000, MILLISECONDS));
         if (metrics) {
-            new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), messagePrinters.metrics());
+            logPrinter.print(queue, new FlyweightMetricsLogEntry(), msgPrinters.metrics());
         } else if (latencies) {
-            new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), messagePrinters.metricsWithLatencies());
+            logPrinter.print(queue, new FlyweightMetricsLogEntry(), msgPrinters.metricsWithLatencies());
         } else if (histograms) {
-            new ChronicleLogPrinter().print(queue, new FlyweightMetricsLogEntry(), messagePrinters.metricsWithLatencyHistogram());
+            logPrinter.print(queue, new FlyweightMetricsLogEntry(), msgPrinters.metricsWithLatencyHistogram());
         } else {
-            new ChronicleLogPrinter().print(queue, new FlyweightDataFrame(), messagePrinters.frame());
+            logPrinter.print(queue, new FlyweightDataFrame(), msgPrinters.frame());
         }
+    }
+
+    private static void printHelp() {
+        System.err.println("usage: " + ChronicleLogPrinter.class.getSimpleName() + "[-t|--time <unit>] [-i|--interval <duration>] [-m|--metrics|-l|--latencies|-h|--histograms] <file>");
+        System.err.println("    -t|--time <unit>           Defines the unit of the time source that was used when running Elara.");
+        System.err.println("                               Valid <unit> values are 'ms', 'us', 'ns' for milliseconds, microseconds and nanoseconds, respectively");
+        System.err.println("    -i|--interval <duration>   Defines the interval for in the histogram option (-h), in which a new histogram is started.");
+        System.err.println("                               The <duration> uses the same unit as was used when running Elara.");
+        System.err.println("    -m|--metrics               <file> refers to a time and/or frequency metric file");
+        System.err.println("    -l|--latencies             <file> refers to a time and/or frequency metric file, with times printed as latencies");
+        System.err.println("    -h|--histograms            <file> refers to a time and/or frequency metric file, with times summarised as latency histograms");
+        System.exit(1);
     }
 }

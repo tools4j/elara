@@ -28,7 +28,8 @@ import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.plugin.metrics.MetricsLogEntry;
 import org.tools4j.elara.plugin.metrics.MetricsLogEntry.Type;
 
-import static java.util.Objects.requireNonNull;
+import java.util.concurrent.TimeUnit;
+
 import static org.tools4j.elara.format.MessagePrinter.composite;
 
 public interface MessagePrinters {
@@ -37,84 +38,20 @@ public interface MessagePrinters {
         return new DefaultMessagePrinters();
     }
 
-    static MessagePrinters defaults(final TimeFormatter timeFormatter) {
-        return defaults().withTimeFormatter(timeFormatter);
+    static MessagePrinters defaults(final TimeUnit timeUnit, final long interval) {
+        switch (timeUnit) {
+            case MILLISECONDS:
+                return defaults(TimeFormatter.MILLIS, interval);
+            case MICROSECONDS:
+                return defaults(TimeFormatter.MICROS, interval);
+            case NANOSECONDS:
+                return defaults(TimeFormatter.NANOS, interval);
+        }
+        throw new IllegalArgumentException("Unsupported time unit: " + timeUnit);
     }
 
-    default DataFrameFormatter dataFrameFormatter() {
-        return DataFrameFormatter.DEFAULT;
-    }
-
-    default MetricsFormatter metricsFormatter() {
-        return MetricsFormatter.DEFAULT;
-    }
-
-    default LatencyFormatter latencyFormatter() {
-        return LatencyFormatter.DEFAULT;
-    }
-
-    default HistogramFormatter histogramFormatter() {
-        return HistogramFormatter.DEFAULT;
-    }
-
-    default MessagePrinters withTimeFormatter(final TimeFormatter timeFormatter) {
-        requireNonNull(timeFormatter);
-        return new MessagePrinters() {
-            final DataFrameFormatter DATA_FRAME_FORMATTER = DataFrameFormatter.create(timeFormatter);
-            final MetricsFormatter METRICS_FORMATTER = MetricsFormatter.create(timeFormatter);
-            final LatencyFormatter LATENCY_FORMATTER = LatencyFormatter.create(timeFormatter);
-            final HistogramFormatter HISTOGRAM_FORMATTER = HistogramFormatter.create(timeFormatter);
-
-            @Override
-            public DataFrameFormatter dataFrameFormatter() {
-                return DATA_FRAME_FORMATTER;
-            }
-
-            @Override
-            public MetricsFormatter metricsFormatter() {
-                return METRICS_FORMATTER;
-            }
-
-            @Override
-            public LatencyFormatter latencyFormatter() {
-                return LATENCY_FORMATTER;
-            }
-
-            @Override
-            public HistogramFormatter histogramFormatter() {
-                return HISTOGRAM_FORMATTER;
-            }
-
-            @Override
-            public MessagePrinter<DataFrame> command() {
-                return MessagePrinters.this.command();
-            }
-
-            @Override
-            public MessagePrinter<DataFrame> event() {
-                return MessagePrinters.this.event();
-            }
-
-            @Override
-            public MessagePrinter<MetricsLogEntry> timeMetrics() {
-                return MessagePrinters.this.timeMetrics();
-            }
-
-            @Override
-            public MessagePrinter<MetricsLogEntry> frequencyMetrics() {
-                return MessagePrinters.this.frequencyMetrics();
-            }
-
-            @Override
-            public MessagePrinter<MetricsLogEntry> latencyMetrics() {
-                return MessagePrinters.this.latencyMetrics();
-            }
-
-            @Override
-            public MessagePrinter<MetricsLogEntry> latencyHistogram() {
-                return MessagePrinters.this.latencyMetrics();
-            }
-        };
+    static MessagePrinters defaults(final TimeFormatter timeFormatter, final long interval) {
+        return new DefaultMessagePrinters(timeFormatter, interval);
     }
 
     default MessagePrinter<DataFrame> frame() {

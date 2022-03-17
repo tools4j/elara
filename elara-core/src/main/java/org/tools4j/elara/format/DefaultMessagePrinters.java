@@ -55,19 +55,42 @@ public class DefaultMessagePrinters implements MessagePrinters {
     public static final String HISTOGRAM_BUCKET_VALUE_0 = "{bucket-name}={bucket-value}";
     public static final String HISTOGRAM_BUCKET_VALUE_N = ", {bucket-name}={bucket-value}";
 
+    private final DataFrameFormatter dataFrameFormatter;
+    private final MetricsFormatter metricsFormatter;
+    private final LatencyFormatter latencyFormatter;
+    private final HistogramFormatter histogramFormatter;
+
+    public DefaultMessagePrinters() {
+        this(DataFrameFormatter.DEFAULT, MetricsFormatter.DEFAULT, LatencyFormatter.DEFAULT, HistogramFormatter.DEFAULT);
+    }
+
+    public DefaultMessagePrinters(final TimeFormatter timeFormatter, final long interval) {
+        this(DataFrameFormatter.create(timeFormatter), MetricsFormatter.create(timeFormatter),
+                LatencyFormatter.create(timeFormatter), HistogramFormatter.create(timeFormatter, interval));
+    }
+
+    public DefaultMessagePrinters(final DataFrameFormatter dataFrameFormatter,
+                                  final MetricsFormatter metricsFormatter,
+                                  final LatencyFormatter latencyFormatter,
+                                  final HistogramFormatter histogramFormatter) {
+        this.dataFrameFormatter = requireNonNull(dataFrameFormatter);
+        this.metricsFormatter = requireNonNull(metricsFormatter);
+        this.latencyFormatter = requireNonNull(latencyFormatter);
+        this.histogramFormatter = requireNonNull(histogramFormatter);
+    }
+
     @Override
     public MessagePrinter<DataFrame> command() {
-        final DataFrameFormatter formatter = dataFrameFormatter();
         return composite(
                 (line, entryId, frame) -> line == 0 ? 0 : 1,
-                parameterized(VERSION_LINE + COMMAND_FORMAT, formatter),
-                parameterized(COMMAND_FORMAT, formatter)
+                parameterized(VERSION_LINE + COMMAND_FORMAT, dataFrameFormatter),
+                parameterized(COMMAND_FORMAT, dataFrameFormatter)
         );
     }
 
     @Override
     public MessagePrinter<DataFrame> event() {
-        final ValueFormatter<DataFrame> formatter0 = dataFrameFormatter();
+        final ValueFormatter<DataFrame> formatter0 = dataFrameFormatter;
         final ValueFormatter<DataFrame> formatterN = Spacer.spacer(formatter0, '.', SOURCE, SEQUENCE);
         return composite((line, entryId, frame) -> {
                     if (line == 0) return 0;
@@ -82,11 +105,10 @@ public class DefaultMessagePrinters implements MessagePrinters {
 
     @Override
     public MessagePrinter<MetricsLogEntry> frequencyMetrics() {
-        final MetricsFormatter formatter = metricsFormatter();
         return composite(
                 (line, entryId, entry) -> line == 0 ? 0 : 1,
-                parameterized(METRICS_VERSION_LINE + METRICS_FREQUENCY_FORMAT, formatter),
-                parameterized(METRICS_FREQUENCY_FORMAT, formatter)
+                parameterized(METRICS_VERSION_LINE + METRICS_FREQUENCY_FORMAT, metricsFormatter),
+                parameterized(METRICS_FREQUENCY_FORMAT, metricsFormatter)
         );
     }
 
@@ -119,31 +141,30 @@ public class DefaultMessagePrinters implements MessagePrinters {
 
     @Override
     public MessagePrinter<MetricsLogEntry> timeMetrics() {
-        return timeMetrics(metricsFormatter());
+        return timeMetrics(metricsFormatter);
     }
 
     @Override
     public MessagePrinter<MetricsLogEntry> latencyMetrics() {
-        return timeMetrics(latencyFormatter());
+        return timeMetrics(latencyFormatter);
     }
 
     @Override
     public MessagePrinter<MetricsLogEntry> latencyHistogram() {
-        final HistogramFormatter formatter = histogramFormatter();
         return composite(
                 (line, entryId, entry) -> {
                     if (line == 0) {
-                        formatter.printStats.remove();
-                        formatter.latencyHistograms.remove();
+                        histogramFormatter.printStats.remove();
+                        histogramFormatter.latencyHistograms.remove();
                     }
-                    final boolean print = formatter.print(line, entryId, entry);
-                    formatter.capture(line, entryId, entry);
+                    final boolean print = histogramFormatter.print(line, entryId, entry);
+                    histogramFormatter.capture(line, entryId, entry);
                     return line == 0 ? (print ? 1 : 0) : (print ? 3 : 2);
                 },
-                parameterized(METRICS_VERSION_LINE, formatter),
-                parameterized(METRICS_VERSION_LINE + HISTOGRAM_FORMAT, formatter),
+                parameterized(METRICS_VERSION_LINE, histogramFormatter),
+                parameterized(METRICS_VERSION_LINE + HISTOGRAM_FORMAT, histogramFormatter),
                 NOOP,
-                parameterized(HISTOGRAM_FORMAT, formatter)
+                parameterized(HISTOGRAM_FORMAT, histogramFormatter)
         );
     }
 

@@ -41,12 +41,17 @@ public interface HistogramFormatter extends LatencyFormatter {
 
     HistogramFormatter DEFAULT = new HistogramFormatter() {};
 
-    static HistogramFormatter create(final TimeFormatter timeFormatter) {
+    static HistogramFormatter create(final TimeFormatter timeFormatter, final long interval) {
         requireNonNull(timeFormatter);
         return new HistogramFormatter() {
             @Override
             public TimeFormatter timeFormatter() {
                 return timeFormatter;
+            }
+
+            @Override
+            public long intervalValue(final long line, final long entryId, final MetricsLogEntry entry) {
+                return interval;
             }
         };
     }
