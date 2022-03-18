@@ -91,3 +91,6 @@ api "org.tools4j:elara-core:1.7'
 ### Download
 You can download binaries, sources and javadoc from maven central:
 * [elara download](https://search.maven.org/search?q=a:elara-*)
+
+### Credits
+* For best performance elara needs to be allocation free.  We achieve this by profiling elara with [JProfiler](https://www.ej-technologies.com/products/jprofiler/overview.html)
