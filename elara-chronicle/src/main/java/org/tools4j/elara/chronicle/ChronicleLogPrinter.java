@@ -201,7 +201,7 @@ public class ChronicleLogPrinter implements AutoCloseable {
                 .build();
         final ChronicleLogPrinter logPrinter = new ChronicleLogPrinter();
         final MessagePrinters msgPrinters = timeUnit == null ? MessagePrinters.defaults() :
-                MessagePrinters.defaults(timeUnit, interval >= 0 ? interval : timeUnit.convert(1000, MILLISECONDS));
+                MessagePrinters.defaults(timeUnit, timeUnit.convert(interval >= 0 ? interval : 1000, MILLISECONDS));
         if (metrics) {
             logPrinter.print(queue, new FlyweightMetricsLogEntry(), msgPrinters.metrics());
         } else if (latencies) {
@@ -217,9 +217,10 @@ public class ChronicleLogPrinter implements AutoCloseable {
         System.err.println("usage: " + ChronicleLogPrinter.class.getSimpleName() + "[-t|--time <unit>] [-i|--interval <duration>] [-m|--metrics|-l|--latencies|-h|--histograms] <file>");
         System.err.println("    -t|--time <unit>           Defines the unit of the time source that was used when running Elara.");
         System.err.println("                               Valid <unit> values are 'ms', 'us', 'ns' for milliseconds, microseconds and nanoseconds, respectively");
-        System.err.println("    -i|--interval <duration>   Defines the interval for in the histogram option (-h), in which a new histogram is started.");
-        System.err.println("                               The <duration> uses the same unit as was used when running Elara.");
-        System.err.println("    -m|--metrics               <file> refers to a time and/or frequency metric file");
+        System.err.println("    -i|--interval <duration>   Specifies the interval in milliseconds after which a histogram is printed and reset.");
+        System.err.println("                               Default value is 1000 (1s). Valid only in combination with the histogram option (-h) and ignored otherwise.");
+        System.err.println("    -m|--metrics\n" +
+                "}\n               <file> refers to a time and/or frequency metric file");
         System.err.println("    -l|--latencies             <file> refers to a time and/or frequency metric file, with times printed as latencies");
         System.err.println("    -h|--histograms            <file> refers to a time and/or frequency metric file, with times summarised as latency histograms");
         System.exit(1);

@@ -185,7 +185,7 @@ public class HashApplication {
     }
 
     public static ElaraRunner chronicleQueueWithMetrics(final ModifiableState state, final AtomicLong input) {
-        final TimeSource pseudoNanoClock = new PseudoNanoClock();
+        final TimeSource pseudoNanoClock = new PseudoMicroClock();
         final ChronicleQueue cq = ChronicleQueue.singleBuilder()
                 .path("build/chronicle/hash-metrics/cmd.cq4")
                 .wireType(WireType.BINARY_LIGHT)
@@ -231,7 +231,7 @@ public class HashApplication {
     }
 
     public static ElaraRunner chronicleQueueWithFreqMetrics(final ModifiableState state, final AtomicLong input) {
-        final TimeSource pseudoNanoClock = new PseudoNanoClock();
+        final TimeSource pseudoNanoClock = new PseudoMicroClock();
         final ChronicleQueue cq = ChronicleQueue.singleBuilder()
                 .path("build/chronicle/hash-metrics/cmd.cq4")
                 .wireType(WireType.BINARY_LIGHT)

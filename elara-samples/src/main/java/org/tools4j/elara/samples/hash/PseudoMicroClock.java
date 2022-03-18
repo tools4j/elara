@@ -25,22 +25,13 @@ package org.tools4j.elara.samples.hash;
 
 import org.tools4j.elara.time.TimeSource;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
-/**
- * Pseudo nano-precision clock used for tests --- not really accurate at all but gives the impression of high precision
- * timestamps.
- */
-public class PseudoNanoClock implements TimeSource {
-
-    private long offsetNanos;
-
-    public PseudoNanoClock() {
-        offsetNanos = MILLISECONDS.toNanos(System.currentTimeMillis()) - System.nanoTime();
-    }
+public class PseudoMicroClock implements TimeSource {
+    private final PseudoNanoClock nanoClock = new PseudoNanoClock();
 
     @Override
     public long currentTime() {
-        return offsetNanos + System.nanoTime();
+        return NANOSECONDS.toMicros(nanoClock.currentTime());
     }
 }

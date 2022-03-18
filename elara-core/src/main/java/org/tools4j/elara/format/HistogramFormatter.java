@@ -78,11 +78,15 @@ public interface HistogramFormatter extends LatencyFormatter {
         void reset();
     }
 
+    interface BucketDescriptor {
+        String displayName();
+        double percentile();//use 0.0 for min and 1.0 for max
+    }
+
     interface BucketValue {
         HistogramValues histogram();
-        String bucketName();
+        BucketDescriptor bucketDescriptor();
         int bucketIndex();
-        double percentile();
         long bucketValue();
     }
 
@@ -132,7 +136,7 @@ public interface HistogramFormatter extends LatencyFormatter {
         for (final LatencyMetric metric : set) {
             final HistogramValues histogram = histogram(line, entryId, entry, metric, index);
             final MetricValue value = metricValue(line, entryId, entry, metric, index);
-            histogram.record(value.value());
+            histogram.record(Math.max(0, value.value()));
             index++;
         }
     }
@@ -177,67 +181,41 @@ public interface HistogramFormatter extends LatencyFormatter {
         /** Placeholder in metrics-values string for the number of values in the histogram */
         String VALUE_COUNT = "{value-count}";
 
-        default int percentileCount(long line, long entryId, HistogramValues value) {
-            return 7;
+        default BucketDescriptor[] bucketDescriptors(long line, long entryId, HistogramValues histogram) {
+            return DefaultHistogramBucket.values();
         }
 
-        default double percentileValue(long line, long entryId, HistogramValues value, int index) {
-            switch (index) {
-                case 0: return 0;
-                case 1: return 0.5;
-                case 2: return 0.9;
-                case 3: return 0.99;
-                case 4: return 0.999;
-                case 5: return 0.9999;
-                case 6: return 1.0;
-                default: return Double.NaN;
-            }
-        }
-
-        default String percentileName(long line, long entryId, HistogramValues value, int index) {
-            switch (index) {
-                case 0: return "min";
-                case 1: return "p50";
-                case 2: return "p90";
-                case 3: return "p99";
-                case 4: return "p99.9";
-                case 5: return "p99.99";
-                case 6: return "max";
-                default: return "p(" + index + ")";
-            }
-        }
-
-        default Object line(long line, long entryId, HistogramValues value) {return line;}
-        default Object entryId(long line, long entryId, HistogramValues value) {return entryId;}
-        default Object metricName(long line, long entryId, HistogramValues value) {return value.metric().displayName();}
-        default Object bucketValues(long line, long entryId, HistogramValues value) {
-            final int n = percentileCount(line, entryId, value);
-            final StringWriter sw = new StringWriter(n * 16);
+        default Object line(long line, long entryId, HistogramValues histogram) {return line;}
+        default Object entryId(long line, long entryId, HistogramValues histogram) {return entryId;}
+        default Object metricName(long line, long entryId, HistogramValues histogram) {return histogram.metric().displayName();}
+        default Object bucketValues(long line, long entryId, HistogramValues histogram) {
+            final BucketDescriptor[] bucketDescriptors = bucketDescriptors(line, entryId, histogram);
+            final StringWriter sw = new StringWriter(bucketDescriptors.length * 16);
             final PrintWriter pw = new PrintWriter(sw);
-            for (int i = 0; i < n; i++) {
-                final double perc = percentileValue(line, entryId, value, i);
-                final BucketValue bucketValue = new DefaultBucketValue(value,
-                        percentileName(line, entryId, value, i), i, perc, value.valueAtPercentile(perc));
-                final MessagePrinter<BucketValue> printer = bucketValuePrinter(line, entryId, value, i);
+            for (int i = 0; i < bucketDescriptors.length; i++) {
+                final BucketDescriptor bucketDesc = bucketDescriptors[i];
+                final BucketValue bucketValue = new DefaultBucketValue(histogram, bucketDesc, i,
+                        histogram.valueAtPercentile(bucketDesc.percentile()));
+                final MessagePrinter<BucketValue> printer = bucketValuePrinter(line, entryId, histogram, i);
                 printer.print(line, entryId, bucketValue, pw);
             }
-            value.reset();
+            histogram.reset();
             pw.flush();
             return sw.toString();
         }
 
-        default Object valueCount(long line, long entryId, HistogramValues value) {return value.count();}
+        default Object valueCount(long line, long entryId, HistogramValues histogram) {return histogram.count();}
 
         @Override
-        default Object value(String placeholder, long line, long entryId, HistogramValues value) {
+        default Object value(String placeholder, long line, long entryId, HistogramValues histogram) {
             switch (placeholder) {
                 case LINE_SEPARATOR: return System.lineSeparator();
-                case MESSAGE: return value;
-                case LINE: return line(line, entryId, value);
-                case ENTRY_ID: return entryId(line, entryId, value);
-                case METRIC_NAME: return metricName(line, entryId, value);
-                case BUCKET_VALUES: return bucketValues(line, entryId, value);
-                case VALUE_COUNT: return valueCount(line, entryId, value);
+                case MESSAGE: return histogram;
+                case LINE: return line(line, entryId, histogram);
+                case ENTRY_ID: return entryId(line, entryId, histogram);
+                case METRIC_NAME: return metricName(line, entryId, histogram);
+                case BUCKET_VALUES: return bucketValues(line, entryId, histogram);
+                case VALUE_COUNT: return valueCount(line, entryId, histogram);
                 default: return placeholder;
             }
         }
@@ -274,7 +252,7 @@ public interface HistogramFormatter extends LatencyFormatter {
         default Object line(long line, long entryId, BucketValue value) {return line;}
         default Object entryId(long line, long entryId, BucketValue value) {return entryId;}
         default Object bucketName(long line, long entryId, BucketValue value) {
-            return value.bucketName();
+            return value.bucketDescriptor().displayName();
         }
         default Object bucketIndex(long line, long entryId, BucketValue value) {
             return value.bucketIndex();

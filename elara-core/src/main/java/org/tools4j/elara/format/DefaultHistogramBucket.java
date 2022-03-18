@@ -24,46 +24,36 @@
 package org.tools4j.elara.format;
 
 import org.tools4j.elara.format.HistogramFormatter.BucketDescriptor;
-import org.tools4j.elara.format.HistogramFormatter.BucketValue;
-import org.tools4j.elara.format.HistogramFormatter.HistogramValues;
 
-import static java.util.Objects.requireNonNull;
+public enum DefaultHistogramBucket implements BucketDescriptor {
+    min(0.0),
+    p50(0.5),
+    p90(0.9),
+    p99(0.99),
+    p99_9(0.999),
+    p99_99(0.9999),
+    p99_999(0.99999),
+    max(1.0);
+    private final String displayName;
+    private final double percentile;
 
-final class DefaultBucketValue implements BucketValue {
-    private final HistogramValues histogram;
-    private final BucketDescriptor bucketDescriptor;
-    private final int index;
-    private final long value;
-
-    DefaultBucketValue(final HistogramValues histogram, final BucketDescriptor bucketDescriptor, final int index, final long value) {
-        this.histogram = requireNonNull(histogram);
-        this.bucketDescriptor = requireNonNull(bucketDescriptor);
-        this.index = index;
-        this.value = value;
+    DefaultHistogramBucket(final double percentile) {
+        this.displayName = name().replace('_', '.');
+        this.percentile = percentile;
     }
 
     @Override
-    public HistogramValues histogram() {
-        return histogram;
+    public String displayName() {
+        return displayName;
     }
 
     @Override
-    public BucketDescriptor bucketDescriptor() {
-        return bucketDescriptor;
-    }
-
-    @Override
-    public int bucketIndex() {
-        return index;
-    }
-
-    @Override
-    public long bucketValue() {
-        return value;
+    public double percentile() {
+        return percentile;
     }
 
     @Override
     public String toString() {
-        return "BucketValue{metric=" + histogram.metric().displayName() + ", desc=" + bucketDescriptor + ", index=" + index + ", value=" + value + "}";
+        return displayName;
     }
 }
