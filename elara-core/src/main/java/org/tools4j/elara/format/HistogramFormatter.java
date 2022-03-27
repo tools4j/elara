@@ -56,26 +56,20 @@ public interface HistogramFormatter extends LatencyFormatter {
         };
     }
 
-    ThreadLocal<Progress> printStats = new ThreadLocal<>();
     ThreadLocal<HistogramValues[]> latencyHistograms = ThreadLocal.withInitial(() -> new HistogramValues[LatencyMetric.count()]);
-
-    interface Progress {
-        long line();
-        long entryId();
-        long time();
-        long repetition();
-    }
 
     interface HistogramValues {
         MetricsLogEntry entry();
         Metric metric();
         TimeFormatter timeFormatter();
+        long resetTime();
+        long resetCount();
         long count();
         long min();
         long max();
         long valueAtPercentile(double percentile);
         void record(long value);
-        void reset();
+        void reset(long time);
     }
 
     interface BucketDescriptor {
@@ -90,28 +84,37 @@ public interface HistogramFormatter extends LatencyFormatter {
         long bucketValue();
     }
 
+    enum CaptureResult {
+        NOOP,
+        CAPTURE,
+        PRINT
+    }
+    default CaptureResult capture(long line, long entryId, MetricsLogEntry entry) {
+        if (entry.type() != Type.TIME) {
+            return CaptureResult.NOOP;
+        }
+        cacheTimeValues(line, entryId, entry);
+        final EnumSet<LatencyMetric> set = metricsSet(line, entryId, entry);
+        final long intervalValue = intervalValue(line, entryId, entry);
+        boolean printAny = false;
+        int index = 0;
+        for (final LatencyMetric metric : set) {
+            final HistogramValues histogram = histogram(line, entryId, entry, metric, index);
+            final MetricValue value = metricValue(line, entryId, entry, metric, index);
+            histogram.record(Math.max(0, value.value()));
+            index++;
+            printAny = entry.time() - histogram.resetTime() >= intervalValue;
+        }
+        return printAny ? CaptureResult.PRINT : CaptureResult.CAPTURE;
+    }
+
     @Override
     default Object interval(long line, long entryId, MetricsLogEntry entry) {
         return timeFormatter().formatDuration(intervalValue(line, entryId, entry));
     }
 
-    @Override
-    default Object repetition(long line, long entryId, MetricsLogEntry entry) {
-        final Progress stats = printStats.get();
-        return String.valueOf(stats == null ? 0 : stats.repetition());
-    }
-
     default long intervalValue(long line, long entryId, MetricsLogEntry entry) {
         return 1000;//every second if in millis
-    }
-
-    default boolean print(long line, long entryId, MetricsLogEntry entry) {
-        final Progress stats = printStats.get();
-        if (stats != null) {
-            return entry.time() - stats.time() >= intervalValue(line, entryId, entry);
-        }
-        printStats.set(new DefaultProgress(line, entryId, entry, 0));
-        return false;
     }
 
     @Override
@@ -124,21 +127,6 @@ public interface HistogramFormatter extends LatencyFormatter {
                 return "FREQ";
         }
         return type;
-    }
-
-    default void capture(long line, long entryId, MetricsLogEntry entry) {
-        if (entry.type() != Type.TIME) {
-            return;
-        }
-        cacheTimeValues(line, entryId, entry);
-        final EnumSet<LatencyMetric> set = metricsSet(line, entryId, entry);
-        int index = 0;
-        for (final LatencyMetric metric : set) {
-            final HistogramValues histogram = histogram(line, entryId, entry, metric, index);
-            final MetricValue value = metricValue(line, entryId, entry, metric, index);
-            histogram.record(Math.max(0, value.value()));
-            index++;
-        }
     }
 
     @Override
@@ -157,8 +145,6 @@ public interface HistogramFormatter extends LatencyFormatter {
             index++;
         }
         pw.flush();
-        final Progress stats = printStats.get();
-        printStats.set(new DefaultProgress(line, entryId, entry, stats == null ? 0 : stats.repetition() + 1));
         return sw.toString();
     }
 
@@ -188,6 +174,7 @@ public interface HistogramFormatter extends LatencyFormatter {
         default Object line(long line, long entryId, HistogramValues histogram) {return line;}
         default Object entryId(long line, long entryId, HistogramValues histogram) {return entryId;}
         default Object metricName(long line, long entryId, HistogramValues histogram) {return histogram.metric().displayName();}
+        default Object repetition(long line, long entryId, HistogramValues histogram) {return histogram.resetCount();}
         default Object bucketValues(long line, long entryId, HistogramValues histogram) {
             final BucketDescriptor[] bucketDescriptors = bucketDescriptors(line, entryId, histogram);
             final StringWriter sw = new StringWriter(bucketDescriptors.length * 16);
@@ -199,7 +186,7 @@ public interface HistogramFormatter extends LatencyFormatter {
                 final MessagePrinter<BucketValue> printer = bucketValuePrinter(line, entryId, histogram, i);
                 printer.print(line, entryId, bucketValue, pw);
             }
-            histogram.reset();
+            histogram.reset(histogram.entry().time());
             pw.flush();
             return sw.toString();
         }
@@ -214,6 +201,7 @@ public interface HistogramFormatter extends LatencyFormatter {
                 case LINE: return line(line, entryId, histogram);
                 case ENTRY_ID: return entryId(line, entryId, histogram);
                 case METRIC_NAME: return metricName(line, entryId, histogram);
+                case REPETITION: return repetition(line, entryId, histogram);
                 case BUCKET_VALUES: return bucketValues(line, entryId, histogram);
                 case VALUE_COUNT: return valueCount(line, entryId, histogram);
                 default: return placeholder;

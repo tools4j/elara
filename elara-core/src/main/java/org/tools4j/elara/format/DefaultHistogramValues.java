@@ -82,6 +82,8 @@ final class DefaultHistogramValues implements HistogramValues {
     private final Metric metric;
     private final TimeFormatter timeFormatter;
 
+    private long resetTime;
+    private long resetCount;
     private long min;
     private long max;
     private int count;
@@ -91,6 +93,7 @@ final class DefaultHistogramValues implements HistogramValues {
         this.entry = requireNonNull(entry);
         this.metric = requireNonNull(metric);
         this.timeFormatter = requireNonNull(timeFormatter);
+        this.resetTime = entry.time();
     }
 
     @Override
@@ -170,11 +173,23 @@ final class DefaultHistogramValues implements HistogramValues {
     }
 
     @Override
-    public void reset() {
+    public void reset(final long time) {
         Arrays.fill(counts, 0);
         min = 0;
         max = 0;
         count = 0;
+        resetTime = time;
+        resetCount++;
+    }
+
+    @Override
+    public long resetTime() {
+        return resetTime;
+    }
+
+    @Override
+    public long resetCount() {
+        return resetCount;
     }
 
     @Override

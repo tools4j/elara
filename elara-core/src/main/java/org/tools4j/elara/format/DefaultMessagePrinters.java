@@ -30,6 +30,7 @@ import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.format.DataFrameFormatter.SEQUENCE;
 import static org.tools4j.elara.format.DataFrameFormatter.SOURCE;
+import static org.tools4j.elara.format.HistogramFormatter.CaptureResult.PRINT;
 import static org.tools4j.elara.format.MessagePrinter.NOOP;
 import static org.tools4j.elara.format.MessagePrinter.composite;
 import static org.tools4j.elara.format.MessagePrinter.parameterized;
@@ -154,11 +155,9 @@ public class DefaultMessagePrinters implements MessagePrinters {
         return composite(
                 (line, entryId, entry) -> {
                     if (line == 0) {
-                        histogramFormatter.printStats.remove();
                         histogramFormatter.latencyHistograms.remove();
                     }
-                    final boolean print = histogramFormatter.print(line, entryId, entry);
-                    histogramFormatter.capture(line, entryId, entry);
+                    final boolean print = histogramFormatter.capture(line, entryId, entry) == PRINT;
                     return line == 0 ? (print ? 1 : 0) : (print ? 3 : 2);
                 },
                 parameterized(METRICS_VERSION_LINE, histogramFormatter),
