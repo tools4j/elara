@@ -221,7 +221,7 @@ public class HashApplication {
 //                    .frequencyMetrics(EnumSet.allOf(FrequencyMetric.class))
                                         .timeMetrics(INPUT_SENDING_TIME, INPUT_POLLING_TIME, PROCESSING_START_TIME, PROCESSING_END_TIME, ROUTING_START_TIME, APPLYING_START_TIME, APPLYING_END_TIME, ROUTING_END_TIME, OUTPUT_START_TIME, OUTPUT_END_TIME)
                                         .frequencyMetrics(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, EVENT_APPLIED_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY)
-                                        .frequencyLogInterval(100_000_000)//nanos
+                                        .frequencyLogInterval(100_000)//micros
                                         .inputSendingTimeExtractor((source, sequence, type, buffer, offset, length) -> pseudoNanoClock.currentTime() - 100_000)//for testing only
 //                    .metricsLog(new ChronicleMessageLog(mq))
                                         .timeMetricsLog(new ChronicleMessageLog(tq))
@@ -256,7 +256,7 @@ public class HashApplication {
                         .idleStrategy(BusySpinIdleStrategy.INSTANCE)
                         .plugin(Plugins.metricsPlugin(Configuration.configure()
                                         .frequencyMetrics(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, EVENT_APPLIED_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY)
-                                        .frequencyLogInterval(100_000_000)//nanos
+                                        .frequencyLogInterval(100_000)//micros
                                         .frequencyMetricsLog(new ChronicleMessageLog(fq))
                         ))
         );
