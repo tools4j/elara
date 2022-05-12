@@ -27,8 +27,7 @@ import org.agrona.concurrent.Agent;
 import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.init.ExecutionType;
 import org.tools4j.elara.loop.AgentStep;
-import org.tools4j.elara.loop.ElaraCore;
-import org.tools4j.elara.loop.ElaraFull;
+import org.tools4j.elara.loop.agent.CoreAgent;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
 
@@ -70,10 +69,10 @@ public class DefaultRunnerFactory implements RunnerFactory {
     @Override
     public Agent elaraAgent() {
         final Singletons factory = singletons.get();
-//        return new ElaraFull(factory.sequencerStep(), factory.commandPollerStep(), factory.eventPollerStep(),
-//                NO_OP, factory.extraStepAlwaysWhenEventsApplied(), factory.extraStepAlways());
-        return new ElaraFull(factory.sequencerStep(), factory.commandPollerStep(), factory.eventPollerStep(),
-                factory.publisherStep(), factory.extraStepAlwaysWhenEventsApplied(), factory.extraStepAlways());
+        return new CoreAgent(factory.sequencerStep(), factory.commandPollerStep(), factory.eventPollerStep(),
+                factory.extraStepAlwaysWhenEventsApplied(), factory.extraStepAlways());
+//        return new AllInOneAgent(factory.sequencerStep(), factory.commandPollerStep(), factory.eventPollerStep(),
+//                factory.publisherStep(), factory.extraStepAlwaysWhenEventsApplied(), factory.extraStepAlways());
     }
 
     private AgentStep extraStep(final ExecutionType executionType) {

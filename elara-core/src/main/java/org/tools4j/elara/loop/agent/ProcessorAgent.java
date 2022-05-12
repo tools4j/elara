@@ -21,25 +21,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.loop;
+package org.tools4j.elara.loop.agent;
 
 import org.agrona.concurrent.Agent;
+import org.tools4j.elara.loop.AgentStep;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Agent for running the elara core tasks.  Core tasks are polling (or replaying) events applying events and processing
- * commands.
+ * Agent for running the elara processor tasks.  Processor tasks are polling (or replaying) and applying events as well
+ * as and processing commands.
  */
-public class ElaraCore implements Agent {
+public class ProcessorAgent implements Agent {
 
     private final AgentStep commandStep;
     private final AgentStep eventStep;
     private final AgentStep extraStepAlwaysWhenEventsApplied;
 
-    public ElaraCore(final AgentStep commandStep,
-                     final AgentStep eventStep,
-                     final AgentStep extraStepAlwaysWhenEventsApplied) {
+    public ProcessorAgent(final AgentStep commandStep,
+                          final AgentStep eventStep,
+                          final AgentStep extraStepAlwaysWhenEventsApplied) {
         this.commandStep = requireNonNull(commandStep);
         this.eventStep = requireNonNull(eventStep);
         this.extraStepAlwaysWhenEventsApplied = requireNonNull(extraStepAlwaysWhenEventsApplied);

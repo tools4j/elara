@@ -21,9 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.loop;
+package org.tools4j.elara.loop.agent;
 
 import org.agrona.concurrent.Agent;
+import org.tools4j.elara.loop.PublisherStep;
 import org.tools4j.elara.store.CommittedEventPoller;
 
 import static java.util.Objects.requireNonNull;
@@ -36,10 +37,10 @@ import static java.util.Objects.requireNonNull;
  * the output handler.  Using a {@link CommittedEventPoller} as tracking poller guarantees that only committed events
  * are passed to the handler.
  */
-public class ElaraPublisher implements Agent {
+public class PublisherAgent implements Agent {
     private final PublisherStep publisherStep;
 
-    public ElaraPublisher(final PublisherStep publisherStep) {
+    public PublisherAgent(final PublisherStep publisherStep) {
         this.publisherStep = requireNonNull(publisherStep);
     }
 
