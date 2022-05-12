@@ -271,8 +271,8 @@ public class DefaultEventRouterTest {
     private void assertEvent(final Command command, final Event event,
                              final int type, final int index, final byte flags, final int payloadSize,
                              final String evtName) {
-        assertEquals(command.id().source(), event.id().commandId().source(), evtName + ".id.commandId.source");
-        assertEquals(command.id().sequence(), event.id().commandId().sequence(), evtName + ".id.commandId.sequence");
+        assertEquals(command.id().source(), event.id().source(), evtName + ".id.source");
+        assertEquals(command.id().sequence(), event.id().sequence(), evtName + ".id.sequence");
         assertEquals(index, event.id().index(), evtName + ".id.index");
         assertEquals(type, event.type(), evtName + ".type");
         assertEquals(Flags.NONE, event.flags().value(), evtName + ".flags");

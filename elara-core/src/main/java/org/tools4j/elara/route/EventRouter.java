@@ -56,11 +56,11 @@ public interface EventRouter {
      */
     RoutingContext routingEvent();
     /**
-     * Starts routing of an event of the given {@code type} returns the routing context with the buffer for event
+     * Starts routing of an event of the given {@code type} returning the routing context with the buffer for event
      * encoding.  Encoding and routing is completed with {@link RoutingContext#route(int) route(..)} and is recommended
      * to be performed inside a try-resource block; see {@link EventRouter class documentation} for an example.
      *
-     * @param type the event type, typically non-negative for application events (plugins use negative event types)
+     * @param type the event type, typically non-negative for application events (plugins use negative types)
      * @return the context for event encoding and routing
      * @throws IllegalArgumentException if type is {@link EventType#COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
      */
@@ -79,7 +79,7 @@ public interface EventRouter {
     /***
      * Routes an already encoded event of the specified event {@code type}.
      *
-     * @param type      the event type, typically non-negative for application events (plugins use negative event types)
+     * @param type      the event type, typically non-negative for application events (plugins use negative types)
      * @param buffer    the buffer containing the event data
      * @param offset    offset where the event data starts in {@code buffer}
      * @param length    the length of the event data in bytes
@@ -89,7 +89,7 @@ public interface EventRouter {
     void routeEvent(int type, DirectBuffer buffer, int offset, int length);
 
     /***
-     * Routes an event that carries the same payload data as the command;  the {@link Command#type() command type} is
+     * Routes an event that carries the same payload data as the {@link #command() command};  the {@link Command#type() command type} is
      * used as event type.
      *
      * @throws IllegalStateException if this command has been {@link #isSkipped() skipped}, or if the command's type is
@@ -98,9 +98,10 @@ public interface EventRouter {
     void routeEventWithCommandPayload();
 
     /***
-     * Routes an event of the specified event {@code type} that carries the same payload data as the command.
+     * Routes an event of the specified event {@code type} that carries the same payload data as the
+     * {@link #command() command}.
      *
-     * @param type the event type, typically non-negative for application events (plugins use negative event types)
+     * @param type the event type, typically non-negative for application events (plugins use negative types)
      * @throws IllegalArgumentException if type is {@link EventType#COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
      * @throws IllegalStateException if this command has been {@link #isSkipped() skipped}
      */
@@ -109,7 +110,7 @@ public interface EventRouter {
     /***
      * Routes an event of the specified event {@code type} that carries no payload data.
      *
-     * @param type the event type, typically non-negative for application events (plugins use negative event types)
+     * @param type the event type, typically non-negative for application events (plugins use negative types)
      * @throws IllegalArgumentException if type is {@link EventType#COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
      * @throws IllegalStateException if this command has been {@link #isSkipped() skipped}
      */

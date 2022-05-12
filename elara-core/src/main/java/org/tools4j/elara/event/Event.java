@@ -31,6 +31,8 @@ import org.tools4j.elara.flyweight.Writable;
 public interface Event extends Writable {
     interface Id {
         Command.Id commandId();
+        int source();
+        long sequence();
         int index();
     }
 

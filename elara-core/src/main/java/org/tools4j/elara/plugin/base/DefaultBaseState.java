@@ -37,7 +37,7 @@ public class DefaultBaseState implements BaseState.Mutable {
         boolean isFinal;
         void update(final Event event) {
             final Event.Id id = event.id();
-            sequence = id.commandId().sequence();
+            sequence = id.sequence();
             index = id.index();
             isFinal = event.flags().isFinal();
         }
@@ -56,10 +56,9 @@ public class DefaultBaseState implements BaseState.Mutable {
 
     @Override
     public boolean eventApplied(final Event.Id id) {
-        final Command.Id cid = id.commandId();
-        final AppliedEventState appliedEventState = sourceToAppliedEventState.get(cid.source());
+        final AppliedEventState appliedEventState = sourceToAppliedEventState.get(id.source());
         if (appliedEventState != null) {
-            final long sequence = cid.sequence();
+            final long sequence = id.sequence();
             return sequence < appliedEventState.sequence ||
                     sequence == appliedEventState.sequence && id.index() <= appliedEventState.index;
         }
@@ -68,7 +67,7 @@ public class DefaultBaseState implements BaseState.Mutable {
 
     @Override
     public Mutable eventApplied(final Event event) {
-        sourceToAppliedEventState.computeIfAbsent(event.id().commandId().source(), k -> new AppliedEventState())
+        sourceToAppliedEventState.computeIfAbsent(event.id().source(), k -> new AppliedEventState())
                 .update(event);
         return this;
     }

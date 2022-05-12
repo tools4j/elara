@@ -73,8 +73,8 @@ public class FlyweightEventTest {
         final FlyweightEvent event = new FlyweightEvent().init(buffer, 0);
 
         //when + then
-        assertEquals(0, event.id().commandId().source(), "id.commandId.source");
-        assertEquals(0, event.id().commandId().sequence(), "id.commandId,sequence");
+        assertEquals(0, event.id().source(), "id.source");
+        assertEquals(0, event.id().sequence(), "id,sequence");
         assertEquals(0, event.id().index(), "id.index");
         assertEquals(0, event.type(), "id.type");
         assertEquals(0, event.time(), "id.time");
@@ -206,8 +206,8 @@ public class FlyweightEventTest {
         }
 
         void assertEvent(final Event event) {
-            assertEquals(source, event.id().commandId().source(), "id..commandId.source");
-            assertEquals(seq, event.id().commandId().sequence(), "id.commandId.sequence");
+            assertEquals(source, event.id().source(), "id.source");
+            assertEquals(seq, event.id().sequence(), "id.sequence");
             assertEquals(index, event.id().index(), "id.index");
             assertEquals(type, event.type(), "type");
             assertEquals(time, event.time(), "time");

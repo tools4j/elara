@@ -29,6 +29,10 @@ import org.tools4j.elara.event.Event;
 public interface Output {
     Output NOOP = (event, replay, retry, loopback) -> Ack.IGNORED;
 
+    /**
+     * Ack returned when {@link #publish(Event, boolean, int, CommandLoopback) publishing} an event to indicate whether
+     * the publication should be committed, retried or if the event was ignored.
+     */
     enum Ack {
         /** The event is committed after successful or attempted publication */
         COMMIT,

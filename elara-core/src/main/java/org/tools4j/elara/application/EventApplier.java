@@ -25,9 +25,17 @@ package org.tools4j.elara.application;
 
 import org.tools4j.elara.event.Event;
 
+/**
+ * Applies an event to the application modifying its state if necessary as per event instructions.
+ */
 @FunctionalInterface
 public interface EventApplier {
+    /**
+     * Applies the provided event to the application, modifying the state as per the event instructions.
+     * @param event the event to apply
+     */
     void onEvent(Event event);
 
+    /** Performs a no-op meaning the event is silently ignored */
     EventApplier NOOP = (event) -> {};
 }
