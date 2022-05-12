@@ -30,7 +30,8 @@ import org.tools4j.elara.event.Event;
 
 /**
  * Facilitates sending of commands when
- * {@link org.tools4j.elara.application.EventProcessor#onEvent(Event, CommandSender) processing} events.
+ * {@link org.tools4j.elara.application.EventProcessor#process(Event, EventContext, InFlightState, CommandSender) processing}
+ * events.
  * <p>
  * Command sending can be done in two ways: already coded commands can be sent via one of the
  * {@link #sendCommand(DirectBuffer, int, int) sendCommand(..)} methods.  Alternatively the command can be encoded into
@@ -117,19 +118,10 @@ public interface CommandSender {
     long nextCommandSequence();
 
     /**
-     * Returns the event context with information about currently processed and most recent event;  see
-     * {@link EventContext} for a detailed description.
-     *
-     * @return the event context with processed and most recent event.
-     * @throws IllegalStateException if no event is currently associated with this command sender
-     */
-    EventContext eventContext();
-
-    /**
      * Returns the event currently processed which is not necessarily the most recent event.  If we are waiting for
      * an event of an in-flight own command to return, an incoming event is parked and processed only when all events
      * for the in-flight command have been received.  In this situation processed is not equal to most recent event.
-     * See {@link #eventContext()} for more details.
+     * See {@link EventContext} and {@link InFlightState} for more details.
      *
      * @return the event currently associated with this command sender
      * @throws IllegalStateException if no event is currently associated with this command sender
