@@ -21,11 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.log;
+package org.tools4j.elara.store;
 
 import org.tools4j.elara.flyweight.Flyweight;
 import org.tools4j.elara.format.MessagePrinter;
-import org.tools4j.elara.log.MessageLog.Handler.Result;
+import org.tools4j.elara.store.MessageStore.Handler.Result;
 import org.tools4j.nobark.loop.LoopCondition;
 import org.tools4j.nobark.run.StoppableThread;
 import org.tools4j.nobark.run.ThreadLike;
@@ -39,29 +39,29 @@ import java.util.function.Predicate;
 
 import static java.util.Objects.requireNonNull;
 
-public class MessageLogPrinter implements AutoCloseable {
+public class MessageStorePrinter implements AutoCloseable {
 
     private final PrintWriter printWriter;
     private final boolean close;
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    public MessageLogPrinter() {
+    public MessageStorePrinter() {
         this(System.out, false);
     }
 
-    public MessageLogPrinter(final OutputStream outputStream) {
+    public MessageStorePrinter(final OutputStream outputStream) {
         this(outputStream, true);
     }
 
-    public MessageLogPrinter(final OutputStream outputStream, final boolean close) {
+    public MessageStorePrinter(final OutputStream outputStream, final boolean close) {
         this(new OutputStreamWriter(outputStream), close);
     }
 
-    public MessageLogPrinter(final Writer writer) {
+    public MessageStorePrinter(final Writer writer) {
         this(writer, true);
     }
 
-    public MessageLogPrinter(final Writer writer, final boolean close) {
+    public MessageStorePrinter(final Writer writer, final boolean close) {
         this.printWriter = writer instanceof PrintWriter ? (PrintWriter)writer : new PrintWriter(writer);
         this.close = close;
     }
@@ -81,30 +81,30 @@ public class MessageLogPrinter implements AutoCloseable {
         }
     }
 
-    public void print(final MessageLog.Poller poller, final Flyweight<?> flyweight) {
+    public void print(final MessageStore.Poller poller, final Flyweight<?> flyweight) {
         print(poller, flyweight, MessagePrinter.DEFAULT);
     }
 
-    public <M> void print(final MessageLog.Poller poller,
+    public <M> void print(final MessageStore.Poller poller,
                           final Flyweight<M> flyweight,
                           final MessagePrinter<? super M> printer) {
         print(poller, flyweight, msg -> true, printer);
     }
 
-    public <M> void print(final MessageLog.Poller poller,
+    public <M> void print(final MessageStore.Poller poller,
                           final Flyweight<M> flyweight,
                           final Predicate<? super M> filter,
                           final MessagePrinter<? super M> printer) {
         print(poller, flyweight, filter, printer, workDone -> workDone);
     }
 
-    public <M> void print(final MessageLog.Poller poller,
+    public <M> void print(final MessageStore.Poller poller,
                           final Flyweight<M> flyweight,
                           final Predicate<? super M> filter,
                           final MessagePrinter<? super M> printer,
                           final LoopCondition loopCondition) {
         final long[] linePtr = {0};
-        final MessageLog.Handler handler = message -> {
+        final MessageStore.Handler handler = message -> {
             final M msg = flyweight.init(message, 0);
             final long line = linePtr[0]++;
             if (filter.test(msg)) {
@@ -119,7 +119,7 @@ public class MessageLogPrinter implements AutoCloseable {
         } while (loopCondition.loopAgain(workDone));
     }
 
-    public <M> ThreadLike printInBackground(final MessageLog.Poller poller,
+    public <M> ThreadLike printInBackground(final MessageStore.Poller poller,
                                             final Flyweight<M> flyweight,
                                             final Predicate<? super M> filter,
                                             final MessagePrinter<? super M> printer) {
@@ -129,7 +129,7 @@ public class MessageLogPrinter implements AutoCloseable {
         requireNonNull(printer);
         return StoppableThread.start(runningCondition -> () ->
                 print(poller, flyweight, filter, printer, workDone -> runningCondition.keepRunning()),
-                r -> new Thread(null, r, "log-printer")
+                r -> new Thread(null, r, "store-printer")
         );
     }
 

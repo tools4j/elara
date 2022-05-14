@@ -55,7 +55,7 @@ package org.tools4j.elara.format;
 
 import org.tools4j.elara.format.HistogramFormatter.HistogramValues;
 import org.tools4j.elara.plugin.metrics.Metric;
-import org.tools4j.elara.plugin.metrics.MetricsLogEntry;
+import org.tools4j.elara.plugin.metrics.MetricsStoreEntry;
 
 import java.util.Arrays;
 
@@ -78,7 +78,7 @@ final class DefaultHistogramValues implements HistogramValues {
     /* init with smaller array, allows storing up to 1s in micros before resizing */
     private final static int INITIAL_ARRAY_LENGTH = COUNTS_ARRAY_LENGTH / 8;
 
-    private final MetricsLogEntry entry;
+    private final MetricsStoreEntry entry;
     private final Metric metric;
     private final TimeFormatter timeFormatter;
 
@@ -89,7 +89,7 @@ final class DefaultHistogramValues implements HistogramValues {
     private int count;
     private long[] counts = new long[INITIAL_ARRAY_LENGTH];
 
-    DefaultHistogramValues(final MetricsLogEntry entry, final Metric metric, final TimeFormatter timeFormatter) {
+    DefaultHistogramValues(final MetricsStoreEntry entry, final Metric metric, final TimeFormatter timeFormatter) {
         this.entry = requireNonNull(entry);
         this.metric = requireNonNull(metric);
         this.timeFormatter = requireNonNull(timeFormatter);
@@ -158,7 +158,7 @@ final class DefaultHistogramValues implements HistogramValues {
     }
 
     @Override
-    public MetricsLogEntry entry() {
+    public MetricsStoreEntry entry() {
         return entry;
     }
 

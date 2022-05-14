@@ -30,10 +30,10 @@ import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import org.tools4j.elara.log.MessageLog.AppendingContext;
-import org.tools4j.elara.log.MessageLog.Appender;
-import org.tools4j.elara.log.MessageLog.Handler;
-import org.tools4j.elara.log.MessageLog.Poller;
+import org.tools4j.elara.store.MessageStore.Appender;
+import org.tools4j.elara.store.MessageStore.AppendingContext;
+import org.tools4j.elara.store.MessageStore.Handler;
+import org.tools4j.elara.store.MessageStore.Poller;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -45,51 +45,51 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.tools4j.elara.log.MessageLog.Handler.Result.POLL;
+import static org.tools4j.elara.store.MessageStore.Handler.Result.POLL;
 
 /**
- * Unit test for {@link ChronicleMessageLog}.
+ * Unit test for {@link ChronicleMessageStore}.
  */
-class ChronicleMessageLogTest {
+class ChronicleMessageStoreTest {
 
     @Test
     public void appendAndPoll(final TestInfo testInfo) {
         //given
-        final ChronicleMessageLog messageLog = chronicleMessageLog(testInfo);
+        final ChronicleMessageStore messageStore = chronicleMessageStore(testInfo);
 
         //when + then
-        final DirectBuffer[] messages = append(messageLog);
-        pollAndAssert(messageLog.poller(), messages);
-        pollAndAssert(messageLog.poller(), messages);
-        pollAndAssert(messageLog.poller("remember-position"), messages);
-        pollAndAssert(messageLog.poller("remember-position"));
+        final DirectBuffer[] messages = append(messageStore);
+        pollAndAssert(messageStore.poller(), messages);
+        pollAndAssert(messageStore.poller(), messages);
+        pollAndAssert(messageStore.poller("remember-position"), messages);
+        pollAndAssert(messageStore.poller("remember-position"));
     }
 
     @Test
     public void appending(final TestInfo testInfo) {
         //given
-        final ChronicleMessageLog messageLog = chronicleMessageLog(testInfo);
+        final ChronicleMessageStore messageStore = chronicleMessageStore(testInfo);
 
         //when + then
-        final DirectBuffer[] messages = appending(messageLog);
-        pollAndAssert(messageLog.poller(), messages);
-        pollAndAssert(messageLog.poller(), messages);
+        final DirectBuffer[] messages = appending(messageStore);
+        pollAndAssert(messageStore.poller(), messages);
+        pollAndAssert(messageStore.poller(), messages);
     }
 
     @Test
     public void appendingFromMultipleThreads(final TestInfo testInfo) throws InterruptedException {
         //given
         final int nThreads = 5;
-        final ChronicleMessageLog messageLog = chronicleMessageLog(testInfo);
+        final ChronicleMessageStore messageStore = chronicleMessageStore(testInfo);
         ConcurrentLinkedQueue<DirectBuffer> messageQueue = new ConcurrentLinkedQueue<>();
 
         //when
         final Thread[] appenders = new Thread[nThreads];
         for (int i = 0; i < nThreads; i++) {
             final Runnable r = () -> {
-                messageQueue.addAll(Arrays.asList(appending(messageLog)));
+                messageQueue.addAll(Arrays.asList(appending(messageStore)));
                 sleep(20);//given other threads chance for interleaved appending
-                messageQueue.addAll(Arrays.asList(appending(messageLog)));
+                messageQueue.addAll(Arrays.asList(appending(messageStore)));
             };
             appenders[i] = new Thread(null, r, "appender-" + i);
             appenders[i].start();
@@ -100,26 +100,26 @@ class ChronicleMessageLogTest {
 
         //then
         final DirectBuffer[] messages = messageQueue.toArray(new DirectBuffer[0]);
-        poll(messageLog.poller(), false, messages);
-        poll(messageLog.poller(), false, messages);
+        poll(messageStore.poller(), false, messages);
+        poll(messageStore.poller(), false, messages);
     }
 
     @Test
     public void appendingWithAbort(final TestInfo testInfo) {
         //given
-        final ChronicleMessageLog messageLog = chronicleMessageLog(testInfo);
+        final ChronicleMessageStore messageStore = chronicleMessageStore(testInfo);
 
         //when + then
-        final DirectBuffer[] messages = appendingWithAbort(messageLog);
-        pollAndAssert(messageLog.poller(), messages);
+        final DirectBuffer[] messages = appendingWithAbort(messageStore);
+        pollAndAssert(messageStore.poller(), messages);
     }
 
     @Test
     public void moveTo(final TestInfo testInfo) {
         //given
-        final ChronicleMessageLog messageLog = chronicleMessageLog(testInfo);
-        final DirectBuffer[] messages = append(messageLog);
-        final ChronicleLogPoller poller = messageLog.poller();
+        final ChronicleMessageStore messageStore = chronicleMessageStore(testInfo);
+        final DirectBuffer[] messages = append(messageStore);
+        final ChroniclePoller poller = messageStore.poller();
         final long firstEntryId = poller.entryId();
         final long secondEntryId;
         final long lastEntryId;
@@ -176,7 +176,7 @@ class ChronicleMessageLogTest {
         assertEquals(1, poller.sequence(), "[secondEntryId]poller.sequence");
     }
 
-    private DirectBuffer[] append(final ChronicleMessageLog messageLog) {
+    private DirectBuffer[] append(final ChronicleMessageStore messageStore) {
         //given
         final DirectBuffer[] messages = new DirectBuffer[]{
                 message("Hi!"),
@@ -185,7 +185,7 @@ class ChronicleMessageLogTest {
                 message("Peter and Paul"),
                 message("a^2 + b^2 = c^2"),
         };
-        final Appender appender = messageLog.appender();
+        final Appender appender = messageStore.appender();
 
         //when
         for (final DirectBuffer message : messages) {
@@ -196,7 +196,7 @@ class ChronicleMessageLogTest {
         return messages;
     }
 
-    private DirectBuffer[] appending(final ChronicleMessageLog messageLog) {
+    private DirectBuffer[] appending(final ChronicleMessageStore messageStore) {
         //given
         final DirectBuffer[] messages = new DirectBuffer[]{
                 message("Hi!"),
@@ -205,7 +205,7 @@ class ChronicleMessageLogTest {
                 message("Peter and Paul"),
                 message("a^2 + b^2 = c^2"),
         };
-        final Appender appender = messageLog.appender();
+        final Appender appender = messageStore.appender();
 
         //when
         for (final DirectBuffer message : messages) {
@@ -219,7 +219,7 @@ class ChronicleMessageLogTest {
         return messages;
     }
 
-    private DirectBuffer[] appendingWithAbort(final ChronicleMessageLog messageLog) {
+    private DirectBuffer[] appendingWithAbort(final ChronicleMessageStore messageStore) {
         //given
         final DirectBuffer[] messages = new DirectBuffer[]{
                 message("Hi!"),
@@ -229,7 +229,7 @@ class ChronicleMessageLogTest {
                 message("a^2 + b^2 = c^2"),
         };
         final List<DirectBuffer> committed = new ArrayList<>();
-        final Appender appender = messageLog.appender();
+        final Appender appender = messageStore.appender();
 
         //when
         for (int i = 0; i < messages.length; i++) {
@@ -277,7 +277,7 @@ class ChronicleMessageLogTest {
         assertNull(messageCaptor.get(), "polled message");
     }
 
-    private ChronicleMessageLog chronicleMessageLog(final TestInfo testInfo) {
+    private ChronicleMessageStore chronicleMessageStore(final TestInfo testInfo) {
         final String fileName = testInfo.getTestClass().get().getSimpleName() + "_" + testInfo.getTestMethod().get().getName();
         final String path = "build/chronicle/" + fileName + ".cq4";
         delete(path);
@@ -285,7 +285,7 @@ class ChronicleMessageLogTest {
                 .path(path)
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
-        return new ChronicleMessageLog(cq);
+        return new ChronicleMessageStore(cq);
     }
 
     private static void delete(final String path) {

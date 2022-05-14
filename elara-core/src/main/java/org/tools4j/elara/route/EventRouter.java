@@ -34,7 +34,7 @@ import org.tools4j.elara.event.EventType;
  * <p>
  * Event routing can be done in two ways: already coded events can be routed via one of the
  * {@link #routeEvent(DirectBuffer, int, int) routeEvent(..)} methods.  Alternatively the event can be encoded into the
- * event log buffer directly as follows:
+ * event store buffer directly as follows:
  * <pre>
  *     try (RoutingContext context = routingEvent()) {
  *         int length = context.buffer().putStringAscii(0, "Hello world");
@@ -140,7 +140,7 @@ public interface EventRouter {
      * The application state after processing the current command will be exactly the same as before the command. Note
      * that the command will not be be marked as processed and is normally also not replayed.  Replaying of the command
      * may occur however if the application is restarted or leadership is passed to another node and commands are
-     * replayed from the command log.  However replaying occurs only if no subsequent command from the same source has
+     * replayed from the command store.  However replaying occurs only if no subsequent command from the same source has
      * yet been marked as processed.
      *
      * @return true if this command is skipped
@@ -158,7 +158,7 @@ public interface EventRouter {
 
     /**
      * Context object returned by {@link #routingEvent()} allowing for zero copy encoding of events directly into the
-     * event log buffer.  Routing contexts are typically used inside a try-resource block; see {@code EventRouter}
+     * event store buffer.  Routing contexts are typically used inside a try-resource block; see {@code EventRouter}
      * {@link EventRouter documentation} for usage example.
      */
     interface RoutingContext extends AutoCloseable {
@@ -166,9 +166,9 @@ public interface EventRouter {
         int index();
 
         /**
-         * Returns the buffer to encode the event directly into the event log.
+         * Returns the buffer to encode the event directly into the event store.
          *
-         * @return the buffer for coding of event data directly into the event log
+         * @return the buffer for coding of event data directly into the event store
          *
          * @throws IllegalStateException if this routing context has already been {@link #isClosed() closed}
          */
@@ -176,7 +176,7 @@ public interface EventRouter {
 
         /**
          * Completes event encoding and routes the event; the event will be applied to the application context but it
-         * cannot be polled from the event log yet (starting the next event or completion of command will make the event
+         * cannot be polled from the event store yet (starting the next event or completion of command will make the event
          * available for polling).
          *
          * @param length the encoding length for the routed event

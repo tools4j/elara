@@ -33,14 +33,14 @@ public interface ReplicationState {
     long lastAppliedEventTime();
 
     interface Volatile extends ReplicationState {
-        long eventLogSize();
-        long nextEventLogIndex(int serverId);
-        long confirmedEventLogIndex(int serverId);
-        long committedEventLogIndex(int serverCount);
+        long eventStoreSize();
+        long nextEventStoreIndex(int serverId);
+        long confirmedEventStoreIndex(int serverId);
+        long committedEventStoreIndex(int serverCount);
         long nextNotBefore(int serverId);
 
-        Volatile nextEventLogIndex(int serverId, long index);
-        Volatile confirmedEventLogIndex(int serverId, long index);
+        Volatile nextEventStoreIndex(int serverId, long index);
+        Volatile confirmedEventStoreIndex(int serverId, long index);
         Volatile nextNotBefore(int serverId, long time);
     }
 

@@ -27,49 +27,49 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.log.MessageLog.Appender;
-import org.tools4j.elara.log.MessageLog.AppendingContext;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
+import org.tools4j.elara.store.MessageStore.Appender;
+import org.tools4j.elara.store.MessageStore.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.plugin.metrics.FlyweightMetricsLogEntry.writeTime;
-import static org.tools4j.elara.plugin.metrics.FlyweightMetricsLogEntry.writeTimeMetricsHeader;
+import static org.tools4j.elara.plugin.metrics.FlyweightMetricsStoreEntry.writeTime;
+import static org.tools4j.elara.plugin.metrics.FlyweightMetricsStoreEntry.writeTimeMetricsHeader;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.METRIC_APPENDING_TIME;
 
-public class TimeMetricsLogger {
+public class TimeMetricsStoreWriter {
 
     private final TimeSource timeSource;
     private final Configuration configuration;
     private final MetricsState state;
     private final Appender appender;
 
-    public TimeMetricsLogger(final TimeSource timeSource,
-                             final Configuration configuration,
-                             final MetricsState state) {
+    public TimeMetricsStoreWriter(final TimeSource timeSource,
+                                  final Configuration configuration,
+                                  final MetricsState state) {
         this.timeSource = requireNonNull(timeSource);
         this.configuration = requireNonNull(configuration);
         this.state = requireNonNull(state);
         if (configuration.timeMetrics().isEmpty()) {
             throw new IllegalArgumentException("Configuration contains no time metrics");
         }
-        this.appender = requireNonNull(configuration.timeMetricsLog(), "configuration.timeMetricsLog()")
+        this.appender = requireNonNull(configuration.timeMetricsStore(), "configuration.timeMetricsStore()")
                 .appender();
     }
 
-    public int logMetrics(final Command command) {
-        return logMetrics(Target.COMMAND, command.id(), FlyweightCommand.INDEX);
+    public int writeMetrics(final Command command) {
+        return writeMetrics(Target.COMMAND, command.id(), FlyweightCommand.INDEX);
     }
 
-    public int logMetrics(final Target target, final Event event) {
+    public int writeMetrics(final Target target, final Event event) {
         if (target == Target.COMMAND) {
             throw new IllegalArgumentException("Command target not applicable for events");
         }
         final Event.Id id = event.id();
-        return logMetrics(target, id.commandId(), (short)id.index());
+        return writeMetrics(target, id.commandId(), (short)id.index());
     }
 
-    private int logMetrics(final Target target, final Command.Id commandId, final short index) {
+    private int writeMetrics(final Target target, final Command.Id commandId, final short index) {
         final byte flags = target.flags(configuration.timeMetrics());
         final int count = target.count(flags);
         if (count == 0) {

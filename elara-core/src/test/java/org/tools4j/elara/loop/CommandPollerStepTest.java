@@ -29,7 +29,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.store.MessageStore;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -44,9 +44,9 @@ import static org.mockito.Mockito.when;
 public class CommandPollerStepTest {
 
     @Mock
-    private MessageLog.Poller commandPoller;
+    private MessageStore.Poller commandPoller;
     @Mock
-    private MessageLog.Handler handler;
+    private MessageStore.Handler handler;
 
     //under test
     private CommandPollerStep step;

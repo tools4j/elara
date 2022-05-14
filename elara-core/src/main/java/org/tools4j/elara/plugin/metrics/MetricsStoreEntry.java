@@ -26,9 +26,9 @@ package org.tools4j.elara.plugin.metrics;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 
 /**
- * An entry of a metrics log as described by {@link MetricsDescriptor}.
+ * An entry of a metrics store as described by {@link MetricsDescriptor}.
  */
-public interface MetricsLogEntry {
+public interface MetricsStoreEntry {
 
     enum Type {
         TIME,

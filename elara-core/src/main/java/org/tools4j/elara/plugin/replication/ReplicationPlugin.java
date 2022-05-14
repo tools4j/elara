@@ -28,12 +28,12 @@ import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.factory.InterceptableSingletons;
 import org.tools4j.elara.factory.Singletons;
 import org.tools4j.elara.init.ExecutionType;
-import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.log.MessageLog.Appender;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.replication.Connection.Handler;
+import org.tools4j.elara.store.MessageStore;
+import org.tools4j.elara.store.MessageStore.Appender;
 import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
@@ -69,13 +69,13 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
                                        final ReplicationState.Mutable replicationState) {
         requireNonNull(appConfig);
         requireNonNull(replicationState);
-        final MessageLog eventLog = appConfig.eventLog();
-        final Appender eventLogAppender = eventLog.appender();
+        final MessageStore eventStore = appConfig.eventStore();
+        final Appender eventStoreAppender = eventStore.appender();
         final EnforcedLeaderEventReceiver enforcedLeaderEventReceiver = new EnforcedLeaderEventReceiver(
-                appConfig.loggerFactory(), appConfig.timeSource(), configuration, replicationState, eventLogAppender
+                appConfig.loggerFactory(), appConfig.timeSource(), configuration, replicationState, eventStoreAppender
         );
         final DispatchingPublisher dispatchingPublisher = new DispatchingPublisher(configuration);
-        final EventSender eventSender = new DefaultEventSender(configuration, replicationState, eventLog,
+        final EventSender eventSender = new DefaultEventSender(configuration, replicationState, eventStore,
                 dispatchingPublisher);
 
         return new Configuration.Default() {
@@ -84,7 +84,7 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
                 switch (executionType) {
                     case ALWAYS_WHEN_EVENTS_APPLIED:
                         final Handler connectionHandler = new ConnectionHandler(
-                                appConfig.loggerFactory(), configuration, baseState, replicationState, eventLogAppender, dispatchingPublisher
+                                appConfig.loggerFactory(), configuration, baseState, replicationState, eventStoreAppender, dispatchingPublisher
                         );
                         return new ReplicationPluginStep(
                                 configuration, replicationState, enforcedLeaderEventReceiver, connectionHandler, eventSender

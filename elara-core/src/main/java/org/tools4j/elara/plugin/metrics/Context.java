@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.plugin.metrics;
 
-import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.store.MessageStore;
 
 import java.util.Set;
 
@@ -38,10 +38,10 @@ public interface Context extends Configuration {
     Context latencyMetrics(LatencyMetric... metrics);
     Context latencyMetrics(Set<? extends LatencyMetric> metrics);
     Context inputSendingTimeExtractor(InputSendingTimeExtractor sendingTimeExtractor);
-    Context frequencyLogInterval(long timeInterval);
-    Context metricsLog(MessageLog metricLog);
-    Context timeMetricsLog(MessageLog metricLog);
-    Context frequencyMetricsLog(MessageLog metricLog);
+    Context frequencyMetricInterval(long timeInterval);
+    Context metricsStore(MessageStore metricStore);
+    Context timeMetricsStore(MessageStore metricStore);
+    Context frequencyMetricsStore(MessageStore metricStore);
 
     static Context create() {
         return new DefaultContext();

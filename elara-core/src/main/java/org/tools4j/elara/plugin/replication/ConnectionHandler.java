@@ -28,12 +28,12 @@ import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.flyweight.FrameDescriptor;
-import org.tools4j.elara.log.MessageLog.Appender;
 import org.tools4j.elara.logging.ElaraLogger;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.logging.Logger.Level;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.replication.Connection.Publisher;
+import org.tools4j.elara.store.MessageStore.Appender;
 
 import java.nio.ByteBuffer;
 
@@ -43,8 +43,8 @@ import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.VERSION;
 import static org.tools4j.elara.plugin.replication.ReplicationMessages.APPEND_REQUEST;
 import static org.tools4j.elara.plugin.replication.ReplicationMessages.APPEND_RESPONSE;
-import static org.tools4j.elara.plugin.replication.ReplicationMessages.logIndex;
 import static org.tools4j.elara.plugin.replication.ReplicationMessages.payloadSize;
+import static org.tools4j.elara.plugin.replication.ReplicationMessages.storeIndex;
 import static org.tools4j.elara.plugin.replication.ReplicationMessages.term;
 import static org.tools4j.elara.plugin.replication.ReplicationMessages.type;
 import static org.tools4j.elara.plugin.replication.ReplicationMessages.version;
@@ -58,7 +58,7 @@ final class ConnectionHandler implements Connection.Handler {
     private final int serverId;
     private final BaseState baseState;
     private final ReplicationState.Volatile state;
-    private final Appender eventLogAppender;
+    private final Appender eventStoreAppender;
     private final Publisher responseSender;
     private final FlyweightEvent flyweightEvent = new FlyweightEvent();
     private final UnsafeBuffer bufferView = new UnsafeBuffer(0, 0);
@@ -68,13 +68,13 @@ final class ConnectionHandler implements Connection.Handler {
                       final Configuration configuration,
                       final BaseState baseState,
                       final ReplicationState.Volatile state,
-                      final Appender eventLogAppender,
+                      final Appender eventStoreAppender,
                       final Publisher responseSender) {
         this.logger = ElaraLogger.create(loggerFactory, getClass());
         this.serverId = configuration.serverId();
         this.baseState = requireNonNull(baseState);
         this.state = requireNonNull(state);
-        this.eventLogAppender = requireNonNull(eventLogAppender);
+        this.eventStoreAppender = requireNonNull(eventStoreAppender);
         this.responseSender = requireNonNull(responseSender);
     }
 
@@ -128,9 +128,9 @@ final class ConnectionHandler implements Connection.Handler {
                     .replace(serverId).replace(leaderId).replace(currentTerm).replace(senderServerId).format();
             return;
         }
-        final long logIndex = logIndex(buffer);
-        long nextEventLogIndex = state.eventLogSize();
-        if (logIndex == nextEventLogIndex) {
+        final long storeIndex = storeIndex(buffer);
+        long nextEventStoreIndex = state.eventStoreSize();
+        if (storeIndex == nextEventStoreIndex) {
             final int payloadSize = payloadSize(buffer);
             if (payloadSize < FrameDescriptor.HEADER_LENGTH) {
                 logger.warn("Server {}: Ignoring append-request message in follower mode: payload size {} is smaller than frame header length {}")
@@ -143,21 +143,21 @@ final class ConnectionHandler implements Connection.Handler {
                         .replace(serverId).replace(flyweightEvent.source()).replace(flyweightEvent.sequence()).replace(flyweightEvent.index()).format();
                 return;
             }
-            eventLogAppender.append(buffer, PAYLOAD_OFFSET, payloadSize);
+            eventStoreAppender.append(buffer, PAYLOAD_OFFSET, payloadSize);
             if (logger.isEnabled(Level.DEBUG)) {
                 logger.debug("Server {}: Processed append-request message {} in follower mode")
-                        .replace(serverId).replace(nextEventLogIndex).format();
+                        .replace(serverId).replace(nextEventStoreIndex).format();
             }
-            nextEventLogIndex++;
+            nextEventStoreIndex++;
         }
-        final boolean success = logIndex <= nextEventLogIndex;
+        final boolean success = storeIndex <= nextEventStoreIndex;
         if (!success && logger.isEnabled(Level.DEBUG)) {
-            logger.debug("Server {}: Ignoring append-request message in follower mode: expected event log index {} but received {}")
-                    .replace(serverId).replace(nextEventLogIndex).replace(logIndex).format();
+            logger.debug("Server {}: Ignoring append-request message in follower mode: expected event store index {} but received {}")
+                    .replace(serverId).replace(nextEventStoreIndex).replace(storeIndex).format();
         }
         final long nextSendingTime = success ? 0 : state.nextNotBefore(senderServerId);
         if (nextSendingTime == 0 || System.nanoTime() - nextSendingTime >= 0) {
-            final boolean sent = sendAppendResponse(senderServerId, nextEventLogIndex, success);
+            final boolean sent = sendAppendResponse(senderServerId, nextEventStoreIndex, success);
             if (success) {
                 state.nextNotBefore(senderServerId, 0);
             } else if (sent) {
@@ -167,13 +167,13 @@ final class ConnectionHandler implements Connection.Handler {
     }
 
     private boolean sendAppendResponse(final int targetServerId,
-                                       final long nextEventLogIndex,
+                                       final long nextEventStoreIndex,
                                        final boolean success) {
         final int length = ReplicationMessages.appendResponse(sendBuffer, 0, state.term(),
-                state.leaderId(), nextEventLogIndex, success);
+                state.leaderId(), nextEventStoreIndex, success);
         if (!responseSender.publish(targetServerId, sendBuffer, 0, length)) {
-            logger.warn("Server {}: Sending append response to {} for next event log index {} failed")
-                    .replace(serverId).replace(targetServerId).replace(nextEventLogIndex).format();
+            logger.warn("Server {}: Sending append response to {} for next event store index {} failed")
+                    .replace(serverId).replace(targetServerId).replace(nextEventStoreIndex).format();
             return false;
         }
         return true;
@@ -181,16 +181,16 @@ final class ConnectionHandler implements Connection.Handler {
 
     private void handleAppendResponse(final int senderServerId, final DirectBuffer buffer) {
         final boolean appendSuccessful = ReplicationMessages.isAppendSuccess(buffer);
-        final long nextEventLogIndex = logIndex(buffer);
-        if (appendSuccessful && nextEventLogIndex > 0) {
-            state.confirmedEventLogIndex(senderServerId, nextEventLogIndex - 1);
+        final long nextEventStoreIndex = storeIndex(buffer);
+        if (appendSuccessful && nextEventStoreIndex > 0) {
+            state.confirmedEventStoreIndex(senderServerId, nextEventStoreIndex - 1);
         }
-        if (!appendSuccessful || nextEventLogIndex > state.nextEventLogIndex(senderServerId)) {
-            if (state.nextEventLogIndex(senderServerId) != nextEventLogIndex) {
-                state.nextEventLogIndex(senderServerId, nextEventLogIndex);
+        if (!appendSuccessful || nextEventStoreIndex > state.nextEventStoreIndex(senderServerId)) {
+            if (state.nextEventStoreIndex(senderServerId) != nextEventStoreIndex) {
+                state.nextEventStoreIndex(senderServerId, nextEventStoreIndex);
                 if (logger.isEnabled(Level.DEBUG)) {
-                    logger.debug("Server {}: Reset next event log index to to {} for server {}")
-                            .replace(serverId).replace(nextEventLogIndex).replace(senderServerId).format();
+                    logger.debug("Server {}: Reset next event store index to to {} for server {}")
+                            .replace(serverId).replace(nextEventStoreIndex).replace(senderServerId).format();
                 }
             }
         }

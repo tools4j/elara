@@ -53,7 +53,7 @@ public class ReplicationInterceptor extends InterceptableSingletons {
                 pluginConfig,
                 singletons().baseState(),
                 replicationState,
-                new DefaultEventRouter(appConfig.eventLog().appender(), singletons().eventHandler()),
+                new DefaultEventRouter(appConfig.eventStore().appender(), singletons().eventHandler()),
                 singletons().commandProcessor(),
                 appConfig.exceptionHandler(),
                 appConfig.duplicateHandler()

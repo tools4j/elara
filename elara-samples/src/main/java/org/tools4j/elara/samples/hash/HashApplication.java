@@ -28,17 +28,17 @@ import net.openhft.chronicle.wire.WireType;
 import org.agrona.concurrent.BusySpinIdleStrategy;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.chronicle.ChronicleMessageLog;
+import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver.ReceivingContext;
-import org.tools4j.elara.log.InMemoryLog;
 import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.plugin.metrics.Configuration;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
+import org.tools4j.elara.store.InMemoryStore;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -161,8 +161,8 @@ public class HashApplication {
                 .commandProcessor(commandProcessor(state))
                 .eventApplier(eventApplier(state))
                 .input(input(input))
-                .commandLog(new InMemoryLog())
-                .eventLog(new InMemoryLog())
+                .commandStore(new InMemoryStore())
+                .eventStore(new InMemoryStore())
         );
     }
 
@@ -179,8 +179,8 @@ public class HashApplication {
                 .commandProcessor(commandProcessor(state))
                 .eventApplier(eventApplier(state))
                 .input(input(input))
-                .commandLog(new ChronicleMessageLog(cq))
-                .eventLog(new ChronicleMessageLog(eq))
+                .commandStore(new ChronicleMessageStore(cq))
+                .eventStore(new ChronicleMessageStore(eq))
         );
     }
 
@@ -210,8 +210,8 @@ public class HashApplication {
                         .commandProcessor(commandProcessor(state))
                         .eventApplier(eventApplier(state))
                         .input(input(input))
-                        .commandLog(new ChronicleMessageLog(cq))
-                        .eventLog(new ChronicleMessageLog(eq))
+                        .commandStore(new ChronicleMessageStore(cq))
+                        .eventStore(new ChronicleMessageStore(eq))
                         /* trigger capturing of output metrics approximately every second time */
                         .output((event, replay, retry, loopback) -> (event.payload().getLong(0) & 0x1) == 0 ? Ack.COMMIT : Ack.IGNORED)
                         .timeSource(pseudoNanoClock)
@@ -221,11 +221,11 @@ public class HashApplication {
 //                    .frequencyMetrics(EnumSet.allOf(FrequencyMetric.class))
                                         .timeMetrics(INPUT_SENDING_TIME, INPUT_POLLING_TIME, PROCESSING_START_TIME, PROCESSING_END_TIME, ROUTING_START_TIME, APPLYING_START_TIME, APPLYING_END_TIME, ROUTING_END_TIME, OUTPUT_START_TIME, OUTPUT_END_TIME)
                                         .frequencyMetrics(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, EVENT_APPLIED_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY)
-                                        .frequencyLogInterval(100_000)//micros
+                                        .frequencyMetricInterval(100_000)//micros
                                         .inputSendingTimeExtractor((source, sequence, type, buffer, offset, length) -> pseudoNanoClock.currentTime() - 100_000)//for testing only
-//                    .metricsLog(new ChronicleMessageLog(mq))
-                                        .timeMetricsLog(new ChronicleMessageLog(tq))
-                                        .frequencyMetricsLog(new ChronicleMessageLog(fq))
+//                    .metricsStore(new ChronicleMessageStore(mq))
+                                        .timeMetricsStore(new ChronicleMessageStore(tq))
+                                        .frequencyMetricsStore(new ChronicleMessageStore(fq))
                         ))
         );
     }
@@ -248,16 +248,16 @@ public class HashApplication {
                         .commandProcessor(commandProcessor(state))
                         .eventApplier(eventApplier(state))
                         .input(input(input))
-                        .commandLog(new ChronicleMessageLog(cq))
-                        .eventLog(new ChronicleMessageLog(eq))
+                        .commandStore(new ChronicleMessageStore(cq))
+                        .eventStore(new ChronicleMessageStore(eq))
                         /* trigger capturing of output metrics approximately every second time */
                         .output((event, replay, retry, loopback) -> (event.payload().getLong(0) & 0x1) == 0 ? Ack.COMMIT : Ack.IGNORED)
                         .timeSource(pseudoNanoClock)
                         .idleStrategy(BusySpinIdleStrategy.INSTANCE)
                         .plugin(Plugins.metricsPlugin(Configuration.configure()
                                         .frequencyMetrics(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, EVENT_APPLIED_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY)
-                                        .frequencyLogInterval(100_000)//micros
-                                        .frequencyMetricsLog(new ChronicleMessageLog(fq))
+                                        .frequencyMetricInterval(100_000)//micros
+                                        .frequencyMetricsStore(new ChronicleMessageStore(fq))
                         ))
         );
     }

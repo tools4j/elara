@@ -21,17 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.log;
+package org.tools4j.elara.store;
 
 import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
-import org.tools4j.elara.log.MessageLog.Handler.Result;
+import org.tools4j.elara.store.MessageStore.Handler.Result;
 
-import static org.tools4j.elara.log.MessageLog.Handler.Result.POLL;
+import static org.tools4j.elara.store.MessageStore.Handler.Result.POLL;
 
-public class InMemoryLog implements MessageLog {
+public class InMemoryStore implements MessageStore {
 
     public static final int DEFAULT_INITIAL_QUEUE_CAPACITY = 16;
     public static final int DEFAULT_INITIAL_BUFFER_CAPACITY = 256;
@@ -44,14 +44,14 @@ public class InMemoryLog implements MessageLog {
     private int start;
     private int size;
 
-    public InMemoryLog() {
+    public InMemoryStore() {
         this(DEFAULT_INITIAL_QUEUE_CAPACITY, DEFAULT_INITIAL_BUFFER_CAPACITY, false, false);
     }
 
-    public InMemoryLog(final int initialQueueCapacity,
-                       final int initialBufferCapacity,
-                       final boolean removeOnPoll,
-                       final boolean initEagerly) {
+    public InMemoryStore(final int initialQueueCapacity,
+                         final int initialBufferCapacity,
+                         final boolean removeOnPoll,
+                         final boolean initEagerly) {
         this.initialBufferCapacity = initialBufferCapacity;
         this.removeOnPoll = removeOnPoll;
         this.initEagerly = initEagerly;
@@ -66,7 +66,7 @@ public class InMemoryLog implements MessageLog {
 
     @Override
     public Appender appender() {
-        ensureMessageLogNotClosed();
+        ensureMessageStoreNotClosed();
         return new Appender() {
             boolean closed;
             final AppendingContext appendContext = new AppendingContext();
@@ -110,7 +110,7 @@ public class InMemoryLog implements MessageLog {
                 return appendContext.init();
             }
 
-            final class AppendingContext implements MessageLog.AppendingContext {
+            final class AppendingContext implements MessageStore.AppendingContext {
 
                 MutableDirectBuffer buffer;
                 int index = -1;
@@ -194,7 +194,7 @@ public class InMemoryLog implements MessageLog {
                 if (closed) {
                     throw new IllegalStateException("Appender is closed");
                 }
-                ensureMessageLogNotClosed();
+                ensureMessageStoreNotClosed();
             }
 
             @Override
@@ -205,8 +205,8 @@ public class InMemoryLog implements MessageLog {
     }
 
     @Override
-    public MessageLog.Poller poller() {
-        ensureMessageLogNotClosed();
+    public MessageStore.Poller poller() {
+        ensureMessageStoreNotClosed();
         return new Poller() {
             boolean closed;
             final MutableDirectBuffer message = new UnsafeBuffer(0, 0);
@@ -301,7 +301,7 @@ public class InMemoryLog implements MessageLog {
                 if (closed) {
                     throw new IllegalStateException("Poller is closed");
                 }
-                ensureMessageLogNotClosed();
+                ensureMessageStoreNotClosed();
             }
 
             @Override
@@ -327,9 +327,9 @@ public class InMemoryLog implements MessageLog {
         buffers = null;
     }
 
-    private void ensureMessageLogNotClosed() {
+    private void ensureMessageStoreNotClosed() {
         if (buffers == null) {
-            throw new IllegalStateException("InMemoryLog is closed");
+            throw new IllegalStateException("InMemoryStore is closed");
         }
     }
 

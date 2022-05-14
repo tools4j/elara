@@ -31,28 +31,28 @@ import net.openhft.chronicle.queue.TailerDirection;
 import net.openhft.chronicle.wire.DocumentContext;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
-import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.store.MessageStore;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.log.MessageLog.Handler;
-import static org.tools4j.elara.log.MessageLog.Handler.Result;
-import static org.tools4j.elara.log.MessageLog.Handler.Result.POLL;
-import static org.tools4j.elara.log.MessageLog.Poller;
+import static org.tools4j.elara.store.MessageStore.Handler;
+import static org.tools4j.elara.store.MessageStore.Handler.Result;
+import static org.tools4j.elara.store.MessageStore.Handler.Result.POLL;
+import static org.tools4j.elara.store.MessageStore.Poller;
 
-public class ChronicleLogPoller implements Poller {
+public class ChroniclePoller implements Poller {
 
     private final ExcerptTailer tailer;
     private final MutableDirectBuffer buffer = new UnsafeBuffer(0, 0);
 
-    public ChronicleLogPoller(final ChronicleQueue queue) {
+    public ChroniclePoller(final ChronicleQueue queue) {
         this(queue.createTailer());
     }
 
-    public ChronicleLogPoller(final String id, final ChronicleQueue queue) {
+    public ChroniclePoller(final String id, final ChronicleQueue queue) {
         this(queue.createTailer(id));
     }
 
-    public ChronicleLogPoller(final ExcerptTailer tailer) {
+    public ChroniclePoller(final ExcerptTailer tailer) {
         this.tailer = requireNonNull(tailer);
     }
 
@@ -88,13 +88,13 @@ public class ChronicleLogPoller implements Poller {
     }
 
     @Override
-    public ChronicleLogPoller moveToStart() {
+    public ChroniclePoller moveToStart() {
         tailer.toStart();
         return this;
     }
 
     @Override
-    public MessageLog.Poller moveToEnd() {
+    public MessageStore.Poller moveToEnd() {
         tailer.toEnd();
         return this;
     }
@@ -167,7 +167,7 @@ public class ChronicleLogPoller implements Poller {
 
     @Override
     public String toString() {
-        return "ChronicleLogPoller{" +
+        return "ChroniclePoller{" +
                 "tailer=" + tailer +
                 '}';
     }

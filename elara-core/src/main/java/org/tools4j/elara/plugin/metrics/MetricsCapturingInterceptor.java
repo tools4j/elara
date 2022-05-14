@@ -37,12 +37,12 @@ import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.input.Receiver.ReceivingContext;
-import org.tools4j.elara.log.MessageLog.Handler.Result;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
+import org.tools4j.elara.store.MessageStore.Handler.Result;
 import org.tools4j.elara.time.TimeSource;
 import org.tools4j.nobark.loop.Step;
 
@@ -84,7 +84,7 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
     private final TimeSource timeSource;
     private final Configuration configuration;
     private final MetricsState state;
-    private final TimeMetricsLogger logger;
+    private final TimeMetricsStoreWriter storeWriter;
 
     public MetricsCapturingInterceptor(final Singletons delegate,
                                        final TimeSource timeSource,
@@ -94,7 +94,7 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
         this.timeSource = requireNonNull(timeSource);
         this.configuration = requireNonNull(configuration);
         this.state = requireNonNull(state);
-        this.logger = configuration.timeMetrics().isEmpty() ? null : new TimeMetricsLogger(timeSource, configuration, state);
+        this.storeWriter = configuration.timeMetrics().isEmpty() ? null : new TimeMetricsStoreWriter(timeSource, configuration, state);
     }
 
     private boolean shouldCapture(final TimeMetric metric) {
@@ -219,7 +219,7 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
                 captureTime(COMMAND_POLLING_TIME);
                 final Result result = commandHandler.onCommand(command);
                 captureTime(PROCESSING_END_TIME);
-                logger.logMetrics(command);
+                storeWriter.writeMetrics(command);
                 return result;
             };
         }
@@ -251,8 +251,8 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
                 eventApplier.onEvent(event);
                 captureTime(APPLYING_END_TIME);
                 captureCount(EVENT_APPLIED_FREQUENCY);
-                if (logger != null) {
-                    logger.logMetrics(EVENT, event);
+                if (storeWriter != null) {
+                    storeWriter.writeMetrics(EVENT, event);
                 }
             };
         }
@@ -295,7 +295,7 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
                 } else {
                     captureTime(OUTPUT_END_TIME);
                     captureCount(OUTPUT_PUBLISHED_FREQUENCY);
-                    logger.logMetrics(OUTPUT, event);
+                    storeWriter.writeMetrics(OUTPUT, event);
                 }
                 return ack;
             };

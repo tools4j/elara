@@ -44,15 +44,15 @@ import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.TIME_OFFSET;
 import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.VERSION;
 import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.VERSION_OFFSET;
 
-public class FlyweightMetricsLogEntry implements MetricsLogEntry, Flyweight<FlyweightMetricsLogEntry> {
+public class FlyweightMetricsStoreEntry implements MetricsStoreEntry, Flyweight<FlyweightMetricsStoreEntry> {
 
     private final MutableDirectBuffer buffer = new UnsafeBuffer(0, 0);
 
     @Override
-    public FlyweightMetricsLogEntry init(final DirectBuffer src, final int srcOffset) {
+    public FlyweightMetricsStoreEntry init(final DirectBuffer src, final int srcOffset) {
         final int length = src.capacity() - srcOffset;
         if (length < MetricsDescriptor.HEADER_LENGTH) {
-            throw new IllegalArgumentException("Invalid metrics log entry, expected min length + " + MetricsDescriptor.HEADER_LENGTH + " but found only " + length);
+            throw new IllegalArgumentException("Invalid metrics store entry, expected min length + " + MetricsDescriptor.HEADER_LENGTH + " but found only " + length);
         }
         validateVersion(src.getByte(srcOffset + MetricsDescriptor.VERSION_OFFSET));
         buffer.wrap(src, srcOffset + HEADER_OFFSET, HEADER_LENGTH);
@@ -65,7 +65,7 @@ public class FlyweightMetricsLogEntry implements MetricsLogEntry, Flyweight<Flyw
         return buffer.capacity() >= MetricsDescriptor.HEADER_LENGTH;
     }
 
-    public FlyweightMetricsLogEntry reset() {
+    public FlyweightMetricsStoreEntry reset() {
         buffer.wrap(0, 0);
         return this;
     }
@@ -195,10 +195,10 @@ public class FlyweightMetricsLogEntry implements MetricsLogEntry, Flyweight<Flyw
     @Override
     public String toString() {
         if (!valid()) {
-            return "FlyweightMetricsLogEntry";
+            return "FlyweightMetricsStoreEntry";
         }
         return type() == Type.TIME ?
-                "FlyweightMetricsLogEntry{" +
+                "FlyweightMetricsStoreEntry{" +
                         "version=" + version() +
                         ", type=" + type() +
                         ", flags=" + toBinaryString(flags()) +
@@ -208,7 +208,7 @@ public class FlyweightMetricsLogEntry implements MetricsLogEntry, Flyweight<Flyw
                         ", time=" + time() +
                         ", count=" + count() +
                         '}' :
-                "FlyweightMetricsLogEntry{" +
+                "FlyweightMetricsStoreEntry{" +
                         "version=" + version() +
                         ", type=" + type() +
                         ", choice=" + toBinaryString(choice()) +

@@ -31,10 +31,10 @@ import org.junit.jupiter.api.Test;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventType;
-import org.tools4j.elara.log.InMemoryLog;
-import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.route.DefaultEventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
+import org.tools4j.elara.store.InMemoryStore;
+import org.tools4j.elara.store.MessageStore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class DefaultEventRouterTest {
 
-    private MessageLog messageLog;
+    private MessageStore messageStore;
     private List<Event> routed;
     private FlyweightCommand command;
 
@@ -60,8 +60,8 @@ public class DefaultEventRouterTest {
     public void init() {
         routed = new ArrayList<>();
         command = new FlyweightCommand();
-        messageLog = new InMemoryLog();
-        eventRouter = new DefaultEventRouter(messageLog.appender(), event -> {
+        messageStore = new InMemoryStore();
+        eventRouter = new DefaultEventRouter(messageStore.appender(), event -> {
             final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
             event.writeTo(buffer, 0);
             routed.add(new FlyweightEvent().init(buffer, 0));

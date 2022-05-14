@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.log;
+package org.tools4j.elara.store;
 
 import org.agrona.AsciiEncoding;
 import org.agrona.BufferUtil;

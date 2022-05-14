@@ -26,11 +26,11 @@ package org.tools4j.elara.plugin.replication;
 import org.agrona.collections.IntHashSet;
 import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.FlyweightHeader;
-import org.tools4j.elara.log.MessageLog.Appender;
-import org.tools4j.elara.log.MessageLog.AppendingContext;
 import org.tools4j.elara.logging.ElaraLogger;
 import org.tools4j.elara.logging.Logger.Factory;
 import org.tools4j.elara.plugin.replication.EnforceLeaderInput.EnforceLeaderReceiver;
+import org.tools4j.elara.store.MessageStore.Appender;
+import org.tools4j.elara.store.MessageStore.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
@@ -50,18 +50,18 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
     private final int serverId;
     private final IntHashSet serverIds;
     private final ReplicationState state;
-    private final Appender eventLogAppender;
+    private final Appender eventStoreAppender;
 
     EnforcedLeaderEventReceiver(final Factory loggerFactory,
                                 final TimeSource timeSource,
                                 final Configuration configuration,
                                 final ReplicationState state,
-                                final Appender eventLogAppender) {
+                                final Appender eventStoreAppender) {
         this.logger = ElaraLogger.create(loggerFactory, getClass());
         this.timeSource = requireNonNull(timeSource);
         this.serverIds = new IntHashSet(NULL_SERVER);
         this.state = requireNonNull(state);
-        this.eventLogAppender = requireNonNull(eventLogAppender);
+        this.eventStoreAppender = requireNonNull(eventStoreAppender);
         this.serverId = configuration.serverId();
         for (final int serverId : configuration.serverIds()) {
             serverIds.add(serverId);
@@ -90,7 +90,7 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
         if (leaderId == state.leaderId()) {
             logger.info("Server {} processing enforce-leader request: leader confirmed since attempted enforced leader {} is already leader")
                     .replace(serverId).replace(leaderId).format();
-            try (final AppendingContext context = eventLogAppender.appending()) {
+            try (final AppendingContext context = eventStoreAppender.appending()) {
                 FlyweightHeader.writeTo(
                         source, LEADER_CONFIRMED, sequence, time, Flags.COMMIT, (short)0, PAYLOAD_LENGTH,
                         context.buffer(), HEADER_OFFSET
@@ -103,7 +103,7 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
         if (!serverIds.contains(leaderId)) {
             logger.info("Server {} processing enforce-leader request: rejected since leader ID {} is invalid")
                     .replace(serverId).replace(leaderId).format();
-            try (final AppendingContext context = eventLogAppender.appending()) {
+            try (final AppendingContext context = eventStoreAppender.appending()) {
                 FlyweightHeader.writeTo(
                         source, LEADER_REJECTED, sequence, time, Flags.COMMIT, (short)0, PAYLOAD_LENGTH,
                         context.buffer(), HEADER_OFFSET
@@ -116,7 +116,7 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
         final int nextTerm = currentTerm + 1;
         logger.info("Server {} processing enforce-leader request: enforcing leader {} to replace current leader {} for next term {}")
                 .replace(serverId).replace(leaderId).replace(state.leaderId()).replace(nextTerm).format();
-        try (final AppendingContext context = eventLogAppender.appending()) {
+        try (final AppendingContext context = eventStoreAppender.appending()) {
             FlyweightHeader.writeTo(
                     source, LEADER_ENFORCED, sequence, timeSource.currentTime(), Flags.COMMIT, (short)0, PAYLOAD_LENGTH,
                     context.buffer(), HEADER_OFFSET

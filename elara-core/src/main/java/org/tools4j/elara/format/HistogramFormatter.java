@@ -25,8 +25,8 @@ package org.tools4j.elara.format;
 
 import org.tools4j.elara.plugin.metrics.LatencyMetric;
 import org.tools4j.elara.plugin.metrics.Metric;
-import org.tools4j.elara.plugin.metrics.MetricsLogEntry;
-import org.tools4j.elara.plugin.metrics.MetricsLogEntry.Type;
+import org.tools4j.elara.plugin.metrics.MetricsStoreEntry;
+import org.tools4j.elara.plugin.metrics.MetricsStoreEntry.Type;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -50,7 +50,7 @@ public interface HistogramFormatter extends LatencyFormatter {
             }
 
             @Override
-            public long intervalValue(final long line, final long entryId, final MetricsLogEntry entry) {
+            public long intervalValue(final long line, final long entryId, final MetricsStoreEntry entry) {
                 return interval;
             }
         };
@@ -59,7 +59,7 @@ public interface HistogramFormatter extends LatencyFormatter {
     ThreadLocal<HistogramValues[]> latencyHistograms = ThreadLocal.withInitial(() -> new HistogramValues[LatencyMetric.count()]);
 
     interface HistogramValues {
-        MetricsLogEntry entry();
+        MetricsStoreEntry entry();
         Metric metric();
         TimeFormatter timeFormatter();
         long resetTime();
@@ -89,7 +89,7 @@ public interface HistogramFormatter extends LatencyFormatter {
         CAPTURE,
         PRINT
     }
-    default CaptureResult capture(long line, long entryId, MetricsLogEntry entry) {
+    default CaptureResult capture(long line, long entryId, MetricsStoreEntry entry) {
         if (entry.type() != Type.TIME) {
             return CaptureResult.NOOP;
         }
@@ -109,16 +109,16 @@ public interface HistogramFormatter extends LatencyFormatter {
     }
 
     @Override
-    default Object interval(long line, long entryId, MetricsLogEntry entry) {
+    default Object interval(long line, long entryId, MetricsStoreEntry entry) {
         return timeFormatter().formatDuration(intervalValue(line, entryId, entry));
     }
 
-    default long intervalValue(long line, long entryId, MetricsLogEntry entry) {
+    default long intervalValue(long line, long entryId, MetricsStoreEntry entry) {
         return 1000;//every second if in millis
     }
 
     @Override
-    default Object type(long line, long entryId, MetricsLogEntry entry) {
+    default Object type(long line, long entryId, MetricsStoreEntry entry) {
         final Type type = entry.type();
         switch (entry.type()) {
             case TIME:
@@ -130,7 +130,7 @@ public interface HistogramFormatter extends LatencyFormatter {
     }
 
     @Override
-    default Object metricsValues(long line, long entryId, MetricsLogEntry entry) {
+    default Object metricsValues(long line, long entryId, MetricsStoreEntry entry) {
         if (entry.type() != Type.TIME) {
             return LatencyFormatter.super.metricsValues(line, entryId, entry);
         }
@@ -148,7 +148,7 @@ public interface HistogramFormatter extends LatencyFormatter {
         return sw.toString();
     }
 
-    default HistogramValues histogram(final long line, final long entryId, final MetricsLogEntry entry, final LatencyMetric metric, final int index) {
+    default HistogramValues histogram(final long line, final long entryId, final MetricsStoreEntry entry, final LatencyMetric metric, final int index) {
         HistogramValues histogram = latencyHistograms.get()[metric.ordinal()];
         if (histogram == null) {
             histogram = new DefaultHistogramValues(entry, metric, timeFormatter());

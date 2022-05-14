@@ -26,14 +26,14 @@ package org.tools4j.elara.plugin.replication;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 
-import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.COMMITTED_LOG_INDEX_OFFSET;
+import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.COMMITTED_STORE_INDEX_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.DATA_SIZE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.FLAGS_NONE;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.FLAGS_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.HEADER_LENGTH;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.LEADER_ID_OFFSET;
-import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.LOG_INDEX_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.PAYLOAD_OFFSET;
+import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.STORE_INDEX_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.TERM_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.TYPE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationMessageDescriptor.VERSION;
@@ -53,7 +53,7 @@ public enum ReplicationMessages {
     public static int appendRequest(final MutableDirectBuffer buffer, final int offset,
                                     final int term,
                                     final int leaderId,
-                                    final long logIndex,
+                                    final long storeIndex,
                                     final DirectBuffer payload,
                                     final int payloadOffset,
                                     final int dataSize) {
@@ -63,8 +63,8 @@ public enum ReplicationMessages {
         buffer.putInt(offset + DATA_SIZE_OFFSET, dataSize);
         buffer.putInt(offset + LEADER_ID_OFFSET, leaderId);
         buffer.putInt(offset + TERM_OFFSET, term);
-        buffer.putLong(offset + LOG_INDEX_OFFSET, logIndex);
-        buffer.putLong(offset + COMMITTED_LOG_INDEX_OFFSET, 0);//TODO commit log
+        buffer.putLong(offset + STORE_INDEX_OFFSET, storeIndex);
+        buffer.putLong(offset + COMMITTED_STORE_INDEX_OFFSET, 0);//TODO commit store index
         buffer.putBytes(offset + PAYLOAD_OFFSET, payload, payloadOffset, dataSize);
         return HEADER_LENGTH + dataSize;
     }
@@ -72,7 +72,7 @@ public enum ReplicationMessages {
     public static int appendResponse(final MutableDirectBuffer buffer, final int offset,
                                      final int term,
                                      final int leaderId,
-                                     final long nextEventLogIndex,
+                                     final long nextEventStoreIndex,
                                      final boolean success) {
         buffer.putByte(offset + VERSION_OFFSET, VERSION);
         buffer.putByte(offset + FLAGS_OFFSET, success ? FLAG_APPEND_SUCCESS : FLAGS_NONE);
@@ -80,8 +80,8 @@ public enum ReplicationMessages {
         buffer.putInt(offset + DATA_SIZE_OFFSET, 0);
         buffer.putInt(offset + LEADER_ID_OFFSET, leaderId);
         buffer.putInt(offset + TERM_OFFSET, term);
-        buffer.putLong(offset + LOG_INDEX_OFFSET, nextEventLogIndex);
-        buffer.putLong(offset + COMMITTED_LOG_INDEX_OFFSET, 0);//TODO commit log
+        buffer.putLong(offset + STORE_INDEX_OFFSET, nextEventStoreIndex);
+        buffer.putLong(offset + COMMITTED_STORE_INDEX_OFFSET, 0);//TODO committed store index
         return HEADER_LENGTH;
     }
 
@@ -113,12 +113,12 @@ public enum ReplicationMessages {
         return ReplicationMessageDescriptor.term(buffer);
     }
 
-    public static int logIndex(final DirectBuffer buffer) {
-        return ReplicationMessageDescriptor.logIndex(buffer);
+    public static int storeIndex(final DirectBuffer buffer) {
+        return ReplicationMessageDescriptor.storeIndex(buffer);
     }
 
-    public static int committedLogIndex(final DirectBuffer buffer) {
-        return ReplicationMessageDescriptor.committedLogIndex(buffer);
+    public static int committedStoreIndex(final DirectBuffer buffer) {
+        return ReplicationMessageDescriptor.committedStoreIndex(buffer);
     }
 
     public static int payloadSize(final DirectBuffer buffer) {

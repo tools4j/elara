@@ -21,19 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.log;
+package org.tools4j.elara.store;
 
-import org.tools4j.elara.log.MessageLog.Handler;
-import org.tools4j.elara.log.MessageLog.Handler.Result;
-import org.tools4j.elara.log.MessageLog.Poller;
+import org.tools4j.elara.store.MessageStore.Handler;
+import org.tools4j.elara.store.MessageStore.Handler.Result;
+import org.tools4j.elara.store.MessageStore.Poller;
 
 public class DefaultIndexTrackingPoller implements IndexTrackingPoller {
 
     private final Poller poller;
     private long index;
 
-    public DefaultIndexTrackingPoller(final MessageLog messageLog) {
-        this.poller = messageLog.poller();
+    public DefaultIndexTrackingPoller(final MessageStore messageStore) {
+        this.poller = messageStore.poller();
         moveToStart();
     }
 

@@ -27,9 +27,9 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FlyweightHeader;
-import org.tools4j.elara.log.ExpandableDirectBuffer;
-import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.log.MessageLog.AppendingContext;
+import org.tools4j.elara.store.ExpandableDirectBuffer;
+import org.tools4j.elara.store.MessageStore;
+import org.tools4j.elara.store.MessageStore.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
@@ -41,17 +41,17 @@ import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
 public final class DefaultReceiver implements Receiver.Default {
 
     private final TimeSource timeSource;
-    private final MessageLog.Appender commandLogAppender;
+    private final MessageStore.Appender commandStoreAppender;
     private final ReceivingContext receivingContext = new ReceivingContext();
 
-    public DefaultReceiver(final TimeSource timeSource, final MessageLog.Appender commandLogAppender) {
+    public DefaultReceiver(final TimeSource timeSource, final MessageStore.Appender commandStoreAppender) {
         this.timeSource = requireNonNull(timeSource);
-        this.commandLogAppender = requireNonNull(commandLogAppender);
+        this.commandStoreAppender = requireNonNull(commandStoreAppender);
     }
 
     @Override
     public ReceivingContext receivingMessage(final int source, final long sequence, final int type) {
-        return receivingContext.init(source, sequence, type, commandLogAppender.appending());
+        return receivingContext.init(source, sequence, type, commandStoreAppender.appending());
     }
 
     private final class ReceivingContext implements Receiver.ReceivingContext {

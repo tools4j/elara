@@ -32,8 +32,6 @@ import org.tools4j.elara.event.Event;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver;
-import org.tools4j.elara.log.InMemoryLog;
-import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.plugin.api.Plugins;
@@ -46,6 +44,8 @@ import org.tools4j.elara.samples.bank.command.BankCommand;
 import org.tools4j.elara.samples.bank.command.CommandType;
 import org.tools4j.elara.samples.bank.event.EventType;
 import org.tools4j.elara.samples.bank.state.Bank;
+import org.tools4j.elara.store.InMemoryStore;
+import org.tools4j.elara.store.MessageStore;
 
 import java.util.Queue;
 
@@ -70,26 +70,26 @@ public class BankApplication {
     }
 
     public ElaraRunner launch(final Queue<BankCommand> inputQueue) {
-        return launch(inputQueue, new InMemoryLog(), new InMemoryLog());
+        return launch(inputQueue, new InMemoryStore(), new InMemoryStore());
     }
 
     public ElaraRunner launch(final Queue<BankCommand> inputQueue,
-                              final MessageLog commandLog,
-                              final MessageLog eventLog) {
-        return launch(new CommandInput(inputQueue), commandLog, eventLog);
+                              final MessageStore commandStore,
+                              final MessageStore eventStore) {
+        return launch(new CommandInput(inputQueue), commandStore, eventStore);
     }
 
     public ElaraRunner launch(final Input input,
-                              final MessageLog commandLog,
-                              final MessageLog eventLog) {
+                              final MessageStore commandStore,
+                              final MessageStore eventStore) {
         return Elara.launch(
                 Context.create()
                         .commandProcessor(commandProcessor)
                         .eventApplier(eventApplier)
                         .input(input)
                         .output(this::publish)
-                        .commandLog(commandLog)
-                        .eventLog(eventLog)
+                        .commandStore(commandStore)
+                        .eventStore(eventStore)
                         .duplicateHandler(duplicateHandler)
                         .plugin(Plugins.bootPlugin())
         );

@@ -83,23 +83,23 @@ public class ReplicationPluginStep implements Step {
     private boolean updateFollowers() {
         if (isLeader()) {
             boolean workDone = false;
-            final long eventLogSize = replicationState.eventLogSize();
+            final long eventStoreSize = replicationState.eventStoreSize();
             for (short server = 0; server < serverIds.length; server++) {
                 final int followerId = serverIds[server];
                 if (followerId != serverId) {
-                    final long nextEventLogIndex = replicationState.nextEventLogIndex(followerId);
-                    if (nextEventLogIndex < eventLogSize) {
-                        if (eventSender.sendEvent(followerId, nextEventLogIndex)) {
-                            replicationState.nextEventLogIndex(followerId, nextEventLogIndex + 1);
+                    final long nextEventStoreIndex = replicationState.nextEventStoreIndex(followerId);
+                    if (nextEventStoreIndex < eventStoreSize) {
+                        if (eventSender.sendEvent(followerId, nextEventStoreIndex)) {
+                            replicationState.nextEventStoreIndex(followerId, nextEventStoreIndex + 1);
                         }
                         workDone = true;//we have still some work done if we move the poller forward or backward
                     } else {
-                        final long confirmedEventLogIndex = replicationState.confirmedEventLogIndex(followerId);
-                        if (confirmedEventLogIndex < eventLogSize) {
+                        final long confirmedEventStoreIndex = replicationState.confirmedEventStoreIndex(followerId);
+                        if (confirmedEventStoreIndex < eventStoreSize) {
                             final long nanoTime = System.nanoTime();
                             final long nextTime = replicationState.nextNotBefore(followerId);
                             if (nextTime == 0 || nanoTime - nextTime >= 0) {
-                                replicationState.nextEventLogIndex(followerId, confirmedEventLogIndex + 1);
+                                replicationState.nextEventStoreIndex(followerId, confirmedEventStoreIndex + 1);
                                 replicationState.nextNotBefore(followerId, nanoTime + RESEND_DELAY_NANOS);
                                 workDone = true;
                             }

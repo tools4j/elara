@@ -24,8 +24,8 @@
 package org.tools4j.elara.format;
 
 import org.tools4j.elara.plugin.metrics.LatencyMetric;
-import org.tools4j.elara.plugin.metrics.MetricsLogEntry;
-import org.tools4j.elara.plugin.metrics.MetricsLogEntry.Type;
+import org.tools4j.elara.plugin.metrics.MetricsStoreEntry;
+import org.tools4j.elara.plugin.metrics.MetricsStoreEntry.Type;
 import org.tools4j.elara.plugin.metrics.TimeMetric;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 
@@ -59,7 +59,7 @@ public interface LatencyFormatter extends MetricsFormatter {
     ThreadLocal<long[]> eventTimes = ThreadLocal.withInitial(() -> new long[TimeMetric.count()]);
 
     @Override
-    default Object type(long line, long entryId, MetricsLogEntry entry) {
+    default Object type(long line, long entryId, MetricsStoreEntry entry) {
         final Type type = entry.type();
         switch (entry.type()) {
             case TIME:
@@ -71,14 +71,14 @@ public interface LatencyFormatter extends MetricsFormatter {
     }
 
     @Override
-    default Object metricsCount(long line, long entryId, MetricsLogEntry entry) {
+    default Object metricsCount(long line, long entryId, MetricsStoreEntry entry) {
         if (entry.type() != Type.TIME) {
             return MetricsFormatter.super.metricsCount(line, entryId, entry);
         }
         return metricsSet(line, entryId, entry).size();
     }
 
-    default EnumSet<LatencyMetric> metricsSet(long line, long entryId, MetricsLogEntry entry) {
+    default EnumSet<LatencyMetric> metricsSet(long line, long entryId, MetricsStoreEntry entry) {
         final Predicate<LatencyMetric> skip;
         switch (entry.target()) {
             case COMMAND: skip = metric ->
@@ -113,7 +113,7 @@ public interface LatencyFormatter extends MetricsFormatter {
         return twoSet;
     }
 
-    default void cacheTimeValues(long line, long entryId, MetricsLogEntry entry) {
+    default void cacheTimeValues(long line, long entryId, MetricsStoreEntry entry) {
         if (entry.type() != Type.TIME) {
             return;
         }
@@ -138,7 +138,7 @@ public interface LatencyFormatter extends MetricsFormatter {
         }
     }
     @Override
-    default Object metricsValues(long line, long entryId, MetricsLogEntry entry) {
+    default Object metricsValues(long line, long entryId, MetricsStoreEntry entry) {
         if (entry.type() != Type.TIME) {
             return MetricsFormatter.super.metricsValues(line, entryId, entry);
         }
@@ -158,7 +158,7 @@ public interface LatencyFormatter extends MetricsFormatter {
     }
 
     @Override
-    default MetricValue metricValue(final long line, final long entryId, final MetricsLogEntry entry, final int index) {
+    default MetricValue metricValue(final long line, final long entryId, final MetricsStoreEntry entry, final int index) {
         if (entry.type() != Type.TIME) {
             return MetricsFormatter.super.metricValue(line, entryId, entry, index);
         }
@@ -167,7 +167,7 @@ public interface LatencyFormatter extends MetricsFormatter {
         return metricValue(line, entryId, entry, metric, index);
     }
 
-    default MetricValue metricValue(final long line, final long entryId, final MetricsLogEntry entry, final LatencyMetric metric, final int index) {
+    default MetricValue metricValue(final long line, final long entryId, final MetricsStoreEntry entry, final LatencyMetric metric, final int index) {
         final Target target = entry.target();
         final ToLongFunction<TimeMetric> timeLookup = timeMetric -> {
             final long commandTime = commandTimes.get()[timeMetric.ordinal()];

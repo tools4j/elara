@@ -21,29 +21,29 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.log;
+package org.tools4j.elara.store;
 
 import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.junit.jupiter.api.Test;
-import org.tools4j.elara.log.MessageLog.Appender;
-import org.tools4j.elara.log.MessageLog.AppendingContext;
-import org.tools4j.elara.log.MessageLog.Handler;
-import org.tools4j.elara.log.MessageLog.Poller;
+import org.tools4j.elara.store.MessageStore.Appender;
+import org.tools4j.elara.store.MessageStore.AppendingContext;
+import org.tools4j.elara.store.MessageStore.Handler;
+import org.tools4j.elara.store.MessageStore.Poller;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.tools4j.elara.log.MessageLog.Handler.Result.POLL;
+import static org.tools4j.elara.store.MessageStore.Handler.Result.POLL;
 
 /**
- * Unit test for {@link InMemoryLog}
+ * Unit test for {@link InMemoryStore}
  */
-class InMemoryLogTest {
+class InMemoryStoreTest {
 
     private static final int INITIAL_QUEUE_CAPACITY     = 4;
     private static final int INITIAL_BUFFER_CAPACITY    = 16;
@@ -51,48 +51,48 @@ class InMemoryLogTest {
     @Test
     public void appendAndPoll_withRemove() {
         //given
-        final InMemoryLog messageLog = removeOnPollLog(false);
+        final InMemoryStore messageStore = removeOnPollStore(false);
 
         //when + then
-        final DirectBuffer[] messages = append(messageLog);
-        poll(messageLog.poller(), messages);
-        poll(messageLog.poller());
+        final DirectBuffer[] messages = append(messageStore);
+        poll(messageStore.poller(), messages);
+        poll(messageStore.poller());
     }
 
     @Test
     public void appendAndPoll_withoutRemove() {
         //given
-        final InMemoryLog messageLog = keepOnPollLog(true);
+        final InMemoryStore messageStore = keepOnPollStore(true);
 
         //when + then
-        final DirectBuffer[] messages = append(messageLog);
-        poll(messageLog.poller(), messages);
-        poll(messageLog.poller(), messages);
+        final DirectBuffer[] messages = append(messageStore);
+        poll(messageStore.poller(), messages);
+        poll(messageStore.poller(), messages);
     }
 
     @Test
     public void appending() {
         //given
-        final InMemoryLog messageLog = removeOnPollLog(true);
+        final InMemoryStore messageStore = removeOnPollStore(true);
 
         //when + then
-        final DirectBuffer[] messages = appending(messageLog);
-        poll(messageLog.poller(), messages);
-        poll(messageLog.poller());
+        final DirectBuffer[] messages = appending(messageStore);
+        poll(messageStore.poller(), messages);
+        poll(messageStore.poller());
     }
 
     @Test
     public void appendingWithAbort() {
         //given
-        final InMemoryLog messageLog = removeOnPollLog(false);
+        final InMemoryStore messageStore = removeOnPollStore(false);
 
         //when + then
-        final DirectBuffer[] messages = appendingWithAbort(messageLog);
-        poll(messageLog.poller(), messages);
-        poll(messageLog.poller());
+        final DirectBuffer[] messages = appendingWithAbort(messageStore);
+        poll(messageStore.poller(), messages);
+        poll(messageStore.poller());
     }
 
-    private DirectBuffer[] append(final InMemoryLog messageLog) {
+    private DirectBuffer[] append(final InMemoryStore messageStore) {
         //given
         final DirectBuffer[] messages = new DirectBuffer[]{
                 message("Hi!"),
@@ -101,7 +101,7 @@ class InMemoryLogTest {
                 message("Peter and Paul"),
                 message("a^2 + b^2 = c^2"),
         };
-        final Appender appender = messageLog.appender();
+        final Appender appender = messageStore.appender();
 
         //when
         for (final DirectBuffer message : messages) {
@@ -109,11 +109,11 @@ class InMemoryLogTest {
         }
 
         //then
-        assertEquals(messages.length, messageLog.size(), "size");
+        assertEquals(messages.length, messageStore.size(), "size");
         return messages;
     }
 
-    private DirectBuffer[] appending(final InMemoryLog messageLog) {
+    private DirectBuffer[] appending(final InMemoryStore messageStore) {
         //given
         final DirectBuffer[] messages = new DirectBuffer[]{
                 message("Hi!"),
@@ -122,7 +122,7 @@ class InMemoryLogTest {
                 message("Peter and Paul"),
                 message("a^2 + b^2 = c^2"),
         };
-        final Appender appender = messageLog.appender();
+        final Appender appender = messageStore.appender();
 
         //when
         for (final DirectBuffer message : messages) {
@@ -133,11 +133,11 @@ class InMemoryLogTest {
         }
 
         //then
-        assertEquals(messages.length, messageLog.size(), "size");
+        assertEquals(messages.length, messageStore.size(), "size");
         return messages;
     }
 
-    private DirectBuffer[] appendingWithAbort(final InMemoryLog messageLog) {
+    private DirectBuffer[] appendingWithAbort(final InMemoryStore messageStore) {
         //given
         final DirectBuffer[] messages = new DirectBuffer[]{
                 message("Hi!"),
@@ -147,7 +147,7 @@ class InMemoryLogTest {
                 message("a^2 + b^2 = c^2"),
         };
         final List<DirectBuffer> committed = new ArrayList<>();
-        final Appender appender = messageLog.appender();
+        final Appender appender = messageStore.appender();
 
         //when
         for (int i = 0; i < messages.length; i++) {
@@ -162,7 +162,7 @@ class InMemoryLogTest {
         }
 
         //then
-        assertEquals(committed.size(), messageLog.size(), "size");
+        assertEquals(committed.size(), messageStore.size(), "size");
         return committed.toArray(new DirectBuffer[0]);
     }
 
@@ -188,12 +188,12 @@ class InMemoryLogTest {
         assertNull(messageCaptor.get(), "polled message");
     }
 
-    private static InMemoryLog keepOnPollLog(final boolean initEagerly) {
-        return new InMemoryLog(INITIAL_QUEUE_CAPACITY, INITIAL_BUFFER_CAPACITY, false, initEagerly);
+    private static InMemoryStore keepOnPollStore(final boolean initEagerly) {
+        return new InMemoryStore(INITIAL_QUEUE_CAPACITY, INITIAL_BUFFER_CAPACITY, false, initEagerly);
     }
 
-    private static InMemoryLog removeOnPollLog(final boolean initEagerly) {
-        return new InMemoryLog(INITIAL_QUEUE_CAPACITY, INITIAL_BUFFER_CAPACITY, true, initEagerly);
+    private static InMemoryStore removeOnPollStore(final boolean initEagerly) {
+        return new InMemoryStore(INITIAL_QUEUE_CAPACITY, INITIAL_BUFFER_CAPACITY, true, initEagerly);
     }
 
 

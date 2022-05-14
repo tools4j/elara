@@ -25,8 +25,8 @@ package org.tools4j.elara.format;
 
 import org.tools4j.elara.plugin.metrics.FrequencyMetric;
 import org.tools4j.elara.plugin.metrics.Metric;
-import org.tools4j.elara.plugin.metrics.MetricsLogEntry;
-import org.tools4j.elara.plugin.metrics.MetricsLogEntry.Type;
+import org.tools4j.elara.plugin.metrics.MetricsStoreEntry;
+import org.tools4j.elara.plugin.metrics.MetricsStoreEntry.Type;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -39,7 +39,7 @@ import static org.tools4j.elara.format.DefaultMessagePrinters.METRICS_VALUE_FORM
  * Formats value for {@link MessagePrinter} when printing lines containing metrics data produced by the
  * {@link org.tools4j.elara.plugin.metrics.MetricsPlugin MetricsPlugin}.
  */
-public interface MetricsFormatter extends ValueFormatter<MetricsLogEntry> {
+public interface MetricsFormatter extends ValueFormatter<MetricsStoreEntry> {
 
     MetricsFormatter DEFAULT = new MetricsFormatter() {};
 
@@ -86,11 +86,11 @@ public interface MetricsFormatter extends ValueFormatter<MetricsLogEntry> {
     /** Placeholder in format string for the metrics values */
     String METRICS_VALUES = "{metrics-values}";
 
-    default Object line(long line, long entryId, MetricsLogEntry entry) {return line;}
-    default Object entryId(long line, long entryId, MetricsLogEntry entry) {return entryId;}
-    default Object version(long line,long entryId, MetricsLogEntry entry) {return entry.version();}
-    default Object flags(long line,long entryId, MetricsLogEntry entry) {return entry.flags();}
-    default Object type(long line, long entryId, MetricsLogEntry entry) {
+    default Object line(long line, long entryId, MetricsStoreEntry entry) {return line;}
+    default Object entryId(long line, long entryId, MetricsStoreEntry entry) {return entryId;}
+    default Object version(long line,long entryId, MetricsStoreEntry entry) {return entry.version();}
+    default Object flags(long line,long entryId, MetricsStoreEntry entry) {return entry.flags();}
+    default Object type(long line, long entryId, MetricsStoreEntry entry) {
         final Type type = entry.type();
         switch (entry.type()) {
             case TIME:
@@ -100,23 +100,23 @@ public interface MetricsFormatter extends ValueFormatter<MetricsLogEntry> {
         }
         return type;
     }
-    default Object target(long line, long entryId, MetricsLogEntry entry) {return entry.target();}
-    default Object time(long line, long entryId, MetricsLogEntry entry) {
+    default Object target(long line, long entryId, MetricsStoreEntry entry) {return entry.target();}
+    default Object time(long line, long entryId, MetricsStoreEntry entry) {
         return timeFormatter().formatDateTime(entry.time());
     }
     //time metrics
-    default Object source(long line, long entryId, MetricsLogEntry entry) {return entry.source();}
-    default Object sequence(long line, long entryId, MetricsLogEntry entry) {return entry.sequence();}
-    default Object index(long line, long entryId, MetricsLogEntry entry) {return entry.index();}
+    default Object source(long line, long entryId, MetricsStoreEntry entry) {return entry.source();}
+    default Object sequence(long line, long entryId, MetricsStoreEntry entry) {return entry.sequence();}
+    default Object index(long line, long entryId, MetricsStoreEntry entry) {return entry.index();}
     //frequency metrics
-    default Object choice(long line, long entryId, MetricsLogEntry entry) {return entry.choice();}
-    default Object repetition(long line, long entryId, MetricsLogEntry entry) {return entry.repetition();}
-    default Object interval(long line, long entryId, MetricsLogEntry entry) {
+    default Object choice(long line, long entryId, MetricsStoreEntry entry) {return entry.choice();}
+    default Object repetition(long line, long entryId, MetricsStoreEntry entry) {return entry.repetition();}
+    default Object interval(long line, long entryId, MetricsStoreEntry entry) {
         return timeFormatter().formatDuration(entry.interval());
     }
 
-    default Object metricsCount(long line, long entryId, MetricsLogEntry entry) {return entry.count();}
-    default Object metricsValues(long line, long entryId, MetricsLogEntry entry) {
+    default Object metricsCount(long line, long entryId, MetricsStoreEntry entry) {return entry.count();}
+    default Object metricsValues(long line, long entryId, MetricsStoreEntry entry) {
         final int count = entry.count();
         final StringWriter sw = new StringWriter(count * 16);
         final PrintWriter pw = new PrintWriter(sw);
@@ -130,7 +130,7 @@ public interface MetricsFormatter extends ValueFormatter<MetricsLogEntry> {
     }
 
     @Override
-    default Object value(final String placeholder, final long line, final long entryId, final MetricsLogEntry entry) {
+    default Object value(final String placeholder, final long line, final long entryId, final MetricsStoreEntry entry) {
         switch (placeholder) {
             case LINE_SEPARATOR: return System.lineSeparator();
             case MESSAGE: return entry;
@@ -201,17 +201,17 @@ public interface MetricsFormatter extends ValueFormatter<MetricsLogEntry> {
         }
     }
 
-    default MessagePrinter<MetricValue> metricValuePrinter(long line, long entryId, MetricsLogEntry entry, int index) {
+    default MessagePrinter<MetricValue> metricValuePrinter(long line, long entryId, MetricsStoreEntry entry, int index) {
         final String format = index == 0 ? METRICS_VALUE_FORMAT_0 : METRICS_VALUE_FORMAT_N;
         final ValueFormatter<MetricValue> formatter = metricValueFormatter(line, entryId, entry, index).withTimeFormatter(timeFormatter());
         return new ParameterizedMessagePrinter<>(format, formatter);
     }
 
-    default MetricValueFormatter metricValueFormatter(long line, long entryId, MetricsLogEntry entry, int index) {
+    default MetricValueFormatter metricValueFormatter(long line, long entryId, MetricsStoreEntry entry, int index) {
         return MetricValueFormatter.DEFAULT;
     }
 
-    default MetricValue metricValue(final long line, final long entryId, final MetricsLogEntry entry, final int index) {
+    default MetricValue metricValue(final long line, final long entryId, final MetricsStoreEntry entry, final int index) {
         final Type type = entry.type();
         final Metric metric = type == Type.TIME ? entry.target().metric(entry.flags(), index) :
                 FrequencyMetric.metric(entry.choice(), index);

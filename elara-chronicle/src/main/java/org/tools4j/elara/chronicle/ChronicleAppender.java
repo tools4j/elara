@@ -31,21 +31,21 @@ import net.openhft.chronicle.wire.DocumentContext;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
-import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.store.MessageStore;
 
 import static java.util.Objects.requireNonNull;
 
-public class ChronicleLogAppender implements MessageLog.Appender {
+public class ChronicleAppender implements MessageStore.Appender {
 
     private final ExcerptAppender appender;
     private final UnsafeBuffer bytesWrapper = new UnsafeBuffer(0, 0);
     private final AppendingContext appendContext = new AppendingContext();
 
-    public ChronicleLogAppender(final ChronicleQueue queue) {
+    public ChronicleAppender(final ChronicleQueue queue) {
         this(queue.acquireAppender());
     }
 
-    public ChronicleLogAppender(final ExcerptAppender appender) {
+    public ChronicleAppender(final ExcerptAppender appender) {
         this.appender = requireNonNull(appender);
     }
 
@@ -95,11 +95,11 @@ public class ChronicleLogAppender implements MessageLog.Appender {
     }
 
     @Override
-    public MessageLog.AppendingContext appending() {
+    public MessageStore.AppendingContext appending() {
         return appendContext.init(appender.writingDocument());
     }
 
-    private static class AppendingContext implements MessageLog.AppendingContext {
+    private static class AppendingContext implements MessageStore.AppendingContext {
         private final BytesDirectBuffer buffer = new BytesDirectBuffer();
         private DocumentContext context;
 
@@ -177,7 +177,7 @@ public class ChronicleLogAppender implements MessageLog.Appender {
 
     @Override
     public String toString() {
-        return "ChronicleLogAppender{" +
+        return "ChronicleAppender{" +
                 "appender=" + appender +
                 '}';
     }

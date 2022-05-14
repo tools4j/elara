@@ -24,8 +24,8 @@ There are excellent introductions to event sourcing out there.  Some of our favo
 #### Terminology 
 * **Command:** essentially an input message but enriched with timestamp, source and sequence number; can be a state modifying command or a query
 * **Event:** result of processing a command; instruction how to modify state or what output to generate
-* **Command Log:** persisted log that sequentially stores all incoming commands
-* **Event Log:** persisted event log that sequentially stores all routed events
+* **Command Store:** persisted store that sequentially stores all incoming commands
+* **Event Store:** persisted event store that sequentially stores all routed events
 * **Application State:** transient in-memory state of the application;  can be constructed from events via _Event Applier_
 * **Input:** a source of input commands, such as a message subscription
 * **Output:** transforms selected events into output messages and publishes them to downstream applications
@@ -48,7 +48,7 @@ Elara provides the following default plugins:
              commands to fire or expire timers which are then removed from the timer state through an event 
              (see samples section for examples) 
 * **metrics:** plugin to capture time and frequency metrics of the running application;  a running application 
-               efficiently captures metrics in a message log file that can be inspected with the log printer tool  
+               efficiently captures metrics in a message store file that can be inspected with the store printer tool  
 * **replication:** *[experimental]* plugin to replicate events from a leader elara instance to follower instances that 
                    are applying events but do not process commands;  follower instances have identical state as the 
                    leader (after applying all events and assuming deterministic application logic);  together with the

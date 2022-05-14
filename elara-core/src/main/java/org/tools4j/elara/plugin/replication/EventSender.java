@@ -24,5 +24,5 @@
 package org.tools4j.elara.plugin.replication;
 
 public interface EventSender {
-    boolean sendEvent(int targetServerId, long eventLogIndex);
+    boolean sendEvent(int targetServerId, long eventStoreIndex);
 }

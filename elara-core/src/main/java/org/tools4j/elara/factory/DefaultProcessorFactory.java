@@ -28,12 +28,12 @@ import org.tools4j.elara.command.CompositeCommandProcessor;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.CommandPollerHandler;
 import org.tools4j.elara.handler.DefaultCommandHandler;
-import org.tools4j.elara.init.CommandLogMode;
+import org.tools4j.elara.init.CommandStoreMode;
 import org.tools4j.elara.init.Configuration;
-import org.tools4j.elara.log.MessageLog.Poller;
 import org.tools4j.elara.loop.CommandPollerStep;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.route.DefaultEventRouter;
+import org.tools4j.elara.store.MessageStore.Poller;
 import org.tools4j.nobark.loop.Step;
 
 import java.util.Arrays;
@@ -80,7 +80,7 @@ public class DefaultProcessorFactory implements ProcessorFactory {
     public CommandHandler commandHandler() {
         return new DefaultCommandHandler(
                 singletons.get().baseState(),
-                new DefaultEventRouter(configuration.eventLog().appender(), singletons.get().eventHandler()),
+                new DefaultEventRouter(configuration.eventStore().appender(), singletons.get().eventHandler()),
                 singletons.get().commandProcessor(),
                 configuration.exceptionHandler(),
                 configuration.duplicateHandler()
@@ -89,22 +89,22 @@ public class DefaultProcessorFactory implements ProcessorFactory {
 
     @Override
     public Step commandPollerStep() {
-        final Poller commandLogPoller;
-        switch (configuration.commandLogMode()) {
+        final Poller commandStorePoller;
+        switch (configuration.commandStoreMode()) {
             case REPLAY_ALL:
-                commandLogPoller = configuration.commandLog().poller();
+                commandStorePoller = configuration.commandStore().poller();
                 break;
             case FROM_LAST:
-                commandLogPoller = configuration.commandLog().poller(CommandLogMode.DEFAULT_POLLER_ID);
+                commandStorePoller = configuration.commandStore().poller(CommandStoreMode.DEFAULT_POLLER_ID);
                 break;
             case FROM_END:
-                commandLogPoller = configuration.commandLog().poller();
-                commandLogPoller.moveToEnd();
+                commandStorePoller = configuration.commandStore().poller();
+                commandStorePoller.moveToEnd();
                 break;
             default:
-                throw new IllegalArgumentException("Unsupported command log mode: " + configuration.commandLogMode());
+                throw new IllegalArgumentException("Unsupported command store mode: " + configuration.commandStoreMode());
         }
-        return new CommandPollerStep(commandLogPoller, new CommandPollerHandler(singletons.get().commandHandler()));
+        return new CommandPollerStep(commandStorePoller, new CommandPollerHandler(singletons.get().commandHandler()));
     }
 
 

@@ -36,9 +36,9 @@ import org.agrona.DirectBuffer;
      +-------+-------+-------+-------+-------+-------+-------+-------+
      |      Candidate/Leader ID      |             Term              |
      +-------+-------+-------+-------+-------+-------+-------+-------+
-     |                           Log Index                           |
+     |                         Store Index                           |
      +-------+-------+-------+-------+-------+-------+-------+-------+
-     |                      Committed Log Index                      |
+     |                    Committed Store Index                      |
      +-------+-------+-------+-------+-------+-------+-------+-------+
      |                             Data                              |
      |                             ....                              |
@@ -63,13 +63,13 @@ public enum ReplicationMessageDescriptor {
     public static final int CANDIDATE_ID_LENGTH = Integer.BYTES;
     public static final int TERM_OFFSET = CANDIDATE_ID_OFFSET + CANDIDATE_ID_LENGTH;
     public static final int TERM_LENGTH = Integer.BYTES;
-    public static final int LOG_INDEX_OFFSET = TERM_OFFSET + TERM_LENGTH;
-    public static final int LOG_INDEX_LENGTH = Long.BYTES;
-    public static final int COMMITTED_LOG_INDEX_OFFSET = LOG_INDEX_OFFSET + LOG_INDEX_LENGTH;
-    public static final int COMMITTED_LOG_INDEX_LENGTH = Long.BYTES;
+    public static final int STORE_INDEX_OFFSET = TERM_OFFSET + TERM_LENGTH;
+    public static final int STORE_INDEX_LENGTH = Long.BYTES;
+    public static final int COMMITTED_STORE_INDEX_OFFSET = STORE_INDEX_OFFSET + STORE_INDEX_LENGTH;
+    public static final int COMMITTED_STORE_INDEX_LENGTH = Long.BYTES;
 
     public static final int HEADER_OFFSET = 0;
-    public static final int HEADER_LENGTH = COMMITTED_LOG_INDEX_OFFSET + COMMITTED_LOG_INDEX_LENGTH;
+    public static final int HEADER_LENGTH = COMMITTED_STORE_INDEX_OFFSET + COMMITTED_STORE_INDEX_LENGTH;
     public static final int PAYLOAD_OFFSET = HEADER_OFFSET + HEADER_LENGTH;
 
     //aliases
@@ -100,12 +100,12 @@ public enum ReplicationMessageDescriptor {
         return buffer.getInt(TERM_OFFSET);
     }
 
-    public static int logIndex(final DirectBuffer buffer) {
-        return buffer.getInt(LOG_INDEX_OFFSET);
+    public static int storeIndex(final DirectBuffer buffer) {
+        return buffer.getInt(STORE_INDEX_OFFSET);
     }
 
-    public static int committedLogIndex(final DirectBuffer buffer) {
-        return buffer.getInt(COMMITTED_LOG_INDEX_OFFSET);
+    public static int committedStoreIndex(final DirectBuffer buffer) {
+        return buffer.getInt(COMMITTED_STORE_INDEX_OFFSET);
     }
 
     public static int dataSize(final DirectBuffer buffer) {

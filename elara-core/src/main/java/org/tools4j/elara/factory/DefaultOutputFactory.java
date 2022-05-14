@@ -86,7 +86,7 @@ public class DefaultOutputFactory implements OutputFactory {
     @Override
     public CommandLoopback commandLoopback() {
         return new DefaultCommandLoopback(
-                configuration.commandLog().appender(),
+                configuration.commandStore().appender(),
                 configuration.timeSource(),
                 singletons.get().loopbackSequenceGenerator()
         );
@@ -106,11 +106,11 @@ public class DefaultOutputFactory implements OutputFactory {
         }
         final OutputHandler outputHandler = singletons.get().outputHandler();
         try {
-            return new OutputStep(outputHandler, configuration.eventLog(), DEFAULT_POLLER_ID);
+            return new OutputStep(outputHandler, configuration.eventStore(), DEFAULT_POLLER_ID);
         } catch (final UnsupportedOperationException e) {
             //ignore, use non-tracking below
         }
-        return new OutputStep(outputHandler, configuration.eventLog());
+        return new OutputStep(outputHandler, configuration.eventStore());
     }
 
 }

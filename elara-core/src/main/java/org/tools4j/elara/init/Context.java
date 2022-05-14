@@ -29,10 +29,10 @@ import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.time.TimeSource;
 import org.tools4j.nobark.loop.Step;
 
@@ -48,11 +48,11 @@ public interface Context extends Configuration {
     Context inputs(Input... inputs);
     Context inputs(Collection<? extends Input> inputs);
     Context output(Output output);
-    Context commandLog(String file);
-    Context commandLog(MessageLog commandLog);
-    Context commandLogMode(CommandLogMode mode);
-    Context eventLog(String file);
-    Context eventLog(MessageLog eventLog);
+    Context commandStore(String file);
+    Context commandStore(MessageStore commandStore);
+    Context commandStoreMode(CommandStoreMode mode);
+    Context eventStore(String file);
+    Context eventStore(MessageStore eventStore);
     Context timeSource(TimeSource timeSource);
     Context exceptionHandler(ExceptionHandler exceptionHandler);
     Context duplicateHandler(DuplicateHandler duplicateHandler);

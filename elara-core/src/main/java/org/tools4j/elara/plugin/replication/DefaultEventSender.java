@@ -28,10 +28,10 @@ import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.collections.Int2ObjectHashMap;
 import org.tools4j.elara.flyweight.FrameDescriptor;
-import org.tools4j.elara.log.IndexTrackingPoller;
-import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.log.MessageLog.Handler;
 import org.tools4j.elara.plugin.replication.Connection.Publisher;
+import org.tools4j.elara.store.IndexTrackingPoller;
+import org.tools4j.elara.store.MessageStore;
+import org.tools4j.elara.store.MessageStore.Handler;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;
@@ -46,32 +46,32 @@ final class DefaultEventSender implements EventSender {
 
     DefaultEventSender(final Configuration configuration,
                        final ReplicationState state,
-                       final MessageLog messageLog,
+                       final MessageStore messageStore,
                        final Publisher publisher) {
         requireNonNull(configuration);
         this.state = requireNonNull(state);
-        requireNonNull(messageLog);
+        requireNonNull(messageStore);
         this.publisher = requireNonNull(publisher);
         this.sendBuffer = new ExpandableDirectByteBuffer(Math.max(FrameDescriptor.HEADER_LENGTH, configuration.initialSendBufferCapacity()));
         final int currentServerId = configuration.serverId();
         for (final int serverId : configuration.serverIds()) {
             if (serverId != currentServerId) {
-                pollerByServerId.put(serverId, IndexTrackingPoller.create(messageLog));
+                pollerByServerId.put(serverId, IndexTrackingPoller.create(messageStore));
             }
         }
     }
 
     @Override
-    public boolean sendEvent(final int targetServerId, final long eventLogIndex) {
+    public boolean sendEvent(final int targetServerId, final long eventStoreIndex) {
         final IndexTrackingPoller poller = pollerByServerId.get(targetServerId);
         if (poller == null) {
             throw new NullPointerException("No poller found for target server " + targetServerId);
         }
         final long index = poller.index();
-        if (index == eventLogIndex) {
-            return poller.poll(publishingHandler.init(targetServerId, eventLogIndex)) > 0;
+        if (index == eventStoreIndex) {
+            return poller.poll(publishingHandler.init(targetServerId, eventStoreIndex)) > 0;
         }
-        if (index < eventLogIndex) {
+        if (index < eventStoreIndex) {
             poller.moveToNext();
         } else {
             poller.moveToPrevious();
@@ -81,17 +81,17 @@ final class DefaultEventSender implements EventSender {
 
     private final class PublishingHandler implements Handler {
         int targetServerId = NULL_SERVER;
-        long eventLogIndex = -1;
-        PublishingHandler init(final int targetServerId, final long eventLogIndex) {
+        long eventStoreIndex = -1;
+        PublishingHandler init(final int targetServerId, final long eventStoreIndex) {
             this.targetServerId = targetServerId;
-            this.eventLogIndex = eventLogIndex;
+            this.eventStoreIndex = eventStoreIndex;
             return this;
         }
 
         @Override
         public Result onMessage(final DirectBuffer message) {
             final int length = ReplicationMessages.appendRequest(sendBuffer, 0, state.term(),
-                    state.leaderId(), eventLogIndex, message, 0, message.capacity());
+                    state.leaderId(), eventStoreIndex, message, 0, message.capacity());
             if (publisher.publish(targetServerId, sendBuffer, 0, length)) {
                 return Result.POLL;
             }

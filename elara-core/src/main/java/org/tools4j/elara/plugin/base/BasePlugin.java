@@ -23,11 +23,11 @@
  */
 package org.tools4j.elara.plugin.base;
 
-import org.tools4j.elara.log.EventLogRepairer;
-import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState.Mutable;
+import org.tools4j.elara.store.EventStoreRepairer;
+import org.tools4j.elara.store.MessageStore;
 
 import java.io.IOException;
 
@@ -50,7 +50,7 @@ public enum BasePlugin implements SystemPlugin<Mutable> {
                                            final BaseState.Mutable baseState) {
         requireNonNull(appConfig);
         requireNonNull(baseState);
-        repairEventLogIfNeeded(appConfig);
+        repairEventStoreIfNeeded(appConfig);
         return () -> baseState;
     }
 
@@ -73,13 +73,13 @@ public enum BasePlugin implements SystemPlugin<Mutable> {
         BaseState.Mutable baseState();
     }
 
-    private void repairEventLogIfNeeded(final org.tools4j.elara.init.Configuration appConfig) {
-        final MessageLog eventLog = appConfig.eventLog();
-        final EventLogRepairer eventLogRepairer = new EventLogRepairer(eventLog);
-        if (eventLogRepairer.isCorrupted()) {
-            appConfig.exceptionHandler().handleException("Repairing corrupted event log",
-                    new IOException("Corrupted event log: " + eventLog));
-            eventLogRepairer.repair();
+    private void repairEventStoreIfNeeded(final org.tools4j.elara.init.Configuration appConfig) {
+        final MessageStore eventStore = appConfig.eventStore();
+        final EventStoreRepairer eventStoreRepairer = new EventStoreRepairer(eventStore);
+        if (eventStoreRepairer.isCorrupted()) {
+            appConfig.exceptionHandler().handleException("Repairing corrupted event store",
+                    new IOException("Corrupted event store: " + eventStore));
+            eventStoreRepairer.repair();
         }
     }
 }

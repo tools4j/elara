@@ -58,7 +58,7 @@ public class MetricsPlugin implements Plugin<MetricsState> {
                 if (configuration.frequencyMetrics().isEmpty() || executionType != ExecutionType.ALWAYS) {
                     return Step.NO_OP;
                 }
-                return new FrequencyMetricsLoggerStep(appConfig.timeSource(), configuration, pluginState);
+                return new FrequencyMetricsWriterStep(appConfig.timeSource(), configuration, pluginState);
             }
 
             @Override

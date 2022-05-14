@@ -25,7 +25,7 @@ package org.tools4j.elara.handler;
 
 import org.agrona.DirectBuffer;
 import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.log.MessageLog.Handler;
+import org.tools4j.elara.store.MessageStore.Handler;
 
 import static java.util.Objects.requireNonNull;
 

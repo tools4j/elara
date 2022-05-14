@@ -32,8 +32,8 @@ import org.tools4j.elara.logging.Logger.Level;
 import static org.tools4j.elara.logging.OutputStreamLogger.SYSTEM_FACTORY;
 
 /**
- * Duplicate commands and events are detected and skipped by the engine.  This handler allows applications to log react
- * in such situations for instance to log an information or warning message.
+ * Duplicate commands and events are detected and skipped by the engine.  This handler allows applications to react to
+ * such situations for instance by logging an information or warning message.
  */
 @FunctionalInterface
 public interface DuplicateHandler {
@@ -42,8 +42,8 @@ public interface DuplicateHandler {
      * Command processing is skipped as all events for this command ID have already been applied.
      * <p>
      * This usually happens when<ol>
-     *     <li>events from the event log are reapplied to reconstruct the application state</li>
-     *     <li>subsequently commands for the same events are processed for instance by replaying the command log</li>
+     *     <li>events from the event store are reapplied to reconstruct the application state</li>
+     *     <li>subsequently commands for the same events are processed for instance by replaying the command store</li>
      * </ol>
      *
      * @param command the skipped command
@@ -55,7 +55,7 @@ public interface DuplicateHandler {
      * <p>
      * This usually happens when <ol>
      *     <li>events are directly applied in the same run when commands are processed</li>
-     *     <li>subsequently the same events are polled from the event log and attempted to reapply</li>
+     *     <li>subsequently the same events are polled from the event store and attempted to reapply</li>
      * </ol>
      *
      * @param event the skipped event

@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.plugin.metrics;
 
-import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.store.MessageStore;
 
 import java.util.Set;
 
@@ -31,9 +31,9 @@ public interface Configuration {
     Set<TimeMetric> timeMetrics();
     Set<FrequencyMetric> frequencyMetrics();
     InputSendingTimeExtractor inputSendingTimeExtractor();
-    long frequencyLogInterval();
-    MessageLog timeMetricsLog();
-    MessageLog frequencyMetricsLog();
+    long frequencyMetricInterval();
+    MessageStore timeMetricsStore();
+    MessageStore frequencyMetricsStore();
 
     static Context configure() {
         return Context.create();

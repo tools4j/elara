@@ -26,7 +26,7 @@ package org.tools4j.elara.samples.bank;
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.wire.WireType;
 import org.junit.jupiter.api.Test;
-import org.tools4j.elara.chronicle.ChronicleMessageLog;
+import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.samples.bank.command.BankCommand;
 import org.tools4j.elara.samples.bank.command.CreateAccountCommand;
@@ -75,8 +75,8 @@ public class BankApplicationTest {
         final BankApplication bankOne = new BankApplication();
         try (final ElaraRunner runner = bankOne.launch(
                 commands,
-                new ChronicleMessageLog(commandQueue()),
-                new ChronicleMessageLog(eventQueue())
+                new ChronicleMessageStore(commandQueue()),
+                new ChronicleMessageStore(eventQueue())
         )) {
             injectSomeCommands(commands);
             while (!commands.isEmpty()) {
@@ -95,8 +95,8 @@ public class BankApplicationTest {
         final BankApplication bankTwo = new BankApplication();
         try (final ElaraRunner runner = bankTwo.launch(
                 commands,
-                new ChronicleMessageLog(commandQueue()),
-                new ChronicleMessageLog(eventQueue())
+                new ChronicleMessageStore(commandQueue()),
+                new ChronicleMessageStore(eventQueue())
         )) {
             injectSomeCommands(commands);
             while (!commands.isEmpty()) {

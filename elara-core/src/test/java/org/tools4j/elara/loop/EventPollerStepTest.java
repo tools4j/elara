@@ -30,7 +30,7 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.handler.EventHandler;
-import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.store.MessageStore;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -46,7 +46,7 @@ import static org.mockito.Mockito.when;
 public class EventPollerStepTest {
 
     @Mock
-    private MessageLog.Poller eventPoller;
+    private MessageStore.Poller eventPoller;
     @Mock
     private EventHandler handler;
 

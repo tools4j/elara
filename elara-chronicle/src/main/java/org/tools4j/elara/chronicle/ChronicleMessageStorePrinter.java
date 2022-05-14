@@ -29,8 +29,8 @@ import org.tools4j.elara.flyweight.Flyweight;
 import org.tools4j.elara.flyweight.FlyweightDataFrame;
 import org.tools4j.elara.format.MessagePrinter;
 import org.tools4j.elara.format.MessagePrinters;
-import org.tools4j.elara.log.MessageLogPrinter;
-import org.tools4j.elara.plugin.metrics.FlyweightMetricsLogEntry;
+import org.tools4j.elara.plugin.metrics.FlyweightMetricsStoreEntry;
+import org.tools4j.elara.store.MessageStorePrinter;
 import org.tools4j.nobark.loop.LoopCondition;
 import org.tools4j.nobark.run.ThreadLike;
 
@@ -43,58 +43,58 @@ import java.util.function.Predicate;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-public class ChronicleLogPrinter implements AutoCloseable {
+public class ChronicleMessageStorePrinter implements AutoCloseable {
 
-    private final MessageLogPrinter messageLogPrinter;
+    private final MessageStorePrinter messageStorePrinter;
 
-    public ChronicleLogPrinter() {
+    public ChronicleMessageStorePrinter() {
         this(System.out, false);
     }
 
-    public ChronicleLogPrinter(final OutputStream outputStream) {
+    public ChronicleMessageStorePrinter(final OutputStream outputStream) {
         this(outputStream, true);
     }
 
-    public ChronicleLogPrinter(final OutputStream outputStream, final boolean close) {
+    public ChronicleMessageStorePrinter(final OutputStream outputStream, final boolean close) {
         this(new OutputStreamWriter(outputStream), close);
     }
 
-    public ChronicleLogPrinter(final Writer writer) {
+    public ChronicleMessageStorePrinter(final Writer writer) {
         this(writer, true);
     }
 
-    public ChronicleLogPrinter(final Writer writer, final boolean close) {
-        this(new MessageLogPrinter(writer, close));
+    public ChronicleMessageStorePrinter(final Writer writer, final boolean close) {
+        this(new MessageStorePrinter(writer, close));
     }
 
-    public ChronicleLogPrinter(final MessageLogPrinter messageLogPrinter) {
-        this.messageLogPrinter = requireNonNull(messageLogPrinter);
+    public ChronicleMessageStorePrinter(final MessageStorePrinter messageStorePrinter) {
+        this.messageStorePrinter = requireNonNull(messageStorePrinter);
     }
 
     public void flush() {
-        messageLogPrinter.flush();
+        messageStorePrinter.flush();
     }
 
     @Override
     public void close() {
-        messageLogPrinter.close();
+        messageStorePrinter.close();
     }
 
     public void print(final ChronicleQueue queue, final Flyweight<?> flyweight) {
-        messageLogPrinter.print(new ChronicleLogPoller(queue), flyweight);
+        messageStorePrinter.print(new ChroniclePoller(queue), flyweight);
     }
 
     public <M> void print(final ChronicleQueue queue,
                           final Flyweight<M> flyweight,
                           final MessagePrinter<? super M> printer) {
-        messageLogPrinter.print(new ChronicleLogPoller(queue), flyweight, msg -> true, printer);
+        messageStorePrinter.print(new ChroniclePoller(queue), flyweight, msg -> true, printer);
     }
 
     public <M> void print(final ChronicleQueue queue,
                           final Flyweight<M> flyweight,
                           final Predicate<? super M> filter,
                           final MessagePrinter<? super M> printer) {
-        messageLogPrinter.print(new ChronicleLogPoller(queue), flyweight, filter, printer);
+        messageStorePrinter.print(new ChroniclePoller(queue), flyweight, filter, printer);
     }
 
     public <M> void print(final ChronicleQueue queue,
@@ -102,14 +102,14 @@ public class ChronicleLogPrinter implements AutoCloseable {
                           final Predicate<? super M> filter,
                           final MessagePrinter<? super M> printer,
                           final LoopCondition loopCondition) {
-        messageLogPrinter.print(new ChronicleLogPoller(queue), flyweight, filter, printer, loopCondition);
+        messageStorePrinter.print(new ChroniclePoller(queue), flyweight, filter, printer, loopCondition);
     }
 
     public <M> ThreadLike printInBackground(final ChronicleQueue queue,
                                             final Flyweight<M> flyweight,
                                             final Predicate<? super M> filter,
                                             final MessagePrinter<? super M> printer) {
-        return messageLogPrinter.printInBackground(new ChronicleLogPoller(queue), flyweight, filter, printer);
+        return messageStorePrinter.printInBackground(new ChroniclePoller(queue), flyweight, filter, printer);
     }
 
     private static TimeUnit timeUnit(final int index, final String... args) {
@@ -199,22 +199,22 @@ public class ChronicleLogPrinter implements AutoCloseable {
                 .wireType(WireType.BINARY_LIGHT)
                 .readOnly(true)
                 .build();
-        final ChronicleLogPrinter logPrinter = new ChronicleLogPrinter();
+        final ChronicleMessageStorePrinter storePrinter = new ChronicleMessageStorePrinter();
         final MessagePrinters msgPrinters = timeUnit == null ? MessagePrinters.defaults() :
                 MessagePrinters.defaults(timeUnit, timeUnit.convert(interval >= 0 ? interval : 1000, MILLISECONDS));
         if (metrics) {
-            logPrinter.print(queue, new FlyweightMetricsLogEntry(), msgPrinters.metrics());
+            storePrinter.print(queue, new FlyweightMetricsStoreEntry(), msgPrinters.metrics());
         } else if (latencies) {
-            logPrinter.print(queue, new FlyweightMetricsLogEntry(), msgPrinters.metricsWithLatencies());
+            storePrinter.print(queue, new FlyweightMetricsStoreEntry(), msgPrinters.metricsWithLatencies());
         } else if (histograms) {
-            logPrinter.print(queue, new FlyweightMetricsLogEntry(), msgPrinters.metricsWithLatencyHistogram());
+            storePrinter.print(queue, new FlyweightMetricsStoreEntry(), msgPrinters.metricsWithLatencyHistogram());
         } else {
-            logPrinter.print(queue, new FlyweightDataFrame(), msgPrinters.frame());
+            storePrinter.print(queue, new FlyweightDataFrame(), msgPrinters.frame());
         }
     }
 
     private static void printHelp() {
-        System.err.println("usage: " + ChronicleLogPrinter.class.getSimpleName() + "[-t|--time <unit>] [-i|--interval <duration>] [-m|--metrics|-l|--latencies|-h|--histograms] <file>");
+        System.err.println("usage: " + ChronicleMessageStorePrinter.class.getSimpleName() + "[-t|--time <unit>] [-i|--interval <duration>] [-m|--metrics|-l|--latencies|-h|--histograms] <file>");
         System.err.println("    -t|--time <unit>           Defines the unit of the time source that was used when running Elara.");
         System.err.println("                               Valid <unit> values are 'ms', 'us', 'ns' for milliseconds, microseconds and nanoseconds, respectively");
         System.err.println("    -i|--interval <duration>   Specifies the interval in milliseconds after which a histogram is printed and reset.");

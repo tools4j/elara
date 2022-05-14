@@ -21,15 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.log;
+package org.tools4j.elara.store;
 
 import org.agrona.DirectBuffer;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.FlyweightEvent;
-import org.tools4j.elara.log.MessageLog.Poller;
+import org.tools4j.elara.store.MessageStore.Poller;
 
-import static org.tools4j.elara.log.MessageLog.Handler.Result.POLL;
+import static org.tools4j.elara.store.MessageStore.Handler.Result.POLL;
 
 /**
  * An event poller that works with two underlying pollers to ensure only committed events
@@ -44,14 +44,14 @@ public class CommittedEventPoller implements Poller {
 
     private final LookAheadState aheadState = new LookAheadState();
 
-    public CommittedEventPoller(final MessageLog eventLog) {
-        this.aheadPoller = eventLog.poller();
-        this.eventPoller = eventLog.poller();
+    public CommittedEventPoller(final MessageStore eventStore) {
+        this.aheadPoller = eventStore.poller();
+        this.eventPoller = eventStore.poller();
     }
 
-    public CommittedEventPoller(final MessageLog eventLog, final String id) {
-        this.eventPoller = eventLog.poller(id);
-        this.aheadPoller = eventLog.poller();
+    public CommittedEventPoller(final MessageStore eventStore, final String id) {
+        this.eventPoller = eventStore.poller(id);
+        this.aheadPoller = eventStore.poller();
         aheadPoller.moveTo(eventPoller.entryId());
     }
 
@@ -116,7 +116,7 @@ public class CommittedEventPoller implements Poller {
     }
 
     @Override
-    public int poll(final MessageLog.Handler handler) {
+    public int poll(final MessageStore.Handler handler) {
         if (eventPoller.entryId() == aheadPoller.entryId()) {
             aheadState.reset();
         }
@@ -136,7 +136,7 @@ public class CommittedEventPoller implements Poller {
         eventPoller.close();
     }
 
-    private static class LookAheadState implements MessageLog.Handler {
+    private static class LookAheadState implements MessageStore.Handler {
         byte lastEventFlags;
         final FlyweightEvent event = new FlyweightEvent();
 

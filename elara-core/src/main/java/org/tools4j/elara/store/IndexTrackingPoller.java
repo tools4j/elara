@@ -21,12 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.log;
+package org.tools4j.elara.store;
 
-import org.tools4j.elara.log.MessageLog.Poller;
+import org.tools4j.elara.store.MessageStore.Poller;
 
 /**
- * A poller tracking (gap free) indexes of entries in the message log.  Note that all methods that are moving by more
+ * A poller tracking (gap free) indexes of entries in the message store.  Note that all methods that are moving by more
  * than a single index are slow!
  */
 public interface IndexTrackingPoller extends Poller {
@@ -55,13 +55,13 @@ public interface IndexTrackingPoller extends Poller {
     /**
      * NOTE: this method is possibly slow if it has to move a lot of positions!
      *
-     * Moves to the end of the message log.
+     * Moves to the end of the message store.
      * @return this poller
      */
     @Override
     Poller moveToEnd();
 
-    static IndexTrackingPoller create(final MessageLog messageLog) {
-        return new DefaultIndexTrackingPoller(messageLog);
+    static IndexTrackingPoller create(final MessageStore messageStore) {
+        return new DefaultIndexTrackingPoller(messageStore);
     }
 }

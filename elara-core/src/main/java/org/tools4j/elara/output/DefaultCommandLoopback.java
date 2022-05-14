@@ -28,9 +28,9 @@ import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FlyweightHeader;
 import org.tools4j.elara.input.SequenceGenerator;
-import org.tools4j.elara.log.ExpandableDirectBuffer;
-import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.log.MessageLog.AppendingContext;
+import org.tools4j.elara.store.ExpandableDirectBuffer;
+import org.tools4j.elara.store.MessageStore;
+import org.tools4j.elara.store.MessageStore.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
@@ -42,23 +42,23 @@ import static org.tools4j.elara.input.Receiver.LOOPBACK_SOURCE;
 
 public class DefaultCommandLoopback implements CommandLoopback.Default {
 
-    private final MessageLog.Appender commandLogAppender;
+    private final MessageStore.Appender commandStoreAppender;
     private final TimeSource timeSource;
     private final SequenceGenerator adminSequenceGenerator;
 
     private final EnqueuingContext enqueuingContext = new EnqueuingContext();
 
-    public DefaultCommandLoopback(final MessageLog.Appender commandLogAppender,
+    public DefaultCommandLoopback(final MessageStore.Appender commandStoreAppender,
                                   final TimeSource timeSource,
                                   final SequenceGenerator adminSequenceGenerator) {
-        this.commandLogAppender = requireNonNull(commandLogAppender);
+        this.commandStoreAppender = requireNonNull(commandStoreAppender);
         this.timeSource = requireNonNull(timeSource);
         this.adminSequenceGenerator = requireNonNull(adminSequenceGenerator);
     }
 
     @Override
     public EnqueuingContext enqueuingCommand(final int type) {
-        return enqueuingContext.init(type, commandLogAppender.appending());
+        return enqueuingContext.init(type, commandStoreAppender.appending());
     }
 
     private final class EnqueuingContext implements CommandLoopback.EnqueuingContext {

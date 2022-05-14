@@ -34,9 +34,9 @@ public class DefaultReplicationState implements ReplicationState.Mutable {
     private int term;
     private int leaderId = NULL_SERVER;
     private long lastAppliedEventTime = TimeSource.BIG_BANG;
-    private long eventLogSize;
-    private final Long2LongHashMap nextEventLogIndexByServerId = new Long2LongHashMap(0);
-    private final Long2LongHashMap confirmedEventLogIndexByServerId = new Long2LongHashMap(0);
+    private long eventStoreSize;
+    private final Long2LongHashMap nextEventStoreIndexByServerId = new Long2LongHashMap(0);
+    private final Long2LongHashMap confirmedEventStoreIndexByServerId = new Long2LongHashMap(0);
     private final Long2LongHashMap nextNotBefore = new Long2LongHashMap(0);
     private final LongArrayList temp = new LongArrayList();
 
@@ -68,47 +68,47 @@ public class DefaultReplicationState implements ReplicationState.Mutable {
     }
 
     @Override
-    public long eventLogSize() {
-        return eventLogSize;
+    public long eventStoreSize() {
+        return eventStoreSize;
     }
 
     @Override
     public Mutable eventApplied(final Event event) {
         lastAppliedEventTime = event.time();
-        eventLogSize++;
+        eventStoreSize++;
         return this;
     }
 
     @Override
-    public long nextEventLogIndex(final int serverId) {
-        return nextEventLogIndexByServerId.get(serverId);
+    public long nextEventStoreIndex(final int serverId) {
+        return nextEventStoreIndexByServerId.get(serverId);
     }
 
     @Override
-    public Volatile nextEventLogIndex(final int serverId, final long index) {
-        putOrRemove(nextEventLogIndexByServerId, serverId, index);
+    public Volatile nextEventStoreIndex(final int serverId, final long index) {
+        putOrRemove(nextEventStoreIndexByServerId, serverId, index);
         return this;
     }
 
     @Override
-    public long confirmedEventLogIndex(final int serverId) {
-        return confirmedEventLogIndexByServerId.get(serverId);
+    public long confirmedEventStoreIndex(final int serverId) {
+        return confirmedEventStoreIndexByServerId.get(serverId);
     }
 
     @Override
-    public Volatile confirmedEventLogIndex(final int serverId, final long index) {
-        putOrRemove(confirmedEventLogIndexByServerId, serverId, index);
+    public Volatile confirmedEventStoreIndex(final int serverId, final long index) {
+        putOrRemove(confirmedEventStoreIndexByServerId, serverId, index);
         return this;
     }
 
     @Override
-    public long committedEventLogIndex(final int serverCount) {
+    public long committedEventStoreIndex(final int serverCount) {
         final int majority = (serverCount / 2) + 1;
-        if (confirmedEventLogIndexByServerId.size() < majority) {
+        if (confirmedEventStoreIndexByServerId.size() < majority) {
             return -1;
         }
         temp.clear();
-        final ValueIterator it = confirmedEventLogIndexByServerId.values().iterator();
+        final ValueIterator it = confirmedEventStoreIndexByServerId.values().iterator();
         while (it.hasNext()) {
             final long value = it.nextValue();
             int index = temp.size();
@@ -146,9 +146,9 @@ public class DefaultReplicationState implements ReplicationState.Mutable {
                 "term=" + term +
                 ", leaderId=" + leaderId +
                 ", lastAppliedEventTime=" + lastAppliedEventTime +
-                ", eventLogSize=" + eventLogSize +
-                ", nextEventLogIndexByServerId=" + nextEventLogIndexByServerId +
-                ", confirmedEventLogIndexByServerId=" + confirmedEventLogIndexByServerId +
+                ", eventStoreSize=" + eventStoreSize +
+                ", nextEventStoreIndexByServerId=" + nextEventStoreIndexByServerId +
+                ", confirmedEventStoreIndexByServerId=" + confirmedEventStoreIndexByServerId +
                 ", nextNotBefore=" + nextNotBefore +
                 ", temp=" + temp +
                 '}';

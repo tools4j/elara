@@ -29,14 +29,13 @@ import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.chronicle.ChronicleMessageLog;
+import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver;
-import org.tools4j.elara.log.InMemoryLog;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.plugin.timer.SimpleTimerState;
 import org.tools4j.elara.plugin.timer.TimerCommands;
@@ -46,6 +45,7 @@ import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
+import org.tools4j.elara.store.InMemoryStore;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -76,8 +76,8 @@ public class TimerApplication {
                 .commandProcessor(this::process)
                 .eventApplier(eventApplier(eventConsumer))
                 .input(new CommandInput(commandQueue))
-                .commandLog(new InMemoryLog())
-                .eventLog(new InMemoryLog())
+                .commandStore(new InMemoryStore())
+                .eventStore(new InMemoryStore())
                 .plugin(Plugins.timerPlugin(), timerStateSupplier)
         );
     }
@@ -97,8 +97,8 @@ public class TimerApplication {
                 .commandProcessor(this::process)
                 .eventApplier(eventApplier(eventConsumer))
                 .input(new CommandInput(commandQueue))
-                .commandLog(new ChronicleMessageLog(cq))
-                .eventLog(new ChronicleMessageLog(eq))
+                .commandStore(new ChronicleMessageStore(cq))
+                .eventStore(new ChronicleMessageStore(eq))
                 .plugin(Plugins.timerPlugin())
         );
     }

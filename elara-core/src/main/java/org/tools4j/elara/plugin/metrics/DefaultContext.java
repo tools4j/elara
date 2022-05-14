@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.plugin.metrics;
 
-import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.store.MessageStore;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -36,9 +36,9 @@ public class DefaultContext implements Context {
     private final Set<TimeMetric> timeMetrics = EnumSet.noneOf(TimeMetric.class);
     private final Set<FrequencyMetric> frequencyMetrics = EnumSet.noneOf(FrequencyMetric.class);
     private InputSendingTimeExtractor inputSendingTimeExtractor;
-    private long frequencyLogInterval;
-    private MessageLog timeMetricsLog;
-    private MessageLog frequencyMetricsLog;
+    private long frequencyMetricInterval;
+    private MessageStore timeMetricsStore;
+    private MessageStore frequencyMetricsStore;
 
     @Override
     public Set<TimeMetric> timeMetrics() {
@@ -56,18 +56,18 @@ public class DefaultContext implements Context {
     }
 
     @Override
-    public long frequencyLogInterval() {
-        return frequencyLogInterval;
+    public long frequencyMetricInterval() {
+        return frequencyMetricInterval;
     }
 
     @Override
-    public MessageLog timeMetricsLog() {
-        return timeMetricsLog;
+    public MessageStore timeMetricsStore() {
+        return timeMetricsStore;
     }
 
     @Override
-    public MessageLog frequencyMetricsLog() {
-        return frequencyMetricsLog;
+    public MessageStore frequencyMetricsStore() {
+        return frequencyMetricsStore;
     }
 
     @Override
@@ -136,31 +136,31 @@ public class DefaultContext implements Context {
     }
 
     @Override
-    public Context frequencyLogInterval(final long timeInterval) {
+    public Context frequencyMetricInterval(final long timeInterval) {
         if (timeInterval <= 0) {
             throw new IllegalArgumentException("time interval must be positive: " + timeInterval);
         }
-        this.frequencyLogInterval = timeInterval;
+        this.frequencyMetricInterval = timeInterval;
         return this;
     }
 
     @Override
-    public Context metricsLog(final MessageLog metricLog) {
-        requireNonNull(metricLog);
-        this.timeMetricsLog = metricLog;
-        this.frequencyMetricsLog = metricLog;
+    public Context metricsStore(final MessageStore metricsStore) {
+        requireNonNull(metricsStore);
+        this.timeMetricsStore = metricsStore;
+        this.frequencyMetricsStore = metricsStore;
         return this;
     }
 
     @Override
-    public Context timeMetricsLog(final MessageLog metricLog) {
-        this.timeMetricsLog = requireNonNull(metricLog);
+    public Context timeMetricsStore(final MessageStore metricStore) {
+        this.timeMetricsStore = requireNonNull(metricStore);
         return this;
     }
 
     @Override
-    public Context frequencyMetricsLog(final MessageLog metricLog) {
-        this.frequencyMetricsLog = requireNonNull(metricLog);
+    public Context frequencyMetricsStore(final MessageStore metricStore) {
+        this.frequencyMetricsStore = requireNonNull(metricStore);
         return this;
     }
 
@@ -172,14 +172,14 @@ public class DefaultContext implements Context {
             throw new IllegalArgumentException("Metrics configuration specifies to capture " + INPUT_SENDING_TIME +
                     " but no " + InputSendingTimeExtractor.class.getSimpleName() + " is configured");
         }
-        if (!configuration.frequencyMetrics().isEmpty() && 0 == configuration.frequencyLogInterval()) {
-            throw new IllegalArgumentException("Metrics configuration specifies at least one frequency metric but no frequency log interval is configured");
+        if (!configuration.frequencyMetrics().isEmpty() && 0 == configuration.frequencyMetricInterval()) {
+            throw new IllegalArgumentException("Metrics configuration specifies at least one frequency metric but no frequency store interval is configured");
         }
-        if (!configuration.timeMetrics().isEmpty() && null == configuration.timeMetricsLog()) {
-            throw new IllegalArgumentException("Metrics configuration specifies at least one time metric but no time metric log is configured");
+        if (!configuration.timeMetrics().isEmpty() && null == configuration.timeMetricsStore()) {
+            throw new IllegalArgumentException("Metrics configuration specifies at least one time metric but no time metric store is configured");
         }
-        if (!configuration.frequencyMetrics().isEmpty() && null == configuration.frequencyMetricsLog()) {
-            throw new IllegalArgumentException("Metrics configuration specifies at least one frequency metric but no frequency metric log is configured");
+        if (!configuration.frequencyMetrics().isEmpty() && null == configuration.frequencyMetricsStore()) {
+            throw new IllegalArgumentException("Metrics configuration specifies at least one frequency metric but no frequency metric store is configured");
         }
         return configuration;
     }

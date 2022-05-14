@@ -21,12 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.log;
+package org.tools4j.elara.store;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 
-public interface MessageLog extends AutoCloseable {
+public interface MessageStore extends AutoCloseable {
     Appender appender();
     Poller poller();
     Poller poller(String id);
@@ -68,8 +68,8 @@ public interface MessageLog extends AutoCloseable {
          * It returns the entry ID of the message currently polled if invoked while polling a message.
          * Otherwise, it returns the entry ID of the next message to be polled.
          * <p>
-         * The index is monotonically increasing but not necessarily gap free;  for instance for a chronicle message log
-         * the entry ID consists of cycle and the sequence number within that cycle.
+         * The index is monotonically increasing but not necessarily gap free;  for instance for a chronicle message
+         * store the entry ID consists of cycle and the sequence number within that cycle.
          *
          * @return the current entry ID of this poller.
          *

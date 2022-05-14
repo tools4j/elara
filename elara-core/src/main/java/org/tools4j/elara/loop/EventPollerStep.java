@@ -26,21 +26,21 @@ package org.tools4j.elara.loop;
 import org.agrona.DirectBuffer;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.handler.EventHandler;
-import org.tools4j.elara.log.MessageLog;
-import org.tools4j.elara.log.MessageLog.Handler.Result;
+import org.tools4j.elara.store.MessageStore;
+import org.tools4j.elara.store.MessageStore.Handler.Result;
 import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;
 
 public class EventPollerStep implements Step {
 
-    private final MessageLog.Poller eventPoller;
+    private final MessageStore.Poller eventPoller;
     private final EventHandler eventHandler;
 
-    private final MessageLog.Handler pollerHandler = this::onEvent;
+    private final MessageStore.Handler pollerHandler = this::onEvent;
     private final FlyweightEvent flyweightEvent = new FlyweightEvent();
 
-    public EventPollerStep(final MessageLog.Poller eventPoller, final EventHandler eventHandler) {
+    public EventPollerStep(final MessageStore.Poller eventPoller, final EventHandler eventHandler) {
         this.eventPoller = requireNonNull(eventPoller);
         this.eventHandler = requireNonNull(eventHandler);
     }

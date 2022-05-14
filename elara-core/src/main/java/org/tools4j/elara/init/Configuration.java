@@ -29,10 +29,10 @@ import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.time.TimeSource;
 import org.tools4j.nobark.loop.Step;
 
@@ -44,9 +44,9 @@ public interface Configuration {
     EventApplier eventApplier();
     List<Input> inputs();
     Output output();
-    MessageLog commandLog();
-    CommandLogMode commandLogMode();
-    MessageLog eventLog();
+    MessageStore commandStore();
+    CommandStoreMode commandStoreMode();
+    MessageStore eventStore();
     TimeSource timeSource();
     ExceptionHandler exceptionHandler();
     DuplicateHandler duplicateHandler();

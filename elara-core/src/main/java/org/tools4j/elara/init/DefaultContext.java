@@ -30,11 +30,11 @@ import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.logging.Logger.Factory;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.time.TimeSource;
 import org.tools4j.nobark.loop.Step;
 
@@ -59,9 +59,9 @@ final class DefaultContext implements Context {
     private EventApplier eventApplier;
     private final List<Input> inputs = new ArrayList<>();
     private Output output = Output.NOOP;
-    private MessageLog commandLog;
-    private CommandLogMode commandLogMode = CommandLogMode.FROM_END;
-    private MessageLog eventLog;
+    private MessageStore commandStore;
+    private CommandStoreMode commandStoreMode = CommandStoreMode.FROM_END;
+    private MessageStore eventStore;
     private TimeSource timeSource;
     private ExceptionHandler exceptionHandler = ExceptionHandler.DEFAULT;
     private Logger.Factory loggerFactory = SYSTEM_FACTORY;
@@ -131,45 +131,45 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public MessageLog commandLog() {
-        return commandLog;
+    public MessageStore commandStore() {
+        return commandStore;
     }
 
     @Override
-    public Context commandLog(final String file) {
+    public Context commandStore(final String file) {
         throw new IllegalStateException("not supported yet");
     }
 
     @Override
-    public Context commandLog(final MessageLog commandLog) {
-        this.commandLog = requireNonNull(commandLog);
+    public Context commandStore(final MessageStore commandStore) {
+        this.commandStore = requireNonNull(commandStore);
         return this;
     }
 
     @Override
-    public CommandLogMode commandLogMode() {
-        return commandLogMode;
+    public CommandStoreMode commandStoreMode() {
+        return commandStoreMode;
     }
 
     @Override
-    public Context commandLogMode(final CommandLogMode mode) {
-        this.commandLogMode = requireNonNull(mode);
+    public Context commandStoreMode(final CommandStoreMode mode) {
+        this.commandStoreMode = requireNonNull(mode);
         return this;
     }
 
     @Override
-    public MessageLog eventLog() {
-        return eventLog;
+    public MessageStore eventStore() {
+        return eventStore;
     }
 
     @Override
-    public Context eventLog(final String file) {
+    public Context eventStore(final String file) {
         throw new IllegalStateException("not supported yet");
     }
 
     @Override
-    public Context eventLog(final MessageLog eventLog) {
-        this.eventLog = requireNonNull(eventLog);
+    public Context eventStore(final MessageStore eventStore) {
+        this.eventStore = requireNonNull(eventStore);
         return this;
     }
 
@@ -307,10 +307,10 @@ final class DefaultContext implements Context {
         if (configuration.eventApplier() == null) {
             throw new IllegalArgumentException("Event applier must be set");
         }
-        if (configuration.commandLog() == null) {
+        if (configuration.commandStore() == null) {
             throw new IllegalArgumentException("Command log must be set");
         }
-        if (configuration.eventLog() == null) {
+        if (configuration.eventStore() == null) {
             throw new IllegalArgumentException("Event log must be set");
         }
         if (configuration.timeSource() == null) {

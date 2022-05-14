@@ -84,6 +84,6 @@ public class DefaultApplierFactory implements ApplierFactory {
 
     @Override
     public Step eventPollerStep() {
-        return new EventPollerStep(configuration.eventLog().poller(), singletons.get().eventHandler());
+        return new EventPollerStep(configuration.eventStore().poller(), singletons.get().eventHandler());
     }
 }

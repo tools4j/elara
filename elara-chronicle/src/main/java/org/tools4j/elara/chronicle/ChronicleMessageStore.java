@@ -24,18 +24,18 @@
 package org.tools4j.elara.chronicle;
 
 import net.openhft.chronicle.queue.ChronicleQueue;
-import org.tools4j.elara.log.MessageLog;
+import org.tools4j.elara.store.MessageStore;
 
 import static java.util.Objects.requireNonNull;
 
-public class ChronicleMessageLog implements MessageLog {
+public class ChronicleMessageStore implements MessageStore {
 
     private final ChronicleQueue queue;
-    private final ThreadLocal<ChronicleLogAppender> appender;
+    private final ThreadLocal<ChronicleAppender> appender;
 
-    public ChronicleMessageLog(final ChronicleQueue queue) {
+    public ChronicleMessageStore(final ChronicleQueue queue) {
         this.queue = requireNonNull(queue);
-        this.appender = ThreadLocal.withInitial(() -> new ChronicleLogAppender(queue));
+        this.appender = ThreadLocal.withInitial(() -> new ChronicleAppender(queue));
     }
 
     public ChronicleQueue queue() {
@@ -43,18 +43,18 @@ public class ChronicleMessageLog implements MessageLog {
     }
 
     @Override
-    public ChronicleLogAppender appender() {
+    public ChronicleAppender appender() {
         return appender.get();
     }
 
     @Override
-    public ChronicleLogPoller poller() {
-        return new ChronicleLogPoller(queue);
+    public ChroniclePoller poller() {
+        return new ChroniclePoller(queue);
     }
 
     @Override
     public Poller poller(final String id) {
-        return new ChronicleLogPoller(id, queue);
+        return new ChroniclePoller(id, queue);
     }
 
     @Override
@@ -64,6 +64,6 @@ public class ChronicleMessageLog implements MessageLog {
 
     @Override
     public String toString() {
-        return "ChronicleMessageLog{queue=" + queue + '}';
+        return "ChronicleMessageStore{queue=" + queue + '}';
     }
 }

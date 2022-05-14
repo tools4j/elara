@@ -27,13 +27,13 @@ import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.Frame;
 
 /**
- * Boot commands added to the command log when booting an elara application to signal startup and initialisation of the
- * application.
+ * Boot commands added to the command store when booting an elara application to signal startup and initialisation of
+ * the application.
  */
 public enum BootCommands {
     ;
     /**
-     * Command added to the command log when an application is started;  the boot plugin command processor translates
+     * Command added to the command store when an application is started;  the boot plugin command processor translates
      * this command into an {@link BootEvents#APP_INITIALISATION_STARTED APP_INITIALISATION_STARTED} event.
      */
     public static final int SIGNAL_APP_INITIALISATION_START = -20;

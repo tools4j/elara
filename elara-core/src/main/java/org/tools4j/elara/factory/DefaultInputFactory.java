@@ -27,9 +27,9 @@ import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.input.DefaultReceiver;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver;
-import org.tools4j.elara.log.MessageLog;
 import org.tools4j.elara.loop.SequencerStep;
 import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.store.MessageStore;
 import org.tools4j.nobark.loop.Step;
 
 import java.util.ArrayList;
@@ -68,7 +68,7 @@ public class DefaultInputFactory implements InputFactory {
 
     @Override
     public Receiver receiver() {
-        final MessageLog.Appender commandAppender = configuration.commandLog().appender();
+        final MessageStore.Appender commandAppender = configuration.commandStore().appender();
         return new DefaultReceiver(configuration.timeSource(), commandAppender);
     }
 

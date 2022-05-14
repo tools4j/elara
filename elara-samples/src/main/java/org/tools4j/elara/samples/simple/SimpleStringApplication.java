@@ -31,12 +31,12 @@ import org.tools4j.elara.event.Event;
 import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver;
-import org.tools4j.elara.log.InMemoryLog;
 import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
+import org.tools4j.elara.store.InMemoryStore;
 
 import java.util.Queue;
 
@@ -53,8 +53,8 @@ public class SimpleStringApplication {
                 .eventApplier(this::apply)
                 .input(new StringInput(inputQueue))
                 .output(this::publish)
-                .commandLog(new InMemoryLog())
-                .eventLog(new InMemoryLog())
+                .commandStore(new InMemoryStore())
+                .eventStore(new InMemoryStore())
         );
     }
 

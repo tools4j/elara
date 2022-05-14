@@ -28,9 +28,9 @@ public interface ValueFormatter<M> {
     /** Placeholder in format string for line separator */
     String LINE_SEPARATOR = "{nl}";
 
-    /** Placeholder in format string for log line no */
+    /** Placeholder in format string for store line no */
     String LINE = "{line}";
-    /** Placeholder in format string for log entry ID */
+    /** Placeholder in format string for store entry ID */
     String ENTRY_ID = "{entry-id}";
     /** Placeholder in format string for message itself */
     String MESSAGE = "{message}";

@@ -35,8 +35,8 @@ import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.input.DefaultReceiver;
-import org.tools4j.elara.log.MessageLog.Appender;
-import org.tools4j.elara.log.MessageLog.AppendingContext;
+import org.tools4j.elara.store.MessageStore.Appender;
+import org.tools4j.elara.store.MessageStore.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.ArrayList;
@@ -56,14 +56,14 @@ public class DefaultReceiverTest {
     @Mock
     private TimeSource timeSource;
 
-    private List<Command> commandLog;
+    private List<Command> commandStore;
 
     //under test
     private DefaultReceiver defaultReceiver;
 
     @BeforeEach
     public void init() {
-        commandLog = new ArrayList<>();
+        commandStore = new ArrayList<>();
         defaultReceiver = new DefaultReceiver(timeSource, new Appender() {
             @Override
             public AppendingContext appending() {
@@ -82,7 +82,7 @@ public class DefaultReceiverTest {
                     @Override
                     public void commit(final int length) {
                         if (buffer != null) {
-                            commandLog.add(new FlyweightCommand().init(buffer, 0));
+                            commandStore.add(new FlyweightCommand().init(buffer, 0));
                             buffer = null;
                         }
                     }
@@ -117,8 +117,8 @@ public class DefaultReceiverTest {
         defaultReceiver.receiveMessage(source, seq, message, offset, length);
 
         //then
-        assertEquals(1, commandLog.size(), "commandLog.size");
-        assertCommand(source, seq, commandTime, EventType.APPLICATION, text, commandLog.get(0));
+        assertEquals(1, commandStore.size(), "commandStore.size");
+        assertCommand(source, seq, commandTime, EventType.APPLICATION, text, commandStore.get(0));
     }
 
     @Test
@@ -138,7 +138,7 @@ public class DefaultReceiverTest {
         defaultReceiver.receiveMessage(source, seq, type, message, offset, length);
 
         //then
-        assertCommand(source, seq, commandTime, type, text, commandLog.get(0));
+        assertCommand(source, seq, commandTime, type, text, commandStore.get(0));
     }
 
     private void assertCommand(final int source,

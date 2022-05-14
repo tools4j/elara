@@ -25,8 +25,8 @@ package org.tools4j.elara.format;
 
 import org.tools4j.elara.flyweight.DataFrame;
 import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.plugin.metrics.MetricsLogEntry;
-import org.tools4j.elara.plugin.metrics.MetricsLogEntry.Type;
+import org.tools4j.elara.plugin.metrics.MetricsStoreEntry;
+import org.tools4j.elara.plugin.metrics.MetricsStoreEntry.Type;
 
 import java.util.concurrent.TimeUnit;
 
@@ -62,20 +62,20 @@ public interface MessagePrinters {
         );
     }
 
-    default MessagePrinter<MetricsLogEntry> metrics() {
+    default MessagePrinter<MetricsStoreEntry> metrics() {
         return metrics(timeMetrics(), frequencyMetrics());
     }
 
-    default MessagePrinter<MetricsLogEntry> metricsWithLatencies() {
+    default MessagePrinter<MetricsStoreEntry> metricsWithLatencies() {
         return metrics(latencyMetrics(), frequencyMetrics());
     }
 
-    default MessagePrinter<MetricsLogEntry> metricsWithLatencyHistogram() {
+    default MessagePrinter<MetricsStoreEntry> metricsWithLatencyHistogram() {
         return metrics(latencyHistogram(), frequencyMetrics());
     }
 
-    default MessagePrinter<MetricsLogEntry> metrics(final MessagePrinter<MetricsLogEntry> timeMetricsPrinter,
-                                                    final MessagePrinter<MetricsLogEntry> frequencyMetricsPrinter) {
+    default MessagePrinter<MetricsStoreEntry> metrics(final MessagePrinter<MetricsStoreEntry> timeMetricsPrinter,
+                                                      final MessagePrinter<MetricsStoreEntry> frequencyMetricsPrinter) {
         return composite(
                 (line, entryId, emtry) -> emtry.type() == Type.TIME ? 0 : 1,
                 timeMetricsPrinter,
@@ -85,9 +85,9 @@ public interface MessagePrinters {
 
     MessagePrinter<DataFrame> command();
     MessagePrinter<DataFrame> event();
-    MessagePrinter<MetricsLogEntry> frequencyMetrics();
-    MessagePrinter<MetricsLogEntry> timeMetrics();
-    MessagePrinter<MetricsLogEntry> latencyMetrics();
-    MessagePrinter<MetricsLogEntry> latencyHistogram();
+    MessagePrinter<MetricsStoreEntry> frequencyMetrics();
+    MessagePrinter<MetricsStoreEntry> timeMetrics();
+    MessagePrinter<MetricsStoreEntry> latencyMetrics();
+    MessagePrinter<MetricsStoreEntry> latencyHistogram();
 
 }

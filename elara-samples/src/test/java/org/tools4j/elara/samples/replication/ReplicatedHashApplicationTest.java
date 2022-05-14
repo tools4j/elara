@@ -30,7 +30,7 @@ import org.junit.jupiter.api.condition.OS;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.DuplicateHandler;
 import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.chronicle.ChronicleMessageLog;
+import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.logging.Logger.Level;
@@ -273,8 +273,8 @@ public class ReplicatedHashApplicationTest {
                 .commandProcessor(commandProcessor(serverId, appState))
                 .eventApplier(eventApplier(serverId, appState))
                 .inputs(inputs)
-                .commandLog(new ChronicleMessageLog(cq))
-                .eventLog(new ChronicleMessageLog(eq))
+                .commandStore(new ChronicleMessageStore(cq))
+                .eventStore(new ChronicleMessageStore(eq))
                 .duplicateHandler(DuplicateHandler.NOOP)
                 .loggerFactory(clazz -> new OutputStreamLogger(Level.DEBUG))
                 .plugin(replicationPlugin)

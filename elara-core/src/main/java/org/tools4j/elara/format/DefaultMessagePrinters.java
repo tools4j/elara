@@ -24,7 +24,7 @@
 package org.tools4j.elara.format;
 
 import org.tools4j.elara.flyweight.DataFrame;
-import org.tools4j.elara.plugin.metrics.MetricsLogEntry;
+import org.tools4j.elara.plugin.metrics.MetricsStoreEntry;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 
 import static java.util.Objects.requireNonNull;
@@ -37,12 +37,12 @@ import static org.tools4j.elara.format.MessagePrinter.parameterized;
 
 public class DefaultMessagePrinters implements MessagePrinters {
 
-    public static final String VERSION_LINE             = "(elara message log format V{version}){nl}";
+    public static final String VERSION_LINE             = "(elara message store format V{version}){nl}";
     public static final String COMMAND_FORMAT           = "{time} | {line} - cmd={source}:{sequence} | type={type}, payload({payload-size})={payload}{nl}";
     public static final String EVENT_FORMAT_0           = "{time} | {line} - evt={source}:{sequence}.{index} | type={type}, payload({payload-size})={payload}{nl}";
     public static final String EVENT_FORMAT_N           = "{time} | {line} - evt={source}.{sequence}.{index} | type={type}, payload({payload-size})={payload}{nl}";
 
-    public static final String METRICS_VERSION_LINE     = "(elara metrics log format V{version}){nl}";
+    public static final String METRICS_VERSION_LINE     = "(elara metrics store format V{version}){nl}";
     public static final String METRICS_COMMAND_FORMAT   = "{time} | {line} - {type} cmd={source}:{sequence}   | {metrics-values}{nl}";
     public static final String METRICS_EVENT_FORMAT_0   = "{time} | {line} - {type} evt={source}:{sequence}.{index} | {metrics-values}{nl}";
     public static final String METRICS_EVENT_FORMAT_N   = "{time} | {line} - {type} evt={source}.{sequence}.{index} | {metrics-values}{nl}";
@@ -105,7 +105,7 @@ public class DefaultMessagePrinters implements MessagePrinters {
     }
 
     @Override
-    public MessagePrinter<MetricsLogEntry> frequencyMetrics() {
+    public MessagePrinter<MetricsStoreEntry> frequencyMetrics() {
         return composite(
                 (line, entryId, entry) -> line == 0 ? 0 : 1,
                 parameterized(METRICS_VERSION_LINE + METRICS_FREQUENCY_FORMAT, metricsFormatter),
@@ -113,9 +113,9 @@ public class DefaultMessagePrinters implements MessagePrinters {
         );
     }
 
-    protected MessagePrinter<MetricsLogEntry> timeMetrics(final MetricsFormatter formatter) {
-        final ValueFormatter<MetricsLogEntry> formatter0 = requireNonNull(formatter);
-        final ValueFormatter<MetricsLogEntry> formatterN = Spacer.spacer(formatter0, '.', SOURCE, SEQUENCE);
+    protected MessagePrinter<MetricsStoreEntry> timeMetrics(final MetricsFormatter formatter) {
+        final ValueFormatter<MetricsStoreEntry> formatter0 = requireNonNull(formatter);
+        final ValueFormatter<MetricsStoreEntry> formatterN = Spacer.spacer(formatter0, '.', SOURCE, SEQUENCE);
         return composite((line, entryId, entry) -> {
                     final Target target = entry.target();
                     switch (target) {
@@ -141,17 +141,17 @@ public class DefaultMessagePrinters implements MessagePrinters {
     }
 
     @Override
-    public MessagePrinter<MetricsLogEntry> timeMetrics() {
+    public MessagePrinter<MetricsStoreEntry> timeMetrics() {
         return timeMetrics(metricsFormatter);
     }
 
     @Override
-    public MessagePrinter<MetricsLogEntry> latencyMetrics() {
+    public MessagePrinter<MetricsStoreEntry> latencyMetrics() {
         return timeMetrics(latencyFormatter);
     }
 
     @Override
-    public MessagePrinter<MetricsLogEntry> latencyHistogram() {
+    public MessagePrinter<MetricsStoreEntry> latencyHistogram() {
         return composite(
                 (line, entryId, entry) -> {
                     if (line == 0) {
