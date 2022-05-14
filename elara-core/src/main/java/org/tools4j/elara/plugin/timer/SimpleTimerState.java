@@ -136,7 +136,7 @@ public class SimpleTimerState implements TimerState.Mutable {
     public int indexOfNextDeadline() {
         final int count = count();
         int index = -1;
-        long minDeadline = TimeSource.END_OF_TIME;
+        long minDeadline = TimeSource.MAX_VALUE;
         for (int i = 0; i < count; i++) {
             final long deadline = deadline(i);
             if (deadline < minDeadline) {

@@ -24,7 +24,7 @@
 package org.tools4j.elara.factory;
 
 import org.agrona.concurrent.Agent;
-import org.tools4j.elara.loop.AgentStep;
+import org.tools4j.elara.step.AgentStep;
 
 public interface RunnerFactory {
     Runnable initStep();

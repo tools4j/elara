@@ -21,41 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.loop;
+package org.tools4j.elara.step;
 
-import org.agrona.DirectBuffer;
-import org.tools4j.elara.flyweight.FlyweightEvent;
-import org.tools4j.elara.handler.EventHandler;
-import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.stream.MessageStream.Handler.Result;
+import org.tools4j.elara.stream.MessageStream.Handler;
+import org.tools4j.elara.stream.MessageStream.Poller;
 
 import static java.util.Objects.requireNonNull;
 
-/**
- * Polls all events and invokes the event handler;  usually only used in follower mode.
- * @see EventReplayStep
- */
-public class EventPollerStep implements AgentStep {
+public class CommandPollerStep implements AgentStep {
 
-    private final MessageStore.Poller eventPoller;
-    private final EventHandler eventHandler;
+    private final Poller commandPoller;
+    private final Handler handler;
 
-    private final MessageStore.Handler pollerHandler = this::onEvent;
-    private final FlyweightEvent flyweightEvent = new FlyweightEvent();
-
-    public EventPollerStep(final MessageStore.Poller eventPoller, final EventHandler eventHandler) {
-        this.eventPoller = requireNonNull(eventPoller);
-        this.eventHandler = requireNonNull(eventHandler);
+    public CommandPollerStep(final Poller commandPoller, final Handler handler) {
+        this.commandPoller = requireNonNull(commandPoller);
+        this.handler = requireNonNull(handler);
     }
 
     @Override
     public int doWork() {
-        return eventPoller.poll(pollerHandler);
+        return commandPoller.poll(handler);
     }
-
-    private Result onEvent(final DirectBuffer event) {
-        eventHandler.onEvent(flyweightEvent.init(event, 0));
-        return Result.POLL;
-    }
-
 }

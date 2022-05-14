@@ -29,12 +29,12 @@ import org.tools4j.elara.input.DefaultReceiver;
 import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.input.SimpleSequenceGenerator;
-import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin.NullState;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.step.AgentStep;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.boot.BootCommands.SIGNAL_APP_INITIALISATION_START;

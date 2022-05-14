@@ -29,10 +29,10 @@ import org.tools4j.elara.factory.InterceptableSingletons;
 import org.tools4j.elara.factory.Singletons;
 import org.tools4j.elara.init.ExecutionType;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.base.BaseState.Mutable;
+import org.tools4j.elara.step.AgentStep;
 
 import java.util.function.Consumer;
 

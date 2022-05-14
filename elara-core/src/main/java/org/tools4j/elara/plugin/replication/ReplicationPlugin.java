@@ -28,11 +28,11 @@ import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.factory.InterceptableSingletons;
 import org.tools4j.elara.factory.Singletons;
 import org.tools4j.elara.init.ExecutionType;
-import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.replication.Connection.Handler;
+import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.stream.MessageStream.Appender;
 

@@ -32,11 +32,11 @@ import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.input.SequenceGenerator;
-import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin.Configuration;
 import org.tools4j.elara.plugin.base.BaseState.Mutable;
+import org.tools4j.elara.step.AgentStep;
 
 import static java.util.Objects.requireNonNull;
 

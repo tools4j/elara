@@ -25,9 +25,9 @@ package org.tools4j.elara.factory;
 
 import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.input.SequenceGenerator;
-import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.Output;
+import org.tools4j.elara.step.AgentStep;
 
 public interface OutputFactory {
     Output output();

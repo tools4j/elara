@@ -38,12 +38,12 @@ import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.input.Receiver.ReceivingContext;
-import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
+import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.stream.MessageStream.Handler.Result;
 import org.tools4j.elara.time.TimeSource;
 

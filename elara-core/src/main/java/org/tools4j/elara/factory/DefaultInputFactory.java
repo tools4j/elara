@@ -27,9 +27,9 @@ import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.input.DefaultReceiver;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver;
-import org.tools4j.elara.loop.AgentStep;
-import org.tools4j.elara.loop.SequencerStep;
 import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.step.AgentStep;
+import org.tools4j.elara.step.SequencerStep;
 import org.tools4j.elara.store.MessageStore;
 
 import java.util.ArrayList;

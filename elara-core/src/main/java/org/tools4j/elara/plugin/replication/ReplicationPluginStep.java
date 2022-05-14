@@ -23,9 +23,9 @@
  */
 package org.tools4j.elara.plugin.replication;
 
-import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.plugin.replication.Connection.Handler;
 import org.tools4j.elara.plugin.replication.Connection.Poller;
+import org.tools4j.elara.step.AgentStep;
 
 import java.util.LinkedHashSet;
 import java.util.Set;

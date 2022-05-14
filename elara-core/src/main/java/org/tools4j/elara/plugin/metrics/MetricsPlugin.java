@@ -26,9 +26,9 @@ package org.tools4j.elara.plugin.metrics;
 import org.tools4j.elara.factory.InterceptableSingletons;
 import org.tools4j.elara.factory.Singletons;
 import org.tools4j.elara.init.ExecutionType;
-import org.tools4j.elara.loop.AgentStep;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.step.AgentStep;
 
 import static java.util.Objects.requireNonNull;
 

@@ -21,38 +21,33 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.loop.agent;
+package org.tools4j.elara.agent;
 
 import org.agrona.concurrent.Agent;
-import org.tools4j.elara.loop.AgentStep;
-import org.tools4j.elara.loop.PublisherStep;
-import org.tools4j.elara.loop.SequencerStep;
+import org.tools4j.elara.step.AgentStep;
+import org.tools4j.elara.step.SequencerStep;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Agent for running all elara tasks including {@link SequencerStep},
- * {@link ProcessorAgent processor agent} steps and {@link PublisherStep}.
+ * Agent for running {@link SequencerStep} and {@link ProcessorAgent processor agent} steps.
  */
-public class AllInOneAgent implements Agent {
+public class CoreAgent implements Agent {
 
     private final AgentStep sequencerStep;
     private final AgentStep commandStep;
     private final AgentStep eventStep;
-    private final AgentStep publisherStep;
     private final AgentStep extraStepAlways;
     private final AgentStep extraStepAlwaysWhenEventsApplied;
 
-    public AllInOneAgent(final AgentStep sequencerStep,
-                         final AgentStep commandStep,
-                         final AgentStep eventStep,
-                         final AgentStep publisherStep,
-                         final AgentStep extraStepAlwaysWhenEventsApplied,
-                         final AgentStep extraStepAlways) {
+    public CoreAgent(final AgentStep sequencerStep,
+                     final AgentStep commandStep,
+                     final AgentStep eventStep,
+                     final AgentStep extraStepAlwaysWhenEventsApplied,
+                     final AgentStep extraStepAlways) {
         this.sequencerStep = requireNonNull(sequencerStep);
         this.commandStep = requireNonNull(commandStep);
         this.eventStep = requireNonNull(eventStep);
-        this.publisherStep = requireNonNull(publisherStep);
         this.extraStepAlways = requireNonNull(extraStepAlways);
         this.extraStepAlwaysWhenEventsApplied = requireNonNull(extraStepAlwaysWhenEventsApplied);
     }
@@ -66,12 +61,10 @@ public class AllInOneAgent implements Agent {
     public int doWork() {
         int workDone;
         if ((workDone = eventStep.doWork()) > 0) {
-            workDone += publisherStep.doWork();
             workDone += extraStepAlways.doWork();
             return workDone;
         }
         if ((workDone = commandStep.doWork()) > 0) {
-            workDone += publisherStep.doWork();
             workDone += extraStepAlwaysWhenEventsApplied.doWork();
             workDone += extraStepAlways.doWork();
             return workDone;
@@ -84,6 +77,6 @@ public class AllInOneAgent implements Agent {
         //       (i) commands should be processed as fast as possible
         //      (ii) command time more accurately reflects real time, even if app latency is now reflected as 'transfer' time
         //     (iii) we prefer input back pressure over falling behind as it makes the problem visible and signals it to senders
-        return publisherStep.doWork() + sequencerStep.doWork() + extraStepAlwaysWhenEventsApplied.doWork() + extraStepAlways.doWork();
+        return sequencerStep.doWork() + extraStepAlwaysWhenEventsApplied.doWork() + extraStepAlways.doWork();
     }
 }

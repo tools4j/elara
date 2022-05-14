@@ -33,7 +33,7 @@ public class DefaultReplicationState implements ReplicationState.Mutable {
 
     private int term;
     private int leaderId = NULL_SERVER;
-    private long lastAppliedEventTime = TimeSource.BIG_BANG;
+    private long lastAppliedEventTime = TimeSource.MIN_VALUE;
     private long eventStoreSize;
     private final Long2LongHashMap nextEventStoreIndexByServerId = new Long2LongHashMap(0);
     private final Long2LongHashMap confirmedEventStoreIndexByServerId = new Long2LongHashMap(0);

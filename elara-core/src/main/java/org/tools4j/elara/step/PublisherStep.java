@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.loop;
+package org.tools4j.elara.step;
 
 import org.agrona.DirectBuffer;
 import org.tools4j.elara.flyweight.FlyweightEvent;

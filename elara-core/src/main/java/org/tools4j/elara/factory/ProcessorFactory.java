@@ -25,7 +25,7 @@ package org.tools4j.elara.factory;
 
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.handler.CommandHandler;
-import org.tools4j.elara.loop.AgentStep;
+import org.tools4j.elara.step.AgentStep;
 
 public interface ProcessorFactory {
     CommandProcessor commandProcessor();

@@ -21,38 +21,46 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.loop;
+package org.tools4j.elara.step;
 
-import org.agrona.concurrent.Agent;
+import org.tools4j.elara.input.Input;
+import org.tools4j.elara.input.Receiver;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * A step or part of an agent's {@link Agent#doWork()} method.
+ * Polls all inputs and sequences received messages into the command log.
  */
-@FunctionalInterface
-public interface AgentStep {
-    /**
-     * An agent step should implement this method to do its work.
-     * <p>
-     * The return value is used for implementing a backoff strategy that can be employed when no work is
-     * currently available for the agent to process.
-     *
-     * @return 0 to indicate no work was currently available, a positive value otherwise.
-     */
-    int doWork();
+public final class SequencerStep implements AgentStep {
 
-    /** Do-nothing step */
-    AgentStep NO_OP = () -> 0;
+    private final Receiver receiver;
+    private final Input[] inputs;
 
-    static AgentStep composite(final AgentStep... steps) {
-        requireNonNull(steps);
-        return () -> {
-            int workDone = 0;
-            for (final AgentStep step : steps) {
-                workDone += step.doWork();
+    private int roundRobinIndex = 0;
+
+    public SequencerStep(final Receiver receiver, final Input... inputs) {
+        this.receiver = requireNonNull(receiver);
+        this.inputs = requireNonNull(inputs);
+    }
+
+    @Override
+    public int doWork() {
+        final int count = inputs.length;
+        for (int i = 0; i < count; i++) {
+            final int index = getAndIncrementRoundRobinIndex(count);
+            if (inputs[index].poll(receiver) > 0) {
+                return 1;
             }
-            return workDone;
-        };
+        }
+        return 0;
+    }
+
+    private int getAndIncrementRoundRobinIndex(final int count) {
+        final int index = roundRobinIndex;
+        roundRobinIndex++;
+        if (roundRobinIndex >= count) {
+            roundRobinIndex = 0;
+        }
+        return index;
     }
 }

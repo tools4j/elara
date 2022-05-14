@@ -30,10 +30,10 @@ import org.tools4j.elara.handler.CommandPollerHandler;
 import org.tools4j.elara.handler.DefaultCommandHandler;
 import org.tools4j.elara.init.CommandStreamMode;
 import org.tools4j.elara.init.Configuration;
-import org.tools4j.elara.loop.AgentStep;
-import org.tools4j.elara.loop.CommandPollerStep;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.route.DefaultEventRouter;
+import org.tools4j.elara.step.AgentStep;
+import org.tools4j.elara.step.CommandPollerStep;
 import org.tools4j.elara.stream.MessageStream.Poller;
 
 import java.util.Arrays;

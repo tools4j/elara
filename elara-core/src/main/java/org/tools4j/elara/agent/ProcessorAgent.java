@@ -21,46 +21,42 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.loop;
+package org.tools4j.elara.agent;
 
-import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.Receiver;
+import org.agrona.concurrent.Agent;
+import org.tools4j.elara.step.AgentStep;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Polls all inputs and sequences received messages into the command log.
+ * Agent for running the elara processor tasks.  Processor tasks are polling (or replaying) and applying events as well
+ * as and processing commands.
  */
-public final class SequencerStep implements AgentStep {
+public class ProcessorAgent implements Agent {
 
-    private final Receiver receiver;
-    private final Input[] inputs;
+    private final AgentStep commandStep;
+    private final AgentStep eventStep;
+    private final AgentStep extraStepAlwaysWhenEventsApplied;
 
-    private int roundRobinIndex = 0;
+    public ProcessorAgent(final AgentStep commandStep,
+                          final AgentStep eventStep,
+                          final AgentStep extraStepAlwaysWhenEventsApplied) {
+        this.commandStep = requireNonNull(commandStep);
+        this.eventStep = requireNonNull(eventStep);
+        this.extraStepAlwaysWhenEventsApplied = requireNonNull(extraStepAlwaysWhenEventsApplied);
+    }
 
-    public SequencerStep(final Receiver receiver, final Input... inputs) {
-        this.receiver = requireNonNull(receiver);
-        this.inputs = requireNonNull(inputs);
+    @Override
+    public String roleName() {
+        return "elara-core";
     }
 
     @Override
     public int doWork() {
-        final int count = inputs.length;
-        for (int i = 0; i < count; i++) {
-            final int index = getAndIncrementRoundRobinIndex(count);
-            if (inputs[index].poll(receiver) > 0) {
-                return 1;
-            }
+        final int workDone = eventStep.doWork();
+        if (workDone > 0) {
+            return workDone;
         }
-        return 0;
-    }
-
-    private int getAndIncrementRoundRobinIndex(final int count) {
-        final int index = roundRobinIndex;
-        roundRobinIndex++;
-        if (roundRobinIndex >= count) {
-            roundRobinIndex = 0;
-        }
-        return index;
+        return commandStep.doWork() + extraStepAlwaysWhenEventsApplied.doWork();
     }
 }

@@ -21,31 +21,41 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.loop.agent;
+package org.tools4j.elara.step;
 
-import org.agrona.concurrent.Agent;
-import org.tools4j.elara.loop.SequencerStep;
+import org.agrona.DirectBuffer;
+import org.tools4j.elara.flyweight.FlyweightEvent;
+import org.tools4j.elara.handler.EventHandler;
+import org.tools4j.elara.store.MessageStore;
+import org.tools4j.elara.stream.MessageStream.Handler.Result;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Agent to Poll all inputs and sequence received messages into the command log.
+ * Polls all events and invokes the event handler;  usually only used in follower mode.
+ * @see EventReplayStep
  */
-public class SequencerAgent implements Agent {
+public class EventPollerStep implements AgentStep {
 
-    private final SequencerStep sequencerStep;
+    private final MessageStore.Poller eventPoller;
+    private final EventHandler eventHandler;
 
-    public SequencerAgent(final SequencerStep sequencerStep) {
-        this.sequencerStep = requireNonNull(sequencerStep);
+    private final MessageStore.Handler pollerHandler = this::onEvent;
+    private final FlyweightEvent flyweightEvent = new FlyweightEvent();
+
+    public EventPollerStep(final MessageStore.Poller eventPoller, final EventHandler eventHandler) {
+        this.eventPoller = requireNonNull(eventPoller);
+        this.eventHandler = requireNonNull(eventHandler);
     }
 
     @Override
-    public int doWork() throws Exception {
-        return sequencerStep.doWork();
+    public int doWork() {
+        return eventPoller.poll(pollerHandler);
     }
 
-    @Override
-    public String roleName() {
-        return "elara-sequencer";
+    private Result onEvent(final DirectBuffer event) {
+        eventHandler.onEvent(flyweightEvent.init(event, 0));
+        return Result.POLL;
     }
+
 }

@@ -24,7 +24,7 @@
 package org.tools4j.elara.plugin.metrics;
 
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.loop.AgentStep;
+import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.stream.MessageStream.Appender;
 import org.tools4j.elara.stream.MessageStream.AppendingContext;
 import org.tools4j.elara.time.TimeSource;

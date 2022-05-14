@@ -25,7 +25,7 @@ package org.tools4j.elara.time;
 
 @FunctionalInterface
 public interface TimeSource {
-    long BIG_BANG = Long.MIN_VALUE;
-    long END_OF_TIME = Long.MAX_VALUE;
+    long MIN_VALUE = 0;
+    long MAX_VALUE = Long.MAX_VALUE;
     long currentTime();
 }
