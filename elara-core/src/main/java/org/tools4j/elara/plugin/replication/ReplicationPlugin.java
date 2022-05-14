@@ -33,7 +33,7 @@ import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.replication.Connection.Handler;
 import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.store.MessageStore.Appender;
+import org.tools4j.elara.stream.MessageStream.Appender;
 import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;

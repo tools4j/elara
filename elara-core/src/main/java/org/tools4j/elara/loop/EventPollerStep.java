@@ -27,7 +27,7 @@ import org.agrona.DirectBuffer;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.store.MessageStore.Handler.Result;
+import org.tools4j.elara.stream.MessageStream.Handler.Result;
 import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;

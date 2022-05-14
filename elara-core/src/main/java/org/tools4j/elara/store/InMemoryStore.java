@@ -27,9 +27,9 @@ import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
-import org.tools4j.elara.store.MessageStore.Handler.Result;
+import org.tools4j.elara.stream.MessageStream.Handler.Result;
 
-import static org.tools4j.elara.store.MessageStore.Handler.Result.POLL;
+import static org.tools4j.elara.stream.MessageStream.Handler.Result.POLL;
 
 public class InMemoryStore implements MessageStore {
 

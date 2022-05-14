@@ -25,7 +25,7 @@ package org.tools4j.elara.store;
 
 import org.tools4j.elara.flyweight.Flyweight;
 import org.tools4j.elara.format.MessagePrinter;
-import org.tools4j.elara.store.MessageStore.Handler.Result;
+import org.tools4j.elara.stream.MessageStream.Handler.Result;
 import org.tools4j.nobark.loop.LoopCondition;
 import org.tools4j.nobark.run.StoppableThread;
 import org.tools4j.nobark.run.ThreadLike;

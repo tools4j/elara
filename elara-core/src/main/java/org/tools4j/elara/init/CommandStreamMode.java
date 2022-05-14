@@ -24,12 +24,12 @@
 package org.tools4j.elara.init;
 
 /**
- * Defines how to resume command store polling when restarting an application with an existing command store.
+ * Defines how to resume command stream polling when restarting an application with an existing command store or stream.
  * <p>
  * The default mode is {@link #FROM_END} so that only new commands will be polled; commands existing in the command
  * store are skipped when starting the application.
  */
-public enum CommandStoreMode {
+public enum CommandStreamMode {
     /** All commands in the command store are replayed */
     REPLAY_ALL,
     /** Resumes polling from the position of the last poll;  works only if this mode was used also previously */

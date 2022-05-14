@@ -35,8 +35,8 @@ import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.input.DefaultReceiver;
-import org.tools4j.elara.store.MessageStore.Appender;
-import org.tools4j.elara.store.MessageStore.AppendingContext;
+import org.tools4j.elara.stream.MessageStream.Appender;
+import org.tools4j.elara.stream.MessageStream.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.ArrayList;

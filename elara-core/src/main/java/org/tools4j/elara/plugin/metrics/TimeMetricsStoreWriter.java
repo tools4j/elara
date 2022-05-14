@@ -28,8 +28,8 @@ import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
-import org.tools4j.elara.store.MessageStore.Appender;
-import org.tools4j.elara.store.MessageStore.AppendingContext;
+import org.tools4j.elara.stream.MessageStream.Appender;
+import org.tools4j.elara.stream.MessageStream.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;

@@ -23,45 +23,16 @@
  */
 package org.tools4j.elara.store;
 
-import org.agrona.DirectBuffer;
-import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.stream.MessageStream;
 
-public interface MessageStore extends AutoCloseable {
+public interface MessageStore extends MessageStream {
     Appender appender();
     Poller poller();
     Poller poller(String id);
     @Override
     void close();
 
-    interface Appender extends AutoCloseable {
-        default void append(DirectBuffer buffer, int offset, int length) {
-            try (final AppendingContext ctxt = appending()) {
-                ctxt.buffer().putBytes(0, buffer, offset, length);
-                ctxt.commit(length);
-            }
-        }
-        AppendingContext appending();
-
-        @Override
-        void close();
-    }
-
-    interface AppendingContext extends AutoCloseable {
-        MutableDirectBuffer buffer();
-
-        void commit(int length);
-        void abort();
-        boolean isClosed();
-
-        @Override
-        default void close() {
-            if (!isClosed()) {
-                abort();
-            }
-        }
-    }
-
-    interface Poller extends AutoCloseable {
+    interface Poller extends MessageStream.Poller {
         /**
          * Returns the current entry ID of this poller.
          * <p>
@@ -79,21 +50,13 @@ public interface MessageStore extends AutoCloseable {
         boolean moveToNext();//skip one
         boolean moveToPrevious();//skip one
         Poller moveToStart();
+        @Override
         Poller moveToEnd();
+
+        @Override
         int poll(Handler handler);
 
         @Override
         void close();
-    }
-
-    @FunctionalInterface
-    interface Handler {
-        enum Result {
-            /** Marks message as peeked so that it will be revisited when polling again */
-            PEEK,
-            /** Marks message as consumed so that the next message is returned when polling again */
-            POLL
-        }
-        Result onMessage(DirectBuffer message);
     }
 }

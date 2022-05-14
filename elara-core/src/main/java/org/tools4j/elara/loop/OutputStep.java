@@ -29,9 +29,9 @@ import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.store.CommittedEventPoller;
 import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.store.MessageStore.Handler;
-import org.tools4j.elara.store.MessageStore.Handler.Result;
 import org.tools4j.elara.store.MessageStore.Poller;
+import org.tools4j.elara.stream.MessageStream.Handler;
+import org.tools4j.elara.stream.MessageStream.Handler.Result;
 import org.tools4j.nobark.loop.Step;
 
 import static java.util.Objects.requireNonNull;

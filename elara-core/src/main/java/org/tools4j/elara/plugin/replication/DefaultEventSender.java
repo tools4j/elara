@@ -31,7 +31,7 @@ import org.tools4j.elara.flyweight.FrameDescriptor;
 import org.tools4j.elara.plugin.replication.Connection.Publisher;
 import org.tools4j.elara.store.IndexTrackingPoller;
 import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.store.MessageStore.Handler;
+import org.tools4j.elara.stream.MessageStream.Handler;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;

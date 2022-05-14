@@ -33,6 +33,7 @@ import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.store.MessageStore;
+import org.tools4j.elara.stream.MessageStream;
 import org.tools4j.elara.time.TimeSource;
 import org.tools4j.nobark.loop.Step;
 
@@ -44,8 +45,8 @@ public interface Configuration {
     EventApplier eventApplier();
     List<Input> inputs();
     Output output();
-    MessageStore commandStore();
-    CommandStoreMode commandStoreMode();
+    MessageStream commandStream();
+    CommandStreamMode commandStreamMode();
     MessageStore eventStore();
     TimeSource timeSource();
     ExceptionHandler exceptionHandler();

@@ -24,7 +24,7 @@
 package org.tools4j.elara.handler;
 
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.store.MessageStore.Handler.Result;
+import org.tools4j.elara.stream.MessageStream.Handler.Result;
 
 public interface CommandHandler {
     Result onCommand(Command command);

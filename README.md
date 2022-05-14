@@ -22,14 +22,15 @@ There are excellent introductions to event sourcing out there.  Some of our favo
 ![Elara Event Sourcing](./elara.jpg)
 
 #### Terminology 
-* **Command:** essentially an input message but enriched with timestamp, source and sequence number; can be a state modifying command or a query
+* **Command:** essentially an input message but enriched with timestamp, source and sequence number; can be a state modifying command instruction or a query
 * **Event:** result of processing a command; instruction how to modify state or what output to generate
-* **Command Store:** persisted store that sequentially stores all incoming commands
-* **Event Store:** persisted event store that sequentially stores all routed events
+* **Event Store:** persisted store with all routed events stored sequentially in appending order
 * **Application State:** transient in-memory state of the application;  can be constructed from events via _Event Applier_
-* **Input:** a source of input commands, such as a message subscription
+* **Input:** a source of input messages for instance from an upstream subscription
 * **Output:** transforms selected events into output messages and publishes them to downstream applications
-* **Command Processor:** handles command messages and has read-only access to application state; routes events
+* **Command Stream:** stream of commands that is derived by sequencing messages from all inputs
+* **Command Store:** optionally the command stream is persisted before streaming it to the _Event Processor_
+* **Command Processor:** handles commands and has read-only access to application state; routes events
 * **Event Applier:** triggered by events (routed or replayed); modifies the application state according to the event instruction
 
 ### Plugins

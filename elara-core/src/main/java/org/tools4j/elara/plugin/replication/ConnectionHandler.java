@@ -33,7 +33,7 @@ import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.logging.Logger.Level;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.replication.Connection.Publisher;
-import org.tools4j.elara.store.MessageStore.Appender;
+import org.tools4j.elara.stream.MessageStream.Appender;
 
 import java.nio.ByteBuffer;
 

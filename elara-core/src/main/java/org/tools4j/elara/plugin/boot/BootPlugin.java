@@ -95,7 +95,7 @@ public class BootPlugin implements SystemPlugin<NullState> {
     }
 
     private void appendAppInitStartCommand(final org.tools4j.elara.init.Configuration appConfig) {
-        final Receiver receiver = new DefaultReceiver(appConfig.timeSource(), appConfig.commandStore().appender());
+        final Receiver receiver = new DefaultReceiver(appConfig.timeSource(), appConfig.commandStream().appender());
         receiver.receiveMessageWithoutPayload(commandSource, sequenceGenerator.nextSequence(), SIGNAL_APP_INITIALISATION_START);
     }
 }

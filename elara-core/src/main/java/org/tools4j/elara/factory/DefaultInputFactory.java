@@ -68,7 +68,7 @@ public class DefaultInputFactory implements InputFactory {
 
     @Override
     public Receiver receiver() {
-        final MessageStore.Appender commandAppender = configuration.commandStore().appender();
+        final MessageStore.Appender commandAppender = configuration.commandStream().appender();
         return new DefaultReceiver(configuration.timeSource(), commandAppender);
     }
 

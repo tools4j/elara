@@ -28,12 +28,12 @@ import org.tools4j.elara.command.CompositeCommandProcessor;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.CommandPollerHandler;
 import org.tools4j.elara.handler.DefaultCommandHandler;
-import org.tools4j.elara.init.CommandStoreMode;
+import org.tools4j.elara.init.CommandStreamMode;
 import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.loop.CommandPollerStep;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.route.DefaultEventRouter;
-import org.tools4j.elara.store.MessageStore.Poller;
+import org.tools4j.elara.stream.MessageStream.Poller;
 import org.tools4j.nobark.loop.Step;
 
 import java.util.Arrays;
@@ -90,19 +90,19 @@ public class DefaultProcessorFactory implements ProcessorFactory {
     @Override
     public Step commandPollerStep() {
         final Poller commandStorePoller;
-        switch (configuration.commandStoreMode()) {
+        switch (configuration.commandStreamMode()) {
             case REPLAY_ALL:
-                commandStorePoller = configuration.commandStore().poller();
+                commandStorePoller = configuration.commandStream().poller();
                 break;
             case FROM_LAST:
-                commandStorePoller = configuration.commandStore().poller(CommandStoreMode.DEFAULT_POLLER_ID);
+                commandStorePoller = configuration.commandStream().poller(CommandStreamMode.DEFAULT_POLLER_ID);
                 break;
             case FROM_END:
-                commandStorePoller = configuration.commandStore().poller();
+                commandStorePoller = configuration.commandStream().poller();
                 commandStorePoller.moveToEnd();
                 break;
             default:
-                throw new IllegalArgumentException("Unsupported command store mode: " + configuration.commandStoreMode());
+                throw new IllegalArgumentException("Unsupported command stream mode: " + configuration.commandStreamMode());
         }
         return new CommandPollerStep(commandStorePoller, new CommandPollerHandler(singletons.get().commandHandler()));
     }

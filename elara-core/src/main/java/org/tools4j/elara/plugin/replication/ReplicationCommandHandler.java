@@ -30,12 +30,12 @@ import org.tools4j.elara.command.Command;
 import org.tools4j.elara.handler.DefaultCommandHandler;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.route.DefaultEventRouter;
-import org.tools4j.elara.store.MessageStore.Handler.Result;
+import org.tools4j.elara.stream.MessageStream.Handler.Result;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.store.MessageStore.Handler.Result.PEEK;
-import static org.tools4j.elara.store.MessageStore.Handler.Result.POLL;
+import static org.tools4j.elara.stream.MessageStream.Handler.Result.PEEK;
+import static org.tools4j.elara.stream.MessageStream.Handler.Result.POLL;
 
 public class ReplicationCommandHandler extends DefaultCommandHandler {
 

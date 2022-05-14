@@ -34,10 +34,10 @@ import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.store.MessageStore;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.store.MessageStore.Handler;
-import static org.tools4j.elara.store.MessageStore.Handler.Result;
-import static org.tools4j.elara.store.MessageStore.Handler.Result.POLL;
 import static org.tools4j.elara.store.MessageStore.Poller;
+import static org.tools4j.elara.stream.MessageStream.Handler;
+import static org.tools4j.elara.stream.MessageStream.Handler.Result;
+import static org.tools4j.elara.stream.MessageStream.Handler.Result.POLL;
 
 public class ChroniclePoller implements Poller {
 

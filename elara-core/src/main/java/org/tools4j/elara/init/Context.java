@@ -33,6 +33,7 @@ import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.store.MessageStore;
+import org.tools4j.elara.stream.MessageStream;
 import org.tools4j.elara.time.TimeSource;
 import org.tools4j.nobark.loop.Step;
 
@@ -48,9 +49,8 @@ public interface Context extends Configuration {
     Context inputs(Input... inputs);
     Context inputs(Collection<? extends Input> inputs);
     Context output(Output output);
-    Context commandStore(String file);
-    Context commandStore(MessageStore commandStore);
-    Context commandStoreMode(CommandStoreMode mode);
+    Context commandStream(MessageStream commandStream);
+    Context commandStreamMode(CommandStreamMode mode);
     Context eventStore(String file);
     Context eventStore(MessageStore eventStore);
     Context timeSource(TimeSource timeSource);

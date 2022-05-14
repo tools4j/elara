@@ -23,9 +23,9 @@
  */
 package org.tools4j.elara.store;
 
-import org.tools4j.elara.store.MessageStore.Handler;
-import org.tools4j.elara.store.MessageStore.Handler.Result;
 import org.tools4j.elara.store.MessageStore.Poller;
+import org.tools4j.elara.stream.MessageStream.Handler;
+import org.tools4j.elara.stream.MessageStream.Handler.Result;
 
 public class DefaultIndexTrackingPoller implements IndexTrackingPoller {
 

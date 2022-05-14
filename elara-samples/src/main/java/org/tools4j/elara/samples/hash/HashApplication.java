@@ -161,7 +161,7 @@ public class HashApplication {
                 .commandProcessor(commandProcessor(state))
                 .eventApplier(eventApplier(state))
                 .input(input(input))
-                .commandStore(new InMemoryStore())
+                .commandStream(new InMemoryStore())
                 .eventStore(new InMemoryStore())
         );
     }
@@ -179,7 +179,7 @@ public class HashApplication {
                 .commandProcessor(commandProcessor(state))
                 .eventApplier(eventApplier(state))
                 .input(input(input))
-                .commandStore(new ChronicleMessageStore(cq))
+                .commandStream(new ChronicleMessageStore(cq))
                 .eventStore(new ChronicleMessageStore(eq))
         );
     }
@@ -210,7 +210,7 @@ public class HashApplication {
                         .commandProcessor(commandProcessor(state))
                         .eventApplier(eventApplier(state))
                         .input(input(input))
-                        .commandStore(new ChronicleMessageStore(cq))
+                        .commandStream(new ChronicleMessageStore(cq))
                         .eventStore(new ChronicleMessageStore(eq))
                         /* trigger capturing of output metrics approximately every second time */
                         .output((event, replay, retry, loopback) -> (event.payload().getLong(0) & 0x1) == 0 ? Ack.COMMIT : Ack.IGNORED)
@@ -248,7 +248,7 @@ public class HashApplication {
                         .commandProcessor(commandProcessor(state))
                         .eventApplier(eventApplier(state))
                         .input(input(input))
-                        .commandStore(new ChronicleMessageStore(cq))
+                        .commandStream(new ChronicleMessageStore(cq))
                         .eventStore(new ChronicleMessageStore(eq))
                         /* trigger capturing of output metrics approximately every second time */
                         .output((event, replay, retry, loopback) -> (event.payload().getLong(0) & 0x1) == 0 ? Ack.COMMIT : Ack.IGNORED)

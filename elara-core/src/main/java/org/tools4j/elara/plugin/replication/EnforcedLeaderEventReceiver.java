@@ -29,8 +29,8 @@ import org.tools4j.elara.flyweight.FlyweightHeader;
 import org.tools4j.elara.logging.ElaraLogger;
 import org.tools4j.elara.logging.Logger.Factory;
 import org.tools4j.elara.plugin.replication.EnforceLeaderInput.EnforceLeaderReceiver;
-import org.tools4j.elara.store.MessageStore.Appender;
-import org.tools4j.elara.store.MessageStore.AppendingContext;
+import org.tools4j.elara.stream.MessageStream.Appender;
+import org.tools4j.elara.stream.MessageStream.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;

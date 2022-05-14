@@ -273,7 +273,7 @@ public class ReplicatedHashApplicationTest {
                 .commandProcessor(commandProcessor(serverId, appState))
                 .eventApplier(eventApplier(serverId, appState))
                 .inputs(inputs)
-                .commandStore(new ChronicleMessageStore(cq))
+                .commandStream(new ChronicleMessageStore(cq))
                 .eventStore(new ChronicleMessageStore(eq))
                 .duplicateHandler(DuplicateHandler.NOOP)
                 .loggerFactory(clazz -> new OutputStreamLogger(Level.DEBUG))

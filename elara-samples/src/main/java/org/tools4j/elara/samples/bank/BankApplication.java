@@ -88,7 +88,7 @@ public class BankApplication {
                         .eventApplier(eventApplier)
                         .input(input)
                         .output(this::publish)
-                        .commandStore(commandStore)
+                        .commandStream(commandStore)
                         .eventStore(eventStore)
                         .duplicateHandler(duplicateHandler)
                         .plugin(Plugins.bootPlugin())

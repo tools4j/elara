@@ -35,6 +35,7 @@ import org.tools4j.elara.logging.Logger.Factory;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.store.MessageStore;
+import org.tools4j.elara.stream.MessageStream;
 import org.tools4j.elara.time.TimeSource;
 import org.tools4j.nobark.loop.Step;
 
@@ -59,8 +60,8 @@ final class DefaultContext implements Context {
     private EventApplier eventApplier;
     private final List<Input> inputs = new ArrayList<>();
     private Output output = Output.NOOP;
-    private MessageStore commandStore;
-    private CommandStoreMode commandStoreMode = CommandStoreMode.FROM_END;
+    private MessageStream commandStream;
+    private CommandStreamMode commandStreamMode = CommandStreamMode.FROM_END;
     private MessageStore eventStore;
     private TimeSource timeSource;
     private ExceptionHandler exceptionHandler = ExceptionHandler.DEFAULT;
@@ -131,29 +132,24 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public MessageStore commandStore() {
-        return commandStore;
+    public MessageStream commandStream() {
+        return commandStream;
     }
 
     @Override
-    public Context commandStore(final String file) {
-        throw new IllegalStateException("not supported yet");
-    }
-
-    @Override
-    public Context commandStore(final MessageStore commandStore) {
-        this.commandStore = requireNonNull(commandStore);
+    public Context commandStream(final MessageStream commandStream) {
+        this.commandStream = requireNonNull(commandStream);
         return this;
     }
 
     @Override
-    public CommandStoreMode commandStoreMode() {
-        return commandStoreMode;
+    public CommandStreamMode commandStreamMode() {
+        return commandStreamMode;
     }
 
     @Override
-    public Context commandStoreMode(final CommandStoreMode mode) {
-        this.commandStoreMode = requireNonNull(mode);
+    public Context commandStreamMode(final CommandStreamMode mode) {
+        this.commandStreamMode = requireNonNull(mode);
         return this;
     }
 
@@ -307,7 +303,7 @@ final class DefaultContext implements Context {
         if (configuration.eventApplier() == null) {
             throw new IllegalArgumentException("Event applier must be set");
         }
-        if (configuration.commandStore() == null) {
+        if (configuration.commandStream() == null) {
             throw new IllegalArgumentException("Command log must be set");
         }
         if (configuration.eventStore() == null) {
