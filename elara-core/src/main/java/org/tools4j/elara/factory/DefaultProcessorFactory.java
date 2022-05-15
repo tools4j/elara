@@ -101,6 +101,8 @@ public class DefaultProcessorFactory implements ProcessorFactory {
                 commandStorePoller = configuration.commandStore().poller();
                 commandStorePoller.moveToEnd();
                 break;
+            case NO_STORE:
+                return AgentStep.NO_OP;
             default:
                 throw new IllegalArgumentException("Unsupported command polling mode: " + configuration.commandPollingMode());
         }

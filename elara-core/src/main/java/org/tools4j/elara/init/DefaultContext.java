@@ -49,6 +49,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.init.CommandPollingMode.NO_STORE;
 import static org.tools4j.elara.logging.OutputStreamLogger.SYSTEM_FACTORY;
 
 final class DefaultContext implements Context {
@@ -302,8 +303,8 @@ final class DefaultContext implements Context {
         if (configuration.eventApplier() == null) {
             throw new IllegalArgumentException("Event applier must be set");
         }
-        if (configuration.commandStore() == null) {
-            throw new IllegalArgumentException("Command log must be set");
+        if (configuration.commandStore() == null && configuration.commandPollingMode() != NO_STORE) {
+            throw new IllegalArgumentException("Command log must be set unless command polling mode is NO_STORE");
         }
         if (configuration.eventStore() == null) {
             throw new IllegalArgumentException("Event log must be set");

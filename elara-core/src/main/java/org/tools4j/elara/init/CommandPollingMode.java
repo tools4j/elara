@@ -24,7 +24,8 @@
 package org.tools4j.elara.init;
 
 /**
- * Defines how to resume command stream polling when restarting an application with an existing command store or stream.
+ * Determines the command polling mode, either from a persisted store (all commands, from last or from end) or without
+ * store polling commands directly from inputs.
  * <p>
  * The default mode is {@link #FROM_END} so that only new commands will be polled; commands existing in the command
  * store are skipped when starting the application.
@@ -35,7 +36,9 @@ public enum CommandPollingMode {
     /** Resumes polling from the position of the last poll;  works only if this mode was used also previously */
     FROM_LAST,
     /** No replay at all, only newly added commands will be polled */
-    FROM_END;
+    FROM_END,
+    /** No command store is used, commands are passed through directly from input messages */
+    NO_STORE;
 
     /**
      * Poller ID used for {@link #FROM_LAST} mode.

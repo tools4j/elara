@@ -27,6 +27,8 @@ import org.tools4j.elara.factory.InterceptableSingletons;
 import org.tools4j.elara.factory.Singletons;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.route.DefaultEventRouter;
+import org.tools4j.elara.step.AgentStep;
+import org.tools4j.elara.step.EventPollerStep;
 
 import static java.util.Objects.requireNonNull;
 
@@ -58,5 +60,10 @@ public class ReplicationInterceptor extends InterceptableSingletons {
                 appConfig.exceptionHandler(),
                 appConfig.duplicateHandler()
         );
+    }
+
+    @Override
+    public AgentStep eventPollerStep() {
+        return new EventPollerStep(appConfig.eventStore().poller(), singletons().eventHandler());
     }
 }

@@ -30,7 +30,7 @@ import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.step.AgentStep;
-import org.tools4j.elara.step.EventPollerStep;
+import org.tools4j.elara.step.EventReplayStep;
 
 import java.util.Arrays;
 import java.util.function.Supplier;
@@ -84,7 +84,6 @@ public class DefaultApplierFactory implements ApplierFactory {
 
     @Override
     public AgentStep eventPollerStep() {
-//        return new EventReplayStep(configuration.eventStore().poller(), singletons.get().eventHandler());
-        return new EventPollerStep(configuration.eventStore().poller(), singletons.get().eventHandler());
+        return new EventReplayStep(configuration.eventStore().poller(), singletons.get().eventHandler());
     }
 }

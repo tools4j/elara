@@ -90,14 +90,14 @@ public class HashApplicationTest {
         final ModifiableState state = new DefaultState();
         final Random random = new Random(123);
         final long sleepNanos = MICROSECONDS.toNanos(0);
-//        final long expected = -6817377618556807803L;//     5_000
         final long expected = 8951308420835593941L;//  500_000
 //        final long expected = -4253299023651259134L;//5_000_000
 //        final long expected = 8536806003277137281L;//50_000_000
 
         //when
         try (final ElaraRunner runner = HashApplication.chronicleQueueWithMetrics(state, input)) {
-//        try (final ElaraRunner runner = HashApplication.chronicleQueueWithFreqMetrics(state, input)) {
+//        try (final ElaraRunner runner = HashApplication.chronicleQueueWithFreqMetrics(state, input, FROM_END)) {
+//        try (final ElaraRunner runner = HashApplication.chronicleQueueWithFreqMetrics(state, input, NO_STORE)) {
             runHashApp(n, random, sleepNanos, input, runner);
         }
 

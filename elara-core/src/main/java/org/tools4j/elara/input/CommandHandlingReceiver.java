@@ -106,6 +106,7 @@ public final class CommandHandlingReceiver implements Receiver.Default {
                 throw new IllegalStateException("Receiving context not closed");
             }
             initHeader(source, sequence, type, 0);
+            closed = false;
             return this;
         }
 

@@ -23,7 +23,10 @@
  */
 package org.tools4j.elara.factory;
 
+import org.tools4j.elara.handler.CommandHandler;
+import org.tools4j.elara.init.CommandPollingMode;
 import org.tools4j.elara.init.Configuration;
+import org.tools4j.elara.input.CommandHandlingReceiver;
 import org.tools4j.elara.input.CommandStoreReceiver;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver;
@@ -68,6 +71,11 @@ public class DefaultInputFactory implements InputFactory {
 
     @Override
     public Receiver receiver() {
+        final CommandPollingMode commandPollingMode = configuration.commandPollingMode();
+        if (commandPollingMode == CommandPollingMode.NO_STORE) {
+            final CommandHandler commandHandler = singletons.get().commandHandler();
+            return new CommandHandlingReceiver(4096, configuration.timeSource(), commandHandler);
+        }
         final MessageStore.Appender commandAppender = configuration.commandStore().appender();
         return new CommandStoreReceiver(configuration.timeSource(), commandAppender);
     }

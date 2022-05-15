@@ -29,6 +29,7 @@ import org.agrona.concurrent.BusySpinIdleStrategy;
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.application.EventApplier;
 import org.tools4j.elara.chronicle.ChronicleMessageStore;
+import org.tools4j.elara.init.CommandPollingMode;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.Receiver.ReceivingContext;
@@ -230,7 +231,9 @@ public class HashApplication {
         );
     }
 
-    public static ElaraRunner chronicleQueueWithFreqMetrics(final ModifiableState state, final AtomicLong input) {
+    public static ElaraRunner chronicleQueueWithFreqMetrics(final ModifiableState state,
+                                                            final AtomicLong input,
+                                                            final CommandPollingMode commandPollingMode) {
         final TimeSource pseudoNanoClock = new PseudoMicroClock();
         final ChronicleQueue cq = ChronicleQueue.singleBuilder()
                 .path("build/chronicle/hash-metrics/cmd.cq4")
@@ -246,6 +249,7 @@ public class HashApplication {
                 .build();
         return Elara.launch(Context.create()
                         .commandProcessor(commandProcessor(state))
+                        .commandPollingMode(commandPollingMode)
                         .eventApplier(eventApplier(state))
                         .input(input(input))
                         .commandStore(new ChronicleMessageStore(cq))
