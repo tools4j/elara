@@ -29,7 +29,7 @@ import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.store.MessageStore.Poller;
 
-import static org.tools4j.elara.stream.MessageStream.Handler.Result.POLL;
+import static org.tools4j.elara.store.MessageStore.Handler.Result.POLL;
 
 /**
  * An event poller that works with two underlying pollers to ensure only committed events

@@ -53,7 +53,7 @@ public class SimpleStringApplication {
                 .eventApplier(this::apply)
                 .input(new StringInput(inputQueue))
                 .output(this::publish)
-                .commandStream(new InMemoryStore())
+                .commandStore(new InMemoryStore())
                 .eventStore(new InMemoryStore())
         );
     }

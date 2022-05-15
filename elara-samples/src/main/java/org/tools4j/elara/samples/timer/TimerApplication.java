@@ -76,7 +76,7 @@ public class TimerApplication {
                 .commandProcessor(this::process)
                 .eventApplier(eventApplier(eventConsumer))
                 .input(new CommandInput(commandQueue))
-                .commandStream(new InMemoryStore())
+                .commandStore(new InMemoryStore())
                 .eventStore(new InMemoryStore())
                 .plugin(Plugins.timerPlugin(), timerStateSupplier)
         );
@@ -97,7 +97,7 @@ public class TimerApplication {
                 .commandProcessor(this::process)
                 .eventApplier(eventApplier(eventConsumer))
                 .input(new CommandInput(commandQueue))
-                .commandStream(new ChronicleMessageStore(cq))
+                .commandStore(new ChronicleMessageStore(cq))
                 .eventStore(new ChronicleMessageStore(eq))
                 .plugin(Plugins.timerPlugin())
         );

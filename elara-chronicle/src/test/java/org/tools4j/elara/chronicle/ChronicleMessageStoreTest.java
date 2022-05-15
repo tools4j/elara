@@ -30,10 +30,10 @@ import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import org.tools4j.elara.stream.MessageStream.Appender;
-import org.tools4j.elara.stream.MessageStream.AppendingContext;
-import org.tools4j.elara.stream.MessageStream.Handler;
-import org.tools4j.elara.stream.MessageStream.Poller;
+import org.tools4j.elara.store.MessageStore.Appender;
+import org.tools4j.elara.store.MessageStore.AppendingContext;
+import org.tools4j.elara.store.MessageStore.Handler;
+import org.tools4j.elara.store.MessageStore.Poller;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.tools4j.elara.stream.MessageStream.Handler.Result.POLL;
+import static org.tools4j.elara.store.MessageStore.Handler.Result.POLL;
 
 /**
  * Unit test for {@link ChronicleMessageStore}.

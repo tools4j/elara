@@ -23,8 +23,8 @@
  */
 package org.tools4j.elara.step;
 
-import org.tools4j.elara.stream.MessageStream.Handler;
-import org.tools4j.elara.stream.MessageStream.Poller;
+import org.tools4j.elara.store.MessageStore.Handler;
+import org.tools4j.elara.store.MessageStore.Poller;
 
 import static java.util.Objects.requireNonNull;
 

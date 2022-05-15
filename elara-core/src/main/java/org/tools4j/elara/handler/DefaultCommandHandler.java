@@ -29,10 +29,10 @@ import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.route.DefaultEventRouter;
-import org.tools4j.elara.stream.MessageStream.Handler.Result;
+import org.tools4j.elara.store.MessageStore.Handler.Result;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.stream.MessageStream.Handler.Result.POLL;
+import static org.tools4j.elara.store.MessageStore.Handler.Result.POLL;
 
 public class DefaultCommandHandler implements CommandHandler {
 

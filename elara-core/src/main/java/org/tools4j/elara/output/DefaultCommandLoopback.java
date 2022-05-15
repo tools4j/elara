@@ -30,7 +30,7 @@ import org.tools4j.elara.flyweight.FlyweightHeader;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.store.ExpandableDirectBuffer;
 import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.stream.MessageStream.AppendingContext;
+import org.tools4j.elara.store.MessageStore.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;

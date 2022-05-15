@@ -29,8 +29,8 @@ import org.agrona.concurrent.AgentRunner;
 import org.agrona.concurrent.BackoffIdleStrategy;
 import org.tools4j.elara.flyweight.Flyweight;
 import org.tools4j.elara.format.MessagePrinter;
-import org.tools4j.elara.stream.MessageStream;
-import org.tools4j.elara.stream.MessageStream.Handler.Result;
+import org.tools4j.elara.store.MessageStore.Handler;
+import org.tools4j.elara.store.MessageStore.Handler.Result;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -109,7 +109,7 @@ public class MessageStorePrinter implements AutoCloseable {
                                 final Predicate<? super M> filter,
                                 final MessagePrinter<? super M> printer) {
         final long[] linePtr = {0};
-        final MessageStream.Handler handler = message -> {
+        final Handler handler = message -> {
             final M msg = flyweight.init(message, 0);
             final long line = linePtr[0]++;
             if (filter.test(msg)) {

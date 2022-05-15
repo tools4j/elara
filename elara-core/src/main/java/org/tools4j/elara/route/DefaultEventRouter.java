@@ -31,8 +31,8 @@ import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.flyweight.FlyweightHeader;
 import org.tools4j.elara.store.ExpandableDirectBuffer;
-import org.tools4j.elara.stream.MessageStream.Appender;
-import org.tools4j.elara.stream.MessageStream.AppendingContext;
+import org.tools4j.elara.store.MessageStore.Appender;
+import org.tools4j.elara.store.MessageStore.AppendingContext;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.flyweight.FrameDescriptor.FLAGS_OFFSET;

@@ -36,7 +36,6 @@ import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.stream.MessageStream;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.ArrayList;
@@ -60,8 +59,8 @@ final class DefaultContext implements Context {
     private EventApplier eventApplier;
     private final List<Input> inputs = new ArrayList<>();
     private Output output = Output.NOOP;
-    private MessageStream commandStream;
-    private CommandStreamMode commandStreamMode = CommandStreamMode.FROM_END;
+    private MessageStore commandStore;
+    private CommandPollingMode commandStreamMode = CommandPollingMode.FROM_END;
     private MessageStore eventStore;
     private TimeSource timeSource;
     private ExceptionHandler exceptionHandler = ExceptionHandler.DEFAULT;
@@ -132,23 +131,23 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public MessageStream commandStream() {
-        return commandStream;
+    public MessageStore commandStore() {
+        return commandStore;
     }
 
     @Override
-    public Context commandStream(final MessageStream commandStream) {
-        this.commandStream = requireNonNull(commandStream);
+    public Context commandStore(final MessageStore commandStore) {
+        this.commandStore = requireNonNull(commandStore);
         return this;
     }
 
     @Override
-    public CommandStreamMode commandStreamMode() {
+    public CommandPollingMode commandPollingMode() {
         return commandStreamMode;
     }
 
     @Override
-    public Context commandStreamMode(final CommandStreamMode mode) {
+    public Context commandPollingMode(final CommandPollingMode mode) {
         this.commandStreamMode = requireNonNull(mode);
         return this;
     }
@@ -303,7 +302,7 @@ final class DefaultContext implements Context {
         if (configuration.eventApplier() == null) {
             throw new IllegalArgumentException("Event applier must be set");
         }
-        if (configuration.commandStream() == null) {
+        if (configuration.commandStore() == null) {
             throw new IllegalArgumentException("Command log must be set");
         }
         if (configuration.eventStore() == null) {

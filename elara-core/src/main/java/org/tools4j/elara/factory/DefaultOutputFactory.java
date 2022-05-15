@@ -85,7 +85,7 @@ public class DefaultOutputFactory implements OutputFactory {
     @Override
     public CommandLoopback commandLoopback() {
         return new DefaultCommandLoopback(
-                configuration.commandStream().appender(),
+                configuration.commandStore().appender(),
                 configuration.timeSource(),
                 singletons.get().loopbackSequenceGenerator()
         );

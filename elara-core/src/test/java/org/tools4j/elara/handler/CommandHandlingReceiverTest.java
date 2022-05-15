@@ -25,7 +25,6 @@ package org.tools4j.elara.handler;
 
 import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
-import org.agrona.MutableDirectBuffer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,9 +33,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.input.DefaultReceiver;
-import org.tools4j.elara.stream.MessageStream.Appender;
-import org.tools4j.elara.stream.MessageStream.AppendingContext;
+import org.tools4j.elara.input.CommandHandlingReceiver;
+import org.tools4j.elara.store.MessageStore.Handler.Result;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.ArrayList;
@@ -48,10 +46,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit test for {@link DefaultReceiver}
+ * Unit test for {@link CommandHandlingReceiver}
  */
 @ExtendWith(MockitoExtension.class)
-public class DefaultReceiverTest {
+public class CommandHandlingReceiverTest {
+
+    private static final int INITIAL_BUFFER_CAPACITY = 1024;
 
     @Mock
     private TimeSource timeSource;
@@ -59,45 +59,16 @@ public class DefaultReceiverTest {
     private List<Command> commandStore;
 
     //under test
-    private DefaultReceiver defaultReceiver;
+    private CommandHandlingReceiver receiver;
 
     @BeforeEach
     public void init() {
         commandStore = new ArrayList<>();
-        defaultReceiver = new DefaultReceiver(timeSource, new Appender() {
-            @Override
-            public AppendingContext appending() {
-                return new AppendingContext() {
-                    MutableDirectBuffer buffer = new ExpandableArrayBuffer();
-                    @Override
-                    public MutableDirectBuffer buffer() {
-                        return buffer;
-                    }
-
-                    @Override
-                    public void abort() {
-                        buffer = null;
-                    }
-
-                    @Override
-                    public void commit(final int length) {
-                        if (buffer != null) {
-                            commandStore.add(new FlyweightCommand().init(buffer, 0));
-                            buffer = null;
-                        }
-                    }
-
-                    @Override
-                    public boolean isClosed() {
-                        return buffer == null;
-                    }
-                };
-            }
-
-            @Override
-            public void close() {
-                //no op
-            }
+        receiver = new CommandHandlingReceiver(INITIAL_BUFFER_CAPACITY, timeSource, command -> {
+            final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer();
+            command.writeTo(buffer, 0);
+            commandStore.add(new FlyweightCommand().init(buffer, 0));
+            return Result.POLL;
         });
     }
 
@@ -114,7 +85,7 @@ public class DefaultReceiverTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        defaultReceiver.receiveMessage(source, seq, message, offset, length);
+        receiver.receiveMessage(source, seq, message, offset, length);
 
         //then
         assertEquals(1, commandStore.size(), "commandStore.size");
@@ -135,28 +106,66 @@ public class DefaultReceiverTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        defaultReceiver.receiveMessage(source, seq, type, message, offset, length);
+        receiver.receiveMessage(source, seq, type, message, offset, length);
 
         //then
         assertCommand(source, seq, commandTime, type, text, commandStore.get(0));
     }
 
+    @Test
+    public void shouldAppendCommandWithAppendingContext() {
+        //given
+        final long commandTime = 9988776600001L;
+        final int source = 1;
+        final long seq = 22;
+        final int type = 12345;
+        final String text = "Hello world!!!";
+        final int offset = 77;
+        final DirectBuffer message = message(text, offset);
+        final int length = message.capacity() - offset;
+
+        //when
+        when(timeSource.currentTime()).thenReturn(commandTime);
+        receiver.receiveMessage(source, seq, type, message, offset, length);
+
+        //then
+        assertCommand(source, seq, commandTime, type, text, commandStore.get(0));
+    }
+
+    @Test
+    public void shouldAppendCommandWithoutPayload() {
+        //given
+        final long commandTime = 9988776600001L;
+        final int source = 1;
+        final long seq = 22;
+        final int type = 12345;
+
+        //when
+        when(timeSource.currentTime()).thenReturn(commandTime);
+        receiver.receiveMessageWithoutPayload(source, seq, type);
+
+        //then
+        assertCommand(source, seq, commandTime, type, null, commandStore.get(0));
+    }
+
     private void assertCommand(final int source,
                                final long seq,
                                final long commandTime,
-                               final int tpye,
+                               final int type,
                                final String text,
                                final Command command) {
-        final int payloadSize = Integer.BYTES + text.length();
+        final int payloadSize = text == null ? 0 : Integer.BYTES + text.length();
         assertEquals(source, command.id().source(), "command.id.source");
         assertEquals(seq, command.id().sequence(), "command.id.sequence");
         assertEquals(commandTime, command.time(), "command.time");
         assertFalse(command.isAdmin(), "command.isAdmin");
         assertTrue(command.isApplication(), "command.isApplication");
-        assertEquals(tpye, command.type(), "command.type");
+        assertEquals(type, command.type(), "command.type");
         final DirectBuffer payload = command.payload();
         assertEquals(payloadSize, payload.capacity(), "command.payload.capacity");
-        assertEquals(text, payload.getStringAscii(0), "command.payload.text");
+        if (text != null) {
+            assertEquals(text, payload.getStringAscii(0), "command.payload.text");
+        }
     }
 
     private static DirectBuffer message(final String text, final int offset) {

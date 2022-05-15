@@ -34,7 +34,6 @@ import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.stream.MessageStream;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.List;
@@ -45,8 +44,8 @@ public interface Configuration {
     EventApplier eventApplier();
     List<Input> inputs();
     Output output();
-    MessageStream commandStream();
-    CommandStreamMode commandStreamMode();
+    MessageStore commandStore();
+    CommandPollingMode commandPollingMode();
     MessageStore eventStore();
     TimeSource timeSource();
     ExceptionHandler exceptionHandler();

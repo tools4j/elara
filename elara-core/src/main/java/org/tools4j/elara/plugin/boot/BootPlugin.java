@@ -25,7 +25,7 @@ package org.tools4j.elara.plugin.boot;
 
 import org.tools4j.elara.application.CommandProcessor;
 import org.tools4j.elara.init.ExecutionType;
-import org.tools4j.elara.input.DefaultReceiver;
+import org.tools4j.elara.input.CommandStoreReceiver;
 import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.input.SimpleSequenceGenerator;
@@ -95,7 +95,7 @@ public class BootPlugin implements SystemPlugin<NullState> {
     }
 
     private void appendAppInitStartCommand(final org.tools4j.elara.init.Configuration appConfig) {
-        final Receiver receiver = new DefaultReceiver(appConfig.timeSource(), appConfig.commandStream().appender());
+        final Receiver receiver = new CommandStoreReceiver(appConfig.timeSource(), appConfig.commandStore().appender());
         receiver.receiveMessageWithoutPayload(commandSource, sequenceGenerator.nextSequence(), SIGNAL_APP_INITIALISATION_START);
     }
 }

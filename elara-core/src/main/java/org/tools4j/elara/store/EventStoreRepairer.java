@@ -28,9 +28,9 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.event.Event.Flags;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.plugin.base.BaseEvents;
+import org.tools4j.elara.store.MessageStore.AppendingContext;
+import org.tools4j.elara.store.MessageStore.Handler.Result;
 import org.tools4j.elara.store.MessageStore.Poller;
-import org.tools4j.elara.stream.MessageStream.AppendingContext;
-import org.tools4j.elara.stream.MessageStream.Handler.Result;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;

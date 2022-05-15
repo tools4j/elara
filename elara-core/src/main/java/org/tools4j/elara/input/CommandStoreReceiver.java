@@ -29,7 +29,7 @@ import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FlyweightHeader;
 import org.tools4j.elara.store.ExpandableDirectBuffer;
 import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.stream.MessageStream.AppendingContext;
+import org.tools4j.elara.store.MessageStore.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
@@ -38,13 +38,16 @@ import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
 
-public final class DefaultReceiver implements Receiver.Default {
+/**
+ * A receiver that appends the command to a command store.
+ */
+public final class CommandStoreReceiver implements Receiver.Default {
 
     private final TimeSource timeSource;
     private final MessageStore.Appender commandStoreAppender;
     private final ReceivingContext receivingContext = new ReceivingContext();
 
-    public DefaultReceiver(final TimeSource timeSource, final MessageStore.Appender commandStoreAppender) {
+    public CommandStoreReceiver(final TimeSource timeSource, final MessageStore.Appender commandStoreAppender) {
         this.timeSource = requireNonNull(timeSource);
         this.commandStoreAppender = requireNonNull(commandStoreAppender);
     }

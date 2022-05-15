@@ -27,8 +27,8 @@ import org.agrona.DirectBuffer;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.stream.MessageStream;
-import org.tools4j.elara.stream.MessageStream.Handler.Result;
+import org.tools4j.elara.store.MessageStore.Handler;
+import org.tools4j.elara.store.MessageStore.Handler.Result;
 
 import static java.util.Objects.requireNonNull;
 
@@ -42,7 +42,7 @@ public class EventReplayStep implements AgentStep {
     private final MessageStore.Poller eventPoller;
     private final EventHandler eventHandler;
 
-    private final MessageStream.Handler pollerHandler = this::onEvent;
+    private final Handler pollerHandler = this::onEvent;
     private final FlyweightEvent flyweightEvent = new FlyweightEvent();
     private boolean replayed;
 

@@ -34,7 +34,6 @@ import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.stream.MessageStream;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.Collection;
@@ -49,8 +48,8 @@ public interface Context extends Configuration {
     Context inputs(Input... inputs);
     Context inputs(Collection<? extends Input> inputs);
     Context output(Output output);
-    Context commandStream(MessageStream commandStream);
-    Context commandStreamMode(CommandStreamMode mode);
+    Context commandStore(MessageStore commandStore);
+    Context commandPollingMode(CommandPollingMode mode);
     Context eventStore(String file);
     Context eventStore(MessageStore eventStore);
     Context timeSource(TimeSource timeSource);
