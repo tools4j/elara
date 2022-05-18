@@ -35,7 +35,6 @@ import org.tools4j.elara.event.Event;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.plugin.timer.SimpleTimerState;
 import org.tools4j.elara.plugin.timer.TimerCommands;
@@ -45,6 +44,7 @@ import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
+import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.store.InMemoryStore;
 
 import java.time.Instant;
@@ -195,17 +195,16 @@ public class TimerApplication {
 
     private static class CommandInput implements Input {
         final Queue<DirectBuffer> commands;
-        long seq = 0;
 
         CommandInput(final Queue<DirectBuffer> commands) {
             this.commands = requireNonNull(commands);
         }
 
         @Override
-        public int poll(final Receiver receiver) {
+        public int poll(final SenderSupplier senderSupplier) {
             final DirectBuffer command = commands.poll();
             if (command != null) {
-                receiver.receiveMessage(SOURCE, ++seq, command, 0, command.capacity());
+                senderSupplier.senderFor(SOURCE).sendCommand(command, 0, command.capacity());
                 return 1;
             }
             return 0;

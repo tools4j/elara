@@ -86,4 +86,26 @@ public interface SendingResult {
             return status != Status.SENT && status != Status.PENDING;
         }
     }
+
+    SendingResult SENT = new Default() {
+        @Override
+        public Status status() {
+            return Status.SENT;
+        }
+
+        @Override
+        public Exception exception() {
+            return null;
+        }
+
+        @Override
+        public SendingResult sendAgainImmediately() {
+            throw new IllegalStateException("Cannot send again after command was successfully sent");
+        }
+
+        @Override
+        public SendingResult sendAgainAfter(final long time) {
+            throw new IllegalStateException("Cannot send again after command was successfully sent");
+        }
+    };
 }

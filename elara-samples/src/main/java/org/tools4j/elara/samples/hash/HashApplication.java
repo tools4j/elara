@@ -32,13 +32,13 @@ import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.init.CommandPollingMode;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.Receiver.ReceivingContext;
 import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.plugin.metrics.Configuration;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
+import org.tools4j.elara.send.CommandSender.SendingContext;
 import org.tools4j.elara.store.InMemoryStore;
 import org.tools4j.elara.time.TimeSource;
 
@@ -145,11 +145,11 @@ public class HashApplication {
             final long value = input.getAndSet(NULL_VALUE);
             if (value != NULL_VALUE) {
                 final long seq = seqNo.incrementAndGet();
-                try (final ReceivingContext context = receiver.receivingMessage(source, seq)) {
+                try (final SendingContext context = receiver.senderFor(source, seq).sendingCommand()) {
                     for (int pos = 0; pos < MESSAGE_LENGTH; pos += Long.BYTES) {
                         context.buffer().putLong(pos, value);
                     }
-                    context.receive(MESSAGE_LENGTH);
+                    context.send(MESSAGE_LENGTH);
                 }
                 return 1;
             }

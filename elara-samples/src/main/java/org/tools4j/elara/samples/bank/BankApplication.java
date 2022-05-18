@@ -31,8 +31,6 @@ import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.init.Context;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.Receiver;
-import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.route.EventRouter;
@@ -44,6 +42,8 @@ import org.tools4j.elara.samples.bank.command.BankCommand;
 import org.tools4j.elara.samples.bank.command.CommandType;
 import org.tools4j.elara.samples.bank.event.EventType;
 import org.tools4j.elara.samples.bank.state.Bank;
+import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.store.InMemoryStore;
 import org.tools4j.elara.store.MessageStore;
 
@@ -87,7 +87,7 @@ public class BankApplication {
                         .commandProcessor(commandProcessor)
                         .eventApplier(eventApplier)
                         .input(input)
-                        .output(this::publish)
+                        .output((event, replay, retry, loopback) -> publish(event, replay, retry, loopback))
                         .commandStore(commandStore)
                         .eventStore(eventStore)
                         .duplicateHandler(duplicateHandler)
@@ -120,7 +120,7 @@ public class BankApplication {
 
     }
 
-    private Ack publish(final Event event, final boolean replay, final int retry, final CommandLoopback loopback) {
+    private Ack publish(final Event event, final boolean replay, final int retry, final CommandSender loopback) {
         System.out.println("published: " + event + ", replay=" + replay + ", retry=" + retry + ", payload=" + payloadFor(event));
         return Ack.COMMIT;
     }
@@ -141,19 +141,18 @@ public class BankApplication {
 
     private static class CommandInput implements Input {
         final Queue<BankCommand> commands;
-        long seq = 0;
 
         CommandInput(final Queue<BankCommand> commands) {
             this.commands = requireNonNull(commands);
         }
 
         @Override
-        public int poll(final Receiver receiver) {
+        public int poll(final SenderSupplier senderSupplier) {
             final BankCommand cmd = commands.poll();
             if (cmd != null) {
                 final int type = cmd.type().value;
                 final DirectBuffer encoded = cmd.encode();
-                receiver.receiveMessage(SOURCE, ++seq, type, encoded, 0, encoded.capacity());
+                senderSupplier.senderFor(SOURCE).sendCommand(type, encoded, 0, encoded.capacity());
                 return 1;
             }
             return 0;

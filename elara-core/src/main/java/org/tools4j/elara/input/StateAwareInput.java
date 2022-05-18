@@ -21,14 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.factory;
+package org.tools4j.elara.input;
 
-import org.tools4j.elara.input.Input;
+import org.tools4j.elara.send.InFlightState;
 import org.tools4j.elara.send.SenderSupplier;
-import org.tools4j.elara.step.AgentStep;
 
-public interface InputFactory {
-    SenderSupplier senderSupplier();
-    Input[] inputs();
-    AgentStep sequencerStep();
+@FunctionalInterface
+public interface StateAwareInput {
+    int poll(InFlightState inFlightState, SenderSupplier senderSupplier);
 }

@@ -27,7 +27,7 @@ import org.tools4j.elara.event.Event;
 
 /**
  * Event context with information about the event that is currently
- * {@link org.tools4j.elara.application.EventProcessor#process(Event, EventContext, InFlightState, CommandSender) processed}.
+ * {@link org.tools4j.elara.application.EventProcessor#onEvent(Event, EventContext, InFlightState, CommandSender) processed}.
  * <p>
  * Note that the {@link #processedEvent() prcessed} event is not necessarily the {@link #mostRecentEvent() most recent}
  * event.  If not all events corresponding to sent commands have been received back, event processing can be

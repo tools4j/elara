@@ -25,6 +25,7 @@ package org.tools4j.elara.output;
 
 import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.send.CommandSender;
 
 import static java.util.Objects.requireNonNull;
 
@@ -39,7 +40,7 @@ public class CompositeOutput implements Output {
     }
 
     @Override
-    public Ack publish(final Event event, final boolean replay, final int retry, final CommandLoopback loopback) {
+    public Ack publish(final Event event, final boolean replay, final int retry, final CommandSender loopback) {
         Ack ack = Ack.IGNORED;
         for (final Output output : outputs) {
             try {

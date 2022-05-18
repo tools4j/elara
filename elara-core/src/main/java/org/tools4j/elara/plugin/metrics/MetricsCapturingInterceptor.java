@@ -36,13 +36,15 @@ import org.tools4j.elara.factory.Singletons;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.handler.OutputHandler;
-import org.tools4j.elara.input.Receiver;
-import org.tools4j.elara.input.Receiver.ReceivingContext;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
+import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.send.CommandSender.SendingContext;
+import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.send.SendingResult;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore.Handler.Result;
 import org.tools4j.elara.time.TimeSource;
@@ -243,12 +245,12 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
     }
 
     @Override
-    public Receiver receiver() {
-        final Receiver receiver = requireNonNull(singletons().receiver());
+    public SenderSupplier senderSupplier() {
+        final SenderSupplier senderSupplier = requireNonNull(singletons().senderSupplier());
         if (shouldCapture(INPUT_SENDING_TIME) || shouldCapture(INPUT_POLLING_TIME) || shouldCapture(COMMAND_APPENDING_TIME)) {
-            return timedReceiver(receiver);
+            return timedSenderSupplier(senderSupplier);
         }
-        return receiver;
+        return senderSupplier;
     }
 
     @Override
@@ -423,79 +425,118 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
         }
     }
 
-    private Receiver timedReceiver(final Receiver receiver) {
-        requireNonNull(receiver);
-        return new Receiver() {
-            final DirectBuffer empty = new UnsafeBuffer(0, 0);
-            final TimedReceivingContext context = shouldCapture(INPUT_SENDING_TIME)
-                    || shouldCapture(COMMAND_APPENDING_TIME) ? new TimedReceivingContext() : null;
-            ReceivingContext receivingContext(final int source, final long sequence, final int type,
-                                              final ReceivingContext receivingContext) {
-                return context != null ? context.init(source, sequence, type, receivingContext) : receivingContext;
+    private SenderSupplier timedSenderSupplier(final SenderSupplier senderSupplier) {
+        requireNonNull(senderSupplier);
+        return new SenderSupplier() {
+            final TimedCommandSender timedCommandSender = new TimedCommandSender();
+            @Override
+            public CommandSender senderFor(final int source) {
+                return timedCommandSender.init(senderSupplier.senderFor(source));
             }
 
             @Override
-            public ReceivingContext receivingMessage(final int source, final long sequence) {
-                captureTime(INPUT_POLLING_TIME);
-                return receivingContext(source, sequence, CommandType.APPLICATION, receiver.receivingMessage(source, sequence));
-            }
-
-            @Override
-            public ReceivingContext receivingMessage(final int source, final long sequence, final int type) {
-                captureTime(INPUT_POLLING_TIME);
-                return receivingContext(source, sequence, type, receiver.receivingMessage(source, sequence, type));
-            }
-
-            @Override
-            public void receiveMessage(final int source, final long sequence, final DirectBuffer buffer, final int offset, final int length) {
-                captureTime(INPUT_POLLING_TIME);
-                captureInputSendingTime(source, sequence, CommandType.APPLICATION, buffer, offset, length);
-                receiver.receiveMessage(source, sequence, buffer, offset, length);
-                captureTime(COMMAND_APPENDING_TIME);
-            }
-
-            @Override
-            public void receiveMessage(final int source, final long sequence, final int type, final DirectBuffer buffer, final int offset, final int length) {
-                captureTime(INPUT_POLLING_TIME);
-                captureInputSendingTime(source, sequence, type, buffer, offset, length);
-                receiver.receiveMessage(source, sequence, type, buffer, offset, length);
-                captureTime(COMMAND_APPENDING_TIME);
-            }
-
-            @Override
-            public void receiveMessageWithoutPayload(final int source, final long sequence, final int type) {
-                captureTime(INPUT_POLLING_TIME);
-                captureInputSendingTime(source, sequence, type, unwrap(empty), 0, 0);
-                unwrap(empty);//just in case somebody wraps our buffer
-                receiver.receiveMessageWithoutPayload(source, sequence, type);
-                captureTime(COMMAND_APPENDING_TIME);
-            }
-
-            DirectBuffer unwrap(final DirectBuffer buffer) {
-                buffer.wrap(0, 0);
-                return buffer;
+            public CommandSender senderFor(final int source, final long sequence) {
+                return timedCommandSender.init(senderSupplier.senderFor(source, sequence));
             }
         };
     }
 
-    private final class TimedReceivingContext implements ReceivingContext {
-        int source;
-        long sequence;
+    private final class TimedCommandSender implements CommandSender {
+        final DirectBuffer empty = new UnsafeBuffer(0, 0);
+        final TimedSendingContext context = shouldCapture(INPUT_SENDING_TIME)
+                || shouldCapture(COMMAND_APPENDING_TIME) ? new TimedSendingContext() : null;
+
+        CommandSender sender;
+
+        TimedCommandSender init(final CommandSender sender) {
+            this.sender = requireNonNull(sender);
+            return this;
+        }
+
+        SendingContext sendingContext(final int type, final SendingContext sendingContext) {
+            return context != null ? context.init(type, sendingContext) : sendingContext;
+        }
+
+        @Override
+        public int source() {
+            return sender.source();
+        }
+
+        @Override
+        public long nextCommandSequence() {
+            return sender.nextCommandSequence();
+        }
+
+        @Override
+        public SendingContext sendingCommand() {
+            captureTime(INPUT_POLLING_TIME);
+            return sendingContext(CommandType.APPLICATION, sender.sendingCommand());
+        }
+
+        @Override
+        public SendingContext sendingCommand(final int type) {
+            captureTime(INPUT_POLLING_TIME);
+            return sendingContext(type, sender.sendingCommand(type));
+        }
+
+        @Override
+        public SendingResult sendCommand(final DirectBuffer buffer, final int offset, final int length) {
+            captureTime(INPUT_POLLING_TIME);
+            captureInputSendingTime(sender.source(), sender.nextCommandSequence(), CommandType.APPLICATION, buffer, offset, length);
+            final SendingResult result = sender.sendCommand(buffer, offset, length);
+            captureTime(COMMAND_APPENDING_TIME);
+            return result;
+        }
+
+        @Override
+        public SendingResult sendCommand(final int type, final DirectBuffer buffer, final int offset, final int length) {
+            captureTime(INPUT_POLLING_TIME);
+            captureInputSendingTime(sender.source(), sender.nextCommandSequence(), type, buffer, offset, length);
+            final SendingResult result = sender.sendCommand(type, buffer, offset, length);
+            captureTime(COMMAND_APPENDING_TIME);
+            return result;
+        }
+
+        @Override
+        public SendingResult sendCommandWithoutPayload(final int type) {
+            captureTime(INPUT_POLLING_TIME);
+            captureInputSendingTime(sender.source(), sender.nextCommandSequence(), type, unwrap(empty), 0, 0);
+            unwrap(empty);//just in case somebody wraps our buffer
+            final SendingResult result = sender.sendCommandWithoutPayload(type);
+            captureTime(COMMAND_APPENDING_TIME);
+            return result;
+        }
+
+        DirectBuffer unwrap(final DirectBuffer buffer) {
+            buffer.wrap(0, 0);
+            return buffer;
+        }
+    }
+
+    private final class TimedSendingContext implements SendingContext {
         int type;
-        ReceivingContext context;
-        TimedReceivingContext init(final int source, final long sequence, final int type, final ReceivingContext context) {
-            this.source = source;
-            this.sequence = sequence;
+        SendingContext context;
+        TimedSendingContext init(final int type, final SendingContext context) {
             this.type = type;
             this.context = requireNonNull(context);
             return this;
         }
 
-        ReceivingContext unclosedContext() {
+        SendingContext unclosedContext() {
             if (context != null) {
                 return context;
             }
-            throw new IllegalStateException("Receiving context is closed");
+            throw new IllegalStateException("Sending context is closed");
+        }
+
+        @Override
+        public int source() {
+            return unclosedContext().source();
+        }
+
+        @Override
+        public long sequence() {
+            return unclosedContext().sequence();
         }
 
         @Override
@@ -504,11 +545,12 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
         }
 
         @Override
-        public void receive(final int length) {
-            final ReceivingContext rc = captureInputSendingTime(length);
-            rc.receive(length);
+        public SendingResult send(final int length) {
+            final SendingContext sc = captureInputSendingTime(length);
+            final SendingResult result = sc.send(length);
             context = null;
             captureTime(COMMAND_APPENDING_TIME);
+            return result;
         }
 
         @Override
@@ -524,16 +566,16 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
             return context == null || context.isClosed();
         }
 
-        ReceivingContext captureInputSendingTime(final int length) {
+        SendingContext captureInputSendingTime(final int length) {
             if (!shouldCapture(INPUT_SENDING_TIME)) {
                 return unclosedContext();
             }
             if (length < 0) {
                 throw new IllegalArgumentException("Length cannot be negative: " + length);
             }
-            final ReceivingContext rc = unclosedContext();
-            MetricsCapturingInterceptor.this.captureInputSendingTime(source, sequence, type, rc.buffer(), 0, length);
-            return rc;
+            final SendingContext sc = unclosedContext();
+            MetricsCapturingInterceptor.this.captureInputSendingTime(sc.source(), sc.sequence(), type, sc.buffer(), 0, length);
+            return sc;
         }
     }
 }

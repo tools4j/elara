@@ -34,7 +34,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.input.CommandStoreReceiver;
+import org.tools4j.elara.send.CommandAppendingSender;
+import org.tools4j.elara.send.DefaultSenderSupplier;
+import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.store.MessageStore.Appender;
 import org.tools4j.elara.store.MessageStore.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
@@ -48,10 +50,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit test for {@link CommandStoreReceiver}
+ * Unit test for {@link CommandAppendingSender}
  */
 @ExtendWith(MockitoExtension.class)
-public class CommandStoreReceiverTest {
+public class CommandAppendingSenderTest {
 
     @Mock
     private TimeSource timeSource;
@@ -59,12 +61,12 @@ public class CommandStoreReceiverTest {
     private List<Command> commandStore;
 
     //under test
-    private CommandStoreReceiver receiver;
+    private SenderSupplier senderSupplier;
 
     @BeforeEach
     public void init() {
         commandStore = new ArrayList<>();
-        receiver = new CommandStoreReceiver(timeSource, new Appender() {
+        senderSupplier = new DefaultSenderSupplier(new CommandAppendingSender(timeSource, new Appender() {
             @Override
             public AppendingContext appending() {
                 return new AppendingContext() {
@@ -98,7 +100,7 @@ public class CommandStoreReceiverTest {
             public void close() {
                 //no op
             }
-        });
+        }));
     }
 
     @Test
@@ -114,7 +116,7 @@ public class CommandStoreReceiverTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        receiver.receiveMessage(source, seq, message, offset, length);
+        senderSupplier.senderFor(source, seq).sendCommand(message, offset, length);
 
         //then
         assertEquals(1, commandStore.size(), "commandStore.size");
@@ -135,7 +137,7 @@ public class CommandStoreReceiverTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        receiver.receiveMessage(source, seq, type, message, offset, length);
+        senderSupplier.senderFor(source, seq).sendCommand(type, message, offset, length);
 
         //then
         assertCommand(source, seq, commandTime, type, text, commandStore.get(0));

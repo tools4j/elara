@@ -46,7 +46,7 @@ public interface EventProcessor {
     EventProcessor NOOP = (event, context, state, sender) -> Ack.IGNORED;
 
     /**
-     * Ack returned when {@link #process(Event, EventContext, InFlightState, CommandSender) processing} an event in a
+     * Ack returned when {@link #onEvent(Event, EventContext, InFlightState, CommandSender) processing} an event in a
      * feedback app.  If own commands are {@link InFlightState#hasInFlightCommand() in-flight} the application can
      * return {@link #DEFERRED} to re-process the event once the application state has been fully updated.
      */
@@ -60,7 +60,7 @@ public interface EventProcessor {
     }
 
     /**
-     * Processes the specified event.  This can be the most recently received event, or a deferred event that is
+     * Invoked to process the given event.  This can be the most recently received event, or a deferred event that is
      * processed after bringing the application state up to date.  Returning {@link Ack#DEFERRED} if the no command was
      * in-flight has no effect and is ignored.
      *
@@ -70,5 +70,5 @@ public interface EventProcessor {
      * @param sender        handler to encode and send commands back to the sequencer
      * @return ack indicating the outcome of processing the command, in particular whether it was deferred or not
      */
-    Ack process(Event event, EventContext context, InFlightState inFlightState, CommandSender sender);
+    Ack onEvent(Event event, EventContext context, InFlightState inFlightState, CommandSender sender);
 }

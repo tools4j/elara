@@ -23,7 +23,9 @@
  */
 package org.tools4j.elara.input;
 
+import org.tools4j.elara.send.SenderSupplier;
+
 @FunctionalInterface
 public interface Input {
-    int poll(Receiver receiver);
+    int poll(SenderSupplier senderSupplier);
 }

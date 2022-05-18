@@ -24,8 +24,8 @@
 package org.tools4j.elara.plugin.boot;
 
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.Output;
+import org.tools4j.elara.send.CommandSender;
 
 import static org.tools4j.elara.plugin.boot.BootCommands.SIGNAL_APP_INITIALISATION_COMPLETE;
 import static org.tools4j.elara.plugin.boot.BootEvents.APP_INITIALISATION_STARTED;
@@ -33,9 +33,9 @@ import static org.tools4j.elara.plugin.boot.BootEvents.APP_INITIALISATION_STARTE
 public class BootOutput implements Output {
 
     @Override
-    public Ack publish(final Event event, final boolean replay, final int retry, final CommandLoopback loopback) {
+    public Ack publish(final Event event, final boolean replay, final int retry, final CommandSender loopback) {
         if (!replay && retry == 0 && event.type() == APP_INITIALISATION_STARTED) {
-            loopback.enqueueCommandWithoutPayload(SIGNAL_APP_INITIALISATION_COMPLETE);
+            loopback.sendCommandWithoutPayload(SIGNAL_APP_INITIALISATION_COMPLETE);
             return Ack.COMMIT;
         }
         return Ack.IGNORED;
