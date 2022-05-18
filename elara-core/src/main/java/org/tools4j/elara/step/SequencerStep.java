@@ -24,22 +24,24 @@
 package org.tools4j.elara.step;
 
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.Receiver;
+import org.tools4j.elara.send.SenderSupplier;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Polls all inputs and sequences received messages into the command log.
+ * Polls all inputs, sequences received messages and send them as commands using the command sender.
+ * Depending on the command sender type, the command processor is either directly invoked, or the command is appended to
+ * the command queue.
  */
 public final class SequencerStep implements AgentStep {
 
-    private final Receiver receiver;
+    private final SenderSupplier senderSupplier;
     private final Input[] inputs;
 
     private int roundRobinIndex = 0;
 
-    public SequencerStep(final Receiver receiver, final Input... inputs) {
-        this.receiver = requireNonNull(receiver);
+    public SequencerStep(final SenderSupplier senderSupplier, final Input... inputs) {
+        this.senderSupplier = requireNonNull(senderSupplier);
         this.inputs = requireNonNull(inputs);
     }
 
@@ -48,7 +50,7 @@ public final class SequencerStep implements AgentStep {
         final int count = inputs.length;
         for (int i = 0; i < count; i++) {
             final int index = getAndIncrementRoundRobinIndex(count);
-            if (inputs[index].poll(receiver) > 0) {
+            if (inputs[index].poll(senderSupplier) > 0) {
                 return 1;
             }
         }

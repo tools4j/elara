@@ -32,12 +32,11 @@ import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.Receiver;
-import org.tools4j.elara.input.SequenceGenerator;
-import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState.Mutable;
+import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.step.AgentStep;
 
 import java.util.Map;
@@ -114,8 +113,8 @@ public class DefaultSingletons implements Singletons {
     //InputFactory
 
     @Override
-    public Receiver receiver() {
-        return getOrCreate("receiver", Receiver.class, inputFactory, InputFactory::receiver);
+    public SenderSupplier senderSupplier() {
+        return getOrCreate("senderSupplier", SenderSupplier.class, inputFactory, InputFactory::senderSupplier);
     }
 
     @Override
@@ -170,13 +169,8 @@ public class DefaultSingletons implements Singletons {
     }
 
     @Override
-    public SequenceGenerator loopbackSequenceGenerator() {
-        return getOrCreate("loopbackSequenceGenerator", SequenceGenerator.class, outputFactory, OutputFactory::loopbackSequenceGenerator);
-    }
-
-    @Override
-    public CommandLoopback commandLoopback() {
-        return getOrCreate("commandLoopback", CommandLoopback.class, outputFactory, OutputFactory::commandLoopback);
+    public CommandSender loopbackCommandSender() {
+        return getOrCreate("loopbackCommandSender", CommandSender.class, outputFactory, OutputFactory::loopbackCommandSender);
     }
 
     @Override

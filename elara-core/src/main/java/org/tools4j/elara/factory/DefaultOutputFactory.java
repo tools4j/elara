@@ -26,13 +26,10 @@ package org.tools4j.elara.factory;
 import org.tools4j.elara.handler.DefaultOutputHandler;
 import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.init.Configuration;
-import org.tools4j.elara.input.SequenceGenerator;
-import org.tools4j.elara.input.SimpleSequenceGenerator;
-import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.CompositeOutput;
-import org.tools4j.elara.output.DefaultCommandLoopback;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.step.PublisherStep;
 
@@ -40,6 +37,7 @@ import java.util.Arrays;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.send.SenderSupplier.LOOPBACK_SOURCE;
 import static org.tools4j.elara.step.PublisherStep.DEFAULT_POLLER_ID;
 
 public class DefaultOutputFactory implements OutputFactory {
@@ -78,23 +76,15 @@ public class DefaultOutputFactory implements OutputFactory {
     }
 
     @Override
-    public SequenceGenerator loopbackSequenceGenerator() {
-        return new SimpleSequenceGenerator(configuration.timeSource().currentTime());
-    }
-
-    @Override
-    public CommandLoopback commandLoopback() {
-        return new DefaultCommandLoopback(
-                configuration.commandStore().appender(),
-                configuration.timeSource(),
-                singletons.get().loopbackSequenceGenerator()
-        );
+    public CommandSender loopbackCommandSender() {
+        return DefaultInputFactory.senderSupplier(configuration, singletons.get())
+                .senderFor(LOOPBACK_SOURCE, configuration.timeSource().currentTime());
     }
 
     @Override
     public OutputHandler outputHandler() {
         return new DefaultOutputHandler(
-                singletons.get().output(), singletons.get().commandLoopback(), configuration.exceptionHandler()
+                singletons.get().output(), singletons.get().loopbackCommandSender(), configuration.exceptionHandler()
         );
     }
 

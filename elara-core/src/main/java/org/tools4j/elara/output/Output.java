@@ -24,13 +24,14 @@
 package org.tools4j.elara.output;
 
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.send.CommandSender;
 
 @FunctionalInterface
 public interface Output {
     Output NOOP = (event, replay, retry, loopback) -> Ack.IGNORED;
 
     /**
-     * Ack returned when {@link #publish(Event, boolean, int, CommandLoopback) publishing} an event to indicate whether
+     * Ack returned when {@link #publish(Event, boolean, int, CommandSender) publishing} an event to indicate whether
      * the publication should be committed, retried or if the event was ignored.
      */
     enum Ack {
@@ -42,5 +43,5 @@ public interface Output {
         IGNORED
     }
 
-    Ack publish(Event event, boolean replay, int retry, CommandLoopback loopback);
+    Ack publish(Event event, boolean replay, int retry, CommandSender loopback);
 }

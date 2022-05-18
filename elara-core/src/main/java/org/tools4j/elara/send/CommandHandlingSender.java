@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.input;
+package org.tools4j.elara.send;
 
 import org.agrona.DirectBuffer;
 import org.agrona.ExpandableDirectByteBuffer;
@@ -37,42 +37,46 @@ import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
+import static org.tools4j.elara.flyweight.FrameDescriptor.SEQUENCE_OFFSET;
+import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_OFFSET;
 
 /**
- * A receiver that directly invokes the command handler without persisting the command.
+ * A command sender that directly invokes the command handler without persisting the command.
  */
-public final class CommandHandlingReceiver implements Receiver.Default {
+public final class CommandHandlingSender extends FlyweightCommandSender {
 
     private static final DirectBuffer EMPTY_BUFFER = new UnsafeBuffer(0, 0);
 
     private final TimeSource timeSource;
     private final CommandHandler commandHandler;
-    private final ReceivingContext receivingContext;
+    private final SendingContext commandContext;
     private final MutableDirectBuffer header = new ExpandableDirectByteBuffer(HEADER_LENGTH);
     private final FlyweightCommand command = new FlyweightCommand();
 
-    public CommandHandlingReceiver(final int initialBufferCapacity,
-                                   final TimeSource timeSource,
-                                   final CommandHandler commandHandler) {
+    public CommandHandlingSender(final int initialBufferCapacity,
+                                 final TimeSource timeSource,
+                                 final CommandHandler commandHandler) {
         this.timeSource = requireNonNull(timeSource);
         this.commandHandler = requireNonNull(commandHandler);
-        this.receivingContext = new ReceivingContext(initialBufferCapacity);
+        this.commandContext = new SendingContext(initialBufferCapacity);
     }
 
     @Override
-    public ReceivingContext receivingMessage(final int source, final long sequence, final int type) {
-        return receivingContext.init(source, sequence, type);
+    public CommandSender.SendingContext sendingCommand(final int type) {
+        return commandContext.init(source(), nextCommandSequence(), type);
     }
 
     @Override
-    public void receiveMessageWithoutPayload(final int source, final long sequence, final int type) {
-        receiveMessage(source, sequence, type, EMPTY_BUFFER, 0, 0);
+    public SendingResult sendCommandWithoutPayload(final int type) {
+        return sendCommand(type, EMPTY_BUFFER, 0, 0);
     }
 
     @Override
-    public void receiveMessage(final int source, final long sequence, final int type, final DirectBuffer buffer, final int offset, final int length) {
-        initHeader(source, sequence, type, length);
-        invokeCommandHandler(buffer, offset, length);
+    public SendingResult sendCommand(final int type, final DirectBuffer buffer, final int offset, final int length) {
+        initHeader(source(), nextCommandSequence(), type, length);
+        invokeCommandHandler(buffer, offset, length);//TODO handle result value here
+        incrementCommandSequence();
+        return SendingResult.SENT;
     }
 
     private void initHeader(final int source, final long sequence, final int type, final int payloadSize) {
@@ -91,19 +95,19 @@ public final class CommandHandlingReceiver implements Receiver.Default {
         }
     }
 
-    private final class ReceivingContext implements Receiver.ReceivingContext {
+    private final class SendingContext implements CommandSender.SendingContext {
 
         final MutableDirectBuffer payload;
         boolean closed = true;
 
-        ReceivingContext(final int initialBufferCapacity) {
+        SendingContext(final int initialBufferCapacity) {
             this.payload = new ExpandableDirectByteBuffer(initialBufferCapacity);
         }
 
-        ReceivingContext init(final int source, final long sequence, final int type) {
+        SendingContext init(final int source, final long sequence, final int type) {
             if (!closed) {
                 abort();
-                throw new IllegalStateException("Receiving context not closed");
+                throw new IllegalStateException("Sending context not closed");
             }
             initHeader(source, sequence, type, 0);
             closed = false;
@@ -112,8 +116,20 @@ public final class CommandHandlingReceiver implements Receiver.Default {
 
         void ensureNotClosed() {
             if (closed) {
-                throw new IllegalStateException("Receiving context is closed");
+                throw new IllegalStateException("Sending context is closed");
             }
+        }
+
+        @Override
+        public int source() {
+            ensureNotClosed();
+            return header.getInt(SOURCE_OFFSET);
+        }
+
+        @Override
+        public long sequence() {
+            ensureNotClosed();
+            return header.getLong(SEQUENCE_OFFSET);
         }
 
         @Override
@@ -123,7 +139,7 @@ public final class CommandHandlingReceiver implements Receiver.Default {
         }
 
         @Override
-        public void receive(final int length) {
+        public SendingResult send(final int length) {
             ensureNotClosed();
             if (length < 0) {
                 throw new IllegalArgumentException("Length cannot be negative: " + length);
@@ -132,7 +148,8 @@ public final class CommandHandlingReceiver implements Receiver.Default {
                 header.putInt(PAYLOAD_SIZE_OFFSET, length);
             }
             try {
-                invokeCommandHandler(payload, 0, length);
+                invokeCommandHandler(payload, 0, length);//TODO handler result value here
+                return SendingResult.SENT;
             } finally {
                 command.reset();
                 closed = true;

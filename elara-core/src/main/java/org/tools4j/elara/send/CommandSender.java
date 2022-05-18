@@ -30,7 +30,7 @@ import org.tools4j.elara.event.Event;
 
 /**
  * Facilitates sending of commands when
- * {@link org.tools4j.elara.application.EventProcessor#process(Event, EventContext, InFlightState, CommandSender) processing}
+ * {@link org.tools4j.elara.application.EventProcessor#onEvent(Event, EventContext, InFlightState, CommandSender) processing}
  * events.
  * <p>
  * Command sending can be done in two ways: already coded commands can be sent via one of the
@@ -55,7 +55,7 @@ public interface CommandSender {
      *
      * @return the context for command encoding and sending
      */
-    SendingContext sendingContext();
+    SendingContext sendingCommand();
     /**
      * Starts sending of a command of the given {@code type} returning the sending context with the buffer for command
      * encoding.  Encoding and sending is completed with {@link SendingContext#send(int) send(..)} and is recommended
@@ -64,7 +64,7 @@ public interface CommandSender {
      * @param type the command type, typically non-negative for application commands (plugins use negative types)
      * @return the context for command encoding and sending
      */
-    SendingContext sendingContext(int type);
+    SendingContext sendingCommand(int type);
 
     /***
      * Sends a {@link CommandType#APPLICATION APPLICATION} command already encoded in the given buffer.
@@ -88,14 +88,6 @@ public interface CommandSender {
     SendingResult sendCommand(int type, DirectBuffer buffer, int offset, int length);
 
     /***
-     * Sends a command of the specified command {@code type} that carries the same payload data as the
-     * {@link #event()} event}.
-     *
-     * @param type the command type, typically non-negative for application commands (plugins use negative types)
-     */
-    void sendCommandWithEventPayload(int type);
-
-    /***
      * Sends a command of the specified command {@code type} that carries no payload data.
      *
      * @param type the command type, typically non-negative for application commands (plugins use negative types)
@@ -110,7 +102,7 @@ public interface CommandSender {
     int source();
 
     /**
-     * Returns the sequence of the next command to be sent.  If sending has started via {@link #sendingContext()}
+     * Returns the sequence of the next command to be sent.  If sending has started via {@link #sendingCommand()}
      * then the sequence refers to the command currently being encoded.
      *
      * @return sequence of the next command to be sent.
@@ -118,22 +110,13 @@ public interface CommandSender {
     long nextCommandSequence();
 
     /**
-     * Returns the event currently processed which is not necessarily the most recent event.  If we are waiting for
-     * an event of an in-flight own command to return, an incoming event is parked and processed only when all events
-     * for the in-flight command have been received.  In this situation processed is not equal to most recent event.
-     * See {@link EventContext} and {@link InFlightState} for more details.
-     *
-     * @return the event currently associated with this command sender
-     * @throws IllegalStateException if no event is currently associated with this command sender
-     */
-    Event event();
-
-    /**
-     * Context object returned by {@link #sendingContext()} allowing for zero copy encoding of commands directly into
+     * Context object returned by {@link #sendingCommand()} allowing for zero copy encoding of commands directly into
      * the sending transport buffer.  Sending contexts are typically used inside a try-resource block; see
      * {@code CommandSender} {@link CommandSender documentation} for usage example.
      */
     interface SendingContext extends AutoCloseable {
+        /** @return source of the command currently being encoded and about to be sent */
+        int source();
         /** @return sequence of the command currently being encoded and about to be sent */
         long sequence();
 
@@ -187,8 +170,8 @@ public interface CommandSender {
      */
     interface Default extends CommandSender {
         @Override
-        default SendingContext sendingContext() {
-            return sendingContext(CommandType.APPLICATION);
+        default SendingContext sendingCommand() {
+            return sendingCommand(CommandType.APPLICATION);
         }
 
         @Override
@@ -198,21 +181,15 @@ public interface CommandSender {
 
         @Override
         default SendingResult sendCommand(final int type, final DirectBuffer buffer, final int offset, final int length) {
-            try (final SendingContext context = sendingContext(type)) {
+            try (final SendingContext context = sendingCommand(type)) {
                 context.buffer().putBytes(0, buffer, offset, length);
                 return context.send(length);
             }
         }
 
         @Override
-        default void sendCommandWithEventPayload(final int type) {
-            final DirectBuffer payload = event().payload();
-            sendCommand(type, payload, 0, payload.capacity());
-        }
-
-        @Override
         default SendingResult sendCommandWithoutPayload(final int type) {
-            try (final SendingContext context = sendingContext(type)) {
+            try (final SendingContext context = sendingCommand(type)) {
                 return context.send(0);
             }
         }

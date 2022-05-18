@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.input;
+package org.tools4j.elara.send;
 
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.flyweight.Flags;
@@ -37,35 +37,37 @@ import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
+import static org.tools4j.elara.flyweight.FrameDescriptor.SEQUENCE_OFFSET;
+import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_OFFSET;
 
 /**
- * A receiver that appends the command to a command store.
+ * A command sender that appends the command to a command store.
  */
-public final class CommandStoreReceiver implements Receiver.Default {
+public final class CommandAppendingSender extends FlyweightCommandSender {
 
     private final TimeSource timeSource;
     private final MessageStore.Appender commandStoreAppender;
-    private final ReceivingContext receivingContext = new ReceivingContext();
+    private final SendingContext sendingContext = new SendingContext();
 
-    public CommandStoreReceiver(final TimeSource timeSource, final MessageStore.Appender commandStoreAppender) {
+    public CommandAppendingSender(final TimeSource timeSource, final MessageStore.Appender commandStoreAppender) {
         this.timeSource = requireNonNull(timeSource);
         this.commandStoreAppender = requireNonNull(commandStoreAppender);
     }
 
     @Override
-    public ReceivingContext receivingMessage(final int source, final long sequence, final int type) {
-        return receivingContext.init(source, sequence, type, commandStoreAppender.appending());
+    public CommandSender.SendingContext sendingCommand(final int type) {
+        return sendingContext.init(source(), nextCommandSequence(), type, commandStoreAppender.appending());
     }
 
-    private final class ReceivingContext implements Receiver.ReceivingContext {
+    private final class SendingContext implements CommandSender.SendingContext {
 
         final ExpandableDirectBuffer buffer = new ExpandableDirectBuffer();
         AppendingContext context;
 
-        ReceivingContext init(final int source, final long sequence, final int type, final AppendingContext context) {
+        SendingContext init(final int source, final long sequence, final int type, final AppendingContext context) {
             if (this.context != null) {
                 abort();
-                throw new IllegalStateException("Receiving context not closed");
+                throw new IllegalStateException("Sending context not closed");
             }
             this.context = requireNonNull(context);
             this.buffer.wrap(context.buffer(), PAYLOAD_OFFSET);
@@ -80,17 +82,28 @@ public final class CommandStoreReceiver implements Receiver.Default {
             if (context != null) {
                 return context;
             }
-            throw new IllegalStateException("Receiving context is closed");
+            throw new IllegalStateException("Sending context is closed");
+        }
+
+        @Override
+        public int source() {
+            return unclosedContext().buffer().getInt(SOURCE_OFFSET);
+        }
+
+        @Override
+        public long sequence() {
+            return unclosedContext().buffer().getLong(SEQUENCE_OFFSET);
         }
 
         @Override
         public MutableDirectBuffer buffer() {
+            //noinspection ResultOfMethodCallIgnored
             unclosedContext();
             return buffer;
         }
 
         @Override
-        public void receive(final int length) {
+        public SendingResult send(final int length) {
             if (length < 0) {
                 throw new IllegalArgumentException("Length cannot be negative: " + length);
             }
@@ -100,6 +113,7 @@ public final class CommandStoreReceiver implements Receiver.Default {
                     ac.buffer().putInt(PAYLOAD_SIZE_OFFSET, length);
                 }
                 ac.commit(HEADER_LENGTH + length);
+                return SendingResult.SENT;
             } finally {
                 context = null;
             }

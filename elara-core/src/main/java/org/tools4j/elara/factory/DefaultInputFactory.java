@@ -26,11 +26,12 @@ package org.tools4j.elara.factory;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.init.CommandPollingMode;
 import org.tools4j.elara.init.Configuration;
-import org.tools4j.elara.input.CommandHandlingReceiver;
-import org.tools4j.elara.input.CommandStoreReceiver;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.send.CommandAppendingSender;
+import org.tools4j.elara.send.CommandHandlingSender;
+import org.tools4j.elara.send.DefaultSenderSupplier;
+import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.step.SequencerStep;
 import org.tools4j.elara.store.MessageStore;
@@ -70,19 +71,24 @@ public class DefaultInputFactory implements InputFactory {
     }
 
     @Override
-    public Receiver receiver() {
-        final CommandPollingMode commandPollingMode = configuration.commandPollingMode();
-        if (commandPollingMode == CommandPollingMode.NO_STORE) {
-            final CommandHandler commandHandler = singletons.get().commandHandler();
-            return new CommandHandlingReceiver(4096, configuration.timeSource(), commandHandler);
-        }
-        final MessageStore.Appender commandAppender = configuration.commandStore().appender();
-        return new CommandStoreReceiver(configuration.timeSource(), commandAppender);
+    public SenderSupplier senderSupplier() {
+        return senderSupplier(configuration, singletons.get());
     }
 
     @Override
     public AgentStep sequencerStep() {
-        return new SequencerStep(singletons.get().receiver(), singletons.get().inputs());
+        return new SequencerStep(singletons.get().senderSupplier(), singletons.get().inputs());
+    }
+
+    static SenderSupplier senderSupplier(final Configuration configuration,
+                                         final Singletons singletons) {
+        final CommandPollingMode commandPollingMode = configuration.commandPollingMode();
+        if (commandPollingMode == CommandPollingMode.NO_STORE) {
+            final CommandHandler commandHandler = singletons.commandHandler();
+            return new DefaultSenderSupplier(new CommandHandlingSender(4096, configuration.timeSource(), commandHandler));
+        }
+        final MessageStore.Appender commandAppender = configuration.commandStore().appender();
+        return new DefaultSenderSupplier(new CommandAppendingSender(configuration.timeSource(), commandAppender));
     }
 
 }

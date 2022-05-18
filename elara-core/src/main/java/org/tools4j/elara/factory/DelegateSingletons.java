@@ -30,12 +30,11 @@ import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.Receiver;
-import org.tools4j.elara.input.SequenceGenerator;
-import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin.Configuration;
 import org.tools4j.elara.plugin.base.BaseState.Mutable;
+import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.step.AgentStep;
 
 import static java.util.Objects.requireNonNull;
@@ -53,8 +52,8 @@ public class DelegateSingletons implements Singletons {
     }
 
     @Override
-    public Receiver receiver() {
-        return delegate.receiver();
+    public SenderSupplier senderSupplier() {
+        return delegate.senderSupplier();
     }
 
     @Override
@@ -103,13 +102,8 @@ public class DelegateSingletons implements Singletons {
     }
 
     @Override
-    public SequenceGenerator loopbackSequenceGenerator() {
-        return delegate.loopbackSequenceGenerator();
-    }
-
-    @Override
-    public CommandLoopback commandLoopback() {
-        return delegate.commandLoopback();
+    public CommandSender loopbackCommandSender() {
+        return delegate.loopbackCommandSender();
     }
 
     @Override

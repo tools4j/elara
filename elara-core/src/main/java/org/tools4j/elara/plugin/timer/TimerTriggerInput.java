@@ -24,26 +24,22 @@
 package org.tools4j.elara.plugin.timer;
 
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.Receiver;
-import org.tools4j.elara.input.Receiver.ReceivingContext;
-import org.tools4j.elara.input.SequenceGenerator;
-import org.tools4j.elara.input.SimpleSequenceGenerator;
+import org.tools4j.elara.send.CommandSender.SendingContext;
+import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.input.Receiver.LOOPBACK_SOURCE;
 import static org.tools4j.elara.plugin.timer.TimerCommands.TRIGGER_TIMER;
 import static org.tools4j.elara.plugin.timer.TimerCommands.triggerTimer;
+import static org.tools4j.elara.send.SenderSupplier.LOOPBACK_SOURCE;
 
 public final class TimerTriggerInput implements Input {
 
     private final int source;
     private final TimeSource timeSource;
     private final TimerState timerState;
-    private final SequenceGenerator sequenceGenerator = new SimpleSequenceGenerator();
 
     private boolean timerTriggerPending;
-
 
     public TimerTriggerInput(final int source, final TimeSource timeSource, final TimerState timerState) {
         if (source == LOOPBACK_SOURCE) {
@@ -59,17 +55,16 @@ public final class TimerTriggerInput implements Input {
     }
 
     @Override
-    public int poll(final Receiver receiver) {
+    public int poll(final SenderSupplier senderSupplier) {
         if (timerTriggerPending) {
             return 0;
         }
         final int next = timerState.indexOfNextDeadline();
         if (next >= 0 && timerState.deadline(next) <= timeSource.currentTime()) {
-            final long seq = sequenceGenerator.nextSequence();
-            try (final ReceivingContext context = receiver.receivingMessage(source, seq, TRIGGER_TIMER)) {
+            try (final SendingContext context = senderSupplier.senderFor(source).sendingCommand(TRIGGER_TIMER)) {
                 final int length = triggerTimer(context.buffer(), 0, timerState.id(next),
                         timerState.type(next), timerState.repetition(next), timerState.timeout(next));
-                context.receive(length);
+                context.send(length);
                 timerTriggerPending = true;
             }
             return 1;

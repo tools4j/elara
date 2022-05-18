@@ -30,12 +30,12 @@ import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.Receiver;
-import org.tools4j.elara.output.CommandLoopback;
 import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
+import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.store.InMemoryStore;
 
 import java.util.Queue;
@@ -52,7 +52,7 @@ public class SimpleStringApplication {
                 .commandProcessor(this::process)
                 .eventApplier(this::apply)
                 .input(new StringInput(inputQueue))
-                .output(this::publish)
+                .output((event, replay, retry, loopback) -> publish(event, replay, retry, loopback))
                 .commandStore(new InMemoryStore())
                 .eventStore(new InMemoryStore())
         );
@@ -67,7 +67,7 @@ public class SimpleStringApplication {
         System.out.println("applied: " + event + ", payload=" + payloadFor(event.type(), event.payload()));
     }
 
-    private Ack publish(final Event event, final boolean replay, final int retry, final CommandLoopback loopback) {
+    private Ack publish(final Event event, final boolean replay, final int retry, final CommandSender loopback) {
         System.out.println("published: " + event + ", replay=" + replay + ", retry=" + retry + ", payload=" + payloadFor(event.type(), event.payload()));
         return Ack.COMMIT;
     }
@@ -81,19 +81,18 @@ public class SimpleStringApplication {
 
     private static class StringInput implements Input {
         final Queue<String> strings;
-        long seq = 0;
 
         StringInput(final Queue<String> strings) {
             this.strings = requireNonNull(strings);
         }
 
         @Override
-        public int poll(final Receiver receiver) {
+        public int poll(final SenderSupplier senderSupplier) {
             final String msg = strings.poll();
             if (msg != null) {
                 final MutableDirectBuffer buffer = new ExpandableArrayBuffer(msg.length() + 4);
                 final int length = buffer.putStringAscii(0, msg);
-                receiver.receiveMessage(SOURCE, ++seq, TYPE_STRING, buffer, 0, length);
+                senderSupplier.senderFor(SOURCE).sendCommand(TYPE_STRING, buffer, 0, length);
                 return 1;
             }
             return 0;

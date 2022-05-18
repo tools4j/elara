@@ -21,14 +21,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.factory;
+package org.tools4j.elara.send;
 
-import org.tools4j.elara.input.Input;
-import org.tools4j.elara.send.SenderSupplier;
-import org.tools4j.elara.step.AgentStep;
+abstract class FlyweightCommandSender implements CommandSender.Default {
 
-public interface InputFactory {
-    SenderSupplier senderSupplier();
-    Input[] inputs();
-    AgentStep sequencerStep();
+    private int source;
+    private long sequence;
+
+    FlyweightCommandSender init(final int source, final long sequence) {
+        this.source = source;
+        this.sequence = sequence;
+        return this;
+    }
+
+    void incrementCommandSequence() {
+        sequence++;
+    }
+
+    @Override
+    public int source() {
+        return source;
+    }
+
+    @Override
+    public long nextCommandSequence() {
+        return sequence;
+    }
+
 }

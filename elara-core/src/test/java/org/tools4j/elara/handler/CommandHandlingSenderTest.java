@@ -33,7 +33,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.input.CommandHandlingReceiver;
+import org.tools4j.elara.send.CommandHandlingSender;
+import org.tools4j.elara.send.DefaultSenderSupplier;
+import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.store.MessageStore.Handler.Result;
 import org.tools4j.elara.time.TimeSource;
 
@@ -46,10 +48,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit test for {@link CommandHandlingReceiver}
+ * Unit test for {@link CommandHandlingSender}
  */
 @ExtendWith(MockitoExtension.class)
-public class CommandHandlingReceiverTest {
+public class CommandHandlingSenderTest {
 
     private static final int INITIAL_BUFFER_CAPACITY = 1024;
 
@@ -59,17 +61,17 @@ public class CommandHandlingReceiverTest {
     private List<Command> commandStore;
 
     //under test
-    private CommandHandlingReceiver receiver;
+    private SenderSupplier senderSupplier;
 
     @BeforeEach
     public void init() {
         commandStore = new ArrayList<>();
-        receiver = new CommandHandlingReceiver(INITIAL_BUFFER_CAPACITY, timeSource, command -> {
+        senderSupplier = new DefaultSenderSupplier(new CommandHandlingSender(INITIAL_BUFFER_CAPACITY, timeSource, command -> {
             final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer();
             command.writeTo(buffer, 0);
             commandStore.add(new FlyweightCommand().init(buffer, 0));
             return Result.POLL;
-        });
+        }));
     }
 
     @Test
@@ -85,7 +87,7 @@ public class CommandHandlingReceiverTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        receiver.receiveMessage(source, seq, message, offset, length);
+        senderSupplier.senderFor(source, seq).sendCommand(message, offset, length);
 
         //then
         assertEquals(1, commandStore.size(), "commandStore.size");
@@ -106,7 +108,7 @@ public class CommandHandlingReceiverTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        receiver.receiveMessage(source, seq, type, message, offset, length);
+        senderSupplier.senderFor(source, seq).sendCommand(type, message, offset, length);
 
         //then
         assertCommand(source, seq, commandTime, type, text, commandStore.get(0));
@@ -126,7 +128,7 @@ public class CommandHandlingReceiverTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        receiver.receiveMessage(source, seq, type, message, offset, length);
+        senderSupplier.senderFor(source, seq).sendCommand(type, message, offset, length);
 
         //then
         assertCommand(source, seq, commandTime, type, text, commandStore.get(0));
@@ -142,7 +144,7 @@ public class CommandHandlingReceiverTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        receiver.receiveMessageWithoutPayload(source, seq, type);
+        senderSupplier.senderFor(source, seq).sendCommandWithoutPayload(type);
 
         //then
         assertCommand(source, seq, commandTime, type, null, commandStore.get(0));

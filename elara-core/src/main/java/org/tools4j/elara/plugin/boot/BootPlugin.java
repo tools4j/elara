@@ -24,9 +24,9 @@
 package org.tools4j.elara.plugin.boot;
 
 import org.tools4j.elara.application.CommandProcessor;
+import org.tools4j.elara.factory.InterceptableSingletons;
+import org.tools4j.elara.factory.Singletons;
 import org.tools4j.elara.init.ExecutionType;
-import org.tools4j.elara.input.CommandStoreReceiver;
-import org.tools4j.elara.input.Receiver;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.input.SimpleSequenceGenerator;
 import org.tools4j.elara.output.Output;
@@ -34,6 +34,7 @@ import org.tools4j.elara.plugin.api.Plugin.NullState;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.step.AgentStep;
 
 import static java.util.Objects.requireNonNull;
@@ -71,11 +72,19 @@ public class BootPlugin implements SystemPlugin<NullState> {
         requireNonNull(appConfig);
         requireNonNull(pluginState);
         return new Configuration.Default() {
+            Singletons singletons;
+
+            @Override
+            public InterceptableSingletons interceptOrNull(final Singletons singletons) {
+                this.singletons = requireNonNull(singletons);
+                return null;
+            }
+
             @Override
             public AgentStep step(final BaseState baseState, final ExecutionType executionType) {
                 if (executionType == ExecutionType.INIT_ONCE_ONLY) {
                     return () -> {
-                        appendAppInitStartCommand(appConfig);
+                        appendAppInitStartCommand(singletons.senderSupplier());
                         return 1;
                     };
                 }
@@ -94,8 +103,9 @@ public class BootPlugin implements SystemPlugin<NullState> {
         };
     }
 
-    private void appendAppInitStartCommand(final org.tools4j.elara.init.Configuration appConfig) {
-        final Receiver receiver = new CommandStoreReceiver(appConfig.timeSource(), appConfig.commandStore().appender());
-        receiver.receiveMessageWithoutPayload(commandSource, sequenceGenerator.nextSequence(), SIGNAL_APP_INITIALISATION_START);
+    private void appendAppInitStartCommand(final SenderSupplier senderSupplier) {
+        senderSupplier
+                .senderFor(commandSource, sequenceGenerator.nextSequence())
+                .sendCommandWithoutPayload(SIGNAL_APP_INITIALISATION_START);
     }
 }

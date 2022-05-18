@@ -21,37 +21,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.handler;
+package org.tools4j.elara.send;
 
-import org.tools4j.elara.application.ExceptionHandler;
-import org.tools4j.elara.event.Event;
-import org.tools4j.elara.output.Output;
-import org.tools4j.elara.output.Output.Ack;
-import org.tools4j.elara.send.CommandSender;
+import org.agrona.collections.Long2LongCounterMap;
 
 import static java.util.Objects.requireNonNull;
 
-public class DefaultOutputHandler implements OutputHandler {
+public class DefaultSenderSupplier implements SenderSupplier {
 
-    private final Output output;
-    private final CommandSender loopbackSender;
-    private final ExceptionHandler exceptionHandler;
+    public static final long INITIAL_SEQUENCE = 0;
 
-    public DefaultOutputHandler(final Output output,
-                                final CommandSender loopbackSender,
-                                final ExceptionHandler exceptionHandler) {
-        this.output = requireNonNull(output);
-        this.loopbackSender = requireNonNull(loopbackSender);
-        this.exceptionHandler = requireNonNull(exceptionHandler);
+    private final FlyweightCommandSender commandSender;
+    private final Long2LongCounterMap sequenceBySource;
+
+    public DefaultSenderSupplier(final FlyweightCommandSender commandSender) {
+        this.commandSender = requireNonNull(commandSender);
+        this.sequenceBySource = new Long2LongCounterMap(INITIAL_SEQUENCE);
+    }
+
+    public DefaultSenderSupplier(final FlyweightCommandSender commandSender,
+                                 final int initialCapacity,
+                                 final float loadFactor ) {
+        this.commandSender = requireNonNull(commandSender);
+        this.sequenceBySource = new Long2LongCounterMap(initialCapacity, loadFactor, INITIAL_SEQUENCE);
     }
 
     @Override
-    public Ack publish(final Event event, final boolean replay, final int retry) {
-        try {
-            return output.publish(event, replay, retry, loopbackSender);
-        } catch (final Throwable t) {
-            exceptionHandler.handleEventOutputException(event, t);
-            return Ack.COMMIT;//to retry handle exception and be explicit
-        }
+    public CommandSender senderFor(final int source) {
+        return senderFor(source, sequenceBySource.getAndIncrement(source));
+    }
+
+    @Override
+    public CommandSender senderFor(final int source, final long sequence) {
+        return commandSender.init(source, sequence);
     }
 }

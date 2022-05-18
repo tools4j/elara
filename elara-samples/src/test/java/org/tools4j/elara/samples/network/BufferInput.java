@@ -24,8 +24,8 @@
 package org.tools4j.elara.samples.network;
 
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.Receiver;
-import org.tools4j.elara.input.Receiver.ReceivingContext;
+import org.tools4j.elara.send.CommandSender.SendingContext;
+import org.tools4j.elara.send.SenderSupplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.samples.network.Buffer.CONSUMED_NOTHING;
@@ -34,7 +34,6 @@ public class BufferInput implements Input {
 
     private final int source;
     private final Buffer buffer;
-    private long sequence = System.currentTimeMillis();
 
     public BufferInput(final int source, final Buffer buffer) {
         this.source = source;
@@ -50,15 +49,14 @@ public class BufferInput implements Input {
     }
 
     @Override
-    public int poll(final Receiver receiver) {
-        try (final ReceivingContext context = receiver.receivingMessage(source, sequence)) {
+    public int poll(final SenderSupplier senderSupplier) {
+        try (final SendingContext context = senderSupplier.senderFor(source).sendingCommand()) {
             final int consumed = buffer.consume(context.buffer(), 0);
             if (consumed == CONSUMED_NOTHING) {
                 context.abort();
                 return 0;
             }
-            sequence++;
-            context.receive(consumed);
+            context.send(consumed);
             return 1;
         }
     }
