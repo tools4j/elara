@@ -113,6 +113,7 @@ public final class CommandAppendingSender extends FlyweightCommandSender {
                     ac.buffer().putInt(PAYLOAD_SIZE_OFFSET, length);
                 }
                 ac.commit(HEADER_LENGTH + length);
+                incrementCommandSequence();
                 return SendingResult.SENT;
             } finally {
                 context = null;

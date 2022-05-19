@@ -52,6 +52,7 @@ public class DefaultEventRouterTest {
     private MessageStore messageStore;
     private List<Event> routed;
     private FlyweightCommand command;
+    private long eventTime;
 
     //under test
     private DefaultEventRouter eventRouter;
@@ -61,7 +62,7 @@ public class DefaultEventRouterTest {
         routed = new ArrayList<>();
         command = new FlyweightCommand();
         messageStore = new InMemoryStore();
-        eventRouter = new DefaultEventRouter(messageStore.appender(), event -> {
+        eventRouter = new DefaultEventRouter(() -> eventTime, messageStore.appender(), event -> {
             final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
             event.writeTo(buffer, 0);
             routed.add(new FlyweightEvent().init(buffer, 0));
@@ -75,6 +76,7 @@ public class DefaultEventRouterTest {
         final long sequence = 22;
         final int type = 33;
         final long time = 44;
+        eventTime = time + 1;
 
         //when
         startWithCommand(source, sequence, type, time);
@@ -101,6 +103,7 @@ public class DefaultEventRouterTest {
         final int eventType = 55;
         final int msgOffset = 2;
         final String msg = "Hello world";
+        eventTime = time + 1;
 
         startWithCommand(source, sequence, type, time);
 
@@ -134,6 +137,7 @@ public class DefaultEventRouterTest {
         final long sequence = 22;
         final int type = 33;
         final long time = 44;
+        eventTime = time + 1;
 
         startWithCommand(source, sequence, type, time);
 
@@ -154,6 +158,7 @@ public class DefaultEventRouterTest {
         final long sequence = 22;
         final int type = 33;
         final long time = 44;
+        eventTime = time + 1;
 
         startWithCommand(source, sequence, type, time);
 
@@ -181,6 +186,7 @@ public class DefaultEventRouterTest {
         final int eventType = 55;
         final int msgOffset = 2;
         final String msg = "Hello world";
+        eventTime = time + 1;
 
         startWithCommand(source, sequence, type, time);
         routeEmptyApplicationEvent();
@@ -209,6 +215,7 @@ public class DefaultEventRouterTest {
         startWithCommand(source, sequence, type, time);
         final boolean skipped = eventRouter.skipCommand();
         assertTrue(skipped, "skipped");
+        eventTime = time + 1;
 
         //when + then
         assertThrows(IllegalStateException.class, this::routeEmptyApplicationEvent);
@@ -243,10 +250,11 @@ public class DefaultEventRouterTest {
         final long sequence = 22;
         final int type = 33;
         final long time = 44;
+        eventTime = time + 1;
         final DirectBuffer zeroPayload = new ExpandableArrayBuffer(0);
         startWithCommand(source, sequence, type, time);
 
-        //when
+        //when + then
         assertThrows(IllegalArgumentException.class,
                 () -> eventRouter.routeEvent(EventType.COMMIT, zeroPayload, 0, 0)
         );
@@ -259,10 +267,11 @@ public class DefaultEventRouterTest {
         final long sequence = 22;
         final int type = 33;
         final long time = 44;
+        eventTime = time + 1;
         final DirectBuffer zeroPayload = new ExpandableArrayBuffer(0);
         startWithCommand(source, sequence, type, time);
 
-        //when
+        //when + then
         assertThrows(IllegalArgumentException.class,
                 () -> eventRouter.routeEvent(EventType.ROLLBACK, zeroPayload, 0, 0)
         );
@@ -276,7 +285,7 @@ public class DefaultEventRouterTest {
         assertEquals(index, event.id().index(), evtName + ".id.index");
         assertEquals(type, event.type(), evtName + ".type");
         assertEquals(Flags.NONE, event.flags().value(), evtName + ".flags");
-        assertEquals(command.time(), event.time(), evtName + ".time");
+        assertEquals(eventTime, event.time(), evtName + ".time");
         assertEquals(payloadSize, event.payload().capacity(), evtName + ".payload.capacity");
     }
 }

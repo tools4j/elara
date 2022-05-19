@@ -24,7 +24,7 @@
 package org.tools4j.elara.factory;
 
 import org.tools4j.elara.agent.AllInOneAgent;
-import org.tools4j.elara.init.Configuration;
+import org.tools4j.elara.app.config.Configuration;
 
 /**
  * Main elara factory to create and wire elara objects.  Singleton object instances are obtained via

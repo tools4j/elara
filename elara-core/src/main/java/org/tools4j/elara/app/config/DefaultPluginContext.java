@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.init;
+package org.tools4j.elara.app.config;
 
 import org.agrona.collections.Object2ObjectHashMap;
 import org.tools4j.elara.plugin.api.Plugin;
@@ -36,33 +36,47 @@ import java.util.stream.Collectors;
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.api.Plugin.STATE_UNAWARE;
 
-final class PluginContext {
+public class DefaultPluginContext implements PluginContext {
 
     private static final PluginBuilder<?> DEFAULT_BUILDER = defaultBuilder();
 
+    private final AppConfig appConfig;
     private final Map<Plugin<?>, PluginBuilder<?>> pluginBuilders = new Object2ObjectHashMap<>();
     private final Map<Plugin<?>, Consumer<?>> pluginStateAwares = new Object2ObjectHashMap<>();
 
     private interface PluginBuilder<P> {
-        Plugin.Configuration build(Plugin<P> plugin, Configuration appConfig, Consumer<? super P> pluginStateAware);
+        Plugin.Configuration build(Plugin<P> plugin, AppConfig appConfig, Consumer<? super P> pluginStateAware);
     }
 
-    void register(final Plugin<?> plugin) {
-        register(plugin, STATE_UNAWARE);
+    public DefaultPluginContext(final AppConfig appConfig) {
+        this.appConfig = requireNonNull(appConfig);
     }
 
-    <P> void register(final Plugin<P> plugin, final Supplier<? extends P> pluginStateProvider) {
-        register(plugin, pluginStateProvider, STATE_UNAWARE);
+    @Override
+    public List<Plugin.Configuration> plugins() {
+        return configurations(appConfig);
     }
 
-    <P> void register(final Plugin<P> plugin, final Consumer<? super P> pluginStateAware) {
+    @Override
+    public PluginContext plugin(final Plugin<?> plugin) {
+        return plugin(plugin, STATE_UNAWARE);
+    }
+
+    @Override
+    public <P> PluginContext plugin(final Plugin<P> plugin, final Supplier<? extends P> pluginStateProvider) {
+        return plugin(plugin, pluginStateProvider, STATE_UNAWARE);
+    }
+
+    @Override
+    public <P> PluginContext plugin(final Plugin<P> plugin, final Consumer<? super P> pluginStateAware) {
         register(plugin, defaultBuilder(), pluginStateAware);
+        return this;
     }
 
-    <P> void register(final Plugin<P> plugin,
-                      final Supplier<? extends P> pluginStateProvider,
-                      final Consumer<? super P> pluginStateAware) {
+    @Override
+    public <P> PluginContext plugin(final Plugin<P> plugin, final Supplier<? extends P> pluginStateProvider, final Consumer<? super P> pluginStateAware) {
         register(plugin, builder(plugin, pluginStateProvider), pluginStateAware);
+        return this;
     }
 
     private <P> void register(final Plugin<P> plugin,
@@ -90,11 +104,11 @@ final class PluginContext {
     }
 
     private <P> void register(final Dependency<P> dependency) {
-        register(dependency.plugin(), dependency.pluginStateAware());
+        plugin(dependency.plugin(), dependency.pluginStateAware());
     }
 
     private static <P> Plugin.Configuration build(final Plugin<P> plugin,
-                                                  final Configuration appConfig,
+                                                  final AppConfig appConfig,
                                                   final Consumer<? super P> pluginStateAware) {
         final P pluginState = plugin.defaultPluginState();
         pluginStateAware.accept(pluginState);
@@ -102,7 +116,7 @@ final class PluginContext {
     }
 
     private static <P> PluginBuilder<P> defaultBuilder() {
-        final PluginBuilder<P> builder = PluginContext::build;
+        final PluginBuilder<P> builder = DefaultPluginContext::build;
         assert builder == DEFAULT_BUILDER || DEFAULT_BUILDER == null;
         return builder;
     }
@@ -119,7 +133,7 @@ final class PluginContext {
     }
 
     private <P> Plugin.Configuration configuration(final Plugin<P> plugin,
-                                                   final Configuration appConfig,
+                                                   final AppConfig appConfig,
                                                    final PluginBuilder<?> builder) {
         @SuppressWarnings("unchecked")//safe because register method taking a builder enforces this
         final PluginBuilder<P> pluginBuilder = (PluginBuilder<P>)builder;
@@ -129,7 +143,7 @@ final class PluginContext {
     }
 
 
-    List<Plugin.Configuration> configurations(final Configuration appConfig) {
+    List<Plugin.Configuration> configurations(final AppConfig appConfig) {
         requireNonNull(appConfig);
         return pluginBuilders.entrySet().stream()
                 .map(e -> configuration(e.getKey(), appConfig, e.getValue()))

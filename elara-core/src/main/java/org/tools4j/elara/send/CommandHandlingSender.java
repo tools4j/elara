@@ -144,11 +144,12 @@ public final class CommandHandlingSender extends FlyweightCommandSender {
             if (length < 0) {
                 throw new IllegalArgumentException("Length cannot be negative: " + length);
             }
-            if (length > 0) {
-                header.putInt(PAYLOAD_SIZE_OFFSET, length);
-            }
             try {
+                if (length > 0) {
+                    header.putInt(PAYLOAD_SIZE_OFFSET, length);
+                }
                 invokeCommandHandler(payload, 0, length);//TODO handler result value here
+                incrementCommandSequence();
                 return SendingResult.SENT;
             } finally {
                 command.reset();

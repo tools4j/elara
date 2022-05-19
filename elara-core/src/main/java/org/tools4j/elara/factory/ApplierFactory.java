@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.factory;
 
-import org.tools4j.elara.application.EventApplier;
+import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.step.AgentStep;
 

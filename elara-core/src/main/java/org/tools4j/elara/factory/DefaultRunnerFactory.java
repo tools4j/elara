@@ -25,8 +25,8 @@ package org.tools4j.elara.factory;
 
 import org.agrona.concurrent.Agent;
 import org.tools4j.elara.agent.CoreAgent;
-import org.tools4j.elara.init.Configuration;
-import org.tools4j.elara.init.ExecutionType;
+import org.tools4j.elara.app.config.Configuration;
+import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.step.AgentStep;
@@ -36,9 +36,9 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.init.ExecutionType.ALWAYS;
-import static org.tools4j.elara.init.ExecutionType.ALWAYS_WHEN_EVENTS_APPLIED;
-import static org.tools4j.elara.init.ExecutionType.INIT_ONCE_ONLY;
+import static org.tools4j.elara.app.config.ExecutionType.ALWAYS;
+import static org.tools4j.elara.app.config.ExecutionType.ALWAYS_WHEN_EVENTS_APPLIED;
+import static org.tools4j.elara.app.config.ExecutionType.INIT_ONCE_ONLY;
 import static org.tools4j.elara.step.AgentStep.NO_OP;
 
 public class DefaultRunnerFactory implements RunnerFactory {

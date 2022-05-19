@@ -23,15 +23,16 @@
  */
 package org.tools4j.elara.send;
 
+import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.event.Event;
 
 /**
  * Event context with information about the event that is currently
- * {@link org.tools4j.elara.application.EventProcessor#onEvent(Event, EventContext, InFlightState, CommandSender) processed}.
+ * {@link EventProcessor#onEvent(Event, EventContext, InFlightState, CommandSender) processed}.
  * <p>
  * Note that the {@link #processedEvent() prcessed} event is not necessarily the {@link #mostRecentEvent() most recent}
  * event.  If not all events corresponding to sent commands have been received back, event processing can be
- * {@link org.tools4j.elara.application.EventProcessor.Ack#DEFERRED deferred} until all events have been received and
+ * {@link EventProcessor.Ack#DEFERRED deferred} until all events have been received and
  * the applications state has been brought up-to-date.
  * <p>
  * For instance if a request event A1 is received that results in a command B1, then we wait for the event B1 to be
@@ -39,7 +40,7 @@ import org.tools4j.elara.event.Event;
  * If a request event A2 arrives before event B1, then it is <i>deferred</i> because we know that the application state
  * is not up-to-date; A2 will be processed after processing the B1 event and bringing the state up-to-date.
  * <p>
- * See also {@link org.tools4j.elara.application.EventProcessor EventProcessor} and {@link InFlightState} description
+ * See also {@link EventProcessor EventProcessor} and {@link InFlightState} description
  * for more information.
  */
 public interface EventContext {

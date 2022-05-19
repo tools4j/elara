@@ -23,9 +23,10 @@
  */
 package org.tools4j.elara.plugin.metrics;
 
+import org.tools4j.elara.app.config.AppConfig;
+import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.factory.InterceptableSingletons;
 import org.tools4j.elara.factory.Singletons;
-import org.tools4j.elara.init.ExecutionType;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.step.AgentStep;
@@ -49,7 +50,7 @@ public class MetricsPlugin implements Plugin<MetricsState> {
     }
 
     @Override
-    public Configuration configuration(final org.tools4j.elara.init.Configuration appConfig, final MetricsState pluginState) {
+    public Configuration configuration(final AppConfig appConfig, final MetricsState pluginState) {
         requireNonNull(appConfig);
         requireNonNull(pluginState);
         return new Configuration.Default() {

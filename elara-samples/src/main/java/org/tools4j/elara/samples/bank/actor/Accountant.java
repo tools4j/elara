@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.samples.bank.actor;
 
-import org.tools4j.elara.application.EventApplier;
+import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.samples.bank.event.AccountCreatedEvent;
 import org.tools4j.elara.samples.bank.event.AmountAddedOrRemovedEvent;

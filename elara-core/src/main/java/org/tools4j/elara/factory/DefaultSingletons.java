@@ -25,12 +25,12 @@ package org.tools4j.elara.factory;
 
 import org.agrona.collections.Object2ObjectHashMap;
 import org.agrona.concurrent.Agent;
-import org.tools4j.elara.application.CommandProcessor;
-import org.tools4j.elara.application.EventApplier;
+import org.tools4j.elara.app.config.Configuration;
+import org.tools4j.elara.app.handler.CommandProcessor;
+import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.handler.OutputHandler;
-import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
@@ -44,7 +44,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
-import static org.tools4j.elara.init.Configuration.validate;
 
 public class DefaultSingletons implements Singletons {
 
@@ -71,7 +70,7 @@ public class DefaultSingletons implements Singletons {
                              final FactorySupplier<? extends ApplierFactory> applierFactorySupplier,
                              final FactorySupplier<? extends OutputFactory> outputFactorySupplier,
                              final FactorySupplier<? extends PluginFactory> pluginFactorySupplier) {
-        validate(configuration);
+        configuration.validate();
         this.runnerFactory = runnerFactorySupplier.supply(configuration, singletonsSupplier);
         this.inputFactory = inputFactorySupplier.supply(configuration, singletonsSupplier);
         this.processorFactory = processorFactorySupplier.supply(configuration, singletonsSupplier);

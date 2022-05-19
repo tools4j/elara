@@ -21,16 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.init;
+package org.tools4j.elara.app.config;
 
-/**
- * Extra steps that are linked to the duty cycle loop
- */
-public enum ExecutionType {
-    /** Execute a single time when initialising the duty cycle loop */
-    INIT_ONCE_ONLY,
-    /** Execute always when all events have been applied; application and plugin state is up-to-date */
-    ALWAYS_WHEN_EVENTS_APPLIED,
-    /** Execute always even when events are being replied */
-    ALWAYS
+import org.tools4j.elara.app.handler.EventProcessor;
+import org.tools4j.elara.output.Output;
+import org.tools4j.elara.store.MessageStore;
+import org.tools4j.elara.stream.MessageStream;
+
+public interface EventStreamContext extends EventStreamConfig {
+    EventStreamContext eventStream(MessageStore eventStore);
+    EventStreamContext eventStream(MessageStore.Poller eventStorePoller);
+    EventStreamContext eventStream(MessageStream eventStream);
+    EventStreamContext eventProcessor(EventProcessor eventProcessor);
+    EventStreamContext output(Output output);
 }

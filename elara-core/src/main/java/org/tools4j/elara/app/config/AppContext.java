@@ -21,46 +21,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.init;
+package org.tools4j.elara.app.config;
 
 import org.agrona.concurrent.IdleStrategy;
-import org.tools4j.elara.application.CommandProcessor;
-import org.tools4j.elara.application.DuplicateHandler;
-import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.application.ExceptionHandler;
-import org.tools4j.elara.input.Input;
+import org.tools4j.elara.exception.DuplicateHandler;
+import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.logging.Logger;
-import org.tools4j.elara.output.Output;
-import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.step.AgentStep;
-import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.time.TimeSource;
 
-import java.util.List;
 import java.util.concurrent.ThreadFactory;
 
-public interface Configuration {
-    CommandProcessor commandProcessor();
-    EventApplier eventApplier();
-    List<Input> inputs();
-    Output output();
-    MessageStore commandStore();
-    CommandPollingMode commandPollingMode();
-    MessageStore eventStore();
-    TimeSource timeSource();
-    ExceptionHandler exceptionHandler();
-    DuplicateHandler duplicateHandler();
-    Logger.Factory loggerFactory();
-    IdleStrategy idleStrategy();
-    List<AgentStep> dutyCycleExtraSteps(ExecutionType executionType);
-    ThreadFactory threadFactory();
-    List<Plugin.Configuration> plugins();
-
-    static Context configure() {
-        return Context.create();
-    }
-
-    static Configuration validate(final Configuration configuration) {
-        return DefaultContext.validate(configuration);
-    }
+public interface AppContext extends AppConfig {
+    AppContext timeSource(TimeSource timeSource);
+    AppContext exceptionHandler(ExceptionHandler exceptionHandler);
+    AppContext duplicateHandler(DuplicateHandler duplicateHandler);
+    AppContext loggerFactory(Logger.Factory loggerFactory);
+    AppContext idleStrategy(IdleStrategy idleStrategy);
+    AppContext dutyCycleExtraStep(AgentStep step, ExecutionType executionType);
+    AppContext threadFactory(String threadName);
+    AppContext threadFactory(ThreadFactory threadFactory);
 }

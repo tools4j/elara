@@ -21,21 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.application;
+package org.tools4j.elara.app.config;
 
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.handler.EventProcessor;
+import org.tools4j.elara.output.Output;
+import org.tools4j.elara.stream.MessageStream;
 
-/**
- * Applies an event to the application modifying its state if necessary as per event instructions.
- */
-@FunctionalInterface
-public interface EventApplier {
-    /**
-     * Applies the provided event to the application, modifying the state as per the event instructions.
-     * @param event the event to apply
-     */
-    void onEvent(Event event);
-
-    /** Performs a no-op meaning the event is silently ignored */
-    EventApplier NOOP = (event) -> {};
+public interface EventStreamConfig {
+    MessageStream eventStream();
+    EventProcessor eventProcessor();
+    Output output();
 }

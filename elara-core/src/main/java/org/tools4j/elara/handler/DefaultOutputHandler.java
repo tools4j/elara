@@ -23,8 +23,8 @@
  */
 package org.tools4j.elara.handler;
 
-import org.tools4j.elara.application.ExceptionHandler;
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.send.CommandSender;

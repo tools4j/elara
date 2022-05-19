@@ -24,7 +24,7 @@
 package org.tools4j.elara.route;
 
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.application.EventApplier;
+import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.Flags;
@@ -33,6 +33,7 @@ import org.tools4j.elara.flyweight.FlyweightHeader;
 import org.tools4j.elara.store.ExpandableDirectBuffer;
 import org.tools4j.elara.store.MessageStore.Appender;
 import org.tools4j.elara.store.MessageStore.AppendingContext;
+import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.flyweight.FrameDescriptor.FLAGS_OFFSET;
@@ -45,6 +46,7 @@ public class DefaultEventRouter implements EventRouter.Default {
 
     private static final int MAX_EVENTS = Short.MAX_VALUE + 1;
 
+    private final TimeSource timeSource;
     private final Appender appender;
     private final EventApplier eventApplier;
     private final RoutingContext routingContext = new RoutingContext();
@@ -53,7 +55,8 @@ public class DefaultEventRouter implements EventRouter.Default {
     private short nextIndex;
     private boolean skipped;
 
-    public DefaultEventRouter(final Appender appender, final EventApplier eventApplier) {
+    public DefaultEventRouter(final TimeSource timeSource, final Appender appender, final EventApplier eventApplier) {
+        this.timeSource = requireNonNull(timeSource);
         this.appender = requireNonNull(appender);
         this.eventApplier = requireNonNull(eventApplier);
     }
@@ -168,7 +171,7 @@ public class DefaultEventRouter implements EventRouter.Default {
             this.context = requireNonNull(context);
             this.buffer.wrap(context.buffer(), PAYLOAD_OFFSET);
             FlyweightHeader.writeTo(
-                    command.id().source(), type, command.id().sequence(), command.time(),
+                    command.id().source(), type, command.id().sequence(), timeSource.currentTime(),
                     Flags.NONE, nextIndex, 0,
                     context.buffer(), HEADER_OFFSET
             );

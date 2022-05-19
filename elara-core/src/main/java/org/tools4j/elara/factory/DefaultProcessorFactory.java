@@ -23,13 +23,13 @@
  */
 package org.tools4j.elara.factory;
 
-import org.tools4j.elara.application.CommandProcessor;
+import org.tools4j.elara.app.config.CommandPollingMode;
+import org.tools4j.elara.app.config.Configuration;
+import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.command.CompositeCommandProcessor;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.CommandPollerHandler;
 import org.tools4j.elara.handler.DefaultCommandHandler;
-import org.tools4j.elara.init.CommandPollingMode;
-import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.route.DefaultEventRouter;
 import org.tools4j.elara.step.AgentStep;
@@ -78,10 +78,13 @@ public class DefaultProcessorFactory implements ProcessorFactory {
 
     @Override
     public CommandHandler commandHandler() {
+        final Singletons singletons = this.singletons.get();
         return new DefaultCommandHandler(
-                singletons.get().baseState(),
-                new DefaultEventRouter(configuration.eventStore().appender(), singletons.get().eventHandler()),
-                singletons.get().commandProcessor(),
+                singletons.baseState(),
+                new DefaultEventRouter(
+                        configuration.timeSource(), configuration.eventStore().appender(), singletons.eventHandler()
+                ),
+                singletons.commandProcessor(),
                 configuration.exceptionHandler(),
                 configuration.duplicateHandler()
         );

@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.handler;
 
-import org.tools4j.elara.application.EventApplier;
+import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.event.Event;
 
 /**

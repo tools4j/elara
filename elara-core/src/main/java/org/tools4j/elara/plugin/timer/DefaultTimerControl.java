@@ -23,8 +23,8 @@
  */
 package org.tools4j.elara.plugin.timer;
 
-import org.tools4j.elara.init.Configuration;
-import org.tools4j.elara.init.Context;
+import org.tools4j.elara.app.config.Configuration;
+import org.tools4j.elara.app.config.Context;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.route.EventRouter;

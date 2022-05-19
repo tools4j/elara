@@ -23,11 +23,10 @@
  */
 package org.tools4j.elara.factory;
 
-import org.tools4j.elara.init.Configuration;
+import org.tools4j.elara.app.config.Configuration;
 import org.tools4j.elara.plugin.api.Plugin;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.init.Configuration.validate;
 
 public class DefaultElaraFactory implements ElaraFactory {
 
@@ -35,7 +34,8 @@ public class DefaultElaraFactory implements ElaraFactory {
     private final Singletons singletons;
 
     public DefaultElaraFactory(final Configuration configuration) {
-        this.configuration = validate(configuration);
+        configuration.validate();
+        this.configuration = configuration;
         this.singletons = intercept(new DefaultSingletons(configuration, this::singletons));
     }
 
