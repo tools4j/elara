@@ -23,9 +23,9 @@
  */
 package org.tools4j.elara.factory;
 
+import org.tools4j.elara.app.config.CommandPollingMode;
+import org.tools4j.elara.app.config.Configuration;
 import org.tools4j.elara.handler.CommandHandler;
-import org.tools4j.elara.init.CommandPollingMode;
-import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.send.CommandAppendingSender;

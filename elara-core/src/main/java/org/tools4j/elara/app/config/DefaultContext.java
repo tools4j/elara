@@ -21,14 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.init;
+package org.tools4j.elara.app.config;
 
 import org.agrona.concurrent.BackoffIdleStrategy;
 import org.agrona.concurrent.IdleStrategy;
-import org.tools4j.elara.application.CommandProcessor;
-import org.tools4j.elara.application.DuplicateHandler;
-import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.application.ExceptionHandler;
+import org.tools4j.elara.app.handler.CommandProcessor;
+import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.exception.DuplicateHandler;
+import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.logging.Logger.Factory;
@@ -49,7 +49,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.init.CommandPollingMode.NO_STORE;
 import static org.tools4j.elara.logging.OutputStreamLogger.SYSTEM_FACTORY;
 
 final class DefaultContext implements Context {
@@ -71,7 +70,7 @@ final class DefaultContext implements Context {
             100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100));
     private final EnumMap<ExecutionType, List<AgentStep>> extraSteps = new EnumMap<>(ExecutionType.class);
     private ThreadFactory threadFactory;
-    private final PluginContext plugins = new PluginContext();
+    private final DefaultPluginContext plugins = new DefaultPluginContext(this);
 
     @Override
     public CommandProcessor commandProcessor() {
@@ -258,25 +257,25 @@ final class DefaultContext implements Context {
 
     @Override
     public Context plugin(final Plugin<?> plugin) {
-        plugins.register(plugin);
+        plugins.plugin(plugin);
         return this;
     }
 
     @Override
     public <P> Context plugin(final Plugin<P> plugin, final Supplier<? extends P> pluginStateProvider) {
-        plugins.register(plugin, pluginStateProvider);
+        plugins.plugin(plugin, pluginStateProvider);
         return this;
     }
 
     @Override
     public <P> Context plugin(final Plugin<P> plugin, final Consumer<? super P> pluginStateAware) {
-        plugins.register(plugin, pluginStateAware);
+        plugins.plugin(plugin, pluginStateAware);
         return this;
     }
 
     @Override
     public <P> Context plugin(final Plugin<P> plugin, final Supplier<? extends P> pluginStateProvider, final Consumer<? super P> pluginStateAware) {
-        plugins.register(plugin, pluginStateProvider, pluginStateAware);
+        plugins.plugin(plugin, pluginStateProvider, pluginStateAware);
         return this;
     }
 
@@ -296,26 +295,26 @@ final class DefaultContext implements Context {
         return this;
     }
 
-    static Configuration validate(final Configuration configuration) {
-        if (configuration.commandProcessor() == null) {
+    @Override
+    public void validate() {
+        if (commandProcessor() == null) {
             throw new IllegalArgumentException("Command processor must be set");
         }
-        if (configuration.eventApplier() == null) {
+        if (eventApplier() == null) {
             throw new IllegalArgumentException("Event applier must be set");
         }
-        if (configuration.commandStore() == null && configuration.commandPollingMode() != NO_STORE) {
+        if (commandStore() == null && commandPollingMode() != CommandPollingMode.NO_STORE) {
             throw new IllegalArgumentException("Command log must be set unless command polling mode is NO_STORE");
         }
-        if (configuration.eventStore() == null) {
+        if (eventStore() == null) {
             throw new IllegalArgumentException("Event log must be set");
         }
-        if (configuration.timeSource() == null) {
+        if (timeSource() == null) {
             throw new IllegalArgumentException("Time source must be set");
         }
-        if (configuration.threadFactory() == null) {
+        if (threadFactory() == null) {
             throw new IllegalArgumentException("Thread factory must be set");
         }
-        return configuration;
     }
 
 }

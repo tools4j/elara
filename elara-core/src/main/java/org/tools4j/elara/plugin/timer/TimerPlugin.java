@@ -23,8 +23,9 @@
  */
 package org.tools4j.elara.plugin.timer;
 
-import org.tools4j.elara.application.CommandProcessor;
-import org.tools4j.elara.application.EventApplier;
+import org.tools4j.elara.app.config.AppConfig;
+import org.tools4j.elara.app.handler.CommandProcessor;
+import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
@@ -60,7 +61,7 @@ public class TimerPlugin implements SystemPlugin<TimerState.Mutable> {
     }
 
     @Override
-    public Configuration configuration(final org.tools4j.elara.init.Configuration appConfig, final Mutable timerState) {
+    public Configuration configuration(final AppConfig appConfig, final Mutable timerState) {
         requireNonNull(appConfig);
         requireNonNull(timerState);
         return new Configuration.Default() {

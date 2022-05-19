@@ -24,7 +24,7 @@
 package org.tools4j.elara.samples.bank.actor;
 
 import org.agrona.DirectBuffer;
-import org.tools4j.elara.application.CommandProcessor;
+import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.samples.bank.command.CommandType;

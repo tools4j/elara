@@ -25,12 +25,13 @@ package org.tools4j.elara.send;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.command.CommandType;
 import org.tools4j.elara.event.Event;
 
 /**
  * Facilitates sending of commands when
- * {@link org.tools4j.elara.application.EventProcessor#onEvent(Event, EventContext, InFlightState, CommandSender) processing}
+ * {@link EventProcessor#onEvent(Event, EventContext, InFlightState, CommandSender) processing}
  * events.
  * <p>
  * Command sending can be done in two ways: already coded commands can be sent via one of the

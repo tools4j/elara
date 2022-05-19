@@ -21,27 +21,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.init;
+package org.tools4j.elara.app.type;
 
-/**
- * Determines the command polling mode, either from a persisted store (all commands, from last or from end) or without
- * store polling commands directly from inputs.
- * <p>
- * The default mode is {@link #FROM_END} so that only new commands will be polled; commands existing in the command
- * store are skipped when starting the application.
- */
-public enum CommandPollingMode {
-    /** All commands in the command store are replayed */
-    REPLAY_ALL,
-    /** Resumes polling from the position of the last poll;  works only if this mode was used also previously */
-    FROM_LAST,
-    /** No replay at all, only newly added commands will be polled */
-    FROM_END,
-    /** No command store is used, commands are passed through directly from input messages */
-    NO_STORE;
+import org.tools4j.elara.app.handler.EventProcessor;
 
-    /**
-     * Poller ID used for {@link #FROM_LAST} mode.
-     */
-    public static final String DEFAULT_POLLER_ID = "elara-cmd";
+final class PublisherAppContextImpl extends AbstractEventStreamContext<PublisherAppContextImpl> implements PublisherAppContext {
+
+    public static final String DEFAULT_THREAD_NAME = "elara-pub";
+
+    @Override
+    protected PublisherAppContextImpl self() {
+        return this;
+    }
+
+    @Override
+    public PublisherAppContext populateDefaults() {
+        if (eventProcessor() == null) {
+            eventProcessor(EventProcessor.NOOP);
+        }
+        return populateDefaults(DEFAULT_THREAD_NAME);
+    }
+
+    @Override
+    public PublisherAppContext populateDefaults(final PublisherApp app) {
+        return this
+                .output(app)
+                .populateDefaults();
+    }
 }

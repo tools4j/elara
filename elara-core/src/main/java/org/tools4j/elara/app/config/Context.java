@@ -21,13 +21,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.init;
+package org.tools4j.elara.app.config;
 
 import org.agrona.concurrent.IdleStrategy;
-import org.tools4j.elara.application.CommandProcessor;
-import org.tools4j.elara.application.DuplicateHandler;
-import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.application.ExceptionHandler;
+import org.tools4j.elara.app.handler.CommandProcessor;
+import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.exception.DuplicateHandler;
+import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.output.Output;
@@ -41,7 +41,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public interface Context extends Configuration {
+public interface Context extends Configuration, CoreContext {
     Context commandProcessor(CommandProcessor commandProcessor);
     Context eventApplier(EventApplier eventApplier);
     Context input(Input input);

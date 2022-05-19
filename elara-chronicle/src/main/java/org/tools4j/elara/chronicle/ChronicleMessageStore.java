@@ -24,7 +24,10 @@
 package org.tools4j.elara.chronicle;
 
 import net.openhft.chronicle.queue.ChronicleQueue;
+import net.openhft.chronicle.wire.WireType;
 import org.tools4j.elara.store.MessageStore;
+
+import java.io.File;
 
 import static java.util.Objects.requireNonNull;
 
@@ -32,6 +35,13 @@ public class ChronicleMessageStore implements MessageStore {
 
     private final ChronicleQueue queue;
     private final ThreadLocal<ChronicleAppender> appender;
+
+    public ChronicleMessageStore(final File file) {
+        this(ChronicleQueue.singleBuilder()
+                .path(file)
+                .wireType(WireType.BINARY_LIGHT)
+                .build());
+    }
 
     public ChronicleMessageStore(final ChronicleQueue queue) {
         this.queue = requireNonNull(queue);

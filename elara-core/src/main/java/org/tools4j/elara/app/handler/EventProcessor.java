@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.application;
+package org.tools4j.elara.app.handler;
 
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.send.CommandSender;

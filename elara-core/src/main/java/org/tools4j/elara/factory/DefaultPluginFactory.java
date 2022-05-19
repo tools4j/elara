@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.factory;
 
-import org.tools4j.elara.init.Configuration;
+import org.tools4j.elara.app.config.Configuration;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.plugin.base.BasePlugin.BaseConfiguration;

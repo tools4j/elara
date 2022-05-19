@@ -23,10 +23,10 @@
  */
 package org.tools4j.elara.handler;
 
-import org.tools4j.elara.application.DuplicateHandler;
-import org.tools4j.elara.application.EventApplier;
-import org.tools4j.elara.application.ExceptionHandler;
+import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.exception.DuplicateHandler;
+import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.plugin.base.BaseState;
 
 import static java.util.Objects.requireNonNull;

@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.plugin.boot;
 
-import org.tools4j.elara.application.CommandProcessor;
+import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.route.EventRouter;
 

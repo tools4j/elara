@@ -23,18 +23,19 @@
  */
 package org.tools4j.elara.send;
 
+import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.time.TimeSource;
 
 /**
  * Application state that provides information about own commands that are still {@link #hasInFlightCommand() in-flight}.
  * A command is in-flight if the corresponding event has not been received back.  In this situation event
- * {@link org.tools4j.elara.application.EventProcessor#onEvent(Event, EventContext, InFlightState, CommandSender) processing}
+ * {@link EventProcessor#onEvent(Event, EventContext, InFlightState, CommandSender) processing}
  * may be
- * {@link org.tools4j.elara.application.EventProcessor.Ack#DEFERRED deferred} until all events have been received and
+ * {@link EventProcessor.Ack#DEFERRED deferred} until all events have been received and
  * the applications state has been brought up-to-date.
  * <p>
- * See also {@link org.tools4j.elara.application.EventProcessor EventProcessor} and {@link EventContext} description for
+ * See also {@link EventProcessor EventProcessor} and {@link EventContext} description for
  * more information.
  */
 public interface InFlightState {

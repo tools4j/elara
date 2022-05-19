@@ -24,12 +24,12 @@
 package org.tools4j.elara.samples.bank;
 
 import org.agrona.DirectBuffer;
-import org.tools4j.elara.application.CommandProcessor;
-import org.tools4j.elara.application.DuplicateHandler;
-import org.tools4j.elara.application.EventApplier;
+import org.tools4j.elara.app.config.Context;
+import org.tools4j.elara.app.handler.CommandProcessor;
+import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.init.Context;
+import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.plugin.api.Plugins;

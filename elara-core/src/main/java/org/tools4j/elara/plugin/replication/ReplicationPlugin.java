@@ -23,15 +23,18 @@
  */
 package org.tools4j.elara.plugin.replication;
 
-import org.tools4j.elara.application.CommandProcessor;
-import org.tools4j.elara.application.EventApplier;
+import org.tools4j.elara.app.config.AppConfig;
+import org.tools4j.elara.app.config.CoreConfig;
+import org.tools4j.elara.app.config.ExecutionType;
+import org.tools4j.elara.app.handler.CommandProcessor;
+import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.factory.InterceptableSingletons;
 import org.tools4j.elara.factory.Singletons;
-import org.tools4j.elara.init.ExecutionType;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.replication.Connection.Handler;
+import org.tools4j.elara.plugin.replication.ReplicationState.Mutable;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.store.MessageStore.Appender;
@@ -65,11 +68,15 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
     }
 
     @Override
-    public Configuration configuration(final org.tools4j.elara.init.Configuration appConfig,
-                                       final ReplicationState.Mutable replicationState) {
+    public Configuration configuration(final AppConfig appConfig,
+                                       final Mutable replicationState) {
         requireNonNull(appConfig);
         requireNonNull(replicationState);
-        final MessageStore eventStore = appConfig.eventStore();
+        if (!(appConfig instanceof CoreConfig)) {
+            throw new IllegalArgumentException("Plugin requires CoreConfig but found " + appConfig.getClass());
+        }
+        final CoreConfig coreConfig = (CoreConfig) appConfig;
+        final MessageStore eventStore = coreConfig.eventStore();
         final Appender eventStoreAppender = eventStore.appender();
         final EnforcedLeaderEventReceiver enforcedLeaderEventReceiver = new EnforcedLeaderEventReceiver(
                 appConfig.loggerFactory(), appConfig.timeSource(), configuration, replicationState, eventStoreAppender
@@ -81,6 +88,7 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
         return new Configuration.Default() {
             @Override
             public AgentStep step(final BaseState baseState, final ExecutionType executionType) {
+                //noinspection SwitchStatementWithTooFewBranches
                 switch (executionType) {
                     case ALWAYS_WHEN_EVENTS_APPLIED:
                         final Handler connectionHandler = new ConnectionHandler(
@@ -106,7 +114,7 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
 
             @Override
             public InterceptableSingletons interceptOrNull(final Singletons singletons) {
-                return new ReplicationInterceptor(singletons, appConfig, configuration, replicationState);
+                return new ReplicationInterceptor(singletons, coreConfig, configuration, replicationState);
             }
         };
     }

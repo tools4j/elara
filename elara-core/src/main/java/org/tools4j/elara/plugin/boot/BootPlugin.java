@@ -23,10 +23,11 @@
  */
 package org.tools4j.elara.plugin.boot;
 
-import org.tools4j.elara.application.CommandProcessor;
+import org.tools4j.elara.app.config.AppConfig;
+import org.tools4j.elara.app.config.ExecutionType;
+import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.factory.InterceptableSingletons;
 import org.tools4j.elara.factory.Singletons;
-import org.tools4j.elara.init.ExecutionType;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.input.SimpleSequenceGenerator;
 import org.tools4j.elara.output.Output;
@@ -68,7 +69,7 @@ public class BootPlugin implements SystemPlugin<NullState> {
     }
 
     @Override
-    public Configuration configuration(final org.tools4j.elara.init.Configuration appConfig, final NullState pluginState) {
+    public Configuration configuration(final AppConfig appConfig, final NullState pluginState) {
         requireNonNull(appConfig);
         requireNonNull(pluginState);
         return new Configuration.Default() {

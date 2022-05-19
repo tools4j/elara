@@ -21,37 +21,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.application;
+package org.tools4j.elara.app.config;
 
-import org.agrona.ErrorHandler;
-import org.tools4j.elara.command.Command;
-import org.tools4j.elara.event.Event;
+import org.agrona.concurrent.IdleStrategy;
+import org.tools4j.elara.exception.DuplicateHandler;
+import org.tools4j.elara.exception.ExceptionHandler;
+import org.tools4j.elara.logging.Logger;
+import org.tools4j.elara.step.AgentStep;
+import org.tools4j.elara.time.TimeSource;
 
-@FunctionalInterface
-public interface ExceptionHandler extends ErrorHandler {
+import java.util.List;
+import java.util.concurrent.ThreadFactory;
 
-    void handleException(String message, Throwable t);
+public interface AppConfig {
+    TimeSource timeSource();
+    ExceptionHandler exceptionHandler();
+    DuplicateHandler duplicateHandler();
+    Logger.Factory loggerFactory();
+    IdleStrategy idleStrategy();
+    List<AgentStep> dutyCycleExtraSteps(ExecutionType executionType);
+    ThreadFactory threadFactory();
 
-    default void handleCommandProcessorException(final Command command, final Throwable t) {
-        handleException("Unhandled exception when processing command [" + command + "], e=" + t, t);
-    }
-
-    default void handleEventApplierException(final Event event, final Throwable t) {
-        handleException("Unhandled exception when applying event [" + event + "], e=" + t, t);
-    }
-
-    default void handleEventOutputException(final Event event, final Throwable t) {
-        handleException("Unhandled exception when publishing event [" + event + "], e=" + t, t);
-    }
-
-    @Override
-    default void onError(final Throwable t) {
-        handleException("Unhandled exception, e=" + t, t);
-    }
-
-    ExceptionHandler DEFAULT = (message, t) -> {
-        System.err.println(message);
-        t.printStackTrace();
-    };
-
+    void validate();
 }

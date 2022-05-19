@@ -25,12 +25,13 @@ package org.tools4j.elara.route;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.EventType;
 
 /**
  * Facilitates routing of events when
- * {@link org.tools4j.elara.application.CommandProcessor#onCommand(Command, EventRouter) processing} commands.
+ * {@link CommandProcessor#onCommand(Command, EventRouter) processing} commands.
  * <p>
  * Event routing can be done in two ways: already coded events can be routed via one of the
  * {@link #routeEvent(DirectBuffer, int, int) routeEvent(..)} methods.  Alternatively the event can be encoded into the

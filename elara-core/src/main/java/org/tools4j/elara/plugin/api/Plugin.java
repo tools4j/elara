@@ -23,11 +23,12 @@
  */
 package org.tools4j.elara.plugin.api;
 
-import org.tools4j.elara.application.CommandProcessor;
-import org.tools4j.elara.application.EventApplier;
+import org.tools4j.elara.app.config.AppConfig;
+import org.tools4j.elara.app.config.ExecutionType;
+import org.tools4j.elara.app.handler.CommandProcessor;
+import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.factory.InterceptableSingletons;
 import org.tools4j.elara.factory.Singletons;
-import org.tools4j.elara.init.ExecutionType;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.base.BaseState;
@@ -49,7 +50,7 @@ public interface Plugin<P> {
     Consumer<Object> STATE_UNAWARE = state -> {};
 
     P defaultPluginState();
-    Configuration configuration(org.tools4j.elara.init.Configuration appConfig, P pluginState);
+    Configuration configuration(AppConfig appConfig, P pluginState);
 
     default Dependency<?>[] dependencies() {
         return NO_DEPENDENCIES;

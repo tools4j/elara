@@ -23,9 +23,9 @@
  */
 package org.tools4j.elara.factory;
 
+import org.tools4j.elara.app.config.Configuration;
 import org.tools4j.elara.handler.DefaultOutputHandler;
 import org.tools4j.elara.handler.OutputHandler;
-import org.tools4j.elara.init.Configuration;
 import org.tools4j.elara.output.CompositeOutput;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.base.BaseState;
