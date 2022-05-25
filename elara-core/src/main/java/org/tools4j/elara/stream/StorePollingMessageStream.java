@@ -53,7 +53,7 @@ public class StorePollingMessageStream implements MessageStream {
     }
 
     private Result onMessage(final DirectBuffer buffer) {
-        streamHandler.onMessage(buffer, 0, buffer.capacity());
+        streamHandler.onMessage(buffer);
         return Result.POLL;
     }
 }

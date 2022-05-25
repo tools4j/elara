@@ -21,14 +21,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream;
+package org.tools4j.elara.stream.tcp;
 
-import org.agrona.DirectBuffer;
+import org.tools4j.elara.stream.MessageSender;
+import org.tools4j.elara.stream.MessageStream;
 
-public interface MessageStream {
-    int poll(Handler handler);
+public interface TcpConnection extends AutoCloseable {
+    MessageSender sender();
+    MessageStream stream();
+    boolean isConnected();
+    boolean isClosed();
 
-    interface Handler {
-        void onMessage(DirectBuffer message);
+    @Override
+    void close();
+
+    interface ClientConnection extends TcpConnection {
+        @Override
+        ClientMessageStream stream();
+    }
+
+    interface ServerConnection extends TcpConnection {
+        @Override
+        ServerMessageStream stream();
     }
 }

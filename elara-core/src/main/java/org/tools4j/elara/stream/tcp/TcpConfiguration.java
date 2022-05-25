@@ -21,14 +21,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream;
+package org.tools4j.elara.stream.tcp;
 
-import org.agrona.DirectBuffer;
+import org.tools4j.elara.logging.Logger;
 
-public interface MessageStream {
-    int poll(Handler handler);
+public interface TcpConfiguration {
+    Logger.Factory loggerFactory();
 
-    interface Handler {
-        void onMessage(DirectBuffer message);
+    interface ClientConfiguration extends TcpConfiguration {
+        /**
+         * Returns the timeout in milliseconds after which new reconnect attempts are made;
+         * returning zero or a negative value disables reconnect attempts altogether.
+         *
+         * @return reconnect timeout in milliseconds, zero or negative to not attempt at all
+         */
+        long reconnectTimeoutMillis();
     }
+
+    interface ServerConfiguration extends TcpConfiguration {
+        int acceptConnectionsMax();
+        DisconnectPolicy disconnectPolicy();
+        SendingStrategy sendingStrategy();
+
+        enum DisconnectPolicy {
+            DISCONNECT_NEWEST,
+            DISCONNECT_OLDEST
+        }
+
+        enum SendingStrategy {
+            MULTICAST,
+            SINGLE_NEWEST,
+            SINGLE_ROUND_ROBIN
+        }
+    }
+
 }

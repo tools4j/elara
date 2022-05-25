@@ -108,4 +108,50 @@ public interface SendingResult {
             throw new IllegalStateException("Cannot send again after command was successfully sent");
         }
     };
+
+    //FIXME remove below
+    SendingResult DISCONNECTED = new Default() {
+        @Override
+        public Status status() {
+            return Status.DISCONNECTED;
+        }
+
+        @Override
+        public Exception exception() {
+            return null;
+        }
+
+        @Override
+        public SendingResult sendAgainImmediately() {
+            return this;
+        }
+
+        @Override
+        public SendingResult sendAgainAfter(final long time) {
+            throw new IllegalStateException("not supported");
+        }
+    };
+
+    //FIXME remove below
+    SendingResult FAILED = new Default() {
+        @Override
+        public Status status() {
+            return Status.FAILED;
+        }
+
+        @Override
+        public Exception exception() {
+            return null;
+        }
+
+        @Override
+        public SendingResult sendAgainImmediately() {
+            throw new IllegalStateException("not implemented");//FIXME impl
+        }
+
+        @Override
+        public SendingResult sendAgainAfter(final long time) {
+            throw new IllegalStateException("not implemented");//FIXME impl
+        }
+    };
 }
