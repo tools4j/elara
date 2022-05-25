@@ -40,14 +40,14 @@ public interface PublisherApp extends Output {
     @Override
     Ack publish(Event event, boolean replay, int retry, CommandSender loopback);
 
-    default ElaraRunner launch(final MessageStore messageStore) {
-        requireNonNull(messageStore);
-        return launch((Consumer<PublisherAppContext>)context -> context.eventStream(messageStore));
+    default ElaraRunner launch(final MessageStore eventStore) {
+        requireNonNull(eventStore);
+        return launch((Consumer<PublisherAppContext>)context -> context.eventStream(eventStore));
     }
 
-    default ElaraRunner launch(final MessageStore.Poller messageStorePoller) {
-        requireNonNull(messageStorePoller);
-        return launch((Consumer<PublisherAppContext>)context -> context.eventStream(messageStorePoller));
+    default ElaraRunner launch(final MessageStore.Poller eventStorePoller) {
+        requireNonNull(eventStorePoller);
+        return launch((Consumer<PublisherAppContext>)context -> context.eventStream(eventStorePoller));
     }
 
     default ElaraRunner launch(final MessageStream eventStream) {

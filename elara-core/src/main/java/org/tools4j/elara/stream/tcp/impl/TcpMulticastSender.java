@@ -21,14 +21,54 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream;
+package org.tools4j.elara.stream.tcp.impl;
 
-import org.agrona.DirectBuffer;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
-public interface MessageStream {
-    int poll(Handler handler);
+final class TcpMulticastSender extends AbstractTcpSender {
 
-    interface Handler {
-        void onMessage(DirectBuffer message);
+    private final List<TcpSender> senders = new ArrayList<>();
+
+    TcpMulticastSender() {
+        super();
+    }
+
+    void add(final TcpSender sender) {
+
+        senders.add(sender);
+    }
+
+    void removeAll() {
+        senders.clear();
+    }
+
+    @Override
+    public boolean isConnected() {
+        return !senders.isEmpty();
+    }
+
+    @Override
+    protected void write(final ByteBuffer buffer) throws IOException {
+        int size = senders.size();
+        for (int i = 0; i < size; ) {
+            if (write(buffer, senders.get(i))) {
+                i++;
+            } else {
+                senders.remove(i);
+                size--;
+            }
+        }
+    }
+
+    private boolean write(final ByteBuffer buffer, final TcpSender sender) {
+        try {
+            sender.write(buffer);
+            return true;
+        } catch (final IOException e) {
+            return false;
+        }
     }
 }

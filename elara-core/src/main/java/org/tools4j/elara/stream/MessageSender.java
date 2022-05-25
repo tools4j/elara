@@ -37,7 +37,7 @@ import static java.util.Objects.requireNonNull;
  * {@link #sendMessage(DirectBuffer, int, int) sendMessage(..)} methods.  Alternatively the message can be encoded into
  * the sending transport buffer directly as follows:
  * <pre>
- *     try (SendingContext context = sendingEvent()) {
+ *     try (SendingContext context = sendingMessage()) {
  *         int length = context.buffer().putStringAscii(0, "Hello world");
  *         context.send(length);
  *     }
@@ -142,6 +142,7 @@ public interface MessageSender {
         public Buffered() {
             this(new ExpandableDirectByteBuffer(4096));
         }
+
         public Buffered(final MutableDirectBuffer buffer) {
             this.buffer = requireNonNull(buffer);
         }
@@ -200,4 +201,15 @@ public interface MessageSender {
             }
         }
     }
+
+    /**
+     * Provides a sender for disconnected transports.
+     */
+    MessageSender DISCONNECTED = new Buffered(/*FIXME pass some NullBuffer here*/) {
+        @Override
+        public SendingResult sendMessage(final DirectBuffer buffer, final int offset, final int length) {
+            return SendingResult.DISCONNECTED;
+        }
+    };
+
 }

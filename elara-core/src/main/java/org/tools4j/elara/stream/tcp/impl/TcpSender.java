@@ -21,14 +21,34 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream;
+package org.tools4j.elara.stream.tcp.impl;
 
-import org.agrona.DirectBuffer;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 
-public interface MessageStream {
-    int poll(Handler handler);
+import static java.util.Objects.requireNonNull;
 
-    interface Handler {
-        void onMessage(DirectBuffer message);
+final class TcpSender extends AbstractTcpSender implements AutoCloseable {
+
+    private final SocketChannel socketChannel;
+
+    TcpSender(final SocketChannel socketChannel) {
+        this.socketChannel = requireNonNull(socketChannel);
+    }
+
+    @Override
+    public boolean isConnected() {
+        return socketChannel.isConnected();
+    }
+
+    @Override
+    protected void write(final ByteBuffer buffer) throws IOException {
+        socketChannel.write(buffer);
+    }
+
+    @Override
+    public void close() throws Exception {
+        socketChannel.close();
     }
 }
