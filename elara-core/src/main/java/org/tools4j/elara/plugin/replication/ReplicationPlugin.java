@@ -24,7 +24,7 @@
 package org.tools4j.elara.plugin.replication;
 
 import org.tools4j.elara.app.config.AppConfig;
-import org.tools4j.elara.app.config.CoreConfig;
+import org.tools4j.elara.app.config.ProcessorConfig;
 import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
@@ -72,11 +72,11 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
                                        final Mutable replicationState) {
         requireNonNull(appConfig);
         requireNonNull(replicationState);
-        if (!(appConfig instanceof CoreConfig)) {
-            throw new IllegalArgumentException("Plugin requires CoreConfig but found " + appConfig.getClass());
+        if (!(appConfig instanceof ProcessorConfig)) {
+            throw new IllegalArgumentException("Plugin requires CommandProcessorConfig but found " + appConfig.getClass());
         }
-        final CoreConfig coreConfig = (CoreConfig) appConfig;
-        final MessageStore eventStore = coreConfig.eventStore();
+        final ProcessorConfig cmdProcessorConfig = (ProcessorConfig) appConfig;
+        final MessageStore eventStore = cmdProcessorConfig.eventStore();
         final Appender eventStoreAppender = eventStore.appender();
         final EnforcedLeaderEventReceiver enforcedLeaderEventReceiver = new EnforcedLeaderEventReceiver(
                 appConfig.loggerFactory(), appConfig.timeSource(), configuration, replicationState, eventStoreAppender
@@ -114,7 +114,7 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
 
             @Override
             public InterceptableSingletons interceptOrNull(final Singletons singletons) {
-                return new ReplicationInterceptor(singletons, coreConfig, configuration, replicationState);
+                return new ReplicationInterceptor(singletons, appConfig, cmdProcessorConfig, configuration, replicationState);
             }
         };
     }

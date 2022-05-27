@@ -23,11 +23,13 @@
  */
 package org.tools4j.elara.app.type;
 
-import org.tools4j.elara.app.config.CoreConfig;
+import org.tools4j.elara.app.config.AppConfig;
+import org.tools4j.elara.app.config.ProcessorConfig;
+import org.tools4j.elara.app.config.CommandStoreConfig;
 import org.tools4j.elara.app.config.InOutConfig;
 import org.tools4j.elara.app.config.PluginConfig;
 
-public interface AllInOneAppConfig extends CoreConfig, InOutConfig, PluginConfig {
+public interface AllInOneAppConfig extends AppConfig, CommandStoreConfig, ProcessorConfig, InOutConfig, PluginConfig {
     static AllInOneAppContext configure() {
         return AllInOneAppContext.create();
     }

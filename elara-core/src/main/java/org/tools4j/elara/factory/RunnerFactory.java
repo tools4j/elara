@@ -26,9 +26,10 @@ package org.tools4j.elara.factory;
 import org.agrona.concurrent.Agent;
 import org.tools4j.elara.step.AgentStep;
 
+@Deprecated
 public interface RunnerFactory {
     Runnable initStep();
     AgentStep extraStepAlwaysWhenEventsApplied();
     AgentStep extraStepAlways();
-    Agent elaraAgent();
+    Agent agent();
 }

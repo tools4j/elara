@@ -23,6 +23,7 @@
  */
 package org.tools4j.elara.app.type;
 
+import org.agrona.concurrent.Agent;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.StoreAppendingMessageSender;
@@ -74,5 +75,11 @@ final class FeedbackAppContextImpl extends AbstractEventStreamContext<FeedbackAp
             throw new IllegalArgumentException("Command stream must be set");
         }
         super.validate();
+    }
+
+    @Override
+    public Agent createAgent() {
+        populateDefaults().validate();
+        throw new IllegalArgumentException("Implement feedback agent");//FIXME implement feedback agent
     }
 }

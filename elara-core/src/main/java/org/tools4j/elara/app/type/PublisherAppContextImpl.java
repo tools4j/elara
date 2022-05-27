@@ -23,6 +23,7 @@
  */
 package org.tools4j.elara.app.type;
 
+import org.agrona.concurrent.Agent;
 import org.tools4j.elara.app.handler.EventProcessor;
 
 final class PublisherAppContextImpl extends AbstractEventStreamContext<PublisherAppContextImpl> implements PublisherAppContext {
@@ -47,5 +48,11 @@ final class PublisherAppContextImpl extends AbstractEventStreamContext<Publisher
         return this
                 .output(app)
                 .populateDefaults();
+    }
+
+    @Override
+    public Agent createAgent() {
+        populateDefaults().validate();
+        throw new IllegalArgumentException("Implement publisher agent");//FIXME implement publisher agent
     }
 }

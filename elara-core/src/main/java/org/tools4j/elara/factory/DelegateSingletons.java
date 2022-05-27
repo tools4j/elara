@@ -132,8 +132,8 @@ public class DelegateSingletons implements Singletons {
     }
 
     @Override
-    public Agent elaraAgent() {
-        return delegate.elaraAgent();
+    public Agent agent() {
+        return delegate.agent();
     }
 
     @Override

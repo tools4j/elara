@@ -24,7 +24,8 @@
 package org.tools4j.elara.plugin.base;
 
 import org.tools4j.elara.app.config.AppConfig;
-import org.tools4j.elara.app.config.CoreConfig;
+import org.tools4j.elara.app.config.ProcessorConfig;
+import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState.Mutable;
@@ -52,8 +53,8 @@ public enum BasePlugin implements SystemPlugin<Mutable> {
                                            final Mutable baseState) {
         requireNonNull(appConfig);
         requireNonNull(baseState);
-        if (appConfig instanceof CoreConfig) {
-            repairEventStoreIfNeeded((CoreConfig) appConfig);
+        if (appConfig instanceof ProcessorConfig) {
+            repairEventStoreIfNeeded(((ProcessorConfig) appConfig).eventStore(), appConfig.exceptionHandler());
         }
         return () -> baseState;
     }
@@ -77,11 +78,11 @@ public enum BasePlugin implements SystemPlugin<Mutable> {
         BaseState.Mutable baseState();
     }
 
-    private void repairEventStoreIfNeeded(final CoreConfig coreConfig) {
-        final MessageStore eventStore = coreConfig.eventStore();
+    private void repairEventStoreIfNeeded(final MessageStore eventStore,
+                                          final ExceptionHandler exceptionHandler) {
         final EventStoreRepairer eventStoreRepairer = new EventStoreRepairer(eventStore);
         if (eventStoreRepairer.isCorrupted()) {
-            coreConfig.exceptionHandler().handleException("Repairing corrupted event store",
+            exceptionHandler.handleException("Repairing corrupted event store",
                     new IOException("Corrupted event store: " + eventStore));
             eventStoreRepairer.repair();
         }

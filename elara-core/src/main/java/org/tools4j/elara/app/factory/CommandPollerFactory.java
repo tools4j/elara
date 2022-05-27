@@ -21,16 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.app.config;
+package org.tools4j.elara.app.factory;
 
-import org.tools4j.elara.app.handler.CommandProcessor;
-import org.tools4j.elara.app.handler.EventApplier;
-import org.tools4j.elara.store.MessageStore;
+import org.tools4j.elara.step.AgentStep;
 
-public interface CoreConfig extends AppConfig {
-    CommandProcessor commandProcessor();
-    EventApplier eventApplier();
-    CommandPollingMode commandPollingMode();
-    MessageStore commandStore();
-    MessageStore eventStore();
+public interface CommandPollerFactory {
+    AgentStep commandPollerStep();
 }

@@ -60,7 +60,7 @@ public interface AllInOneApp extends CommandProcessor, EventApplier, Output {
         final AllInOneAppContext context = AllInOneAppConfig.configure();
         configurator.accept(context);
         context.populateDefaults(this);
-        return Elara.launch(context, null);//FIXME agent
+        return Elara.launch(context);
     }
 
 }

@@ -23,7 +23,8 @@
  */
 package org.tools4j.elara.plugin.replication;
 
-import org.tools4j.elara.app.config.CoreConfig;
+import org.tools4j.elara.app.config.AppConfig;
+import org.tools4j.elara.app.config.ProcessorConfig;
 import org.tools4j.elara.factory.InterceptableSingletons;
 import org.tools4j.elara.factory.Singletons;
 import org.tools4j.elara.handler.CommandHandler;
@@ -35,16 +36,19 @@ import static java.util.Objects.requireNonNull;
 
 public class ReplicationInterceptor extends InterceptableSingletons {
 
-    private final CoreConfig coreConfig;
+    private final AppConfig appConfig;
+    private final ProcessorConfig cmdProcessorConfig;
     private final Configuration pluginConfig;
     private final ReplicationState replicationState;
 
     public ReplicationInterceptor(final Singletons delegate,
-                                  final CoreConfig coreConfig,
+                                  final AppConfig appConfig,
+                                  final ProcessorConfig cmdProcessorConfig,
                                   final Configuration pluginConfig,
                                   final ReplicationState replicationState) {
         super(delegate);
-        this.coreConfig = requireNonNull(coreConfig);
+        this.appConfig = requireNonNull(appConfig);
+        this.cmdProcessorConfig = requireNonNull(cmdProcessorConfig);
         this.pluginConfig = requireNonNull(pluginConfig);
         this.replicationState = requireNonNull(replicationState);
     }
@@ -52,21 +56,21 @@ public class ReplicationInterceptor extends InterceptableSingletons {
     @Override
     public CommandHandler commandHandler() {
         return new ReplicationCommandHandler(
-                coreConfig.timeSource(),
+                appConfig.timeSource(),
                 pluginConfig,
                 singletons().baseState(),
                 replicationState,
                 new DefaultEventRouter(
-                        coreConfig.timeSource(), coreConfig.eventStore().appender(), singletons().eventHandler()
+                        appConfig.timeSource(), cmdProcessorConfig.eventStore().appender(), singletons().eventHandler()
                 ),
                 singletons().commandProcessor(),
-                coreConfig.exceptionHandler(),
-                coreConfig.duplicateHandler()
+                appConfig.exceptionHandler(),
+                appConfig.duplicateHandler()
         );
     }
 
     @Override
     public AgentStep eventPollerStep() {
-        return new EventPollerStep(coreConfig.eventStore().poller(), singletons().eventHandler());
+        return new EventPollerStep(cmdProcessorConfig.eventStore().poller(), singletons().eventHandler());
     }
 }

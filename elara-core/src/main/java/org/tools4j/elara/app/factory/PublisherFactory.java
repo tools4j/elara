@@ -21,31 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.factory;
+package org.tools4j.elara.app.factory;
 
-import org.tools4j.elara.agent.AllInOneAgent;
-import org.tools4j.elara.app.config.Configuration;
+import org.tools4j.elara.handler.OutputHandler;
+import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.step.AgentStep;
 
-/**
- * Main elara factory to create and wire elara objects.  Singleton object instances are obtained via
- * {@link #singletons()} with the {@link Singletons#extraStepAlways() dutyCycle} containing the
- * {@link AllInOneAgent DutyCycleStep} as central object for
- * {@link org.tools4j.elara.run.Elara Elara} to start the application.
- *
- * @see org.tools4j.elara.run.Elara
- */
-@Deprecated
-public interface ElaraFactory {
-
-    Configuration configuration();
-    Singletons singletons();
-
-    /**
-     * Creates a new elara factory for the provided configuration.
-     * @param configuration the configuration for the application to create
-     * @return a new factory to create and wire elara objects
-     */
-    static ElaraFactory create(final Configuration configuration) {
-        return new DefaultElaraFactory(configuration);
-    }
+public interface PublisherFactory {
+    CommandSender loopbackCommandSender();
+    OutputHandler outputHandler();
+    AgentStep publisherStep();
 }

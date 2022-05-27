@@ -45,6 +45,7 @@ import java.util.function.Supplier;
 
 import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
 
+@Deprecated
 public class DefaultSingletons implements Singletons {
 
     private final RunnerFactory runnerFactory;
@@ -105,8 +106,8 @@ public class DefaultSingletons implements Singletons {
     }
 
     @Override
-    public Agent elaraAgent() {
-        return getOrCreate("elaraAgent", Agent.class, runnerFactory, RunnerFactory::elaraAgent);
+    public Agent agent() {
+        return getOrCreate("elaraAgent", Agent.class, runnerFactory, RunnerFactory::agent);
     }
 
     //InputFactory

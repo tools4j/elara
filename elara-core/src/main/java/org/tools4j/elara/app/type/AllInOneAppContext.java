@@ -24,8 +24,10 @@
 package org.tools4j.elara.app.type;
 
 import org.agrona.concurrent.IdleStrategy;
+import org.tools4j.elara.app.config.AppContext;
 import org.tools4j.elara.app.config.CommandPollingMode;
-import org.tools4j.elara.app.config.CoreContext;
+import org.tools4j.elara.app.config.ProcessorContext;
+import org.tools4j.elara.app.config.CommandStoreContext;
 import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.config.InOutContext;
 import org.tools4j.elara.app.config.PluginContext;
@@ -46,7 +48,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public interface AllInOneAppContext extends AllInOneAppConfig, CoreContext, InOutContext, PluginContext {
+public interface AllInOneAppContext extends AllInOneAppConfig, AppContext, CommandStoreContext, ProcessorContext, InOutContext, PluginContext {
     @Override
     AllInOneAppContext input(Input input);
     @Override
