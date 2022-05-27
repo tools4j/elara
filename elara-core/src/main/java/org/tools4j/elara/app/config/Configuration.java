@@ -39,7 +39,8 @@ import org.tools4j.elara.time.TimeSource;
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
 
-public interface Configuration extends CoreConfig {
+@Deprecated
+public interface Configuration extends AppConfig {
     CommandProcessor commandProcessor();
     EventApplier eventApplier();
     List<Input> inputs();

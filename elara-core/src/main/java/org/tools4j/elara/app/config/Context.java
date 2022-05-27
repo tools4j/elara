@@ -26,6 +26,7 @@ package org.tools4j.elara.app.config;
 import org.agrona.concurrent.IdleStrategy;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.type.AllInOneAppContext;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.input.Input;
@@ -41,7 +42,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public interface Context extends Configuration, CoreContext {
+@Deprecated
+public interface Context extends Configuration, AllInOneAppContext {
     Context commandProcessor(CommandProcessor commandProcessor);
     Context eventApplier(EventApplier eventApplier);
     Context input(Input input);

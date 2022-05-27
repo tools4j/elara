@@ -23,7 +23,9 @@
  */
 package org.tools4j.elara.app.type;
 
+import org.agrona.concurrent.Agent;
 import org.tools4j.elara.app.config.CommandPollingMode;
+import org.tools4j.elara.app.factory.AllInOneAppFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.store.MessageStore;
@@ -134,5 +136,11 @@ final class AllInOneAppContextImpl extends AbstractAppContext<AllInOneAppContext
             throw new IllegalArgumentException("Event log must be set");
         }
         super.validate();
+    }
+
+    @Override
+    public Agent createAgent() {
+        populateDefaults().validate();
+        return new AllInOneAppFactory(this).agent();
     }
 }

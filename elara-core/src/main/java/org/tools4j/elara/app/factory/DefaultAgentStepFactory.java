@@ -21,11 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.factory;
+package org.tools4j.elara.app.factory;
 
-import org.agrona.concurrent.Agent;
-import org.tools4j.elara.agent.CoreAgent;
-import org.tools4j.elara.app.config.Configuration;
+import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
@@ -41,14 +39,15 @@ import static org.tools4j.elara.app.config.ExecutionType.ALWAYS_WHEN_EVENTS_APPL
 import static org.tools4j.elara.app.config.ExecutionType.INIT_ONCE_ONLY;
 import static org.tools4j.elara.step.AgentStep.NO_OP;
 
-public class DefaultRunnerFactory implements RunnerFactory {
+public class DefaultAgentStepFactory implements AgentStepFactory {
 
-    private final Configuration configuration;
-    private final Supplier<? extends Singletons> singletons;
+    private final AppConfig config;
+    private final Supplier<? extends PluginFactory> pluginSingletons;
 
-    public DefaultRunnerFactory(final Configuration configuration, final Supplier<? extends Singletons> singletons) {
-        this.configuration = requireNonNull(configuration);
-        this.singletons = requireNonNull(singletons);
+    public DefaultAgentStepFactory(final AppConfig config,
+                                   final Supplier<? extends PluginFactory> pluginSingletons) {
+        this.config = requireNonNull(config);
+        this.pluginSingletons = requireNonNull(pluginSingletons);
     }
 
     @Override
@@ -66,23 +65,14 @@ public class DefaultRunnerFactory implements RunnerFactory {
         return extraStep(ALWAYS);
     }
 
-    @Override
-    public Agent agent() {
-        final Singletons factory = singletons.get();
-        return new CoreAgent(factory.sequencerStep(), factory.commandPollerStep(), factory.eventPollerStep(),
-                factory.extraStepAlwaysWhenEventsApplied(), factory.extraStepAlways());
-//        return new AllInOneAgent(factory.sequencerStep(), factory.commandPollerStep(), factory.eventPollerStep(),
-//                factory.publisherStep(), factory.extraStepAlwaysWhenEventsApplied(), factory.extraStepAlways());
-    }
-
     private AgentStep extraStep(final ExecutionType executionType) {
-        final Plugin.Configuration[] plugins = singletons.get().plugins();
-        final List<AgentStep> dutyCycleExtraSteps = configuration.dutyCycleExtraSteps(executionType);
+        final Plugin.Configuration[] plugins = pluginSingletons.get().plugins();
+        final List<AgentStep> dutyCycleExtraSteps = config.dutyCycleExtraSteps(executionType);
         if (plugins.length == 0 && dutyCycleExtraSteps.isEmpty()) {
             return NO_OP;
         }
         final List<AgentStep> extraSteps = new ArrayList<>(plugins.length + dutyCycleExtraSteps.size());
-        final BaseState baseState = singletons.get().baseState();
+        final BaseState baseState = pluginSingletons.get().baseState();
         for (final Plugin.Configuration plugin : plugins) {
             extraSteps.add(plugin.step(baseState, executionType));
         }

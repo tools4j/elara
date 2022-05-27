@@ -23,7 +23,6 @@
  */
 package org.tools4j.elara.run;
 
-import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.AgentRunner;
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.Configuration;
@@ -36,22 +35,20 @@ import org.tools4j.elara.factory.ElaraFactory;
 public enum Elara {
     ;
 
+    @Deprecated
     public static ElaraRunner launch(final Context context) {
         return launch((Configuration)context.populateDefaults());
     }
 
-    public static ElaraRunner launch(final Configuration configuration) {
-        return launch(ElaraFactory.create(configuration));
-    }
-
+    @Deprecated
     public static ElaraRunner launch(final ElaraFactory elaraFactory) {
-        return launch(elaraFactory.configuration(), elaraFactory.singletons().elaraAgent());
+        return launch(elaraFactory.configuration());
     }
 
-    public static ElaraRunner launch(final AppConfig appConfig, final Agent agent) {
+    public static ElaraRunner launch(final AppConfig appConfig) {
         appConfig.validate();
-        return ElaraRunner.startOnThread(
-                new AgentRunner(appConfig.idleStrategy(), appConfig.exceptionHandler(), null, agent)
-        );
+        return ElaraRunner.startOnThread(new AgentRunner(
+                appConfig.idleStrategy(), appConfig.exceptionHandler(), null, appConfig.createAgent()
+        ));
     }
 }

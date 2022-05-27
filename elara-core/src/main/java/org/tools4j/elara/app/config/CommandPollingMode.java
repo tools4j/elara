@@ -37,6 +37,7 @@ public enum CommandPollingMode {
     FROM_LAST,
     /** No replay at all, only newly added commands will be polled */
     FROM_END,
+    @Deprecated
     /** No command store is used, commands are passed through directly from input messages */
     NO_STORE;
 

@@ -61,6 +61,6 @@ public interface FeedbackApp extends EventProcessor {
         final FeedbackAppContext context = FeedbackAppConfig.configure();
         configurator.accept(context);
         context.populateDefaults(this);
-        return Elara.launch(context, null);//FIXME agent
+        return Elara.launch(context);
     }
 }

@@ -23,6 +23,7 @@
  */
 package org.tools4j.elara.app.config;
 
+import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.IdleStrategy;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
@@ -43,4 +44,5 @@ public interface AppConfig {
     ThreadFactory threadFactory();
 
     void validate();
+    Agent createAgent();
 }

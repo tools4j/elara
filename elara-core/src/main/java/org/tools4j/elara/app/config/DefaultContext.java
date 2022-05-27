@@ -23,12 +23,16 @@
  */
 package org.tools4j.elara.app.config;
 
+import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.BackoffIdleStrategy;
 import org.agrona.concurrent.IdleStrategy;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.type.AllInOneApp;
+import org.tools4j.elara.app.type.AllInOneAppContext;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
+import org.tools4j.elara.factory.ElaraFactory;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.logging.Logger.Factory;
@@ -51,6 +55,7 @@ import java.util.function.Supplier;
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.logging.OutputStreamLogger.SYSTEM_FACTORY;
 
+@Deprecated
 final class DefaultContext implements Context {
 
     private static final String DEFAULT_THREAD_NAME = "elara";
@@ -296,6 +301,15 @@ final class DefaultContext implements Context {
     }
 
     @Override
+    public AllInOneAppContext populateDefaults(final AllInOneApp app) {
+        return this
+                .commandProcessor(app)
+                .eventApplier(app)
+                .output(app)
+                .populateDefaults();
+    }
+
+    @Override
     public void validate() {
         if (commandProcessor() == null) {
             throw new IllegalArgumentException("Command processor must be set");
@@ -317,4 +331,9 @@ final class DefaultContext implements Context {
         }
     }
 
+    @Override
+    public Agent createAgent() {
+        populateDefaults().validate();
+        return ElaraFactory.create(this).singletons().agent();
+    }
 }

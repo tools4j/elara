@@ -215,8 +215,8 @@ public class MetricsCapturingInterceptor extends InterceptableSingletons {
     }
 
     @Override
-    public Agent elaraAgent() {
-        return counterAgent(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, singletons().elaraAgent());
+    public Agent agent() {
+        return counterAgent(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, singletons().agent());
     }
 
     @Override

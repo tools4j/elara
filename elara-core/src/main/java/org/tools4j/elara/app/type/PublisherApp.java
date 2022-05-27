@@ -59,6 +59,6 @@ public interface PublisherApp extends Output {
         final PublisherAppContext context = PublisherAppConfig.configure();
         configurator.accept(context);
         context.populateDefaults(this);
-        return Elara.launch(context, null);//FIXME agent
+        return Elara.launch(context);
     }
 }
