@@ -282,7 +282,7 @@ public class ReplicatedHashApplicationTest {
     }
 
     private static CommandProcessor commandProcessor(final int serverId, final State appState) {
-        final CommandProcessor p = HashApplication.commandProcessor(appState);
+        final CommandProcessor p = new HashApplication((ModifiableState)appState);
         return p;
 //        return (command, router) -> {
 //            System.out.println(Instant.now() + " server-" + serverId + ": " + command);
@@ -291,7 +291,7 @@ public class ReplicatedHashApplicationTest {
     }
 
     private static EventApplier eventApplier(final int serverId, final ModifiableState appState) {
-        final EventApplier a = HashApplication.eventApplier(appState);
+        final EventApplier a = new HashApplication(appState);
         return a;
 //        return event -> {
 //            System.out.println(Instant.now() + " server-" + serverId + ": " + event);

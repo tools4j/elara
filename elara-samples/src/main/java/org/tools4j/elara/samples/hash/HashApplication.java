@@ -27,16 +27,15 @@ import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.wire.WireType;
 import org.agrona.concurrent.BusySpinIdleStrategy;
 import org.tools4j.elara.app.config.CommandPollingMode;
-import org.tools4j.elara.app.config.Context;
-import org.tools4j.elara.app.handler.CommandProcessor;
-import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.type.AllInOneApp;
 import org.tools4j.elara.chronicle.ChronicleMessageStore;
+import org.tools4j.elara.command.Command;
+import org.tools4j.elara.event.Event;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.plugin.metrics.Configuration;
+import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
-import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.send.CommandSender.SendingContext;
 import org.tools4j.elara.store.InMemoryStore;
@@ -72,7 +71,7 @@ import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_START_TIME;
  *     - State is a simple hash of all event values
  * </pre>
  */
-public class HashApplication {
+public class HashApplication implements AllInOneApp {
 
     public static final int MESSAGE_LENGTH = 5 * Long.BYTES;
     public static final long NULL_VALUE = Long.MIN_VALUE;
@@ -108,30 +107,38 @@ public class HashApplication {
         }
     }
 
-    public static CommandProcessor commandProcessor(final State state) {
-        requireNonNull(state);
-        return (command, router) -> {
-            if (command.isApplication()) {
-                final long commandValue = command.payload().getLong(0);
-                final long eventValue = isEven(state.hash()) ? commandValue : ~commandValue;
-                try (final RoutingContext context = router.routingEvent()) {
-                    for (int pos = 0; pos < MESSAGE_LENGTH; pos += Long.BYTES) {
-                        context.buffer().putLong(pos, eventValue);
-                    }
-                    context.route(MESSAGE_LENGTH);
-                }
-            }
-        };
+    private final ModifiableState modifiableState;
+    private final State state;
+    
+    public HashApplication() {
+        this(new DefaultState());
     }
 
-    public static EventApplier eventApplier(final ModifiableState state) {
-        requireNonNull(state);
-        return event -> {
-            if (event.isApplication()) {
-                final long value = event.payload().getLong(0);
-                state.update(value);
+    public HashApplication(final ModifiableState modifiableState) {
+        this.modifiableState = requireNonNull(modifiableState);
+        this.state = this.modifiableState;
+    }
+    
+    @Override
+    public void onCommand(final Command command, final EventRouter router) {
+        if (command.isApplication()) {
+            final long commandValue = command.payload().getLong(0);
+            final long eventValue = isEven(state.hash()) ? commandValue : ~commandValue;
+            try (final RoutingContext context = router.routingEvent()) {
+                for (int pos = 0; pos < MESSAGE_LENGTH; pos += Long.BYTES) {
+                    context.buffer().putLong(pos, eventValue);
+                }
+                context.route(MESSAGE_LENGTH);
             }
-        };
+        }
+    }
+
+    @Override
+    public void onEvent(final Event event) {
+        if (event.isApplication()) {
+            final long value = event.payload().getLong(0);
+            modifiableState.update(value);
+        }
     }
 
     public static Input input(final AtomicLong input) {
@@ -141,11 +148,11 @@ public class HashApplication {
     public static Input input(final int source, final AtomicLong input) {
         requireNonNull(input);
         final AtomicLong seqNo = new AtomicLong();
-        return receiver -> {
+        return senderSupplier -> {
             final long value = input.getAndSet(NULL_VALUE);
             if (value != NULL_VALUE) {
                 final long seq = seqNo.incrementAndGet();
-                try (final SendingContext context = receiver.senderFor(source, seq).sendingCommand()) {
+                try (final SendingContext context = senderSupplier.senderFor(source, seq).sendingCommand()) {
                     for (int pos = 0; pos < MESSAGE_LENGTH; pos += Long.BYTES) {
                         context.buffer().putLong(pos, value);
                     }
@@ -158,9 +165,7 @@ public class HashApplication {
     }
 
     public static ElaraRunner inMemory(final ModifiableState state, final AtomicLong input) {
-        return Elara.launch(Context.create()
-                .commandProcessor(commandProcessor(state))
-                .eventApplier(eventApplier(state))
+        return new HashApplication(state).launch(config -> config
                 .input(input(input))
                 .commandStore(new InMemoryStore())
                 .eventStore(new InMemoryStore())
@@ -176,9 +181,7 @@ public class HashApplication {
                 .path("build/chronicle/hash/evt.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
-        return Elara.launch(Context.create()
-                .commandProcessor(commandProcessor(state))
-                .eventApplier(eventApplier(state))
+        return new HashApplication(state).launch(config -> config
                 .input(input(input))
                 .commandStore(new ChronicleMessageStore(cq))
                 .eventStore(new ChronicleMessageStore(eq))
@@ -207,9 +210,7 @@ public class HashApplication {
                 .path("build/chronicle/hash-metrics/frq.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
-        return Elara.launch(Context.create()
-                        .commandProcessor(commandProcessor(state))
-                        .eventApplier(eventApplier(state))
+        return new HashApplication(state).launch(config -> config
                         .input(input(input))
                         .commandStore(new ChronicleMessageStore(cq))
                         .eventStore(new ChronicleMessageStore(eq))
@@ -247,10 +248,8 @@ public class HashApplication {
                 .path("build/chronicle/hash-metrics/frq.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
-        return Elara.launch(Context.create()
-                        .commandProcessor(commandProcessor(state))
+        return new HashApplication(state).launch(config -> config
                         .commandPollingMode(commandPollingMode)
-                        .eventApplier(eventApplier(state))
                         .input(input(input))
                         .commandStore(new ChronicleMessageStore(cq))
                         .eventStore(new ChronicleMessageStore(eq))
