@@ -57,7 +57,7 @@ public class MetricsPlugin implements Plugin<MetricsState> {
             @Override
             public AgentStep step(final BaseState baseState, final ExecutionType executionType) {
                 if (configuration.frequencyMetrics().isEmpty() || executionType != ExecutionType.ALWAYS) {
-                    return AgentStep.NO_OP;
+                    return AgentStep.NOOP;
                 }
                 return new FrequencyMetricsWriterStep(appConfig.timeSource(), configuration, pluginState);
             }

@@ -45,6 +45,7 @@ import org.tools4j.elara.time.TimeSource;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.app.config.CommandPollingMode.NO_STORE;
 import static org.tools4j.elara.plugin.metrics.FrequencyMetric.COMMAND_PROCESSED_FREQUENCY;
 import static org.tools4j.elara.plugin.metrics.FrequencyMetric.DUTY_CYCLE_FREQUENCY;
 import static org.tools4j.elara.plugin.metrics.FrequencyMetric.DUTY_CYCLE_PERFORMED_FREQUENCY;
@@ -256,7 +257,7 @@ public class HashApplication implements AllInOneApp {
         return new HashApplication(state).launch(config -> config
                         .commandPollingMode(commandPollingMode)
                         .input(input(input))
-                        .commandStore(new ChronicleMessageStore(cq))
+                        .commandStore(commandPollingMode == NO_STORE ? null : new ChronicleMessageStore(cq))
                         .eventStore(new ChronicleMessageStore(eq))
                         .timeSource(pseudoNanoClock)
                         .idleStrategy(BusySpinIdleStrategy.INSTANCE)

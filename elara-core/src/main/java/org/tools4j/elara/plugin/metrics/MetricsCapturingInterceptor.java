@@ -94,7 +94,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
     private final TimeSource timeSource;
     private final Configuration configuration;
     private final MetricsState state;
-    private final TimeMetricsStoreWriter storeWriter;
+    private final TimeMetricsStoreWriter timeMetricsWriter;
 
     public MetricsCapturingInterceptor(final TimeSource timeSource,
                                        final Configuration configuration,
@@ -102,7 +102,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
         this.timeSource = requireNonNull(timeSource);
         this.configuration = requireNonNull(configuration);
         this.state = requireNonNull(state);
-        this.storeWriter = configuration.timeMetrics().isEmpty() ? null : new TimeMetricsStoreWriter(timeSource, configuration, state);
+        this.timeMetricsWriter = configuration.timeMetrics().isEmpty() ? null : new TimeMetricsStoreWriter(timeSource, configuration, state);
     }
 
     private boolean shouldCapture(final TimeMetric metric) {
@@ -180,7 +180,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
                                   final FrequencyMetric performedMetric,
                                   final AgentStep step) {
         requireNonNull(invokedMetric);
-        requireNonNull(performedMetric);
+        //nullable: performedMetric
         requireNonNull(step);
         if (shouldCapture(STEP_ERROR_FREQUENCY)) {
             if (shouldCapture(invokedMetric) || shouldCapture(performedMetric)) {
@@ -188,7 +188,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
                     try {
                         final int workDone = step.doWork();
                         captureCount(invokedMetric);
-                        if (workDone > 0) {
+                        if (workDone > 0 && performedMetric != null) {
                             captureCount(performedMetric);
                         }
                         return workDone;
@@ -288,12 +288,12 @@ public class MetricsCapturingInterceptor implements Interceptor {
     @Override
     public CommandPollerFactory interceptOrNull(final CommandPollerFactory original) {
         requireNonNull(original);
-        if (shouldCapture(STEP_ERROR_FREQUENCY) || shouldCapture(COMMAND_POLL_FREQUENCY) || shouldCapture(COMMAND_PROCESSED_FREQUENCY)) {
+        if (shouldCapture(STEP_ERROR_FREQUENCY) || shouldCapture(COMMAND_POLL_FREQUENCY)) {
             //noinspection Convert2Lambda
             return new CommandPollerFactory() {
                 @Override
                 public AgentStep commandPollerStep() {
-                    return counterStep(COMMAND_POLL_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, original.commandPollerStep());
+                    return counterStep(COMMAND_POLL_FREQUENCY, null, original.commandPollerStep());
                 }
             };
         }
@@ -304,7 +304,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
     public ProcessorFactory interceptOrNull(final ProcessorFactory original) {
         requireNonNull(original);
         if (shouldCapture(STEP_ERROR_FREQUENCY) ||
-                shouldCapture(EVENT_POLL_FREQUENCY) || shouldCapture(EVENT_POLLED_FREQUENCY) ||
+                shouldCapture(COMMAND_PROCESSED_FREQUENCY) ||
                 shouldCapture(EVENT_POLL_FREQUENCY) || shouldCapture(EVENT_POLLED_FREQUENCY) ||
                 shouldCaptureAnyOf(COMMAND) || //includes COMMAND_POLLING_TIME and PROCESSING_END_TIME shouldCapture(PROCESSING_START_TIME) || shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME)) {
                 shouldCapture(PROCESSING_START_TIME) || shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME) ||
@@ -315,13 +315,17 @@ public class MetricsCapturingInterceptor implements Interceptor {
                 @Override
                 public CommandProcessor commandProcessor() {
                     final CommandProcessor commandProcessor = original.commandProcessor();
-                    if (shouldCapture(PROCESSING_START_TIME) || shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME)) {
+                    if (shouldCapture(COMMAND_PROCESSED_FREQUENCY) ||
+                            shouldCapture(PROCESSING_START_TIME) ||
+                            shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME)
+                    ) {
                         final TimedEventRouter timedEventRouter = shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME) ?
                                 new TimedEventRouter() : null;
                         return (command, router) -> {
                             final EventRouter eventRouter = timedEventRouter != null ? timedEventRouter.init(router) : router;
                             captureTime(PROCESSING_START_TIME);
                             commandProcessor.onCommand(command, eventRouter);
+                            captureCount(COMMAND_PROCESSED_FREQUENCY);
                             //PROCESSING_END_TIME is measured in CommandHandler
                         };
                     }
@@ -336,7 +340,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
                             captureTime(COMMAND_POLLING_TIME);
                             final Result result = commandHandler.onCommand(command);
                             captureTime(PROCESSING_END_TIME);
-                            storeWriter.writeMetrics(command);
+                            timeMetricsWriter.writeMetrics(command);
                             return result;
                         };
                     }
@@ -352,8 +356,8 @@ public class MetricsCapturingInterceptor implements Interceptor {
                             eventApplier.onEvent(event);
                             captureTime(APPLYING_END_TIME);
                             captureCount(EVENT_APPLIED_FREQUENCY);
-                            if (storeWriter != null) {
-                                storeWriter.writeMetrics(EVENT, event);
+                            if (timeMetricsWriter != null) {
+                                timeMetricsWriter.writeMetrics(EVENT, event);
                             }
                         };
                     }
@@ -374,7 +378,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
 
                 @Override
                 public AgentStep eventPollerStep() {
-                    return counterStep(EVENT_POLL_FREQUENCY, EVENT_POLLED_FREQUENCY, original.eventPollerStep());
+                    return counterStep(EVENT_POLL_FREQUENCY, null, original.eventPollerStep());
                 }
             };
         }
@@ -384,8 +388,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
     @Override
     public InOutFactory interceptOrNull(final InOutFactory original) {
         requireNonNull(original);
-        if (shouldCaptureAnyOf(OUTPUT)  //includes OUTPUT_START_TIME and OUTPUT_END_TIME
-        ) {
+        if (shouldCapture(OUTPUT_PUBLISHED_FREQUENCY) || shouldCaptureAnyOf(OUTPUT)) {
             return new InOutFactory() {
                 @Override
                 public Input[] inputs() {
@@ -395,7 +398,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
                 @Override
                 public Output output() {
                     final Output output = original.output();
-                    if (shouldCaptureAnyOf(OUTPUT)) {//includes OUTPUT_START_TIME and OUTPUT_END_TIME
+                    if (shouldCapture(OUTPUT_PUBLISHED_FREQUENCY) || shouldCaptureAnyOf(OUTPUT)) {
                         return (event, replay, retry, loopback) -> {
                             captureTime(OUTPUT_START_TIME);
                             final Ack ack = output.publish(event, replay, retry, loopback);
@@ -404,7 +407,9 @@ public class MetricsCapturingInterceptor implements Interceptor {
                             } else {
                                 captureTime(OUTPUT_END_TIME);
                                 captureCount(OUTPUT_PUBLISHED_FREQUENCY);
-                                storeWriter.writeMetrics(OUTPUT, event);
+                                if (timeMetricsWriter != null) {
+                                    timeMetricsWriter.writeMetrics(OUTPUT, event);
+                                }
                             }
                             return ack;
                         };
@@ -420,13 +425,12 @@ public class MetricsCapturingInterceptor implements Interceptor {
     public PublisherFactory interceptOrNull(final PublisherFactory original) {
         requireNonNull(original);
         if (shouldCapture(STEP_ERROR_FREQUENCY) ||
-                shouldCapture(OUTPUT_POLL_FREQUENCY) || shouldCapture(OUTPUT_POLL_FREQUENCY) ||
-                shouldCapture(OUTPUT_POLLING_TIME)
-        ) {
+                shouldCapture(OUTPUT_POLLING_TIME) ||
+                shouldCapture(OUTPUT_POLL_FREQUENCY)) {
             return new PublisherFactory() {
                 @Override
                 public CommandSender loopbackCommandSender() {
-                    return null;
+                    return original.loopbackCommandSender();
                 }
 
                 @Override
@@ -443,7 +447,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
 
                 @Override
                 public AgentStep publisherStep() {
-                    return counterStep(OUTPUT_POLL_FREQUENCY, OUTPUT_POLL_FREQUENCY, original.publisherStep());
+                    return counterStep(OUTPUT_POLL_FREQUENCY, null, original.publisherStep());
                 }
             };
         }

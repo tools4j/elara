@@ -120,14 +120,15 @@ public class CommittedEventPoller implements Poller {
         if (eventPoller.entryId() == aheadPoller.entryId()) {
             aheadState.reset();
         }
+        int workDone = aheadPoller.poll(aheadState);
         if (aheadState.isCommit()) {
-            return eventPoller.poll(handler);
+            return workDone + eventPoller.poll(handler);
         }
         if (aheadState.isRollback()) {
             eventPoller.moveTo(aheadPoller.entryId());
             aheadState.reset();
         }
-        return aheadPoller.poll(aheadState);
+        return workDone;
     }
 
     @Override

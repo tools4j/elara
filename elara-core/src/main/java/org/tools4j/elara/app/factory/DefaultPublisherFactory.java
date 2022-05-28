@@ -27,6 +27,7 @@ import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.ProcessorConfig;
 import org.tools4j.elara.handler.DefaultOutputHandler;
 import org.tools4j.elara.handler.OutputHandler;
+import org.tools4j.elara.output.Output;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.step.PublisherStep;
@@ -35,6 +36,7 @@ import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.send.SenderSupplier.LOOPBACK_SOURCE;
+import static org.tools4j.elara.step.AgentStep.NOOP;
 import static org.tools4j.elara.step.PublisherStep.DEFAULT_POLLER_ID;
 
 public class DefaultPublisherFactory implements PublisherFactory {
@@ -72,6 +74,9 @@ public class DefaultPublisherFactory implements PublisherFactory {
 
     @Override
     public AgentStep publisherStep() {
+        if (inOutSingletons.get().output() == Output.NOOP) {
+            return NOOP;
+        }
         final OutputHandler outputHandler = publisherSingletons.get().outputHandler();
         try {
             return new PublisherStep(outputHandler, processorConfig.eventStore(), DEFAULT_POLLER_ID);

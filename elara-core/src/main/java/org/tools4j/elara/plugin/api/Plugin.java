@@ -66,7 +66,7 @@ public interface Plugin<P> {
 
         interface Default extends Configuration {
             @Override
-            default AgentStep step(final BaseState baseState, final ExecutionType executionType) {return AgentStep.NO_OP;}
+            default AgentStep step(final BaseState baseState, final ExecutionType executionType) {return AgentStep.NOOP;}
             @Override
             default Input[] inputs(final BaseState baseState) {return NO_INPUTS;}
             @Override

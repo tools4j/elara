@@ -37,7 +37,7 @@ import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.app.config.ExecutionType.ALWAYS;
 import static org.tools4j.elara.app.config.ExecutionType.ALWAYS_WHEN_EVENTS_APPLIED;
 import static org.tools4j.elara.app.config.ExecutionType.INIT_ONCE_ONLY;
-import static org.tools4j.elara.step.AgentStep.NO_OP;
+import static org.tools4j.elara.step.AgentStep.NOOP;
 
 public class DefaultAgentStepFactory implements AgentStepFactory {
 
@@ -69,7 +69,7 @@ public class DefaultAgentStepFactory implements AgentStepFactory {
         final Plugin.Configuration[] plugins = pluginSingletons.get().plugins();
         final List<AgentStep> dutyCycleExtraSteps = config.dutyCycleExtraSteps(executionType);
         if (plugins.length == 0 && dutyCycleExtraSteps.isEmpty()) {
-            return NO_OP;
+            return NOOP;
         }
         final List<AgentStep> extraSteps = new ArrayList<>(plugins.length + dutyCycleExtraSteps.size());
         final BaseState baseState = pluginSingletons.get().baseState();
@@ -79,9 +79,9 @@ public class DefaultAgentStepFactory implements AgentStepFactory {
         for (int i = 0; i < dutyCycleExtraSteps.size(); i++) {
             extraSteps.add(dutyCycleExtraSteps.get(i));
         }
-        extraSteps.removeIf(step -> step == NO_OP);
+        extraSteps.removeIf(step -> step == NOOP);
         if (extraSteps.isEmpty()) {
-            return NO_OP;
+            return NOOP;
         }
         if (extraSteps.size() == 1) {
             return extraSteps.get(0);
