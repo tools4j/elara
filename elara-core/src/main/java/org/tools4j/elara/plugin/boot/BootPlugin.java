@@ -99,7 +99,7 @@ public class BootPlugin implements SystemPlugin<NullState> {
                         return 1;
                     };
                 }
-                return AgentStep.NO_OP;
+                return AgentStep.NOOP;
             }
 
             @Override

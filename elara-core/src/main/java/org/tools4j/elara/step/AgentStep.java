@@ -43,7 +43,7 @@ public interface AgentStep {
     int doWork();
 
     /** Do-nothing step */
-    AgentStep NO_OP = () -> 0;
+    AgentStep NOOP = () -> 0;
 
     static AgentStep composite(final AgentStep... steps) {
         requireNonNull(steps);

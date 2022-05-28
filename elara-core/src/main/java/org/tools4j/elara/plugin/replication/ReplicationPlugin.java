@@ -98,7 +98,7 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
                                 configuration, replicationState, enforcedLeaderEventReceiver, connectionHandler, eventSender
                         );
                     default:
-                        return AgentStep.NO_OP;
+                        return AgentStep.NOOP;
                 }
             }
 

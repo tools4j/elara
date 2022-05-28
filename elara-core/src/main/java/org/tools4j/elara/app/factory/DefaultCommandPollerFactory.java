@@ -60,7 +60,7 @@ public class DefaultCommandPollerFactory implements CommandPollerFactory {
                 commandStorePoller.moveToEnd();
                 break;
             case NO_STORE:
-                return AgentStep.NO_OP;
+                return AgentStep.NOOP;
             default:
                 throw new IllegalArgumentException("Unsupported command polling mode: " + commandStoreConfig.commandPollingMode());
         }
