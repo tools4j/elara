@@ -30,8 +30,6 @@ import org.tools4j.elara.app.factory.Interceptor;
 import org.tools4j.elara.app.factory.PluginFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
-import org.tools4j.elara.factory.InterceptableSingletons;
-import org.tools4j.elara.factory.Singletons;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState;
@@ -117,11 +115,6 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
             @Override
             public Interceptor interceptor(final PluginFactory pluginSingletons) {
                 return new ReplicationInterceptor(appConfig, processorConfig, configuration, pluginSingletons, replicationState);
-            }
-
-            @Override
-            public InterceptableSingletons interceptOrNull(final Singletons singletons) {
-                return new ReplicationInterceptedSingletons(singletons, appConfig, processorConfig, configuration, replicationState);
             }
         };
     }

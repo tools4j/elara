@@ -27,8 +27,6 @@ import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.factory.Interceptor;
 import org.tools4j.elara.app.factory.PluginFactory;
-import org.tools4j.elara.factory.InterceptableSingletons;
-import org.tools4j.elara.factory.Singletons;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.step.AgentStep;
@@ -67,11 +65,6 @@ public class MetricsPlugin implements Plugin<MetricsState> {
             @Override
             public Interceptor interceptor(final PluginFactory pluginSingletons) {
                 return new MetricsCapturingInterceptor(appConfig.timeSource(), configuration, pluginState);
-            }
-
-            @Override
-            public InterceptableSingletons interceptOrNull(final Singletons singletons) {
-                return new MetricsCapturingIntercept(singletons, appConfig.timeSource(), configuration, pluginState);
             }
         };
     }

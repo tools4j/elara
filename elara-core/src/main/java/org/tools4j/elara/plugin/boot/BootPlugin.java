@@ -29,8 +29,6 @@ import org.tools4j.elara.app.factory.Interceptor;
 import org.tools4j.elara.app.factory.PluginFactory;
 import org.tools4j.elara.app.factory.SequencerFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
-import org.tools4j.elara.factory.InterceptableSingletons;
-import org.tools4j.elara.factory.Singletons;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.input.SimpleSequenceGenerator;
 import org.tools4j.elara.output.Output;
@@ -76,7 +74,6 @@ public class BootPlugin implements SystemPlugin<NullState> {
         requireNonNull(appConfig);
         requireNonNull(pluginState);
         return new Configuration.Default() {
-            Singletons singletons;
             SequencerFactory sequencerFactory;
 
             @Override
@@ -91,19 +88,11 @@ public class BootPlugin implements SystemPlugin<NullState> {
             }
 
             @Override
-            public InterceptableSingletons interceptOrNull(final Singletons singletons) {
-                this.singletons = requireNonNull(singletons);
-                return null;
-            }
-
-            @Override
             public AgentStep step(final BaseState baseState, final ExecutionType executionType) {
                 if (executionType == ExecutionType.INIT_ONCE_ONLY) {
                     return () -> {
                         if (sequencerFactory != null) {
                             appendAppInitStartCommand(sequencerFactory.senderSupplier());
-                        } else if (singletons != null) {
-                            appendAppInitStartCommand(singletons.senderSupplier());
                         } else {
                             throw new IllegalStateException("No factory available for sender supplier");
                         }
