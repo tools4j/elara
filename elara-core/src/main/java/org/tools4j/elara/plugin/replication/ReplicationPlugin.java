@@ -24,8 +24,10 @@
 package org.tools4j.elara.plugin.replication;
 
 import org.tools4j.elara.app.config.AppConfig;
-import org.tools4j.elara.app.config.ProcessorConfig;
 import org.tools4j.elara.app.config.ExecutionType;
+import org.tools4j.elara.app.config.ProcessorConfig;
+import org.tools4j.elara.app.factory.Interceptor;
+import org.tools4j.elara.app.factory.PluginFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.factory.InterceptableSingletons;
@@ -73,10 +75,10 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
         requireNonNull(appConfig);
         requireNonNull(replicationState);
         if (!(appConfig instanceof ProcessorConfig)) {
-            throw new IllegalArgumentException("Plugin requires CommandProcessorConfig but found " + appConfig.getClass());
+            throw new IllegalArgumentException("Plugin requires ProcessorConfig but found " + appConfig.getClass());
         }
-        final ProcessorConfig cmdProcessorConfig = (ProcessorConfig) appConfig;
-        final MessageStore eventStore = cmdProcessorConfig.eventStore();
+        final ProcessorConfig processorConfig = (ProcessorConfig) appConfig;
+        final MessageStore eventStore = processorConfig.eventStore();
         final Appender eventStoreAppender = eventStore.appender();
         final EnforcedLeaderEventReceiver enforcedLeaderEventReceiver = new EnforcedLeaderEventReceiver(
                 appConfig.loggerFactory(), appConfig.timeSource(), configuration, replicationState, eventStoreAppender
@@ -113,8 +115,13 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
             }
 
             @Override
+            public Interceptor interceptor(final PluginFactory pluginSingletons) {
+                return new ReplicationInterceptor(appConfig, processorConfig, configuration, pluginSingletons, replicationState);
+            }
+
+            @Override
             public InterceptableSingletons interceptOrNull(final Singletons singletons) {
-                return new ReplicationInterceptor(singletons, appConfig, cmdProcessorConfig, configuration, replicationState);
+                return new ReplicationInterceptedSingletons(singletons, appConfig, processorConfig, configuration, replicationState);
             }
         };
     }

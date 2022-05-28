@@ -37,6 +37,7 @@ import org.tools4j.elara.plugin.metrics.Configuration;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.run.ElaraRunner;
+import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.CommandSender.SendingContext;
 import org.tools4j.elara.store.InMemoryStore;
 import org.tools4j.elara.time.TimeSource;
@@ -141,6 +142,12 @@ public class HashApplication implements AllInOneApp {
         }
     }
 
+    @Override
+    public Ack publish(final Event event, final boolean replay, final int retry, final CommandSender loopback) {
+        /* trigger capturing of output metrics approximately every second time */
+        return (event.payload().getLong(0) & 0x1) == 0 ? Ack.COMMIT : Ack.IGNORED;
+    }
+
     public static Input input(final AtomicLong input) {
         return input(DEFAULT_SOURCE, input);
     }
@@ -214,8 +221,6 @@ public class HashApplication implements AllInOneApp {
                         .input(input(input))
                         .commandStore(new ChronicleMessageStore(cq))
                         .eventStore(new ChronicleMessageStore(eq))
-                        /* trigger capturing of output metrics approximately every second time */
-                        .output((event, replay, retry, loopback) -> (event.payload().getLong(0) & 0x1) == 0 ? Ack.COMMIT : Ack.IGNORED)
                         .timeSource(pseudoNanoClock)
                         .idleStrategy(BusySpinIdleStrategy.INSTANCE)
                         .plugin(Plugins.metricsPlugin(Configuration.configure()
@@ -253,8 +258,6 @@ public class HashApplication implements AllInOneApp {
                         .input(input(input))
                         .commandStore(new ChronicleMessageStore(cq))
                         .eventStore(new ChronicleMessageStore(eq))
-                        /* trigger capturing of output metrics approximately every second time */
-                        .output((event, replay, retry, loopback) -> (event.payload().getLong(0) & 0x1) == 0 ? Ack.COMMIT : Ack.IGNORED)
                         .timeSource(pseudoNanoClock)
                         .idleStrategy(BusySpinIdleStrategy.INSTANCE)
                         .plugin(Plugins.metricsPlugin(Configuration.configure()

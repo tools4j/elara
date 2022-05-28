@@ -24,6 +24,7 @@
 package org.tools4j.elara.app.factory;
 
 import org.agrona.collections.Object2ObjectHashMap;
+import org.agrona.concurrent.Agent;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.handler.CommandHandler;
@@ -57,6 +58,18 @@ final class Singletons {
             instanceByName.put(name, value = factoryMethod.apply(factoryInstance));
         }
         return type.cast(value);
+    }
+
+    static AppFactory create(final AppFactory factory) {
+        requireNonNull(factory);
+        final Singletons singletons = new Singletons();
+        //noinspection Convert2Lambda
+        return new AppFactory() {
+            @Override
+            public Agent agent() {
+                return singletons.getOrCreate("agent", Agent.class, factory, AppFactory::agent);
+            }
+        };
     }
 
     static SequencerFactory create(final SequencerFactory factory) {

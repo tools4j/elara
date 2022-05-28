@@ -31,6 +31,7 @@ import org.tools4j.elara.plugin.api.Plugin.Configuration;
  * 
  * @see org.tools4j.elara.plugin.api.Plugin.Configuration#interceptOrNull(Singletons)
  */
+@Deprecated
 public class InterceptableSingletons extends DelegateSingletons {
 
     public InterceptableSingletons(final Singletons delegate) {
