@@ -25,6 +25,9 @@ package org.tools4j.elara.plugin.boot;
 
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.ExecutionType;
+import org.tools4j.elara.app.factory.Interceptor;
+import org.tools4j.elara.app.factory.PluginFactory;
+import org.tools4j.elara.app.factory.SequencerFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.factory.InterceptableSingletons;
 import org.tools4j.elara.factory.Singletons;
@@ -74,6 +77,18 @@ public class BootPlugin implements SystemPlugin<NullState> {
         requireNonNull(pluginState);
         return new Configuration.Default() {
             Singletons singletons;
+            SequencerFactory sequencerFactory;
+
+            @Override
+            public Interceptor interceptor(final PluginFactory pluginSingletons) {
+                return new Interceptor() {
+                    @Override
+                    public SequencerFactory interceptOrNull(final SequencerFactory original) {
+                        sequencerFactory = original;
+                        return null;
+                    }
+                };
+            }
 
             @Override
             public InterceptableSingletons interceptOrNull(final Singletons singletons) {
@@ -85,7 +100,13 @@ public class BootPlugin implements SystemPlugin<NullState> {
             public AgentStep step(final BaseState baseState, final ExecutionType executionType) {
                 if (executionType == ExecutionType.INIT_ONCE_ONLY) {
                     return () -> {
-                        appendAppInitStartCommand(singletons.senderSupplier());
+                        if (sequencerFactory != null) {
+                            appendAppInitStartCommand(sequencerFactory.senderSupplier());
+                        } else if (singletons != null) {
+                            appendAppInitStartCommand(singletons.senderSupplier());
+                        } else {
+                            throw new IllegalStateException("No factory available for sender supplier");
+                        }
                         return 1;
                     };
                 }

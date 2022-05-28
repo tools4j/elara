@@ -25,6 +25,8 @@ package org.tools4j.elara.plugin.api;
 
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.ExecutionType;
+import org.tools4j.elara.app.factory.Interceptor;
+import org.tools4j.elara.app.factory.PluginFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.factory.InterceptableSingletons;
@@ -62,6 +64,8 @@ public interface Plugin<P> {
         Output output(BaseState baseState);
         CommandProcessor commandProcessor(BaseState baseState);
         EventApplier eventApplier(BaseState.Mutable baseState);
+        Interceptor interceptor(PluginFactory pluginSingletons);
+        @Deprecated
         InterceptableSingletons interceptOrNull(Singletons singletons);
 
         interface Default extends Configuration {
@@ -75,6 +79,8 @@ public interface Plugin<P> {
             default CommandProcessor commandProcessor(final BaseState baseState) {return CommandProcessor.NOOP;}
             @Override
             default EventApplier eventApplier(final Mutable baseState) {return EventApplier.NOOP;}
+            @Override
+            default Interceptor interceptor(final PluginFactory pluginSingletons) {return Interceptor.NOOP;}
             @Override
             default InterceptableSingletons interceptOrNull(Singletons singletons) {
                 return null;

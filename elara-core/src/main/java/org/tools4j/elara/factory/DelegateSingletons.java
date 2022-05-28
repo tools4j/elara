@@ -39,6 +39,7 @@ import org.tools4j.elara.step.AgentStep;
 
 import static java.util.Objects.requireNonNull;
 
+@Deprecated
 public class DelegateSingletons implements Singletons {
 
     private final Singletons delegate;

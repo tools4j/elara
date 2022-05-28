@@ -24,17 +24,13 @@
 package org.tools4j.elara.samples.bank;
 
 import org.agrona.DirectBuffer;
-import org.tools4j.elara.app.config.Context;
-import org.tools4j.elara.app.handler.CommandProcessor;
-import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.type.AllInOneApp;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.route.EventRouter;
-import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.samples.bank.actor.Accountant;
 import org.tools4j.elara.samples.bank.actor.Teller;
@@ -51,15 +47,13 @@ import java.util.Queue;
 
 import static java.util.Objects.requireNonNull;
 
-public class BankApplication {
+public class BankApplication implements AllInOneApp {
 
     private static final int SOURCE = 666;
     private final Bank.Mutable bank = new Bank.Default();
     private final Teller teller = new Teller(bank);
     private final Accountant accountant = new Accountant(bank);
 
-    private final CommandProcessor commandProcessor = this::process;
-    private final EventApplier eventApplier = this::apply;
     private final DuplicateHandler duplicateHandler = command -> {
         System.out.println("-----------------------------------------------------------");
         System.out.println("skipping: " + command + ", payload=" + payloadFor(command));
@@ -82,16 +76,12 @@ public class BankApplication {
     public ElaraRunner launch(final Input input,
                               final MessageStore commandStore,
                               final MessageStore eventStore) {
-        return Elara.launch(
-                Context.create()
-                        .commandProcessor(commandProcessor)
-                        .eventApplier(eventApplier)
-                        .input(input)
-                        .output((event, replay, retry, loopback) -> publish(event, replay, retry, loopback))
-                        .commandStore(commandStore)
-                        .eventStore(eventStore)
-                        .duplicateHandler(duplicateHandler)
-                        .plugin(Plugins.bootPlugin())
+        return launch(config -> config
+                .input(input)
+                .commandStore(commandStore)
+                .eventStore(eventStore)
+                .duplicateHandler(duplicateHandler)
+                .plugin(Plugins.bootPlugin())
         );
     }
 
@@ -99,13 +89,15 @@ public class BankApplication {
         System.out.println("===========================================================");
     }
 
-    private void process(final Command command, final EventRouter router) {
+    @Override
+    public void onCommand(final Command command, final EventRouter router) {
         System.out.println("-----------------------------------------------------------");
         System.out.println("processing: " + command + ", payload=" + payloadFor(command));
         teller.onCommand(command, router);
     }
 
-    private void apply(final Event event) {
+    @Override
+    public void onEvent(final Event event) {
         System.out.println("applying: " + event + ", payload=" + payloadFor(event));
         accountant.onEvent(event);
         printBankAccounts(bank);
@@ -115,12 +107,11 @@ public class BankApplication {
         System.out.println("bank accounts:");
         for (final String account : bank.accounts()) {
             System.out.println("..." + account + ":\tbalance=" + bank.account(account).balance());
-
         }
-
     }
 
-    private Ack publish(final Event event, final boolean replay, final int retry, final CommandSender loopback) {
+    @Override
+    public Ack publish(final Event event, final boolean replay, final int retry, final CommandSender loopback) {
         System.out.println("published: " + event + ", replay=" + replay + ", retry=" + retry + ", payload=" + payloadFor(event));
         return Ack.COMMIT;
     }

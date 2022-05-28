@@ -27,22 +27,15 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.UnsafeBuffer;
-import org.tools4j.elara.app.factory.AgentStepFactory;
-import org.tools4j.elara.app.factory.AppFactory;
-import org.tools4j.elara.app.factory.CommandPollerFactory;
-import org.tools4j.elara.app.factory.InOutFactory;
-import org.tools4j.elara.app.factory.Interceptor;
-import org.tools4j.elara.app.factory.ProcessorFactory;
-import org.tools4j.elara.app.factory.PublisherFactory;
-import org.tools4j.elara.app.factory.SequencerFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.command.CommandType;
+import org.tools4j.elara.factory.InterceptableSingletons;
+import org.tools4j.elara.factory.Singletons;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.handler.OutputHandler;
-import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
@@ -89,16 +82,19 @@ import static org.tools4j.elara.plugin.metrics.TimeMetric.Target.COMMAND;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.Target.EVENT;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.Target.OUTPUT;
 
-public class MetricsCapturingInterceptor implements Interceptor {
+@Deprecated
+public class MetricsCapturingIntercept extends InterceptableSingletons {
 
     private final TimeSource timeSource;
     private final Configuration configuration;
     private final MetricsState state;
     private final TimeMetricsStoreWriter storeWriter;
 
-    public MetricsCapturingInterceptor(final TimeSource timeSource,
-                                       final Configuration configuration,
-                                       final MetricsState state) {
+    public MetricsCapturingIntercept(final Singletons delegate,
+                                     final TimeSource timeSource,
+                                     final Configuration configuration,
+                                     final MetricsState state) {
+        super(delegate);
         this.timeSource = requireNonNull(timeSource);
         this.configuration = requireNonNull(configuration);
         this.state = requireNonNull(state);
@@ -138,7 +134,6 @@ public class MetricsCapturingInterceptor implements Interceptor {
         }
     }
 
-    @SuppressWarnings("SameParameterValue")
     private Agent counterAgent(final FrequencyMetric invokedMetric,
                                final FrequencyMetric performedMetric,
                                final Agent agent) {
@@ -221,233 +216,134 @@ public class MetricsCapturingInterceptor implements Interceptor {
     }
 
     @Override
-    public AppFactory interceptOrNull(final AppFactory original) {
-        requireNonNull(original);
-        if (shouldCapture(DUTY_CYCLE_FREQUENCY) || shouldCapture(DUTY_CYCLE_PERFORMED_FREQUENCY)) {
-            //noinspection Convert2Lambda
-            return new AppFactory() {
-                @Override
-                public Agent agent() {
-                    return counterAgent(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, original.agent());
-                }
-            };
-        }
-        return null;
+    public Agent agent() {
+        return counterAgent(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, singletons().agent());
     }
 
     @Override
-    public AgentStepFactory interceptOrNull(final AgentStepFactory original) {
-        requireNonNull(original);
-        if (shouldCapture(STEP_ERROR_FREQUENCY) || shouldCapture(EXTRA_STEP_INVOCATION_FREQUENCY) || shouldCapture(EXTRA_STEP_PERFORMED_FREQUENCY)) {
-            return new AgentStepFactory() {
-                @Override
-                public Runnable initStep() {
-                    return original.initStep();
-                }
-
-                @Override
-                public AgentStep extraStepAlwaysWhenEventsApplied() {
-                    return counterStep(EXTRA_STEP_INVOCATION_FREQUENCY, EXTRA_STEP_PERFORMED_FREQUENCY, original.extraStepAlwaysWhenEventsApplied());
-                }
-
-                @Override
-                public AgentStep extraStepAlways() {
-                    return counterStep(EXTRA_STEP_INVOCATION_FREQUENCY, EXTRA_STEP_PERFORMED_FREQUENCY, original.extraStepAlways());
-                }
-            };
-        }
-        return null;
+    public AgentStep sequencerStep() {
+        return counterStep(INPUTS_POLL_FREQUENCY, INPUT_RECEIVED_FREQUENCY, singletons().sequencerStep());
     }
 
     @Override
-    public SequencerFactory interceptOrNull(final SequencerFactory original) {
-        requireNonNull(original);
-        if (shouldCapture(STEP_ERROR_FREQUENCY) ||
-                shouldCapture(INPUTS_POLL_FREQUENCY) || shouldCapture(INPUT_RECEIVED_FREQUENCY) ||
-                shouldCapture(INPUT_SENDING_TIME) || shouldCapture(INPUT_POLLING_TIME) || shouldCapture(COMMAND_APPENDING_TIME)
-        ) {
-            return new SequencerFactory() {
-                @Override
-                public SenderSupplier senderSupplier() {
-                    final SenderSupplier senderSupplier = original.senderSupplier();
-                    if (shouldCapture(INPUT_SENDING_TIME) || shouldCapture(INPUT_POLLING_TIME) || shouldCapture(COMMAND_APPENDING_TIME)) {
-                        return timedSenderSupplier(senderSupplier);
-                    }
-                    return senderSupplier;
-                }
-
-                @Override
-                public AgentStep sequencerStep() {
-                    return counterStep(INPUTS_POLL_FREQUENCY, INPUT_RECEIVED_FREQUENCY, original.sequencerStep());
-                }
-            };
-        }
-        return null;
+    public AgentStep commandPollerStep() {
+        return counterStep(COMMAND_POLL_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, singletons().commandPollerStep());
     }
 
     @Override
-    public CommandPollerFactory interceptOrNull(final CommandPollerFactory original) {
-        requireNonNull(original);
-        if (shouldCapture(STEP_ERROR_FREQUENCY) || shouldCapture(COMMAND_POLL_FREQUENCY) || shouldCapture(COMMAND_PROCESSED_FREQUENCY)) {
-            //noinspection Convert2Lambda
-            return new CommandPollerFactory() {
-                @Override
-                public AgentStep commandPollerStep() {
-                    return counterStep(COMMAND_POLL_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, original.commandPollerStep());
-                }
-            };
-        }
-        return null;
+    public AgentStep eventPollerStep() {
+        return counterStep(EVENT_POLL_FREQUENCY, EVENT_POLLED_FREQUENCY, singletons().eventPollerStep());
     }
 
     @Override
-    public ProcessorFactory interceptOrNull(final ProcessorFactory original) {
-        requireNonNull(original);
-        if (shouldCapture(STEP_ERROR_FREQUENCY) ||
-                shouldCapture(EVENT_POLL_FREQUENCY) || shouldCapture(EVENT_POLLED_FREQUENCY) ||
-                shouldCapture(EVENT_POLL_FREQUENCY) || shouldCapture(EVENT_POLLED_FREQUENCY) ||
-                shouldCaptureAnyOf(COMMAND) || //includes COMMAND_POLLING_TIME and PROCESSING_END_TIME shouldCapture(PROCESSING_START_TIME) || shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME)) {
-                shouldCapture(PROCESSING_START_TIME) || shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME) ||
-                shouldCapture(EVENT_APPLIED_FREQUENCY) || shouldCaptureAnyOf(EVENT) || //includes APPLYING_START_TIME and APPLYING_END_TIME
-                shouldCapture(EVENT_POLLING_TIME)
-        ) {
-            return new ProcessorFactory() {
-                @Override
-                public CommandProcessor commandProcessor() {
-                    final CommandProcessor commandProcessor = original.commandProcessor();
-                    if (shouldCapture(PROCESSING_START_TIME) || shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME)) {
-                        final TimedEventRouter timedEventRouter = shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME) ?
-                                new TimedEventRouter() : null;
-                        return (command, router) -> {
-                            final EventRouter eventRouter = timedEventRouter != null ? timedEventRouter.init(router) : router;
-                            captureTime(PROCESSING_START_TIME);
-                            commandProcessor.onCommand(command, eventRouter);
-                            //PROCESSING_END_TIME is measured in CommandHandler
-                        };
-                    }
-                    return commandProcessor;
-                }
-
-                @Override
-                public CommandHandler commandHandler() {
-                    final CommandHandler commandHandler = original.commandHandler();
-                    if (shouldCaptureAnyOf(COMMAND)) {//includes COMMAND_POLLING_TIME and PROCESSING_END_TIME
-                        return command -> {
-                            captureTime(COMMAND_POLLING_TIME);
-                            final Result result = commandHandler.onCommand(command);
-                            captureTime(PROCESSING_END_TIME);
-                            storeWriter.writeMetrics(command);
-                            return result;
-                        };
-                    }
-                    return commandHandler;
-                }
-
-                @Override
-                public EventApplier eventApplier() {
-                    final EventApplier eventApplier = original.eventApplier();
-                    if (shouldCapture(EVENT_APPLIED_FREQUENCY) || shouldCaptureAnyOf(EVENT)) {//includes APPLYING_START_TIME and APPLYING_END_TIME
-                        return event -> {
-                            captureTime(APPLYING_START_TIME);
-                            eventApplier.onEvent(event);
-                            captureTime(APPLYING_END_TIME);
-                            captureCount(EVENT_APPLIED_FREQUENCY);
-                            if (storeWriter != null) {
-                                storeWriter.writeMetrics(EVENT, event);
-                            }
-                        };
-                    }
-                    return eventApplier;
-                }
-
-                @Override
-                public EventHandler eventHandler() {
-                    final EventHandler eventHandler = original.eventHandler();
-                    if (shouldCapture(EVENT_POLLING_TIME)) {
-                        return event -> {
-                            captureTime(EVENT_POLLING_TIME);
-                            eventHandler.onEvent(event);
-                        };
-                    }
-                    return eventHandler;
-                }
-
-                @Override
-                public AgentStep eventPollerStep() {
-                    return counterStep(EVENT_POLL_FREQUENCY, EVENT_POLLED_FREQUENCY, original.eventPollerStep());
-                }
-            };
-        }
-        return null;
+    public AgentStep publisherStep() {
+        return counterStep(OUTPUT_POLL_FREQUENCY, OUTPUT_POLL_FREQUENCY, singletons().publisherStep());
     }
 
     @Override
-    public InOutFactory interceptOrNull(final InOutFactory original) {
-        requireNonNull(original);
-        if (shouldCaptureAnyOf(OUTPUT)  //includes OUTPUT_START_TIME and OUTPUT_END_TIME
-        ) {
-            return new InOutFactory() {
-                @Override
-                public Input[] inputs() {
-                    return original.inputs();//TODO no interception here?
-                }
-
-                @Override
-                public Output output() {
-                    final Output output = original.output();
-                    if (shouldCaptureAnyOf(OUTPUT)) {//includes OUTPUT_START_TIME and OUTPUT_END_TIME
-                        return (event, replay, retry, loopback) -> {
-                            captureTime(OUTPUT_START_TIME);
-                            final Ack ack = output.publish(event, replay, retry, loopback);
-                            if (ack == Ack.IGNORED) {
-                                state.clear(OUTPUT_START_TIME);
-                            } else {
-                                captureTime(OUTPUT_END_TIME);
-                                captureCount(OUTPUT_PUBLISHED_FREQUENCY);
-                                storeWriter.writeMetrics(OUTPUT, event);
-                            }
-                            return ack;
-                        };
-                    }
-                    return output;
-                }
-            };
-        }
-        return null;
+    public AgentStep extraStepAlwaysWhenEventsApplied() {
+        return counterStep(EXTRA_STEP_INVOCATION_FREQUENCY, EXTRA_STEP_PERFORMED_FREQUENCY, singletons().extraStepAlwaysWhenEventsApplied());
     }
 
     @Override
-    public PublisherFactory interceptOrNull(final PublisherFactory original) {
-        requireNonNull(original);
-        if (shouldCapture(STEP_ERROR_FREQUENCY) ||
-                shouldCapture(OUTPUT_POLL_FREQUENCY) || shouldCapture(OUTPUT_POLL_FREQUENCY) ||
-                shouldCapture(OUTPUT_POLLING_TIME)
-        ) {
-            return new PublisherFactory() {
-                @Override
-                public CommandSender loopbackCommandSender() {
-                    return null;
-                }
+    public SenderSupplier senderSupplier() {
+        final SenderSupplier senderSupplier = requireNonNull(singletons().senderSupplier());
+        if (shouldCapture(INPUT_SENDING_TIME) || shouldCapture(INPUT_POLLING_TIME) || shouldCapture(COMMAND_APPENDING_TIME)) {
+            return timedSenderSupplier(senderSupplier);
+        }
+        return senderSupplier;
+    }
 
-                @Override
-                public OutputHandler outputHandler() {
-                    final OutputHandler outputHandler = original.outputHandler();
-                    if (shouldCapture(OUTPUT_POLLING_TIME)) {
-                        return (event, replay, retry) -> {
-                            captureTime(OUTPUT_POLLING_TIME);
-                            return outputHandler.publish(event, replay, retry);
-                        };
-                    }
-                    return outputHandler;
-                }
+    @Override
+    public CommandHandler commandHandler() {
+        final CommandHandler commandHandler = requireNonNull(singletons().commandHandler());
+        if (shouldCaptureAnyOf(COMMAND)) {//includes COMMAND_POLLING_TIME and PROCESSING_END_TIME
+            return command -> {
+                captureTime(COMMAND_POLLING_TIME);
+                final Result result = commandHandler.onCommand(command);
+                captureTime(PROCESSING_END_TIME);
+                storeWriter.writeMetrics(command);
+                return result;
+            };
+        }
+        return commandHandler;
+    }
 
-                @Override
-                public AgentStep publisherStep() {
-                    return counterStep(OUTPUT_POLL_FREQUENCY, OUTPUT_POLL_FREQUENCY, original.publisherStep());
+    @Override
+    public CommandProcessor commandProcessor() {
+        final CommandProcessor commandProcessor = requireNonNull(singletons().commandProcessor());
+        if (shouldCapture(PROCESSING_START_TIME) || shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME)) {
+            final TimedEventRouter timedEventRouter = shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME) ?
+                    new TimedEventRouter() : null;
+            return (command, router) -> {
+                final EventRouter eventRouter = timedEventRouter != null ? timedEventRouter.init(router) : router;
+                captureTime(PROCESSING_START_TIME);
+                commandProcessor.onCommand(command, eventRouter);
+                //PROCESSING_END_TIME is measured in CommandHandler
+            };
+        }
+        return commandProcessor;
+    }
+
+    @Override
+    public EventApplier eventApplier() {
+        final EventApplier eventApplier = requireNonNull(singletons().eventApplier());
+        if (shouldCapture(EVENT_APPLIED_FREQUENCY) || shouldCaptureAnyOf(EVENT)) {//includes APPLYING_START_TIME and APPLYING_END_TIME
+            return event -> {
+                captureTime(APPLYING_START_TIME);
+                eventApplier.onEvent(event);
+                captureTime(APPLYING_END_TIME);
+                captureCount(EVENT_APPLIED_FREQUENCY);
+                if (storeWriter != null) {
+                    storeWriter.writeMetrics(EVENT, event);
                 }
             };
         }
-        return null;
+        return eventApplier;
+    }
+
+    @Override
+    public EventHandler eventHandler() {
+        final EventHandler eventHandler = requireNonNull(singletons().eventHandler());
+        if (shouldCapture(EVENT_POLLING_TIME)) {
+            return event -> {
+                captureTime(EVENT_POLLING_TIME);
+                eventHandler.onEvent(event);
+            };
+        }
+        return eventHandler;
+    }
+
+    @Override
+    public OutputHandler outputHandler() {
+        final OutputHandler outputHandler = requireNonNull(singletons().outputHandler());
+        if (shouldCapture(OUTPUT_POLLING_TIME)) {
+            return (event, replay, retry) -> {
+                captureTime(OUTPUT_POLLING_TIME);
+                return outputHandler.publish(event, replay, retry);
+            };
+        }
+        return outputHandler;
+    }
+
+    @Override
+    public Output output() {
+        final Output output = requireNonNull(singletons().output());
+        if (shouldCaptureAnyOf(OUTPUT)) {//includes OUTPUT_START_TIME and OUTPUT_END_TIME
+            return (event, replay, retry, loopback) -> {
+                captureTime(OUTPUT_START_TIME);
+                final Ack ack = output.publish(event, replay, retry, loopback);
+                if (ack == Ack.IGNORED) {
+                    state.clear(OUTPUT_START_TIME);
+                } else {
+                    captureTime(OUTPUT_END_TIME);
+                    captureCount(OUTPUT_PUBLISHED_FREQUENCY);
+                    storeWriter.writeMetrics(OUTPUT, event);
+                }
+                return ack;
+            };
+        }
+        return output;
     }
 
     private final class TimedEventRouter implements EventRouter.Default {
@@ -679,7 +575,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
                 throw new IllegalArgumentException("Length cannot be negative: " + length);
             }
             final SendingContext sc = unclosedContext();
-            MetricsCapturingInterceptor.this.captureInputSendingTime(sc.source(), sc.sequence(), type, sc.buffer(), 0, length);
+            MetricsCapturingIntercept.this.captureInputSendingTime(sc.source(), sc.sequence(), type, sc.buffer(), 0, length);
             return sc;
         }
     }

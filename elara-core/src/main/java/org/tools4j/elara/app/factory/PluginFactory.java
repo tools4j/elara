@@ -25,9 +25,6 @@ package org.tools4j.elara.app.factory;
 
 import org.tools4j.elara.plugin.api.Plugin.Configuration;
 import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.elara.plugin.base.BaseState.Mutable;
-
-import static java.util.Objects.requireNonNull;
 
 public interface PluginFactory {
     BaseState.Mutable baseState();
