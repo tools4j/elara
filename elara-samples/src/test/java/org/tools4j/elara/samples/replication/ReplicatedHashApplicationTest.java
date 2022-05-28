@@ -27,9 +27,9 @@ import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.wire.WireType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.OS;
-import org.tools4j.elara.app.config.Context;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.type.AllInOneAppConfig;
 import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.input.Input;
@@ -269,7 +269,7 @@ public class ReplicatedHashApplicationTest {
                 .path("build/chronicle/replication/server-" + serverId + "-evt.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
-        return Elara.launch(Context.create()
+        return Elara.launch(AllInOneAppConfig.configure()
                 .commandProcessor(commandProcessor(serverId, appState))
                 .eventApplier(eventApplier(serverId, appState))
                 .inputs(inputs)
@@ -278,6 +278,7 @@ public class ReplicatedHashApplicationTest {
                 .duplicateHandler(DuplicateHandler.NOOP)
                 .loggerFactory(clazz -> new OutputStreamLogger(Level.DEBUG))
                 .plugin(replicationPlugin)
+                .populateDefaults()
         );
     }
 

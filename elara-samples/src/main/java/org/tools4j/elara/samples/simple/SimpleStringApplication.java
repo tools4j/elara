@@ -26,13 +26,11 @@ package org.tools4j.elara.samples.simple;
 import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.app.config.Configuration;
+import org.tools4j.elara.app.type.AllInOneApp;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.route.EventRouter;
-import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.SenderSupplier;
@@ -42,32 +40,32 @@ import java.util.Queue;
 
 import static java.util.Objects.requireNonNull;
 
-public class SimpleStringApplication {
+public class SimpleStringApplication implements AllInOneApp {
 
     private static final int SOURCE = 999;
     private static final int TYPE_STRING = 1;
 
     public ElaraRunner launch(final Queue<String> inputQueue) {
-        return Elara.launch(Configuration.configure()
-                .commandProcessor(this::process)
-                .eventApplier(this::apply)
+        return launch(config -> config
                 .input(new StringInput(inputQueue))
-                .output((event, replay, retry, loopback) -> publish(event, replay, retry, loopback))
                 .commandStore(new InMemoryStore())
                 .eventStore(new InMemoryStore())
         );
     }
 
-    private void process(final Command command, final EventRouter router) {
+    @Override
+    public void onCommand(final Command command, final EventRouter router) {
         System.out.println("processing: " + command + ", payload=" + payloadFor(command.type(), command.payload()));
         router.routeEvent(command.type(), command.payload(), 0, command.payload().capacity());
     }
 
-    private void apply(final Event event) {
+    @Override
+    public void onEvent(final Event event) {
         System.out.println("applied: " + event + ", payload=" + payloadFor(event.type(), event.payload()));
     }
 
-    private Ack publish(final Event event, final boolean replay, final int retry, final CommandSender loopback) {
+    @Override
+    public Ack publish(final Event event, final boolean replay, final int retry, final CommandSender loopback) {
         System.out.println("published: " + event + ", replay=" + replay + ", retry=" + retry + ", payload=" + payloadFor(event.type(), event.payload()));
         return Ack.COMMIT;
     }

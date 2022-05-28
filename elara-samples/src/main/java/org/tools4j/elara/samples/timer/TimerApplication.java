@@ -28,8 +28,8 @@ import net.openhft.chronicle.wire.WireType;
 import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.app.config.Context;
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.type.AllInOneAppConfig;
 import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
@@ -66,19 +66,20 @@ public class TimerApplication {
 
     public ElaraRunner inMemory(final Queue<DirectBuffer> commandQueue,
                                 final Consumer<? super Event> eventConsumer) {
-        return inMemory(commandQueue, eventConsumer, () -> new SimpleTimerState());
+        return inMemory(commandQueue, eventConsumer, SimpleTimerState::new);
     }
 
     public ElaraRunner inMemory(final Queue<DirectBuffer> commandQueue,
                                 final Consumer<? super Event> eventConsumer,
                                 final Supplier<? extends TimerState.Mutable> timerStateSupplier) {
-        return Elara.launch(Context.create()
+        return Elara.launch(AllInOneAppConfig.configure()
                 .commandProcessor(this::process)
                 .eventApplier(eventApplier(eventConsumer))
                 .input(new CommandInput(commandQueue))
                 .commandStore(new InMemoryStore())
                 .eventStore(new InMemoryStore())
                 .plugin(Plugins.timerPlugin(), timerStateSupplier)
+                .populateDefaults()
         );
     }
 
@@ -93,13 +94,14 @@ public class TimerApplication {
                 .path("build/chronicle/timer/" + queueName + "-evt.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
-        return Elara.launch(Context.create()
+        return Elara.launch(AllInOneAppConfig.configure()
                 .commandProcessor(this::process)
                 .eventApplier(eventApplier(eventConsumer))
                 .input(new CommandInput(commandQueue))
                 .commandStore(new ChronicleMessageStore(cq))
                 .eventStore(new ChronicleMessageStore(eq))
                 .plugin(Plugins.timerPlugin())
+                .populateDefaults()
         );
     }
 

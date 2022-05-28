@@ -25,26 +25,12 @@ package org.tools4j.elara.run;
 
 import org.agrona.concurrent.AgentRunner;
 import org.tools4j.elara.app.config.AppConfig;
-import org.tools4j.elara.app.config.Configuration;
-import org.tools4j.elara.app.config.Context;
-import org.tools4j.elara.factory.ElaraFactory;
 
 /**
  * Starts an elara application.
  */
 public enum Elara {
     ;
-
-    @Deprecated
-    public static ElaraRunner launch(final Context context) {
-        return launch((Configuration)context.populateDefaults());
-    }
-
-    @Deprecated
-    public static ElaraRunner launch(final ElaraFactory elaraFactory) {
-        return launch(elaraFactory.configuration());
-    }
-
     public static ElaraRunner launch(final AppConfig appConfig) {
         appConfig.validate();
         return ElaraRunner.startOnThread(new AgentRunner(

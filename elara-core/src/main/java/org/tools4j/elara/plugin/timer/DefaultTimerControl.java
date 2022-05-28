@@ -23,8 +23,7 @@
  */
 package org.tools4j.elara.plugin.timer;
 
-import org.tools4j.elara.app.config.Configuration;
-import org.tools4j.elara.app.config.Context;
+import org.tools4j.elara.app.config.PluginContext;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.route.EventRouter;
@@ -36,7 +35,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Controller to simplify routing of timer start and stop events.  Requires application access to timer state which is
- * available through {@link Configuration#configure()} for instance by registering the timer plugin as follows:
+ * available through {@link PluginContext} for instance by registering the timer plugin as follows:
  * <pre>
  *     DefaultTimerControl timerControl = new DefaultTimerControl();
  *     Configuration.configure().plugin(Plugins.timerPlugin(), timerControl);
@@ -53,9 +52,9 @@ import static java.util.Objects.requireNonNull;
  *     Configuration.configure().plugin(Plugins.timerPlugin(), new DeadlineHeapTimerState(), timerControl);
  * </pre>
  *
- * @see Context#plugin(Plugin, Consumer) 
- * @see Context#plugin(Plugin, Supplier)
- * @see Context#plugin(Plugin, Supplier, Consumer)
+ * @see PluginContext#plugin(Plugin, Consumer)
+ * @see PluginContext#plugin(Plugin, Supplier)
+ * @see PluginContext#plugin(Plugin, Supplier, Consumer)
  */
 public class DefaultTimerControl implements TimerControl, Consumer<TimerState> {
 
@@ -65,7 +64,7 @@ public class DefaultTimerControl implements TimerControl, Consumer<TimerState> {
         super();
     }
 
-    public DefaultTimerControl(final Context context) {
+    public DefaultTimerControl(final PluginContext context) {
         context.plugin(Plugins.timerPlugin(), this);
     }
 
