@@ -31,7 +31,6 @@ import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.api.Plugin.NullState;
 import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.elara.plugin.base.BaseState.Mutable;
 
 import static java.util.Objects.requireNonNull;
 
@@ -66,7 +65,7 @@ public class HeartbeatPlugin implements Plugin<NullState> {
             }
 
             @Override
-            public EventApplier eventApplier(final Mutable baseState) {
+            public EventApplier eventApplier(final BaseState.Mutable baseState) {
                 return EventApplier.NOOP;
             }
         };

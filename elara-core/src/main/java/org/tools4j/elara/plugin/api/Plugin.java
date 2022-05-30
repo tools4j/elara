@@ -26,13 +26,11 @@ package org.tools4j.elara.plugin.api;
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.factory.Interceptor;
-import org.tools4j.elara.app.factory.PluginFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.elara.plugin.base.BaseState.Mutable;
 import org.tools4j.elara.step.AgentStep;
 
 import java.util.function.Consumer;
@@ -62,7 +60,7 @@ public interface Plugin<P> {
         Output output(BaseState baseState);
         CommandProcessor commandProcessor(BaseState baseState);
         EventApplier eventApplier(BaseState.Mutable baseState);
-        Interceptor interceptor(PluginFactory pluginSingletons);
+        Interceptor interceptor(BaseState.Mutable baseState);
 
         interface Default extends Configuration {
             @Override
@@ -74,9 +72,9 @@ public interface Plugin<P> {
             @Override
             default CommandProcessor commandProcessor(final BaseState baseState) {return CommandProcessor.NOOP;}
             @Override
-            default EventApplier eventApplier(final Mutable baseState) {return EventApplier.NOOP;}
+            default EventApplier eventApplier(final BaseState.Mutable baseState) {return EventApplier.NOOP;}
             @Override
-            default Interceptor interceptor(final PluginFactory pluginSingletons) {return Interceptor.NOOP;}
+            default Interceptor interceptor(final BaseState.Mutable baseState) {return Interceptor.NOOP;}
         }
     }
 

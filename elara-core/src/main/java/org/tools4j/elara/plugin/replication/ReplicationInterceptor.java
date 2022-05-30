@@ -26,12 +26,12 @@ package org.tools4j.elara.plugin.replication;
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.ProcessorConfig;
 import org.tools4j.elara.app.factory.Interceptor;
-import org.tools4j.elara.app.factory.PluginFactory;
 import org.tools4j.elara.app.factory.ProcessorFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.EventHandler;
+import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.route.DefaultEventRouter;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.step.EventPollerStep;
@@ -43,18 +43,18 @@ class ReplicationInterceptor implements Interceptor {
     private final AppConfig appConfig;
     private final ProcessorConfig processorConfig;
     private final Configuration pluginConfig;
-    private final PluginFactory pluginSingletons;
+    private final BaseState.Mutable baseState;
     private final ReplicationState replicationState;
 
     public ReplicationInterceptor(final AppConfig appConfig,
                                   final ProcessorConfig processorConfig,
                                   final Configuration pluginConfig,
-                                  final PluginFactory pluginSingletons,
+                                  final BaseState.Mutable baseState,
                                   final ReplicationState replicationState) {
         this.appConfig = requireNonNull(appConfig);
         this.processorConfig = requireNonNull(processorConfig);
         this.pluginConfig = requireNonNull(pluginConfig);
-        this.pluginSingletons = requireNonNull(pluginSingletons);
+        this.baseState = requireNonNull(baseState);
         this.replicationState = requireNonNull(replicationState);
     }
 
@@ -72,7 +72,7 @@ class ReplicationInterceptor implements Interceptor {
                 return new ReplicationCommandHandler(
                         appConfig.timeSource(),
                         pluginConfig,
-                        pluginSingletons.baseState(),
+                        baseState,
                         replicationState,
                         new DefaultEventRouter(
                                 appConfig.timeSource(), processorConfig.eventStore().appender(), eventHandler()

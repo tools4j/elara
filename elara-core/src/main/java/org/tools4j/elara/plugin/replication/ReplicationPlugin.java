@@ -27,7 +27,6 @@ import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.config.ProcessorConfig;
 import org.tools4j.elara.app.factory.Interceptor;
-import org.tools4j.elara.app.factory.PluginFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.plugin.api.SystemPlugin;
@@ -113,8 +112,8 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
             }
 
             @Override
-            public Interceptor interceptor(final PluginFactory pluginSingletons) {
-                return new ReplicationInterceptor(appConfig, processorConfig, configuration, pluginSingletons, replicationState);
+            public Interceptor interceptor(final BaseState.Mutable baseState) {
+                return new ReplicationInterceptor(appConfig, processorConfig, configuration, baseState, replicationState);
             }
         };
     }

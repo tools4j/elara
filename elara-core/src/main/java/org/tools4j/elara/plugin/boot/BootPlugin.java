@@ -26,7 +26,6 @@ package org.tools4j.elara.plugin.boot;
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.factory.Interceptor;
-import org.tools4j.elara.app.factory.PluginFactory;
 import org.tools4j.elara.app.factory.SequencerFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.input.SequenceGenerator;
@@ -77,7 +76,7 @@ public class BootPlugin implements SystemPlugin<NullState> {
             SequencerFactory sequencerFactory;
 
             @Override
-            public Interceptor interceptor(final PluginFactory pluginSingletons) {
+            public Interceptor interceptor(final BaseState.Mutable baseState) {
                 return new Interceptor() {
                     @Override
                     public SequencerFactory interceptOrNull(final SequencerFactory original) {

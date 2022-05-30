@@ -28,6 +28,7 @@ import org.tools4j.elara.agent.AllInOneAgent;
 import org.tools4j.elara.app.config.CommandPollingMode;
 import org.tools4j.elara.app.type.AllInOneAppConfig;
 import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.plugin.base.BaseState;
 
 import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
@@ -79,9 +80,10 @@ public class AllInOneAppFactory implements AppFactory {
     }
 
     private static Interceptor interceptor(final PluginFactory pluginSingletons) {
+        final BaseState.Mutable baseState = pluginSingletons.baseState();
         Interceptor interceptor = Interceptor.NOOP;
         for (final Plugin.Configuration pluginConfig : pluginSingletons.plugins()) {
-            interceptor = interceptor.andThen(pluginConfig.interceptor(pluginSingletons));
+            interceptor = interceptor.andThen(pluginConfig.interceptor(baseState));
         }
         return interceptor;
     }
