@@ -23,7 +23,8 @@
  */
 package org.tools4j.elara.logging;
 
-import java.io.PrintStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.time.LocalDate;
 
 import static java.time.temporal.ChronoField.YEAR;
@@ -44,8 +45,10 @@ public class OutputStreamLogger implements Logger {
     private static final long MILLIS_PER_DAY = 24 * 60 * 60 * 1000L;
 
     private final Level level;
-    private final PrintStream out;
-    private final PrintStream err;
+    private final PrintWriter out;
+    private final PrintWriter err;
+
+    private final char[] charBuffer = new char[1024];
 
     public OutputStreamLogger() {
         this(Level.INFO);
@@ -55,7 +58,11 @@ public class OutputStreamLogger implements Logger {
         this(level, System.out, System.err);
     }
 
-    public OutputStreamLogger(final Level level, final PrintStream out, final PrintStream err) {
+    public OutputStreamLogger(final Level level, final OutputStream out, final OutputStream err) {
+        this(level, new PrintWriter(out), new PrintWriter(err));
+    }
+
+    public OutputStreamLogger(final Level level, final PrintWriter out, final PrintWriter err) {
         this.level = requireNonNull(level);
         this.out = requireNonNull(out);
         this.err = requireNonNull(err);
@@ -71,21 +78,48 @@ public class OutputStreamLogger implements Logger {
         log(level == Level.ERROR || level == Level.WARN ? err : out, level, message);
     }
 
-    private static void log(final PrintStream stream, final Level level, final CharSequence message) {
+    private void log(final PrintWriter writer, final Level level, final CharSequence message) {
         final long time = System.currentTimeMillis();
-        printDate(stream, time);
-        stream.print('T');
-        printTime(stream, time);
-        stream.print('Z');
-        stream.print(' ');
-        stream.print(levelString(level));
-        stream.print(' ');
-        stream.print(message);
-        stream.println();
+        printDate(writer, time);
+        writer.print('T');
+        printTime(writer, time);
+        writer.print('Z');
+        writer.print(' ');
+        writer.print(levelString(level));
+        writer.print(' ');
+        printMessage(writer, message);
+        writer.println();
+    }
+
+    private void printMessage(final PrintWriter writer, final CharSequence message) {
+        if (message instanceof String) {
+            writer.print((String)message);
+        } else if (message instanceof StringBuilder || message instanceof StringBuffer) {
+            final StringBuilder builder = message instanceof StringBuilder ? (StringBuilder)message : null;
+            final StringBuffer buffer = message instanceof StringBuffer ? (StringBuffer)message : null;
+            int off = 0;
+            int rem = message.length();
+            while (rem > 0) {
+                final int len = Math.min(rem,  charBuffer.length);
+                if (builder != null) {
+                    builder.getChars(off, off + len, charBuffer, 0);
+                } else {
+                    buffer.getChars(off, off + len, charBuffer, 0);
+                }
+                writer.write(charBuffer, 0, len);
+                off += len;
+                rem -= len;
+            }
+        } else {
+            final int len = message.length();
+            for (int i = 0; i < len; i++) {
+                writer.write(message.charAt(i));
+            }
+        }
     }
 
     /** @see LocalDate#ofEpochDay(long) */
-    private static void printDate(final PrintStream stream, final long epochMillis) {
+    private static void printDate(final PrintWriter writer, final long epochMillis) {
         final long epochDay = Math.floorDiv(epochMillis, MILLIS_PER_DAY);
         long zeroDay = epochDay + DAYS_0000_TO_1970;
         // find the march-based year
@@ -115,39 +149,39 @@ public class OutputStreamLogger implements Logger {
 
         // check year now we are certain it is correct
         final int year = YEAR.checkValidIntValue(yearEst);
-        printDigits(stream, year, 4);
-        stream.print('-');
-        printDigits(stream, month, 2);
-        stream.print('-');
-        printDigits(stream, dom, 2);
+        printDigits(writer, year, 4);
+        writer.print('-');
+        printDigits(writer, month, 2);
+        writer.print('-');
+        printDigits(writer, dom, 2);
     }
-    private static void printTime(final PrintStream stream, final long epochMillis) {
+    private static void printTime(final PrintWriter writer, final long epochMillis) {
         final int millisOfDay = (int)Math.floorMod(epochMillis, MILLIS_PER_DAY);
         final int millis = millisOfDay % 1000;
         final int seconds = (millisOfDay / 1000) % 60;
         final int minutes = (millisOfDay / (1000 * 60)) % 60;
         final int hours = millisOfDay / (1000 * 60 * 60);
-        printDigits(stream, hours, 2);
-        stream.print(':');
-        printDigits(stream, minutes, 2);
-        stream.print(':');
-        printDigits(stream, seconds, 2);
-        stream.print('.');
-        printDigits(stream, millis, 3);
+        printDigits(writer, hours, 2);
+        writer.print(':');
+        printDigits(writer, minutes, 2);
+        writer.print(':');
+        printDigits(writer, seconds, 2);
+        writer.print('.');
+        printDigits(writer, millis, 3);
     }
 
-    private static void printDigits(final PrintStream stream, final int value, final int digits) {
+    private static void printDigits(final PrintWriter writer, final int value, final int digits) {
         if (value > 0) {
             switch (digits) {
                 case 4:
-                    if (value < 1000) stream.print('0');
+                    if (value < 1000) writer.print('0');
                 case 3:
-                    if (value < 100) stream.print('0');
+                    if (value < 100) writer.print('0');
                 case 2:
-                    if (value < 10) stream.print('0');
+                    if (value < 10) writer.print('0');
             }
         }
-        stream.print(value);
+        writer.print(value);
     }
     private static String levelString(final Level level) {
         switch (level) {
