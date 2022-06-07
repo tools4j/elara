@@ -23,10 +23,12 @@
  */
 package org.tools4j.elara.app.factory;
 
-import org.tools4j.elara.app.handler.CommandProcessor;
-import org.tools4j.elara.handler.CommandHandler;
+import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.handler.EventHandler;
+import org.tools4j.elara.step.AgentStep;
 
-public interface ProcessorFactory {
-    CommandProcessor commandProcessor();
-    CommandHandler commandHandler();
+public interface ApplierFactory {
+    EventApplier eventApplier();
+    EventHandler eventHandler();
+    AgentStep eventPollerStep();
 }

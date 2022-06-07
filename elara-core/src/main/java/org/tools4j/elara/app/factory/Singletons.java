@@ -27,6 +27,7 @@ import org.agrona.collections.Object2ObjectHashMap;
 import org.agrona.concurrent.Agent;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.handler.OutputHandler;
@@ -38,6 +39,7 @@ import org.tools4j.elara.plugin.base.BaseState.Mutable;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.step.AgentStep;
+import org.tools4j.elara.stream.MessageStream;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -101,20 +103,26 @@ final class Singletons {
             public CommandHandler commandHandler() {
                 return singletons.getOrCreate("commandHandler", CommandHandler.class, factory, ProcessorFactory::commandHandler);
             }
+        };
+    }
 
+    static ApplierFactory create(final ApplierFactory factory) {
+        requireNonNull(factory);
+        final Singletons singletons = new Singletons();
+        return new ApplierFactory() {
             @Override
             public EventApplier eventApplier() {
-                return singletons.getOrCreate("eventApplier", EventApplier.class, factory, ProcessorFactory::eventApplier);
+                return singletons.getOrCreate("eventApplier", EventApplier.class, factory, ApplierFactory::eventApplier);
             }
 
             @Override
             public EventHandler eventHandler() {
-                return singletons.getOrCreate("eventHandler", EventHandler.class, factory, ProcessorFactory::eventHandler);
+                return singletons.getOrCreate("eventHandler", EventHandler.class, factory, ApplierFactory::eventHandler);
             }
 
             @Override
             public AgentStep eventPollerStep() {
-                return singletons.getOrCreate("eventPollerStep", AgentStep.class, factory, ProcessorFactory::eventPollerStep);
+                return singletons.getOrCreate("eventPollerStep", AgentStep.class, factory, ApplierFactory::eventPollerStep);
             }
         };
     }
@@ -127,6 +135,45 @@ final class Singletons {
             @Override
             public AgentStep commandPollerStep() {
                 return singletons.getOrCreate("commandPollerStep", AgentStep.class, factory, CommandPollerFactory::commandPollerStep);
+            }
+        };
+    }
+
+    static CommandStreamFactory create(final CommandStreamFactory factory) {
+        requireNonNull(factory);
+        final Singletons singletons = new Singletons();
+        //noinspection Convert2Lambda
+        return new CommandStreamFactory() {
+            @Override
+            public SenderSupplier senderSupplier() {
+                return singletons.getOrCreate("senderSupplier", SenderSupplier.class, factory, CommandStreamFactory::senderSupplier);
+            }
+
+            @Override
+            public AgentStep inputPollerStep() {
+                return singletons.getOrCreate("inputPollerStep", AgentStep.class, factory, CommandStreamFactory::inputPollerStep);
+            }
+        };
+    }
+
+    static EventStreamFactory create(final EventStreamFactory factory) {
+        requireNonNull(factory);
+        final Singletons singletons = new Singletons();
+        //noinspection Convert2Lambda
+        return new EventStreamFactory() {
+            @Override
+            public MessageStream eventStream() {
+                return singletons.getOrCreate("eventStream", MessageStream.class, factory, EventStreamFactory::eventStream);
+            }
+
+            @Override
+            public EventProcessor eventProcessor() {
+                return singletons.getOrCreate("eventProcessor", EventProcessor.class, factory, EventStreamFactory::eventProcessor);
+            }
+
+            @Override
+            public Output output() {
+                return singletons.getOrCreate("output", Output.class, factory, EventStreamFactory::output);
             }
         };
     }

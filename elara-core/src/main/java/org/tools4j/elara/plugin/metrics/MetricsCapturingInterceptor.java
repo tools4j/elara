@@ -29,6 +29,7 @@ import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.app.factory.AgentStepFactory;
 import org.tools4j.elara.app.factory.AppFactory;
+import org.tools4j.elara.app.factory.ApplierFactory;
 import org.tools4j.elara.app.factory.CommandPollerFactory;
 import org.tools4j.elara.app.factory.InOutFactory;
 import org.tools4j.elara.app.factory.Interceptor;
@@ -55,6 +56,8 @@ import org.tools4j.elara.send.SendingResult;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore.Handler.Result;
 import org.tools4j.elara.time.TimeSource;
+
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.metrics.FrequencyMetric.COMMAND_POLL_FREQUENCY;
@@ -221,14 +224,14 @@ public class MetricsCapturingInterceptor implements Interceptor {
     }
 
     @Override
-    public AppFactory interceptOrNull(final AppFactory original) {
+    public AppFactory appFactory(final Supplier<? extends AppFactory> original) {
         requireNonNull(original);
         if (shouldCapture(DUTY_CYCLE_FREQUENCY) || shouldCapture(DUTY_CYCLE_PERFORMED_FREQUENCY)) {
             //noinspection Convert2Lambda
             return new AppFactory() {
                 @Override
                 public Agent agent() {
-                    return counterAgent(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, original.agent());
+                    return counterAgent(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, original.get().agent());
                 }
             };
         }
@@ -236,23 +239,23 @@ public class MetricsCapturingInterceptor implements Interceptor {
     }
 
     @Override
-    public AgentStepFactory interceptOrNull(final AgentStepFactory original) {
+    public AgentStepFactory agentStepFactory(final Supplier<? extends AgentStepFactory> original) {
         requireNonNull(original);
         if (shouldCapture(STEP_ERROR_FREQUENCY) || shouldCapture(EXTRA_STEP_INVOCATION_FREQUENCY) || shouldCapture(EXTRA_STEP_PERFORMED_FREQUENCY)) {
             return new AgentStepFactory() {
                 @Override
                 public Runnable initStep() {
-                    return original.initStep();
+                    return original.get().initStep();
                 }
 
                 @Override
                 public AgentStep extraStepAlwaysWhenEventsApplied() {
-                    return counterStep(EXTRA_STEP_INVOCATION_FREQUENCY, EXTRA_STEP_PERFORMED_FREQUENCY, original.extraStepAlwaysWhenEventsApplied());
+                    return counterStep(EXTRA_STEP_INVOCATION_FREQUENCY, EXTRA_STEP_PERFORMED_FREQUENCY, original.get().extraStepAlwaysWhenEventsApplied());
                 }
 
                 @Override
                 public AgentStep extraStepAlways() {
-                    return counterStep(EXTRA_STEP_INVOCATION_FREQUENCY, EXTRA_STEP_PERFORMED_FREQUENCY, original.extraStepAlways());
+                    return counterStep(EXTRA_STEP_INVOCATION_FREQUENCY, EXTRA_STEP_PERFORMED_FREQUENCY, original.get().extraStepAlways());
                 }
             };
         }
@@ -260,7 +263,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
     }
 
     @Override
-    public SequencerFactory interceptOrNull(final SequencerFactory original) {
+    public SequencerFactory sequencerFactory(final Supplier<? extends SequencerFactory> original) {
         requireNonNull(original);
         if (shouldCapture(STEP_ERROR_FREQUENCY) ||
                 shouldCapture(INPUTS_POLL_FREQUENCY) || shouldCapture(INPUT_RECEIVED_FREQUENCY) ||
@@ -269,7 +272,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
             return new SequencerFactory() {
                 @Override
                 public SenderSupplier senderSupplier() {
-                    final SenderSupplier senderSupplier = original.senderSupplier();
+                    final SenderSupplier senderSupplier = original.get().senderSupplier();
                     if (shouldCapture(INPUT_SENDING_TIME) || shouldCapture(INPUT_POLLING_TIME) || shouldCapture(COMMAND_APPENDING_TIME)) {
                         return timedSenderSupplier(senderSupplier);
                     }
@@ -278,7 +281,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
 
                 @Override
                 public AgentStep sequencerStep() {
-                    return counterStep(INPUTS_POLL_FREQUENCY, INPUT_RECEIVED_FREQUENCY, original.sequencerStep());
+                    return counterStep(INPUTS_POLL_FREQUENCY, INPUT_RECEIVED_FREQUENCY, original.get().sequencerStep());
                 }
             };
         }
@@ -286,14 +289,14 @@ public class MetricsCapturingInterceptor implements Interceptor {
     }
 
     @Override
-    public CommandPollerFactory interceptOrNull(final CommandPollerFactory original) {
+    public CommandPollerFactory commandPollerFactory(final Supplier<? extends CommandPollerFactory> original) {
         requireNonNull(original);
         if (shouldCapture(STEP_ERROR_FREQUENCY) || shouldCapture(COMMAND_POLL_FREQUENCY)) {
             //noinspection Convert2Lambda
             return new CommandPollerFactory() {
                 @Override
                 public AgentStep commandPollerStep() {
-                    return counterStep(COMMAND_POLL_FREQUENCY, null, original.commandPollerStep());
+                    return counterStep(COMMAND_POLL_FREQUENCY, null, original.get().commandPollerStep());
                 }
             };
         }
@@ -301,20 +304,16 @@ public class MetricsCapturingInterceptor implements Interceptor {
     }
 
     @Override
-    public ProcessorFactory interceptOrNull(final ProcessorFactory original) {
+    public ProcessorFactory processorFactory(final Supplier<? extends ProcessorFactory> original) {
         requireNonNull(original);
-        if (shouldCapture(STEP_ERROR_FREQUENCY) ||
-                shouldCapture(COMMAND_PROCESSED_FREQUENCY) ||
-                shouldCapture(EVENT_POLL_FREQUENCY) || shouldCapture(EVENT_POLLED_FREQUENCY) ||
+        if (shouldCapture(COMMAND_PROCESSED_FREQUENCY) ||
                 shouldCaptureAnyOf(COMMAND) || //includes COMMAND_POLLING_TIME and PROCESSING_END_TIME shouldCapture(PROCESSING_START_TIME) || shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME)) {
-                shouldCapture(PROCESSING_START_TIME) || shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME) ||
-                shouldCapture(EVENT_APPLIED_FREQUENCY) || shouldCaptureAnyOf(EVENT) || //includes APPLYING_START_TIME and APPLYING_END_TIME
-                shouldCapture(EVENT_POLLING_TIME)
+                shouldCapture(PROCESSING_START_TIME) || shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME)
         ) {
             return new ProcessorFactory() {
                 @Override
                 public CommandProcessor commandProcessor() {
-                    final CommandProcessor commandProcessor = original.commandProcessor();
+                    final CommandProcessor commandProcessor = original.get().commandProcessor();
                     if (shouldCapture(COMMAND_PROCESSED_FREQUENCY) ||
                             shouldCapture(PROCESSING_START_TIME) ||
                             shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME)
@@ -334,7 +333,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
 
                 @Override
                 public CommandHandler commandHandler() {
-                    final CommandHandler commandHandler = original.commandHandler();
+                    final CommandHandler commandHandler = original.get().commandHandler();
                     if (shouldCaptureAnyOf(COMMAND)) {//includes COMMAND_POLLING_TIME and PROCESSING_END_TIME
                         return command -> {
                             captureTime(COMMAND_POLLING_TIME);
@@ -346,10 +345,22 @@ public class MetricsCapturingInterceptor implements Interceptor {
                     }
                     return commandHandler;
                 }
+            };
+        }
+        return null;
+    }
 
-                @Override
+    @Override
+    public ApplierFactory applierFactory(final Supplier<? extends ApplierFactory> original) {
+        requireNonNull(original);
+        if (shouldCapture(STEP_ERROR_FREQUENCY) ||
+                shouldCapture(EVENT_POLL_FREQUENCY) || shouldCapture(EVENT_POLLED_FREQUENCY) ||
+                shouldCapture(EVENT_APPLIED_FREQUENCY) || shouldCaptureAnyOf(EVENT) || //includes APPLYING_START_TIME and APPLYING_END_TIME
+                shouldCapture(EVENT_POLLING_TIME)
+        ) {
+            return new ApplierFactory() {
                 public EventApplier eventApplier() {
-                    final EventApplier eventApplier = original.eventApplier();
+                    final EventApplier eventApplier = original.get().eventApplier();
                     if (shouldCapture(EVENT_APPLIED_FREQUENCY) || shouldCaptureAnyOf(EVENT)) {//includes APPLYING_START_TIME and APPLYING_END_TIME
                         return event -> {
                             captureTime(APPLYING_START_TIME);
@@ -366,7 +377,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
 
                 @Override
                 public EventHandler eventHandler() {
-                    final EventHandler eventHandler = original.eventHandler();
+                    final EventHandler eventHandler = original.get().eventHandler();
                     if (shouldCapture(EVENT_POLLING_TIME)) {
                         return event -> {
                             captureTime(EVENT_POLLING_TIME);
@@ -378,7 +389,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
 
                 @Override
                 public AgentStep eventPollerStep() {
-                    return counterStep(EVENT_POLL_FREQUENCY, null, original.eventPollerStep());
+                    return counterStep(EVENT_POLL_FREQUENCY, null, original.get().eventPollerStep());
                 }
             };
         }
@@ -386,18 +397,18 @@ public class MetricsCapturingInterceptor implements Interceptor {
     }
 
     @Override
-    public InOutFactory interceptOrNull(final InOutFactory original) {
+    public InOutFactory inOutFactory(final Supplier<? extends InOutFactory> original) {
         requireNonNull(original);
         if (shouldCapture(OUTPUT_PUBLISHED_FREQUENCY) || shouldCaptureAnyOf(OUTPUT)) {
             return new InOutFactory() {
                 @Override
                 public Input[] inputs() {
-                    return original.inputs();//TODO no interception here?
+                    return original.get().inputs();//TODO no interception here?
                 }
 
                 @Override
                 public Output output() {
-                    final Output output = original.output();
+                    final Output output = original.get().output();
                     if (shouldCapture(OUTPUT_PUBLISHED_FREQUENCY) || shouldCaptureAnyOf(OUTPUT)) {
                         return (event, replay, retry, loopback) -> {
                             captureTime(OUTPUT_START_TIME);
@@ -422,7 +433,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
     }
 
     @Override
-    public PublisherFactory interceptOrNull(final PublisherFactory original) {
+    public PublisherFactory publisherFactory(final Supplier<? extends PublisherFactory> original) {
         requireNonNull(original);
         if (shouldCapture(STEP_ERROR_FREQUENCY) ||
                 shouldCapture(OUTPUT_POLLING_TIME) ||
@@ -430,12 +441,12 @@ public class MetricsCapturingInterceptor implements Interceptor {
             return new PublisherFactory() {
                 @Override
                 public CommandSender loopbackCommandSender() {
-                    return original.loopbackCommandSender();
+                    return original.get().loopbackCommandSender();
                 }
 
                 @Override
                 public OutputHandler outputHandler() {
-                    final OutputHandler outputHandler = original.outputHandler();
+                    final OutputHandler outputHandler = original.get().outputHandler();
                     if (shouldCapture(OUTPUT_POLLING_TIME)) {
                         return (event, replay, retry) -> {
                             captureTime(OUTPUT_POLLING_TIME);
@@ -447,7 +458,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
 
                 @Override
                 public AgentStep publisherStep() {
-                    return counterStep(OUTPUT_POLL_FREQUENCY, null, original.publisherStep());
+                    return counterStep(OUTPUT_POLL_FREQUENCY, null, original.get().publisherStep());
                 }
             };
         }

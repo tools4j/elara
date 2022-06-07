@@ -30,7 +30,7 @@ import org.tools4j.elara.app.type.AllInOneAppConfig;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
 
-import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 public class AllInOneAppFactory implements AppFactory {
@@ -38,45 +38,50 @@ public class AllInOneAppFactory implements AppFactory {
     private final PluginFactory pluginSingletons;
     private final SequencerFactory sequencerSingletons;
     private final ProcessorFactory processorSingletons;
+    private final ApplierFactory applierSingletons;
     private final InOutFactory inOutSingletons;
     private final CommandPollerFactory commandPollerSingletons;
     private final PublisherFactory publisherSingletons;
     private final AgentStepFactory agentStepSingletons;
-    private final AppFactory appFactory;
+    private final AppFactory appSingletons;
 
     public AllInOneAppFactory(final AllInOneAppConfig config) {
         this.pluginSingletons = Singletons.create(new DefaultPluginFactory(config, config, this::pluginSingletons));
 
         final Interceptor interceptor = interceptor(pluginSingletons);
-        this.sequencerSingletons = interceptedSingleton(
+        this.sequencerSingletons = interceptor.sequencerFactory(singletonsSupplier(
                 config.commandPollingMode() == CommandPollingMode.NO_STORE ?
                         new ProcessingSequencerFactory(config, this::sequencerSingletons, this::processorSingletons, this::inOutSingletons) :
                         new AppendingSequencerFactory(config, config, this::sequencerSingletons, this::inOutSingletons),
-                interceptor, Singletons::create, Interceptor::interceptOrNull
-        );
-        this.processorSingletons = interceptedSingleton(
-                (ProcessorFactory)new DefaultProcessorFactory(config, config, this::processorSingletons, this::pluginSingletons),
-                interceptor, Singletons::create, Interceptor::interceptOrNull
-        );
-        this.inOutSingletons = interceptedSingleton(
-                (InOutFactory)new DefaultInOutFactory(config, config, this::pluginSingletons),
-                interceptor, Singletons::create, Interceptor::interceptOrNull
-        );
-        this.commandPollerSingletons = interceptedSingleton(
+                Singletons::create
+        ));
+        this.processorSingletons = interceptor.processorFactory(singletonsSupplier(
+                (ProcessorFactory) new DefaultProcessorFactory(config, config, this::processorSingletons, this::applierSingletons, this::pluginSingletons),
+                Singletons::create
+        ));
+        this.applierSingletons = interceptor.applierFactory(singletonsSupplier(
+                (ApplierFactory) new DefaultApplierFactory(config, config, this::applierSingletons, this::pluginSingletons),
+                Singletons::create
+        ));
+        this.inOutSingletons = interceptor.inOutFactory(singletonsSupplier(
+                (InOutFactory) new DefaultInOutFactory(config, config, this::pluginSingletons),
+                Singletons::create
+        ));
+        this.commandPollerSingletons = interceptor.commandPollerFactory(singletonsSupplier(
                 (CommandPollerFactory)new DefaultCommandPollerFactory(config, this::processorSingletons),
-                interceptor, Singletons::create, Interceptor::interceptOrNull
-        );
-        this.publisherSingletons = interceptedSingleton(
+                Singletons::create
+        ));
+        this.publisherSingletons = interceptor.publisherFactory(singletonsSupplier(
                 (PublisherFactory)new DefaultPublisherFactory(config, config, this::publisherSingletons, this::sequencerSingletons, this::inOutSingletons),
-                interceptor, Singletons::create, Interceptor::interceptOrNull
-        );
-        this.agentStepSingletons = interceptedSingleton(
+                Singletons::create
+        ));
+        this.agentStepSingletons = interceptor.agentStepFactory(singletonsSupplier(
                 (AgentStepFactory)new DefaultAgentStepFactory(config, this::pluginSingletons),
-                interceptor, Singletons::create, Interceptor::interceptOrNull
-        );
-        this.appFactory = interceptedSingleton(
-                appFactory(), interceptor, Singletons::create, Interceptor::interceptOrNull
-        );
+                Singletons::create
+        ));
+        this.appSingletons = interceptor.appFactory(singletonsSupplier(
+                appFactory(), Singletons::create
+        ));
     }
 
     private static Interceptor interceptor(final PluginFactory pluginSingletons) {
@@ -85,20 +90,20 @@ public class AllInOneAppFactory implements AppFactory {
         for (final Plugin.Configuration pluginConfig : pluginSingletons.plugins()) {
             interceptor = interceptor.andThen(pluginConfig.interceptor(baseState));
         }
-        return interceptor;
+        return interceptor.thenYield();
     }
 
-    private static <T> T interceptedSingleton(final T factory,
-                                              final Interceptor interceptor,
-                                              final UnaryOperator<T> singletonOp,
-                                              final BiFunction<Interceptor, T, T> intersectionOp) {
-        final T singleton = singletonOp.apply(factory);
-        final T intersected = intersectionOp.apply(interceptor, singleton);
-        return intersected != null ? intersected : singleton;
+    private <T> Supplier<T> singletonsSupplier(final T factory, final UnaryOperator<T> singletonOp) {
+        final T singletons = singletonOp.apply(factory);
+        return () -> singletons;
     }
 
     private ProcessorFactory processorSingletons() {
         return processorSingletons;
+    }
+
+    private ApplierFactory applierSingletons() {
+        return applierSingletons;
     }
 
     private InOutFactory inOutSingletons() {
@@ -117,17 +122,18 @@ public class AllInOneAppFactory implements AppFactory {
         return pluginSingletons;
     }
 
+
     private AppFactory appFactory() {
 //        return () -> new CoreAgent(
 //                sequencerSingletons.sequencerStep(),
 //                commandPollerSingletons.commandPollerStep(),
-//                processorSingletons.eventPollerStep(),
+//                applierSingletons.eventPollerStep(),
 //                agentStepSingletons.extraStepAlwaysWhenEventsApplied(),
 //                agentStepSingletons.extraStepAlways());
         return () -> new AllInOneAgent(
                 sequencerSingletons.sequencerStep(),
                 commandPollerSingletons.commandPollerStep(),
-                processorSingletons.eventPollerStep(),
+                applierSingletons.eventPollerStep(),
                 publisherSingletons.publisherStep(),
                 agentStepSingletons.extraStepAlwaysWhenEventsApplied(),
                 agentStepSingletons.extraStepAlways());
@@ -135,6 +141,6 @@ public class AllInOneAppFactory implements AppFactory {
 
     @Override
     public Agent agent() {
-        return appFactory.agent();
+        return appSingletons.agent();
     }
 }

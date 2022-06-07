@@ -25,6 +25,7 @@ package org.tools4j.elara.plugin.replication;
 
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.ProcessorConfig;
+import org.tools4j.elara.app.factory.ApplierFactory;
 import org.tools4j.elara.app.factory.Interceptor;
 import org.tools4j.elara.app.factory.ProcessorFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
@@ -36,6 +37,8 @@ import org.tools4j.elara.route.DefaultEventRouter;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.step.EventPollerStep;
 
+import java.util.function.Supplier;
+
 import static java.util.Objects.requireNonNull;
 
 class ReplicationInterceptor implements Interceptor {
@@ -45,6 +48,8 @@ class ReplicationInterceptor implements Interceptor {
     private final Configuration pluginConfig;
     private final BaseState.Mutable baseState;
     private final ReplicationState replicationState;
+
+    private Supplier<? extends ApplierFactory> eventApplierSingletons;
 
     public ReplicationInterceptor(final AppConfig appConfig,
                                   final ProcessorConfig processorConfig,
@@ -59,43 +64,52 @@ class ReplicationInterceptor implements Interceptor {
     }
 
     @Override
-    public ProcessorFactory interceptOrNull(final ProcessorFactory original) {
+    public ApplierFactory applierFactory(final Supplier<? extends ApplierFactory> original) {
+        eventApplierSingletons = requireNonNull(original);
+        return new ApplierFactory() {
+            @Override
+            public EventApplier eventApplier() {
+                return original.get().eventApplier();
+            }
+
+            @Override
+            public EventHandler eventHandler() {
+                return original.get().eventHandler();
+            }
+
+            @Override
+            public AgentStep eventPollerStep() {
+                //NOTE: need override here since default only polls during replay phase
+                return new EventPollerStep(processorConfig.eventStore().poller(), eventHandler());
+            }
+        };
+    }
+
+    @Override
+    public ProcessorFactory processorFactory(final Supplier<? extends ProcessorFactory> original) {
         requireNonNull(original);
         return new ProcessorFactory() {
             @Override
             public CommandProcessor commandProcessor() {
-                return original.commandProcessor();
+                return original.get().commandProcessor();
             }
 
             @Override
             public CommandHandler commandHandler() {
+                requireNonNull(eventApplierSingletons, "eventApplierSingletons is null");
                 return new ReplicationCommandHandler(
                         appConfig.timeSource(),
                         pluginConfig,
                         baseState,
                         replicationState,
                         new DefaultEventRouter(
-                                appConfig.timeSource(), processorConfig.eventStore().appender(), eventHandler()
+                                appConfig.timeSource(), processorConfig.eventStore().appender(),
+                                eventApplierSingletons.get().eventHandler()
                         ),
                         commandProcessor(),
                         appConfig.exceptionHandler(),
                         appConfig.duplicateHandler()
                 );
-            }
-
-            @Override
-            public EventApplier eventApplier() {
-                return original.eventApplier();
-            }
-
-            @Override
-            public EventHandler eventHandler() {
-                return original.eventHandler();
-            }
-
-            @Override
-            public AgentStep eventPollerStep() {
-                return new EventPollerStep(processorConfig.eventStore().poller(), eventHandler());
             }
         };
     }

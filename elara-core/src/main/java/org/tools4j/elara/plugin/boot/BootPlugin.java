@@ -38,6 +38,8 @@ import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.step.AgentStep;
 
+import java.util.function.Supplier;
+
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.boot.BootCommands.SIGNAL_APP_INITIALISATION_START;
 
@@ -73,14 +75,14 @@ public class BootPlugin implements SystemPlugin<NullState> {
         requireNonNull(appConfig);
         requireNonNull(pluginState);
         return new Configuration.Default() {
-            SequencerFactory sequencerFactory;
+            Supplier<? extends SequencerFactory> sequencerSingletons;
 
             @Override
             public Interceptor interceptor(final BaseState.Mutable baseState) {
                 return new Interceptor() {
                     @Override
-                    public SequencerFactory interceptOrNull(final SequencerFactory original) {
-                        sequencerFactory = original;
+                    public SequencerFactory sequencerFactory(final Supplier<? extends SequencerFactory> original) {
+                        sequencerSingletons = original;
                         return null;
                     }
                 };
@@ -90,8 +92,8 @@ public class BootPlugin implements SystemPlugin<NullState> {
             public AgentStep step(final BaseState baseState, final ExecutionType executionType) {
                 if (executionType == ExecutionType.INIT_ONCE_ONLY) {
                     return () -> {
-                        if (sequencerFactory != null) {
-                            appendAppInitStartCommand(sequencerFactory.senderSupplier());
+                        if (sequencerSingletons != null) {
+                            appendAppInitStartCommand(sequencerSingletons.get().senderSupplier());
                         } else {
                             throw new IllegalStateException("No factory available for sender supplier");
                         }

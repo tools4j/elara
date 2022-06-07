@@ -28,8 +28,22 @@ import org.tools4j.elara.event.Event;
 
 public interface BaseState {
 
+    boolean allEventsAppliedFor(int source, long sequence);
     boolean allEventsAppliedFor(Command.Id id);
+    boolean eventApplied(int source, long sequence, int index);
     boolean eventApplied(Event.Id id);
+
+    interface Default extends BaseState {
+        @Override
+        default boolean allEventsAppliedFor(final Command.Id id) {
+            return allEventsAppliedFor(id.source(), id.sequence());
+        }
+
+        @Override
+        default boolean eventApplied(final Event.Id id) {
+            return eventApplied(id.source(), id.sequence(), id.index());
+        }
+    }
 
     interface Mutable extends BaseState {
         Mutable eventApplied(Event event);
