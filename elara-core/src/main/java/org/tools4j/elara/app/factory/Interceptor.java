@@ -32,43 +32,43 @@ public interface Interceptor {
 
     Interceptor NOOP = new Interceptor() {};
 
-    default AppFactory appFactory(final Supplier<? extends AppFactory> original) {
+    default AppFactory appFactory(final Supplier<? extends AppFactory> singletons) {
         return null;
     }
 
-    default AgentStepFactory agentStepFactory(final Supplier<? extends AgentStepFactory> original) {
+    default AgentStepFactory agentStepFactory(final Supplier<? extends AgentStepFactory> singletons) {
         return null;
     }
 
-    default SequencerFactory sequencerFactory(final Supplier<? extends SequencerFactory> original) {
+    default SequencerFactory sequencerFactory(final Supplier<? extends SequencerFactory> singletons) {
         return null;
     }
 
-    default CommandPollerFactory commandPollerFactory(final Supplier<? extends CommandPollerFactory> original) {
+    default CommandPollerFactory commandPollerFactory(final Supplier<? extends CommandPollerFactory> singletons) {
         return null;
     }
 
-    default ProcessorFactory processorFactory(final Supplier<? extends ProcessorFactory> original) {
+    default ProcessorFactory processorFactory(final Supplier<? extends ProcessorFactory> singletons) {
         return null;
     }
 
-    default ApplierFactory applierFactory(final Supplier<? extends ApplierFactory> original) {
+    default ApplierFactory applierFactory(final Supplier<? extends ApplierFactory> singletons) {
         return null;
     }
 
-    default InOutFactory inOutFactory(final Supplier<? extends InOutFactory> original) {
+    default InOutFactory inOutFactory(final Supplier<? extends InOutFactory> singletons) {
         return null;
     }
 
-    default PublisherFactory publisherFactory(final Supplier<? extends PublisherFactory> original) {
+    default PublisherFactory publisherFactory(final Supplier<? extends PublisherFactory> singletons) {
         return null;
     }
 
-    default CommandStreamFactory commandStreamFactory(final Supplier<? extends CommandStreamFactory> original) {
+    default CommandStreamFactory commandStreamFactory(final Supplier<? extends CommandStreamFactory> singletons) {
         return null;
     }
 
-    default EventStreamFactory eventStreamFactory(final Supplier<? extends EventStreamFactory> original) {
+    default EventStreamFactory eventStreamFactory(final Supplier<? extends EventStreamFactory> singletons) {
         return null;
     }
 
@@ -82,64 +82,64 @@ public interface Interceptor {
         }
         final Interceptor first = this;
         return new Interceptor() {
-            private <T> Supplier<? extends T> originalOrIntercepted(final Supplier<? extends T> original,
-                                                                    final T intercepted,
-                                                                    final UnaryOperator<T> singletonOp) {
+            private <T> Supplier<? extends T> singletonOrIntercepted(final Supplier<? extends T> originalSingletons,
+                                                                     final T intercepted,
+                                                                     final UnaryOperator<T> singletonOp) {
                 if (intercepted == null) {
-                    return original;
+                    return originalSingletons;
                 }
-                final T singleton = singletonOp.apply(intercepted);
-                return () -> singleton;
+                final T singletons = singletonOp.apply(intercepted);
+                return () -> singletons;
             }
 
             @Override
-            public AppFactory appFactory(final Supplier<? extends AppFactory> original) {
-                return next.appFactory(originalOrIntercepted(original, first.appFactory(original), Singletons::create));
+            public AppFactory appFactory(final Supplier<? extends AppFactory> singletons) {
+                return next.appFactory(singletonOrIntercepted(singletons, first.appFactory(singletons), Singletons::create));
             }
 
             @Override
-            public AgentStepFactory agentStepFactory(final Supplier<? extends AgentStepFactory> original) {
-                return next.agentStepFactory(originalOrIntercepted(original, first.agentStepFactory(original), Singletons::create));
+            public AgentStepFactory agentStepFactory(final Supplier<? extends AgentStepFactory> singletons) {
+                return next.agentStepFactory(singletonOrIntercepted(singletons, first.agentStepFactory(singletons), Singletons::create));
             }
 
             @Override
-            public SequencerFactory sequencerFactory(final Supplier<? extends SequencerFactory> original) {
-                return next.sequencerFactory(originalOrIntercepted(original, first.sequencerFactory(original), Singletons::create));
+            public SequencerFactory sequencerFactory(final Supplier<? extends SequencerFactory> singletons) {
+                return next.sequencerFactory(singletonOrIntercepted(singletons, first.sequencerFactory(singletons), Singletons::create));
             }
 
             @Override
-            public CommandPollerFactory commandPollerFactory(final Supplier<? extends CommandPollerFactory> original) {
-                return next.commandPollerFactory(originalOrIntercepted(original, first.commandPollerFactory(original), Singletons::create));
+            public CommandPollerFactory commandPollerFactory(final Supplier<? extends CommandPollerFactory> singletons) {
+                return next.commandPollerFactory(singletonOrIntercepted(singletons, first.commandPollerFactory(singletons), Singletons::create));
             }
 
             @Override
-            public ProcessorFactory processorFactory(final Supplier<? extends ProcessorFactory> original) {
-                return next.processorFactory(originalOrIntercepted(original, first.processorFactory(original), Singletons::create));
+            public ProcessorFactory processorFactory(final Supplier<? extends ProcessorFactory> singletons) {
+                return next.processorFactory(singletonOrIntercepted(singletons, first.processorFactory(singletons), Singletons::create));
             }
 
             @Override
-            public ApplierFactory applierFactory(final Supplier<? extends ApplierFactory> original) {
-                return next.applierFactory(originalOrIntercepted(original, first.applierFactory(original), Singletons::create));
+            public ApplierFactory applierFactory(final Supplier<? extends ApplierFactory> singletons) {
+                return next.applierFactory(singletonOrIntercepted(singletons, first.applierFactory(singletons), Singletons::create));
             }
 
             @Override
-            public InOutFactory inOutFactory(final Supplier<? extends InOutFactory> original) {
-                return next.inOutFactory(originalOrIntercepted(original, first.inOutFactory(original), Singletons::create));
+            public InOutFactory inOutFactory(final Supplier<? extends InOutFactory> singletons) {
+                return next.inOutFactory(singletonOrIntercepted(singletons, first.inOutFactory(singletons), Singletons::create));
             }
 
             @Override
-            public PublisherFactory publisherFactory(final Supplier<? extends PublisherFactory> original) {
-                return next.publisherFactory(originalOrIntercepted(original, first.publisherFactory(original), Singletons::create));
+            public PublisherFactory publisherFactory(final Supplier<? extends PublisherFactory> singletons) {
+                return next.publisherFactory(singletonOrIntercepted(singletons, first.publisherFactory(singletons), Singletons::create));
             }
 
             @Override
-            public CommandStreamFactory commandStreamFactory(final Supplier<? extends CommandStreamFactory> original) {
-                return next.commandStreamFactory(originalOrIntercepted(original, first.commandStreamFactory(original), Singletons::create));
+            public CommandStreamFactory commandStreamFactory(final Supplier<? extends CommandStreamFactory> singletons) {
+                return next.commandStreamFactory(singletonOrIntercepted(singletons, first.commandStreamFactory(singletons), Singletons::create));
             }
 
             @Override
-            public EventStreamFactory eventStreamFactory(final Supplier<? extends EventStreamFactory> original) {
-                return next.eventStreamFactory(originalOrIntercepted(original, first.eventStreamFactory(original), Singletons::create));
+            public EventStreamFactory eventStreamFactory(final Supplier<? extends EventStreamFactory> singletons) {
+                return next.eventStreamFactory(singletonOrIntercepted(singletons, first.eventStreamFactory(singletons), Singletons::create));
             }
         };
     }
@@ -152,53 +152,53 @@ public interface Interceptor {
         INSTANCE;
 
         @Override
-        public final AppFactory appFactory(final Supplier<? extends AppFactory> original) {
-            return original.get();
+        public final AppFactory appFactory(final Supplier<? extends AppFactory> singletons) {
+            return singletons.get();
         }
 
         @Override
-        public final AgentStepFactory agentStepFactory(final Supplier<? extends AgentStepFactory> original) {
-            return original.get();
+        public final AgentStepFactory agentStepFactory(final Supplier<? extends AgentStepFactory> singletons) {
+            return singletons.get();
         }
 
         @Override
-        public final SequencerFactory sequencerFactory(final Supplier<? extends SequencerFactory> original) {
-            return original.get();
+        public final SequencerFactory sequencerFactory(final Supplier<? extends SequencerFactory> singletons) {
+            return singletons.get();
         }
 
         @Override
-        public final CommandPollerFactory commandPollerFactory(final Supplier<? extends CommandPollerFactory> original) {
-            return original.get();
+        public final CommandPollerFactory commandPollerFactory(final Supplier<? extends CommandPollerFactory> singletons) {
+            return singletons.get();
         }
 
         @Override
-        public final ProcessorFactory processorFactory(final Supplier<? extends ProcessorFactory> original) {
-            return original.get();
+        public final ProcessorFactory processorFactory(final Supplier<? extends ProcessorFactory> singletons) {
+            return singletons.get();
         }
 
         @Override
-        public final ApplierFactory applierFactory(final Supplier<? extends ApplierFactory> original) {
-            return original.get();
+        public final ApplierFactory applierFactory(final Supplier<? extends ApplierFactory> singletons) {
+            return singletons.get();
         }
 
         @Override
-        public final InOutFactory inOutFactory(final Supplier<? extends InOutFactory> original) {
-            return original.get();
+        public final InOutFactory inOutFactory(final Supplier<? extends InOutFactory> singletons) {
+            return singletons.get();
         }
 
         @Override
-        public final PublisherFactory publisherFactory(final Supplier<? extends PublisherFactory> original) {
-            return original.get();
+        public final PublisherFactory publisherFactory(final Supplier<? extends PublisherFactory> singletons) {
+            return singletons.get();
         }
 
         @Override
-        public final CommandStreamFactory commandStreamFactory(final Supplier<? extends CommandStreamFactory> original) {
-            return original.get();
+        public final CommandStreamFactory commandStreamFactory(final Supplier<? extends CommandStreamFactory> singletons) {
+            return singletons.get();
         }
 
         @Override
-        public final EventStreamFactory eventStreamFactory(final Supplier<? extends EventStreamFactory> original) {
-            return original.get();
+        public final EventStreamFactory eventStreamFactory(final Supplier<? extends EventStreamFactory> singletons) {
+            return singletons.get();
         }
 
         @Override

@@ -224,14 +224,14 @@ public class MetricsCapturingInterceptor implements Interceptor {
     }
 
     @Override
-    public AppFactory appFactory(final Supplier<? extends AppFactory> original) {
-        requireNonNull(original);
+    public AppFactory appFactory(final Supplier<? extends AppFactory> singletons) {
+        requireNonNull(singletons);
         if (shouldCapture(DUTY_CYCLE_FREQUENCY) || shouldCapture(DUTY_CYCLE_PERFORMED_FREQUENCY)) {
             //noinspection Convert2Lambda
             return new AppFactory() {
                 @Override
                 public Agent agent() {
-                    return counterAgent(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, original.get().agent());
+                    return counterAgent(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, singletons.get().agent());
                 }
             };
         }
@@ -239,23 +239,23 @@ public class MetricsCapturingInterceptor implements Interceptor {
     }
 
     @Override
-    public AgentStepFactory agentStepFactory(final Supplier<? extends AgentStepFactory> original) {
-        requireNonNull(original);
+    public AgentStepFactory agentStepFactory(final Supplier<? extends AgentStepFactory> singletons) {
+        requireNonNull(singletons);
         if (shouldCapture(STEP_ERROR_FREQUENCY) || shouldCapture(EXTRA_STEP_INVOCATION_FREQUENCY) || shouldCapture(EXTRA_STEP_PERFORMED_FREQUENCY)) {
             return new AgentStepFactory() {
                 @Override
                 public Runnable initStep() {
-                    return original.get().initStep();
+                    return singletons.get().initStep();
                 }
 
                 @Override
                 public AgentStep extraStepAlwaysWhenEventsApplied() {
-                    return counterStep(EXTRA_STEP_INVOCATION_FREQUENCY, EXTRA_STEP_PERFORMED_FREQUENCY, original.get().extraStepAlwaysWhenEventsApplied());
+                    return counterStep(EXTRA_STEP_INVOCATION_FREQUENCY, EXTRA_STEP_PERFORMED_FREQUENCY, singletons.get().extraStepAlwaysWhenEventsApplied());
                 }
 
                 @Override
                 public AgentStep extraStepAlways() {
-                    return counterStep(EXTRA_STEP_INVOCATION_FREQUENCY, EXTRA_STEP_PERFORMED_FREQUENCY, original.get().extraStepAlways());
+                    return counterStep(EXTRA_STEP_INVOCATION_FREQUENCY, EXTRA_STEP_PERFORMED_FREQUENCY, singletons.get().extraStepAlways());
                 }
             };
         }
@@ -263,8 +263,8 @@ public class MetricsCapturingInterceptor implements Interceptor {
     }
 
     @Override
-    public SequencerFactory sequencerFactory(final Supplier<? extends SequencerFactory> original) {
-        requireNonNull(original);
+    public SequencerFactory sequencerFactory(final Supplier<? extends SequencerFactory> singletons) {
+        requireNonNull(singletons);
         if (shouldCapture(STEP_ERROR_FREQUENCY) ||
                 shouldCapture(INPUTS_POLL_FREQUENCY) || shouldCapture(INPUT_RECEIVED_FREQUENCY) ||
                 shouldCapture(INPUT_SENDING_TIME) || shouldCapture(INPUT_POLLING_TIME) || shouldCapture(COMMAND_APPENDING_TIME)
@@ -272,7 +272,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
             return new SequencerFactory() {
                 @Override
                 public SenderSupplier senderSupplier() {
-                    final SenderSupplier senderSupplier = original.get().senderSupplier();
+                    final SenderSupplier senderSupplier = singletons.get().senderSupplier();
                     if (shouldCapture(INPUT_SENDING_TIME) || shouldCapture(INPUT_POLLING_TIME) || shouldCapture(COMMAND_APPENDING_TIME)) {
                         return timedSenderSupplier(senderSupplier);
                     }
@@ -281,7 +281,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
 
                 @Override
                 public AgentStep sequencerStep() {
-                    return counterStep(INPUTS_POLL_FREQUENCY, INPUT_RECEIVED_FREQUENCY, original.get().sequencerStep());
+                    return counterStep(INPUTS_POLL_FREQUENCY, INPUT_RECEIVED_FREQUENCY, singletons.get().sequencerStep());
                 }
             };
         }
@@ -289,14 +289,14 @@ public class MetricsCapturingInterceptor implements Interceptor {
     }
 
     @Override
-    public CommandPollerFactory commandPollerFactory(final Supplier<? extends CommandPollerFactory> original) {
-        requireNonNull(original);
+    public CommandPollerFactory commandPollerFactory(final Supplier<? extends CommandPollerFactory> singletons) {
+        requireNonNull(singletons);
         if (shouldCapture(STEP_ERROR_FREQUENCY) || shouldCapture(COMMAND_POLL_FREQUENCY)) {
             //noinspection Convert2Lambda
             return new CommandPollerFactory() {
                 @Override
                 public AgentStep commandPollerStep() {
-                    return counterStep(COMMAND_POLL_FREQUENCY, null, original.get().commandPollerStep());
+                    return counterStep(COMMAND_POLL_FREQUENCY, null, singletons.get().commandPollerStep());
                 }
             };
         }
@@ -304,8 +304,8 @@ public class MetricsCapturingInterceptor implements Interceptor {
     }
 
     @Override
-    public ProcessorFactory processorFactory(final Supplier<? extends ProcessorFactory> original) {
-        requireNonNull(original);
+    public ProcessorFactory processorFactory(final Supplier<? extends ProcessorFactory> singletons) {
+        requireNonNull(singletons);
         if (shouldCapture(COMMAND_PROCESSED_FREQUENCY) ||
                 shouldCaptureAnyOf(COMMAND) || //includes COMMAND_POLLING_TIME and PROCESSING_END_TIME shouldCapture(PROCESSING_START_TIME) || shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME)) {
                 shouldCapture(PROCESSING_START_TIME) || shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME)
@@ -313,7 +313,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
             return new ProcessorFactory() {
                 @Override
                 public CommandProcessor commandProcessor() {
-                    final CommandProcessor commandProcessor = original.get().commandProcessor();
+                    final CommandProcessor commandProcessor = singletons.get().commandProcessor();
                     if (shouldCapture(COMMAND_PROCESSED_FREQUENCY) ||
                             shouldCapture(PROCESSING_START_TIME) ||
                             shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME)
@@ -333,7 +333,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
 
                 @Override
                 public CommandHandler commandHandler() {
-                    final CommandHandler commandHandler = original.get().commandHandler();
+                    final CommandHandler commandHandler = singletons.get().commandHandler();
                     if (shouldCaptureAnyOf(COMMAND)) {//includes COMMAND_POLLING_TIME and PROCESSING_END_TIME
                         return command -> {
                             captureTime(COMMAND_POLLING_TIME);
@@ -351,8 +351,8 @@ public class MetricsCapturingInterceptor implements Interceptor {
     }
 
     @Override
-    public ApplierFactory applierFactory(final Supplier<? extends ApplierFactory> original) {
-        requireNonNull(original);
+    public ApplierFactory applierFactory(final Supplier<? extends ApplierFactory> singletons) {
+        requireNonNull(singletons);
         if (shouldCapture(STEP_ERROR_FREQUENCY) ||
                 shouldCapture(EVENT_POLL_FREQUENCY) || shouldCapture(EVENT_POLLED_FREQUENCY) ||
                 shouldCapture(EVENT_APPLIED_FREQUENCY) || shouldCaptureAnyOf(EVENT) || //includes APPLYING_START_TIME and APPLYING_END_TIME
@@ -360,7 +360,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
         ) {
             return new ApplierFactory() {
                 public EventApplier eventApplier() {
-                    final EventApplier eventApplier = original.get().eventApplier();
+                    final EventApplier eventApplier = singletons.get().eventApplier();
                     if (shouldCapture(EVENT_APPLIED_FREQUENCY) || shouldCaptureAnyOf(EVENT)) {//includes APPLYING_START_TIME and APPLYING_END_TIME
                         return event -> {
                             captureTime(APPLYING_START_TIME);
@@ -377,7 +377,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
 
                 @Override
                 public EventHandler eventHandler() {
-                    final EventHandler eventHandler = original.get().eventHandler();
+                    final EventHandler eventHandler = singletons.get().eventHandler();
                     if (shouldCapture(EVENT_POLLING_TIME)) {
                         return event -> {
                             captureTime(EVENT_POLLING_TIME);
@@ -389,7 +389,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
 
                 @Override
                 public AgentStep eventPollerStep() {
-                    return counterStep(EVENT_POLL_FREQUENCY, null, original.get().eventPollerStep());
+                    return counterStep(EVENT_POLL_FREQUENCY, null, singletons.get().eventPollerStep());
                 }
             };
         }
@@ -397,18 +397,18 @@ public class MetricsCapturingInterceptor implements Interceptor {
     }
 
     @Override
-    public InOutFactory inOutFactory(final Supplier<? extends InOutFactory> original) {
-        requireNonNull(original);
+    public InOutFactory inOutFactory(final Supplier<? extends InOutFactory> singletons) {
+        requireNonNull(singletons);
         if (shouldCapture(OUTPUT_PUBLISHED_FREQUENCY) || shouldCaptureAnyOf(OUTPUT)) {
             return new InOutFactory() {
                 @Override
                 public Input[] inputs() {
-                    return original.get().inputs();//TODO no interception here?
+                    return singletons.get().inputs();//TODO no interception here?
                 }
 
                 @Override
                 public Output output() {
-                    final Output output = original.get().output();
+                    final Output output = singletons.get().output();
                     if (shouldCapture(OUTPUT_PUBLISHED_FREQUENCY) || shouldCaptureAnyOf(OUTPUT)) {
                         return (event, replay, retry, loopback) -> {
                             captureTime(OUTPUT_START_TIME);
@@ -433,20 +433,20 @@ public class MetricsCapturingInterceptor implements Interceptor {
     }
 
     @Override
-    public PublisherFactory publisherFactory(final Supplier<? extends PublisherFactory> original) {
-        requireNonNull(original);
+    public PublisherFactory publisherFactory(final Supplier<? extends PublisherFactory> singletons) {
+        requireNonNull(singletons);
         if (shouldCapture(STEP_ERROR_FREQUENCY) ||
                 shouldCapture(OUTPUT_POLLING_TIME) ||
                 shouldCapture(OUTPUT_POLL_FREQUENCY)) {
             return new PublisherFactory() {
                 @Override
                 public CommandSender loopbackCommandSender() {
-                    return original.get().loopbackCommandSender();
+                    return singletons.get().loopbackCommandSender();
                 }
 
                 @Override
                 public OutputHandler outputHandler() {
-                    final OutputHandler outputHandler = original.get().outputHandler();
+                    final OutputHandler outputHandler = singletons.get().outputHandler();
                     if (shouldCapture(OUTPUT_POLLING_TIME)) {
                         return (event, replay, retry) -> {
                             captureTime(OUTPUT_POLLING_TIME);
@@ -458,7 +458,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
 
                 @Override
                 public AgentStep publisherStep() {
-                    return counterStep(OUTPUT_POLL_FREQUENCY, null, original.get().publisherStep());
+                    return counterStep(OUTPUT_POLL_FREQUENCY, null, singletons.get().publisherStep());
                 }
             };
         }

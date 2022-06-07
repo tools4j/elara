@@ -81,8 +81,8 @@ public class BootPlugin implements SystemPlugin<NullState> {
             public Interceptor interceptor(final BaseState.Mutable baseState) {
                 return new Interceptor() {
                     @Override
-                    public SequencerFactory sequencerFactory(final Supplier<? extends SequencerFactory> original) {
-                        sequencerSingletons = original;
+                    public SequencerFactory sequencerFactory(final Supplier<? extends SequencerFactory> singletons) {
+                        sequencerSingletons = singletons;
                         return null;
                     }
                 };

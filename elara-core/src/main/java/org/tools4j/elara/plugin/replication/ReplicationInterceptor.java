@@ -64,17 +64,17 @@ class ReplicationInterceptor implements Interceptor {
     }
 
     @Override
-    public ApplierFactory applierFactory(final Supplier<? extends ApplierFactory> original) {
-        eventApplierSingletons = requireNonNull(original);
+    public ApplierFactory applierFactory(final Supplier<? extends ApplierFactory> singletons) {
+        eventApplierSingletons = requireNonNull(singletons);
         return new ApplierFactory() {
             @Override
             public EventApplier eventApplier() {
-                return original.get().eventApplier();
+                return singletons.get().eventApplier();
             }
 
             @Override
             public EventHandler eventHandler() {
-                return original.get().eventHandler();
+                return singletons.get().eventHandler();
             }
 
             @Override
@@ -86,12 +86,12 @@ class ReplicationInterceptor implements Interceptor {
     }
 
     @Override
-    public ProcessorFactory processorFactory(final Supplier<? extends ProcessorFactory> original) {
-        requireNonNull(original);
+    public ProcessorFactory processorFactory(final Supplier<? extends ProcessorFactory> singletons) {
+        requireNonNull(singletons);
         return new ProcessorFactory() {
             @Override
             public CommandProcessor commandProcessor() {
-                return original.get().commandProcessor();
+                return singletons.get().commandProcessor();
             }
 
             @Override
