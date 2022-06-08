@@ -37,10 +37,10 @@ import static java.util.Objects.requireNonNull;
  */
 public class MetricsPlugin implements Plugin<MetricsState> {
 
-    private final org.tools4j.elara.plugin.metrics.Configuration configuration;
+    private final MetricsConfig configuration;
 
-    public MetricsPlugin(final org.tools4j.elara.plugin.metrics.Configuration configuration) {
-        this.configuration = org.tools4j.elara.plugin.metrics.Configuration.validate(configuration);
+    public MetricsPlugin(final MetricsConfig configuration) {
+        this.configuration = MetricsConfig.validate(configuration);
     }
 
     @Override

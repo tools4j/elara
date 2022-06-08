@@ -105,6 +105,36 @@ public class HashApplicationTest {
         assertEquals(expected, state.hash(), "state.hash(" + n + ")");
     }
 
+    @Test
+    public void passthroughWithMetrics() throws Exception {
+        //given
+        final int n = 500_000;
+//        final int n = 5_000_000;
+//        final int n = 50_000_000;
+        final AtomicLong input = new AtomicLong(NULL_VALUE);
+        final ModifiableState state = new DefaultState();
+        final Random random = new Random(123);
+        final long sleepNanos = MICROSECONDS.toNanos(0);
+        final long expected = 8951308420835593941L;//  500_000
+//        final long expected = -4253299023651259134L;//5_000_000
+//        final long expected = 8536806003277137281L;//50_000_000
+
+        //when
+        try (final ElaraRunner runner = HashPassthroughApplication.chronicleQueueWithMetrics(input)) {
+//        try (final ElaraRunner runner = HashPassthroughApplication.chronicleQueueWithFreqMetrics(input)) {
+            runHashApp(n, random, sleepNanos, input, runner);
+        }
+        try (final ElaraRunner runner = HashPassthroughApplication.publisherWithState(state)) {
+            while (state.count() < n) {
+                Thread.sleep(50);
+            }
+            runner.join(200);
+        }
+
+        //then
+        assertEquals(expected, state.hash(), "state.hash(" + n + ")");
+    }
+
     private static void runHashApp(final int n,
                                    final Random random,
                                    final long sleepNanos,

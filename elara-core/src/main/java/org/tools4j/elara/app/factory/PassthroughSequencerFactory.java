@@ -41,17 +41,20 @@ public class PassthroughSequencerFactory implements SequencerFactory {
     private final EventStoreConfig eventStoreConfig;
     private final Supplier<? extends SequencerFactory> sequencerSingletons;
     private final Supplier<? extends InOutFactory> inOutSingletons;
+    private final Supplier<? extends ApplierFactory> applierSingletons;
     private final Supplier<? extends PluginFactory> pluginSingletons;
 
     public PassthroughSequencerFactory(final AppConfig appConfig,
                                        final EventStoreConfig eventStoreConfig,
                                        final Supplier<? extends SequencerFactory> sequencerSingletons,
                                        final Supplier<? extends InOutFactory> inOutSingletons,
+                                       final Supplier<? extends ApplierFactory> applierSingletons,
                                        final Supplier<? extends PluginFactory> pluginSingletons) {
         this.appConfig = requireNonNull(appConfig);
         this.eventStoreConfig = requireNonNull(eventStoreConfig);
         this.sequencerSingletons = requireNonNull(sequencerSingletons);
         this.inOutSingletons = requireNonNull(inOutSingletons);
+        this.applierSingletons = requireNonNull(applierSingletons);
         this.pluginSingletons = requireNonNull(pluginSingletons);
     }
 
@@ -59,7 +62,7 @@ public class PassthroughSequencerFactory implements SequencerFactory {
     public SenderSupplier senderSupplier() {
         final CommandPassthroughSender commandSender = new CommandPassthroughSender(
                 appConfig.timeSource(), pluginSingletons.get().baseState(), eventStoreConfig.eventStore().appender(),
-                appConfig.exceptionHandler(), appConfig.duplicateHandler());
+                applierSingletons.get().eventApplier(), appConfig.exceptionHandler(), appConfig.duplicateHandler());
         return new DefaultSenderSupplier(commandSender);
     }
 

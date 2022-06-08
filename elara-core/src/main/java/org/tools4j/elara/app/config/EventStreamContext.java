@@ -29,8 +29,8 @@ import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.stream.MessageStream;
 
 public interface EventStreamContext extends EventStreamConfig {
-    EventStreamContext eventStream(MessageStore eventStore);
-    EventStreamContext eventStream(MessageStore.Poller eventStorePoller);
+    EventStreamContext eventStore(MessageStore eventStore);
+    EventStreamContext eventStore(MessageStore.Poller eventStorePoller);
     EventStreamContext eventStream(MessageStream eventStream);
     EventStreamContext eventProcessor(EventProcessor eventProcessor);
     EventStreamContext output(Output output);

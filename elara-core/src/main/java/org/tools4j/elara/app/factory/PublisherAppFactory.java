@@ -24,55 +24,66 @@
 package org.tools4j.elara.app.factory;
 
 import org.agrona.concurrent.Agent;
-import org.tools4j.elara.agent.SequencerPassthroughAgent;
-import org.tools4j.elara.app.config.ApplierConfig;
-import org.tools4j.elara.app.handler.EventApplier;
-import org.tools4j.elara.app.type.SequencerPassthroughAppConfig;
+import org.tools4j.elara.agent.AllInOneAgent;
+import org.tools4j.elara.agent.PublisherAgent;
+import org.tools4j.elara.app.config.CommandPollingMode;
+import org.tools4j.elara.app.config.EventStoreConfig;
+import org.tools4j.elara.app.config.InOutConfig;
+import org.tools4j.elara.app.type.AllInOneAppConfig;
+import org.tools4j.elara.app.type.PublisherApp;
+import org.tools4j.elara.app.type.PublisherAppConfig;
+import org.tools4j.elara.input.Input;
+import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.store.MessageStore;
+import org.tools4j.elara.stream.MessageStream;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
-public class SequencerPassthroughAppFactory implements AppFactory {
+import static java.util.Objects.requireNonNull;
+
+public class PublisherAppFactory implements AppFactory {
 
     private final PluginFactory pluginSingletons;
-    private final SequencerFactory sequencerSingletons;
-    private final ApplierFactory applierSingletons;
     private final InOutFactory inOutSingletons;
     private final PublisherFactory publisherSingletons;
-    private final AgentStepFactory agentStepSingletons;
     private final AppFactory appSingletons;
 
-    public SequencerPassthroughAppFactory(final SequencerPassthroughAppConfig config) {
+    public PublisherAppFactory(final PublisherAppConfig config) {
         this.pluginSingletons = Singletons.create(new DefaultPluginFactory(config, config, this::pluginSingletons));
 
         final Interceptor interceptor = interceptor(pluginSingletons);
-        this.sequencerSingletons = interceptor.sequencerFactory(singletonsSupplier(
-                (SequencerFactory) new PassthroughSequencerFactory(
-                        config, config, this::sequencerSingletons, this::inOutSingletons, this::applierSingletons, this::pluginSingletons
-                ),
-                Singletons::create
-        ));
-        this.applierSingletons = interceptor.applierFactory(singletonsSupplier(
-                (ApplierFactory) new DefaultApplierFactory(config, applierConfig(), config, this::applierSingletons, this::pluginSingletons),
-                Singletons::create
-        ));
         this.inOutSingletons = interceptor.inOutFactory(singletonsSupplier(
-                (InOutFactory) new DefaultInOutFactory(config, config, this::pluginSingletons),
+                (InOutFactory) new DefaultInOutFactory(config, inOutConfig(config), this::pluginSingletons),
                 Singletons::create
         ));
         this.publisherSingletons = interceptor.publisherFactory(singletonsSupplier(
-                (PublisherFactory)new DefaultPublisherFactory(config, config, this::publisherSingletons, this::sequencerSingletons, this::inOutSingletons, this::pluginSingletons),
-                Singletons::create
-        ));
-        this.agentStepSingletons = interceptor.agentStepFactory(singletonsSupplier(
-                (AgentStepFactory)new DefaultAgentStepFactory(config, this::pluginSingletons),
+                (PublisherFactory)new StreamPublisherFactory(config, config, this::publisherSingletons, this::inOutSingletons, this::pluginSingletons),
                 Singletons::create
         ));
         this.appSingletons = interceptor.appFactory(singletonsSupplier(
                 appFactory(), Singletons::create
         ));
+    }
+
+    //FIXME don't use InOut if input is not supported
+    private static InOutConfig inOutConfig(final PublisherAppConfig config) {
+        requireNonNull(config);
+        return new InOutConfig() {
+            @Override
+            public List<Input> inputs() {
+                return Collections.emptyList();
+            }
+
+            @Override
+            public Output output() {
+                return config.output();
+            }
+        };
     }
 
     private static Interceptor interceptor(final PluginFactory pluginSingletons) {
@@ -84,26 +95,13 @@ public class SequencerPassthroughAppFactory implements AppFactory {
         return interceptor.thenYield();
     }
 
-    private ApplierConfig applierConfig() {
-        final EventApplier eventApplier = event -> pluginSingletons().baseState().eventApplied(event);
-        return () -> eventApplier;
-    }
-
     private <T> Supplier<T> singletonsSupplier(final T factory, final UnaryOperator<T> singletonOp) {
         final T singletons = singletonOp.apply(factory);
         return () -> singletons;
     }
 
-    private ApplierFactory applierSingletons() {
-        return applierSingletons;
-    }
-
     private InOutFactory inOutSingletons() {
         return inOutSingletons;
-    }
-
-    private SequencerFactory sequencerSingletons() {
-        return sequencerSingletons;
     }
 
     private PublisherFactory publisherSingletons() {
@@ -114,14 +112,8 @@ public class SequencerPassthroughAppFactory implements AppFactory {
         return pluginSingletons;
     }
 
-
     private AppFactory appFactory() {
-        return () -> new SequencerPassthroughAgent(
-                sequencerSingletons.sequencerStep(),
-                applierSingletons.eventPollerStep(),
-                publisherSingletons.publisherStep(),
-                agentStepSingletons.extraStepAlwaysWhenEventsApplied(),
-                agentStepSingletons.extraStepAlways());
+        return () -> new PublisherAgent(publisherSingletons.publisherStep());
     }
 
     @Override

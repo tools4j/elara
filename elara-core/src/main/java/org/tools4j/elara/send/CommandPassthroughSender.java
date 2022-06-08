@@ -24,10 +24,12 @@
 package org.tools4j.elara.send;
 
 import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.FlyweightCommand;
+import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.flyweight.FlyweightHeader;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.store.ExpandableDirectBuffer;
@@ -56,17 +58,21 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
     private final ExceptionHandler exceptionHandler;
     private final DuplicateHandler duplicateHandler;
     private final MessageStore.Appender eventStoreAppender;
+    private final EventApplier eventApplier;
     private final SendingContext sendingContext = new SendingContext();
     private final FlyweightCommand skippedCommand = new FlyweightCommand();
+    private final FlyweightEvent appliedEvent = new FlyweightEvent();
 
     public CommandPassthroughSender(final TimeSource timeSource,
                                     final BaseState baseState,
                                     final MessageStore.Appender eventStoreAppender,
+                                    final EventApplier eventApplier,
                                     final ExceptionHandler exceptionHandler,
                                     final DuplicateHandler duplicateHandler) {
         this.timeSource = requireNonNull(timeSource);
         this.baseState = requireNonNull(baseState);
         this.eventStoreAppender = requireNonNull(eventStoreAppender);
+        this.eventApplier = requireNonNull(eventApplier);
         this.exceptionHandler = requireNonNull(exceptionHandler);
         this.duplicateHandler = requireNonNull(duplicateHandler);
     }
@@ -133,6 +139,7 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
                 if (baseState.allEventsAppliedFor(source(), sequence())) {
                     skipCommand(ac);
                 } else {
+                    applyEvent(ac);
                     ac.commit(HEADER_LENGTH + length);
                 }
                 incrementCommandSequence();
@@ -152,6 +159,17 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
                 exceptionHandler.handleCommandProcessorException(skippedCommand, t);
             } finally {
                 skippedCommand.reset();
+            }
+        }
+
+        private void applyEvent(final AppendingContext context) {
+            appliedEvent.init(context.buffer(), 0);
+            try {
+                eventApplier.onEvent(appliedEvent);
+            } catch (final Throwable t) {
+                exceptionHandler.handleEventApplierException(appliedEvent, t);
+            } finally {
+                appliedEvent.reset();
             }
         }
 

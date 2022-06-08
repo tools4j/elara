@@ -24,6 +24,7 @@
 package org.tools4j.elara.agent;
 
 import org.agrona.concurrent.Agent;
+import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.step.PublisherStep;
 import org.tools4j.elara.store.CommittedEventPoller;
 
@@ -38,9 +39,9 @@ import static java.util.Objects.requireNonNull;
  * are passed to the handler.
  */
 public class PublisherAgent implements Agent {
-    private final PublisherStep publisherStep;
+    private final AgentStep publisherStep;
 
-    public PublisherAgent(final PublisherStep publisherStep) {
+    public PublisherAgent(final AgentStep publisherStep) {
         this.publisherStep = requireNonNull(publisherStep);
     }
 

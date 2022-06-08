@@ -95,12 +95,12 @@ import static org.tools4j.elara.plugin.metrics.TimeMetric.Target.OUTPUT;
 public class MetricsCapturingInterceptor implements Interceptor {
 
     private final TimeSource timeSource;
-    private final Configuration configuration;
+    private final MetricsConfig configuration;
     private final MetricsState state;
     private final TimeMetricsStoreWriter timeMetricsWriter;
 
     public MetricsCapturingInterceptor(final TimeSource timeSource,
-                                       final Configuration configuration,
+                                       final MetricsConfig configuration,
                                        final MetricsState state) {
         this.timeSource = requireNonNull(timeSource);
         this.configuration = requireNonNull(configuration);
@@ -409,6 +409,9 @@ public class MetricsCapturingInterceptor implements Interceptor {
                 @Override
                 public Output output() {
                     final Output output = singletons.get().output();
+                    if (output == Output.NOOP) {
+                        return output;
+                    }
                     if (shouldCapture(OUTPUT_PUBLISHED_FREQUENCY) || shouldCaptureAnyOf(OUTPUT)) {
                         return (event, replay, retry, loopback) -> {
                             captureTime(OUTPUT_START_TIME);

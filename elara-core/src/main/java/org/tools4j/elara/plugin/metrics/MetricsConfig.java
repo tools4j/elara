@@ -27,23 +27,19 @@ import org.tools4j.elara.store.MessageStore;
 
 import java.util.Set;
 
-public interface Context extends Configuration {
-    Context timeMetric(TimeMetric metric);
-    Context timeMetrics(TimeMetric... metrics);
-    Context timeMetrics(Set<? extends TimeMetric> metrics);
-    Context frequencyMetric(FrequencyMetric metric);
-    Context frequencyMetrics(FrequencyMetric... metrics);
-    Context frequencyMetrics(Set<? extends FrequencyMetric> metrics);
-    Context latencyMetric(LatencyMetric metric);
-    Context latencyMetrics(LatencyMetric... metrics);
-    Context latencyMetrics(Set<? extends LatencyMetric> metrics);
-    Context inputSendingTimeExtractor(InputSendingTimeExtractor sendingTimeExtractor);
-    Context frequencyMetricInterval(long timeInterval);
-    Context metricsStore(MessageStore metricStore);
-    Context timeMetricsStore(MessageStore metricStore);
-    Context frequencyMetricsStore(MessageStore metricStore);
+public interface MetricsConfig {
+    Set<TimeMetric> timeMetrics();
+    Set<FrequencyMetric> frequencyMetrics();
+    InputSendingTimeExtractor inputSendingTimeExtractor();
+    long frequencyMetricInterval();
+    MessageStore timeMetricsStore();
+    MessageStore frequencyMetricsStore();
 
-    static Context create() {
-        return new DefaultContext();
+    static MetricsContext configure() {
+        return MetricsContext.create();
+    }
+
+    static MetricsConfig validate(final MetricsConfig configuration) {
+        return DefaultContext.validate(configuration);
     }
 }

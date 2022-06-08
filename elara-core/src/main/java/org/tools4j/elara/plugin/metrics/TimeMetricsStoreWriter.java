@@ -40,12 +40,12 @@ import static org.tools4j.elara.plugin.metrics.TimeMetric.METRIC_APPENDING_TIME;
 public class TimeMetricsStoreWriter {
 
     private final TimeSource timeSource;
-    private final Configuration configuration;
+    private final MetricsConfig configuration;
     private final MetricsState state;
     private final Appender appender;
 
     public TimeMetricsStoreWriter(final TimeSource timeSource,
-                                  final Configuration configuration,
+                                  final MetricsConfig configuration,
                                   final MetricsState state) {
         this.timeSource = requireNonNull(timeSource);
         this.configuration = requireNonNull(configuration);

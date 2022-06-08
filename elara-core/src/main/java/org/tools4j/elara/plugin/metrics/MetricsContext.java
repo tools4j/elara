@@ -27,19 +27,23 @@ import org.tools4j.elara.store.MessageStore;
 
 import java.util.Set;
 
-public interface Configuration {
-    Set<TimeMetric> timeMetrics();
-    Set<FrequencyMetric> frequencyMetrics();
-    InputSendingTimeExtractor inputSendingTimeExtractor();
-    long frequencyMetricInterval();
-    MessageStore timeMetricsStore();
-    MessageStore frequencyMetricsStore();
+public interface MetricsContext extends MetricsConfig {
+    MetricsContext timeMetric(TimeMetric metric);
+    MetricsContext timeMetrics(TimeMetric... metrics);
+    MetricsContext timeMetrics(Set<? extends TimeMetric> metrics);
+    MetricsContext frequencyMetric(FrequencyMetric metric);
+    MetricsContext frequencyMetrics(FrequencyMetric... metrics);
+    MetricsContext frequencyMetrics(Set<? extends FrequencyMetric> metrics);
+    MetricsContext latencyMetric(LatencyMetric metric);
+    MetricsContext latencyMetrics(LatencyMetric... metrics);
+    MetricsContext latencyMetrics(Set<? extends LatencyMetric> metrics);
+    MetricsContext inputSendingTimeExtractor(InputSendingTimeExtractor sendingTimeExtractor);
+    MetricsContext frequencyMetricInterval(long timeInterval);
+    MetricsContext metricsStore(MessageStore metricStore);
+    MetricsContext timeMetricsStore(MessageStore metricStore);
+    MetricsContext frequencyMetricsStore(MessageStore metricStore);
 
-    static Context configure() {
-        return Context.create();
-    }
-
-    static Configuration validate(final Configuration configuration) {
-        return DefaultContext.validate(configuration);
+    static MetricsContext create() {
+        return new DefaultContext();
     }
 }

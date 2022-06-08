@@ -46,9 +46,9 @@ import java.util.function.Supplier;
 public interface PublisherAppContext extends PublisherAppConfig, AppContext, EventStreamContext, PluginContext {
 
     @Override
-    PublisherAppContext eventStream(MessageStore eventStore);
+    PublisherAppContext eventStore(MessageStore eventStore);
     @Override
-    PublisherAppContext eventStream(Poller eventStorePoller);
+    PublisherAppContext eventStore(Poller eventStorePoller);
     @Override
     PublisherAppContext eventStream(MessageStream eventStream);
     @Override

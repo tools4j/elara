@@ -42,12 +42,12 @@ public interface PublisherApp extends Output {
 
     default ElaraRunner launch(final MessageStore eventStore) {
         requireNonNull(eventStore);
-        return launch((Consumer<PublisherAppContext>)context -> context.eventStream(eventStore));
+        return launch((Consumer<PublisherAppContext>)context -> context.eventStore(eventStore));
     }
 
     default ElaraRunner launch(final MessageStore.Poller eventStorePoller) {
         requireNonNull(eventStorePoller);
-        return launch((Consumer<PublisherAppContext>)context -> context.eventStream(eventStorePoller));
+        return launch((Consumer<PublisherAppContext>)context -> context.eventStore(eventStorePoller));
     }
 
     default ElaraRunner launch(final MessageStream eventStream) {

@@ -25,6 +25,7 @@ package org.tools4j.elara.samples.hash;
 
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.wire.WireType;
+import org.agrona.IoUtil;
 import org.agrona.concurrent.BusySpinIdleStrategy;
 import org.tools4j.elara.app.config.CommandPollingMode;
 import org.tools4j.elara.app.type.AllInOneApp;
@@ -32,9 +33,9 @@ import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.output.Output;
+import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.plugin.api.Plugins;
-import org.tools4j.elara.plugin.metrics.Configuration;
+import org.tools4j.elara.plugin.metrics.MetricsConfig;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.run.ElaraRunner;
@@ -43,6 +44,7 @@ import org.tools4j.elara.send.CommandSender.SendingContext;
 import org.tools4j.elara.store.InMemoryStore;
 import org.tools4j.elara.time.TimeSource;
 
+import java.io.File;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.Objects.requireNonNull;
@@ -74,7 +76,7 @@ import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_START_TIME;
  *     - State is a simple hash of all event values
  * </pre>
  */
-public class HashApplication implements AllInOneApp, Output {
+public class HashApplication implements AllInOneApp /*, Output*/ {
 
     public static final int MESSAGE_LENGTH = 5 * Long.BYTES;
     public static final long NULL_VALUE = Long.MIN_VALUE;
@@ -144,7 +146,7 @@ public class HashApplication implements AllInOneApp, Output {
         }
     }
 
-    @Override
+    //@Override
     public Ack publish(final Event event, final boolean replay, final int retry, final CommandSender loopback) {
         /* trigger capturing of output metrics approximately every second time */
         return (event.payload().getLong(0) & 0x1) == 0 ? Ack.COMMIT : Ack.IGNORED;
@@ -198,6 +200,7 @@ public class HashApplication implements AllInOneApp, Output {
     }
 
     public static ElaraRunner chronicleQueueWithMetrics(final ModifiableState state, final AtomicLong input) {
+        IoUtil.delete(new File("build/chronicle/hash-metrics"), true);
         final TimeSource pseudoNanoClock = new PseudoMicroClock();
         final ChronicleQueue cq = ChronicleQueue.singleBuilder()
                 .path("build/chronicle/hash-metrics/cmd.cq4")
@@ -219,13 +222,14 @@ public class HashApplication implements AllInOneApp, Output {
                 .path("build/chronicle/hash-metrics/frq.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
+
         return new HashApplication(state).launch(config -> config
                         .input(input(input))
                         .commandStore(new ChronicleMessageStore(cq))
                         .eventStore(new ChronicleMessageStore(eq))
                         .timeSource(pseudoNanoClock)
                         .idleStrategy(BusySpinIdleStrategy.INSTANCE)
-                        .plugin(Plugins.metricsPlugin(Configuration.configure()
+                        .plugin(Plugins.metricsPlugin(MetricsConfig.configure()
 //                    .timeMetrics(EnumSet.allOf(TimeMetric.class))
 //                    .frequencyMetrics(EnumSet.allOf(FrequencyMetric.class))
                                         .timeMetrics(INPUT_SENDING_TIME, INPUT_POLLING_TIME, PROCESSING_START_TIME, PROCESSING_END_TIME, ROUTING_START_TIME, APPLYING_START_TIME, APPLYING_END_TIME, ROUTING_END_TIME, OUTPUT_START_TIME, OUTPUT_END_TIME)
@@ -242,6 +246,7 @@ public class HashApplication implements AllInOneApp, Output {
     public static ElaraRunner chronicleQueueWithFreqMetrics(final ModifiableState state,
                                                             final AtomicLong input,
                                                             final CommandPollingMode commandPollingMode) {
+        IoUtil.delete(new File("build/chronicle/hash-metrics"), true);
         final TimeSource pseudoNanoClock = new PseudoMicroClock();
         final ChronicleQueue cq = ChronicleQueue.singleBuilder()
                 .path("build/chronicle/hash-metrics/cmd.cq4")
@@ -262,7 +267,7 @@ public class HashApplication implements AllInOneApp, Output {
                         .eventStore(new ChronicleMessageStore(eq))
                         .timeSource(pseudoNanoClock)
                         .idleStrategy(BusySpinIdleStrategy.INSTANCE)
-                        .plugin(Plugins.metricsPlugin(Configuration.configure()
+                        .plugin(Plugins.metricsPlugin(MetricsConfig.configure()
                                         .frequencyMetrics(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, EVENT_APPLIED_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY)
                                         .frequencyMetricInterval(100_000)//micros
                                         .frequencyMetricsStore(new ChronicleMessageStore(fq))
@@ -270,7 +275,7 @@ public class HashApplication implements AllInOneApp, Output {
         );
     }
 
-    private static boolean isEven(final long value) {
+    static boolean isEven(final long value) {
         return (value & 0x1) == 0;
     }
 }

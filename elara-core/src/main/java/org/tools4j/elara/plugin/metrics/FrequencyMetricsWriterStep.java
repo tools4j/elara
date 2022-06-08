@@ -36,7 +36,7 @@ import static org.tools4j.elara.plugin.metrics.FlyweightMetricsStoreEntry.writeF
 public class FrequencyMetricsWriterStep implements AgentStep {
 
     private final TimeSource timeSource;
-    private final Configuration configuration;
+    private final MetricsConfig configuration;
     private final MetricsState state;
     private final long interval;
     private final Appender appender;
@@ -44,7 +44,7 @@ public class FrequencyMetricsWriterStep implements AgentStep {
     private long lastWriteTime;
 
     public FrequencyMetricsWriterStep(final TimeSource timeSource,
-                                      final Configuration configuration,
+                                      final MetricsConfig configuration,
                                       final MetricsState state) {
         this.timeSource = requireNonNull(timeSource);
         this.configuration = requireNonNull(configuration);

@@ -26,6 +26,9 @@ package org.tools4j.elara.step;
 import org.agrona.DirectBuffer;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.handler.EventHandler;
+import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.plugin.base.SingleEventBaseState;
+import org.tools4j.elara.store.CommittedEventPoller;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.store.MessageStore.Handler;
 import org.tools4j.elara.store.MessageStore.Handler.Result;
@@ -46,9 +49,21 @@ public class EventReplayStep implements AgentStep {
     private final FlyweightEvent flyweightEvent = new FlyweightEvent();
     private boolean replayed;
 
-    public EventReplayStep(final MessageStore.Poller eventPoller, final EventHandler eventHandler) {
+    private EventReplayStep(final MessageStore.Poller eventPoller, final EventHandler eventHandler) {
         this.eventPoller = requireNonNull(eventPoller);
         this.eventHandler = requireNonNull(eventHandler);
+    }
+
+    public static EventReplayStep replayNonAbortedEvents(final MessageStore eventStore, final EventHandler eventHandler) {
+        return new EventReplayStep(new CommittedEventPoller(eventStore), eventHandler);
+    }
+
+    public static EventReplayStep replayAllEvents(final MessageStore eventStore, final EventHandler eventHandler) {
+        return replayAllEvents(eventStore.poller(), eventHandler);
+    }
+
+    public static EventReplayStep replayAllEvents(final MessageStore.Poller eventPoller, final EventHandler eventHandler) {
+        return new EventReplayStep(eventPoller, eventHandler);
     }
 
     @Override

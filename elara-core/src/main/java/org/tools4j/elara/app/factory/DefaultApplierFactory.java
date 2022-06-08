@@ -31,6 +31,7 @@ import org.tools4j.elara.event.CompositeEventApplier;
 import org.tools4j.elara.handler.DefaultEventHandler;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.plugin.base.SingleEventBaseState;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.step.EventReplayStep;
 
@@ -96,8 +97,10 @@ public class DefaultApplierFactory implements ApplierFactory {
 
     @Override
     public AgentStep eventPollerStep() {
-        return new EventReplayStep(
-                eventStoreConfig.eventStore().poller(), applierSingletons.get().eventHandler()
-        );
+        final EventHandler eventHandler = applierSingletons.get().eventHandler();
+        if (pluginSingletons.get().baseState() instanceof SingleEventBaseState) {
+            return EventReplayStep.replayAllEvents(eventStoreConfig.eventStore(), eventHandler);
+        }
+        return EventReplayStep.replayNonAbortedEvents(eventStoreConfig.eventStore(), eventHandler);
     }
 }

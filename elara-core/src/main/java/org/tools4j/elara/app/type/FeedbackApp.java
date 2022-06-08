@@ -44,12 +44,12 @@ public interface FeedbackApp extends EventProcessor {
 
     default ElaraRunner launch(final MessageStore messageStore) {
         requireNonNull(messageStore);
-        return launch((Consumer<FeedbackAppContext>)context -> context.eventStream(messageStore));
+        return launch((Consumer<FeedbackAppContext>)context -> context.eventStore(messageStore));
     }
 
     default ElaraRunner launch(final MessageStore.Poller eventStorePoller) {
         requireNonNull(eventStorePoller);
-        return launch((Consumer<FeedbackAppContext>)context -> context.eventStream(eventStorePoller));
+        return launch((Consumer<FeedbackAppContext>)context -> context.eventStore(eventStorePoller));
     }
 
     default ElaraRunner launch(final MessageStream eventStream) {

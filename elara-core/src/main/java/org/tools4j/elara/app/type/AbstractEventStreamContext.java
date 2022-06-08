@@ -43,12 +43,12 @@ abstract class AbstractEventStreamContext<T extends AbstractEventStreamContext<T
     }
 
     @Override
-    public T eventStream(final MessageStore eventStore) {
+    public T eventStore(final MessageStore eventStore) {
         return eventStream(new StorePollingMessageStream(eventStore));
     }
 
     @Override
-    public T eventStream(final Poller eventStorePoller) {
+    public T eventStore(final Poller eventStorePoller) {
         return eventStream(new StorePollingMessageStream(eventStorePoller));
     }
 

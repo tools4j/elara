@@ -52,7 +52,7 @@ final class SequencerPassthroughAppContextImpl extends AbstractAppContext<Sequen
 
     @Override
     public SequencerPassthroughAppContextImpl populateDefaults() {
-        return populateDefaults();
+        return super.populateDefaults();
     }
 
     @Override
