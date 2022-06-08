@@ -24,7 +24,7 @@
 package org.tools4j.elara.plugin.replication;
 
 import org.tools4j.elara.app.config.AppConfig;
-import org.tools4j.elara.app.config.ProcessorConfig;
+import org.tools4j.elara.app.config.EventStoreConfig;
 import org.tools4j.elara.app.factory.ApplierFactory;
 import org.tools4j.elara.app.factory.Interceptor;
 import org.tools4j.elara.app.factory.ProcessorFactory;
@@ -44,7 +44,7 @@ import static java.util.Objects.requireNonNull;
 class ReplicationInterceptor implements Interceptor {
 
     private final AppConfig appConfig;
-    private final ProcessorConfig processorConfig;
+    private final EventStoreConfig eventStoreConfig;
     private final Configuration pluginConfig;
     private final BaseState.Mutable baseState;
     private final ReplicationState replicationState;
@@ -52,12 +52,12 @@ class ReplicationInterceptor implements Interceptor {
     private Supplier<? extends ApplierFactory> eventApplierSingletons;
 
     public ReplicationInterceptor(final AppConfig appConfig,
-                                  final ProcessorConfig processorConfig,
+                                  final EventStoreConfig eventStoreConfig,
                                   final Configuration pluginConfig,
                                   final BaseState.Mutable baseState,
                                   final ReplicationState replicationState) {
         this.appConfig = requireNonNull(appConfig);
-        this.processorConfig = requireNonNull(processorConfig);
+        this.eventStoreConfig = requireNonNull(eventStoreConfig);
         this.pluginConfig = requireNonNull(pluginConfig);
         this.baseState = requireNonNull(baseState);
         this.replicationState = requireNonNull(replicationState);
@@ -80,7 +80,7 @@ class ReplicationInterceptor implements Interceptor {
             @Override
             public AgentStep eventPollerStep() {
                 //NOTE: need override here since default only polls during replay phase
-                return new EventPollerStep(processorConfig.eventStore().poller(), eventHandler());
+                return new EventPollerStep(eventStoreConfig.eventStore().poller(), eventHandler());
             }
         };
     }
@@ -103,7 +103,7 @@ class ReplicationInterceptor implements Interceptor {
                         baseState,
                         replicationState,
                         new DefaultEventRouter(
-                                appConfig.timeSource(), processorConfig.eventStore().appender(),
+                                appConfig.timeSource(), eventStoreConfig.eventStore().appender(),
                                 eventApplierSingletons.get().eventHandler()
                         ),
                         commandProcessor(),

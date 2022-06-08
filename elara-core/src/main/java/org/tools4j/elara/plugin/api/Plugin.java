@@ -47,7 +47,7 @@ public interface Plugin<P> {
     Plugin.Dependency<?>[] NO_DEPENDENCIES = {};
     Consumer<Object> STATE_UNAWARE = state -> {};
 
-    P defaultPluginState();
+    P defaultPluginState(AppConfig appConfig);
     Configuration configuration(AppConfig appConfig, P pluginState);
 
     default Dependency<?>[] dependencies() {

@@ -25,16 +25,10 @@ package org.tools4j.elara.app.type;
 
 import org.agrona.concurrent.IdleStrategy;
 import org.tools4j.elara.app.config.AppContext;
-import org.tools4j.elara.app.config.ApplierContext;
-import org.tools4j.elara.app.config.CommandPollingMode;
-import org.tools4j.elara.app.config.CommandStoreContext;
 import org.tools4j.elara.app.config.EventStoreContext;
 import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.config.InOutContext;
 import org.tools4j.elara.app.config.PluginContext;
-import org.tools4j.elara.app.config.ProcessorContext;
-import org.tools4j.elara.app.handler.CommandProcessor;
-import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.input.Input;
@@ -49,52 +43,44 @@ import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public interface AllInOneAppContext extends AllInOneAppConfig, AppContext, CommandStoreContext, EventStoreContext, ProcessorContext, ApplierContext, InOutContext, PluginContext {
+public interface SequencerPassthroughAppContext extends SequencerPassthroughAppConfig, AppContext, EventStoreContext, InOutContext, PluginContext {
     @Override
-    AllInOneAppContext input(Input input);
+    SequencerPassthroughAppContext input(Input input);
     @Override
-    AllInOneAppContext inputs(Input... inputs);
+    SequencerPassthroughAppContext inputs(Input... inputs);
     @Override
-    AllInOneAppContext inputs(Collection<? extends Input> inputs);
+    SequencerPassthroughAppContext inputs(Collection<? extends Input> inputs);
     @Override
-    AllInOneAppContext output(Output output);
+    SequencerPassthroughAppContext output(Output output);
     @Override
-    AllInOneAppContext commandProcessor(CommandProcessor commandProcessor);
+    SequencerPassthroughAppContext eventStore(MessageStore eventStore);
     @Override
-    AllInOneAppContext eventApplier(EventApplier eventApplier);
-    @Override
-    AllInOneAppContext commandPollingMode(CommandPollingMode mode);
-    @Override
-    AllInOneAppContext commandStore(MessageStore commandStore);
-    @Override
-    AllInOneAppContext eventStore(MessageStore eventStore);
-    @Override
-    AllInOneAppContext timeSource(TimeSource timeSource);
+    SequencerPassthroughAppContext timeSource(TimeSource timeSource);
 
     @Override
-    AllInOneAppContext exceptionHandler(ExceptionHandler exceptionHandler);
+    SequencerPassthroughAppContext exceptionHandler(ExceptionHandler exceptionHandler);
     @Override
-    AllInOneAppContext duplicateHandler(DuplicateHandler duplicateHandler);
+    SequencerPassthroughAppContext duplicateHandler(DuplicateHandler duplicateHandler);
     @Override
-    AllInOneAppContext loggerFactory(Logger.Factory loggerFactory);
+    SequencerPassthroughAppContext loggerFactory(Logger.Factory loggerFactory);
     @Override
-    AllInOneAppContext idleStrategy(IdleStrategy idleStrategy);
+    SequencerPassthroughAppContext idleStrategy(IdleStrategy idleStrategy);
     @Override
-    AllInOneAppContext dutyCycleExtraStep(AgentStep step, ExecutionType executionType);
+    SequencerPassthroughAppContext dutyCycleExtraStep(AgentStep step, ExecutionType executionType);
 
     @Override
-    AllInOneAppContext plugin(Plugin<?> plugin);
+    SequencerPassthroughAppContext plugin(Plugin<?> plugin);
     @Override
-    <P> AllInOneAppContext plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider);
+    <P> SequencerPassthroughAppContext plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider);
     @Override
-    <P> AllInOneAppContext plugin(Plugin<P> plugin, Consumer<? super P> pluginStateAware);
+    <P> SequencerPassthroughAppContext plugin(Plugin<P> plugin, Consumer<? super P> pluginStateAware);
     @Override
-    <P> AllInOneAppContext plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider, Consumer<? super P> pluginStateAware);
+    <P> SequencerPassthroughAppContext plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider, Consumer<? super P> pluginStateAware);
 
-    AllInOneAppContext populateDefaults();
-    AllInOneAppContext populateDefaults(AllInOneApp app);
+    SequencerPassthroughAppContext populateDefaults();
+    SequencerPassthroughAppContext populateDefaults(SequencerPassthroughApp app);
 
-    static AllInOneAppContext create() {
-        return new AllInOneAppContextImpl();
+    static SequencerPassthroughAppContext create() {
+        return new SequencerPassthroughAppContextImpl();
     }
 }

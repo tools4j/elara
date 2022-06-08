@@ -27,29 +27,22 @@ import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.output.Output;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
-import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.store.MessageStore;
 
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
-public interface AllInOneApp extends CommandProcessor, EventApplier, Output {
+public interface AllInOneApp extends CommandProcessor, EventApplier {
 
     @Override
     void onCommand(Command command, EventRouter router);
 
     @Override
     void onEvent(Event event);
-
-    @Override
-    default Ack publish(final Event event, final boolean replay, final int retry, final CommandSender loopback) {
-        return Ack.IGNORED;
-    }
 
     default ElaraRunner launch(final MessageStore eventStore) {
         requireNonNull(eventStore);

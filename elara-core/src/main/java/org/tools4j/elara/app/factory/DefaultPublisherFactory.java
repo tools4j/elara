@@ -24,38 +24,43 @@
 package org.tools4j.elara.app.factory;
 
 import org.tools4j.elara.app.config.AppConfig;
-import org.tools4j.elara.app.config.ProcessorConfig;
+import org.tools4j.elara.app.config.EventStoreConfig;
 import org.tools4j.elara.handler.DefaultOutputHandler;
 import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.output.Output;
+import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.plugin.base.SingleEventBaseState;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.step.PublisherStep;
+import org.tools4j.elara.store.MessageStore;
 
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.send.SenderSupplier.LOOPBACK_SOURCE;
 import static org.tools4j.elara.step.AgentStep.NOOP;
-import static org.tools4j.elara.step.PublisherStep.DEFAULT_POLLER_ID;
 
 public class DefaultPublisherFactory implements PublisherFactory {
     private final AppConfig appConfig;
-    private final ProcessorConfig processorConfig;
+    private final EventStoreConfig eventStoreConfig;
     private final Supplier<? extends PublisherFactory> publisherSingletons;
     private final Supplier<? extends SequencerFactory> sequencerSingletons;
     private final Supplier<? extends InOutFactory> inOutSingletons;
+    private final Supplier<? extends PluginFactory> pluginSingletons;
 
     public DefaultPublisherFactory(final AppConfig appConfig,
-                                   final ProcessorConfig processorConfig,
+                                   final EventStoreConfig eventStoreConfig,
                                    final Supplier<? extends PublisherFactory> publisherSingletons,
                                    final Supplier<? extends SequencerFactory> sequencerSingletons,
-                                   final Supplier<? extends InOutFactory> inOutSingletons) {
+                                   final Supplier<? extends InOutFactory> inOutSingletons,
+                                   final Supplier<? extends PluginFactory> pluginSingletons) {
         this.appConfig = requireNonNull(appConfig);
-        this.processorConfig = requireNonNull(processorConfig);
+        this.eventStoreConfig = requireNonNull(eventStoreConfig);
         this.publisherSingletons = requireNonNull(publisherSingletons);
         this.sequencerSingletons = requireNonNull(sequencerSingletons);
         this.inOutSingletons = requireNonNull(inOutSingletons);
+        this.pluginSingletons = requireNonNull(pluginSingletons);
     }
 
     @Override
@@ -77,12 +82,12 @@ public class DefaultPublisherFactory implements PublisherFactory {
         if (inOutSingletons.get().output() == Output.NOOP) {
             return NOOP;
         }
+        final MessageStore eventStore = eventStoreConfig.eventStore();
         final OutputHandler outputHandler = publisherSingletons.get().outputHandler();
-        try {
-            return new PublisherStep(outputHandler, processorConfig.eventStore(), DEFAULT_POLLER_ID);
-        } catch (final UnsupportedOperationException e) {
-            //ignore, use non-tracking below
+        final BaseState baseState = pluginSingletons.get().baseState();
+        if (baseState instanceof SingleEventBaseState) {
+            return PublisherStep.allEventsPoller(outputHandler, eventStore);
         }
-        return new PublisherStep(outputHandler, processorConfig.eventStore());
+        return PublisherStep.committedEventsPoller(outputHandler, eventStore);
     }
 }

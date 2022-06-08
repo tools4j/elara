@@ -29,6 +29,7 @@ import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.run.ElaraRunner;
@@ -47,7 +48,7 @@ import java.util.Queue;
 
 import static java.util.Objects.requireNonNull;
 
-public class BankApplication implements AllInOneApp {
+public class BankApplication implements AllInOneApp, Output {
 
     private static final int SOURCE = 666;
     private final Bank.Mutable bank = new Bank.Default();

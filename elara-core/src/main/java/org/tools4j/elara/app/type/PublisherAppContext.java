@@ -40,7 +40,6 @@ import org.tools4j.elara.store.MessageStore.Poller;
 import org.tools4j.elara.stream.MessageStream;
 import org.tools4j.elara.time.TimeSource;
 
-import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -70,10 +69,6 @@ public interface PublisherAppContext extends PublisherAppConfig, AppContext, Eve
     PublisherAppContext idleStrategy(IdleStrategy idleStrategy);
     @Override
     PublisherAppContext dutyCycleExtraStep(AgentStep step, ExecutionType executionType);
-    @Override
-    PublisherAppContext threadFactory(String threadName);
-    @Override
-    PublisherAppContext threadFactory(ThreadFactory threadFactory);
 
     @Override
     PublisherAppContext plugin(Plugin<?> plugin);

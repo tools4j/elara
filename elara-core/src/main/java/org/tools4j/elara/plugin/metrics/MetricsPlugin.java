@@ -44,7 +44,7 @@ public class MetricsPlugin implements Plugin<MetricsState> {
     }
 
     @Override
-    public MetricsState defaultPluginState() {
+    public MetricsState defaultPluginState(final AppConfig appConfig) {
         return new DefaultMetricsState();
     }
 

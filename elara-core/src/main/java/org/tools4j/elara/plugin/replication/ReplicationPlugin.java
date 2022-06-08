@@ -24,8 +24,8 @@
 package org.tools4j.elara.plugin.replication;
 
 import org.tools4j.elara.app.config.AppConfig;
+import org.tools4j.elara.app.config.EventStoreConfig;
 import org.tools4j.elara.app.config.ExecutionType;
-import org.tools4j.elara.app.config.ProcessorConfig;
 import org.tools4j.elara.app.factory.Interceptor;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
@@ -62,7 +62,7 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
     }
 
     @Override
-    public ReplicationState.Mutable defaultPluginState() {
+    public ReplicationState.Mutable defaultPluginState(final AppConfig appConfig) {
         return new DefaultReplicationState();
     }
 
@@ -71,11 +71,11 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
                                        final Mutable replicationState) {
         requireNonNull(appConfig);
         requireNonNull(replicationState);
-        if (!(appConfig instanceof ProcessorConfig)) {
-            throw new IllegalArgumentException("Plugin requires ProcessorConfig but found " + appConfig.getClass());
+        if (!(appConfig instanceof EventStoreConfig)) {
+            throw new IllegalArgumentException("Plugin requires EventStoreConfig but found " + appConfig.getClass());
         }
-        final ProcessorConfig processorConfig = (ProcessorConfig) appConfig;
-        final MessageStore eventStore = processorConfig.eventStore();
+        final EventStoreConfig eventStoreConfig = (EventStoreConfig) appConfig;
+        final MessageStore eventStore = eventStoreConfig.eventStore();
         final Appender eventStoreAppender = eventStore.appender();
         final EnforcedLeaderEventReceiver enforcedLeaderEventReceiver = new EnforcedLeaderEventReceiver(
                 appConfig.loggerFactory(), appConfig.timeSource(), configuration, replicationState, eventStoreAppender
@@ -113,7 +113,7 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
 
             @Override
             public Interceptor interceptor(final BaseState.Mutable baseState) {
-                return new ReplicationInterceptor(appConfig, processorConfig, configuration, baseState, replicationState);
+                return new ReplicationInterceptor(appConfig, eventStoreConfig, configuration, baseState, replicationState);
             }
         };
     }

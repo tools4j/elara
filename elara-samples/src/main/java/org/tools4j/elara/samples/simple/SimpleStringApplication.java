@@ -30,6 +30,7 @@ import org.tools4j.elara.app.type.AllInOneApp;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.output.Output;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.send.CommandSender;
@@ -40,7 +41,7 @@ import java.util.Queue;
 
 import static java.util.Objects.requireNonNull;
 
-public class SimpleStringApplication implements AllInOneApp {
+public class SimpleStringApplication implements AllInOneApp, Output {
 
     private static final int SOURCE = 999;
     private static final int TYPE_STRING = 1;

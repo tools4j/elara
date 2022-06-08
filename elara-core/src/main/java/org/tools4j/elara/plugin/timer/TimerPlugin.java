@@ -56,7 +56,7 @@ public class TimerPlugin implements SystemPlugin<TimerState.Mutable> {
     }
 
     @Override
-    public Mutable defaultPluginState() {
+    public Mutable defaultPluginState(final AppConfig appConfig) {
         return new SimpleTimerState();
     }
 

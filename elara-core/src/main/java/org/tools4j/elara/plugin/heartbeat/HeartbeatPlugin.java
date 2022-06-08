@@ -40,7 +40,7 @@ import static java.util.Objects.requireNonNull;
 public class HeartbeatPlugin implements Plugin<NullState> {
 
     @Override
-    public NullState defaultPluginState() {
+    public NullState defaultPluginState(final AppConfig appConfig) {
         return NullState.NULL;
     }
 

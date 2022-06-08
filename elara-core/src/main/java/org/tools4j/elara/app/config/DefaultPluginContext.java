@@ -110,7 +110,7 @@ public class DefaultPluginContext implements PluginContext {
     private static <P> Plugin.Configuration build(final Plugin<P> plugin,
                                                   final AppConfig appConfig,
                                                   final Consumer<? super P> pluginStateAware) {
-        final P pluginState = plugin.defaultPluginState();
+        final P pluginState = plugin.defaultPluginState(appConfig);
         pluginStateAware.accept(pluginState);
         return plugin.configuration(appConfig, pluginState);
     }

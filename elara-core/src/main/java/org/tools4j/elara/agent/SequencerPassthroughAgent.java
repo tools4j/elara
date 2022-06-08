@@ -25,32 +25,27 @@ package org.tools4j.elara.agent;
 
 import org.agrona.concurrent.Agent;
 import org.tools4j.elara.step.AgentStep;
-import org.tools4j.elara.step.PublisherStep;
-import org.tools4j.elara.step.SequencerStep;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Agent for running all elara tasks including {@link SequencerStep},
- * {@link ProcessorAgent processor agent} steps and {@link PublisherStep}.
+ * Agent for running the elara tasks required for a passthrough app where commands are directly routed as events with
+ * the same payload as the command.
  */
-public class AllInOneAgent implements Agent {
+public class SequencerPassthroughAgent implements Agent {
 
     private final AgentStep sequencerStep;
-    private final AgentStep commandStep;
     private final AgentStep eventStep;
     private final AgentStep publisherStep;
     private final AgentStep extraStepAlways;
     private final AgentStep extraStepAlwaysWhenEventsApplied;
 
-    public AllInOneAgent(final AgentStep sequencerStep,
-                         final AgentStep commandStep,
-                         final AgentStep eventStep,
-                         final AgentStep publisherStep,
-                         final AgentStep extraStepAlwaysWhenEventsApplied,
-                         final AgentStep extraStepAlways) {
+    public SequencerPassthroughAgent(final AgentStep sequencerStep,
+                                     final AgentStep eventStep,
+                                     final AgentStep publisherStep,
+                                     final AgentStep extraStepAlwaysWhenEventsApplied,
+                                     final AgentStep extraStepAlways) {
         this.sequencerStep = requireNonNull(sequencerStep);
-        this.commandStep = requireNonNull(commandStep);
         this.eventStep = requireNonNull(eventStep);
         this.publisherStep = requireNonNull(publisherStep);
         this.extraStepAlways = requireNonNull(extraStepAlways);
@@ -59,7 +54,7 @@ public class AllInOneAgent implements Agent {
 
     @Override
     public String roleName() {
-        return "elara-all";
+        return "elara-pass";
     }
 
     @Override
@@ -67,12 +62,6 @@ public class AllInOneAgent implements Agent {
         int workDone;
         if ((workDone = eventStep.doWork()) > 0) {
             workDone += publisherStep.doWork();
-            workDone += extraStepAlways.doWork();
-            return workDone;
-        }
-        if ((workDone = commandStep.doWork()) > 0) {
-            workDone += publisherStep.doWork();
-            workDone += extraStepAlwaysWhenEventsApplied.doWork();
             workDone += extraStepAlways.doWork();
             return workDone;
         }

@@ -66,7 +66,7 @@ public class BootPlugin implements SystemPlugin<NullState> {
     }
 
     @Override
-    public NullState defaultPluginState() {
+    public NullState defaultPluginState(final AppConfig appConfig) {
         return NullState.NULL;
     }
 

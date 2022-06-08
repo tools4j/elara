@@ -44,7 +44,6 @@ import org.tools4j.elara.stream.MessageStream;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.Collection;
-import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -84,10 +83,6 @@ public interface FeedbackAppContext extends FeedbackAppConfig, AppContext, Event
     FeedbackAppContext idleStrategy(IdleStrategy idleStrategy);
     @Override
     FeedbackAppContext dutyCycleExtraStep(AgentStep step, ExecutionType executionType);
-    @Override
-    FeedbackAppContext threadFactory(String threadName);
-    @Override
-    FeedbackAppContext threadFactory(ThreadFactory threadFactory);
 
     @Override
     FeedbackAppContext plugin(Plugin<?> plugin);

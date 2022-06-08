@@ -24,33 +24,55 @@
 package org.tools4j.elara.app.type;
 
 import org.agrona.concurrent.Agent;
-import org.tools4j.elara.app.handler.EventProcessor;
+import org.tools4j.elara.app.factory.SequencerPassthroughAppFactory;
+import org.tools4j.elara.output.Output;
+import org.tools4j.elara.store.MessageStore;
 
-final class PublisherAppContextImpl extends AbstractEventStreamContext<PublisherAppContextImpl> implements PublisherAppContext {
+import static java.util.Objects.requireNonNull;
+
+final class SequencerPassthroughAppContextImpl extends AbstractAppContext<SequencerPassthroughAppContextImpl> implements SequencerPassthroughAppContext {
+
+    private MessageStore eventStore;
 
     @Override
-    protected PublisherAppContextImpl self() {
+    protected SequencerPassthroughAppContextImpl self() {
         return this;
     }
 
     @Override
-    public PublisherAppContextImpl populateDefaults() {
-        if (eventProcessor() == null) {
-            eventProcessor(EventProcessor.NOOP);
-        }
-        return super.populateDefaults();
+    public MessageStore eventStore() {
+        return eventStore;
     }
 
     @Override
-    public PublisherAppContext populateDefaults(final PublisherApp app) {
+    public SequencerPassthroughAppContext eventStore(final MessageStore eventStore) {
+        this.eventStore = requireNonNull(eventStore);
+        return this;
+    }
+
+    @Override
+    public SequencerPassthroughAppContextImpl populateDefaults() {
+        return populateDefaults();
+    }
+
+    @Override
+    public SequencerPassthroughAppContext populateDefaults(final SequencerPassthroughApp app) {
         return this
-                .output(app)
+                .output(app instanceof Output ? ((Output)app) : Output.NOOP)
                 .populateDefaults();
+    }
+
+    @Override
+    public void validate() {
+        if (eventStore() == null) {
+            throw new IllegalArgumentException("Event store must be set");
+        }
+        super.validate();
     }
 
     @Override
     public Agent createAgent() {
         populateDefaults().validate();
-        throw new IllegalArgumentException("Implement publisher agent");//FIXME implement publisher agent
+        return new SequencerPassthroughAppFactory(this).agent();
     }
 }

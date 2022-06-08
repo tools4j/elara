@@ -32,6 +32,7 @@ import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.plugin.metrics.Configuration;
 import org.tools4j.elara.route.EventRouter;
@@ -73,7 +74,7 @@ import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_START_TIME;
  *     - State is a simple hash of all event values
  * </pre>
  */
-public class HashApplication implements AllInOneApp {
+public class HashApplication implements AllInOneApp, Output {
 
     public static final int MESSAGE_LENGTH = 5 * Long.BYTES;
     public static final long NULL_VALUE = Long.MIN_VALUE;

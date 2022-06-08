@@ -24,11 +24,7 @@
 package org.tools4j.elara.app.config;
 
 import org.tools4j.elara.app.handler.CommandProcessor;
-import org.tools4j.elara.app.handler.EventApplier;
-import org.tools4j.elara.store.MessageStore;
 
 public interface ProcessorContext extends ProcessorConfig {
     ProcessorContext commandProcessor(CommandProcessor commandProcessor);
-    ProcessorContext eventApplier(EventApplier eventApplier);
-    ProcessorContext eventStore(MessageStore eventStore);
 }

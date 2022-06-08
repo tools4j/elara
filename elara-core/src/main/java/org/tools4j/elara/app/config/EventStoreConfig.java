@@ -21,33 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.base;
+package org.tools4j.elara.app.config;
 
-import org.agrona.collections.Long2LongHashMap;
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.store.MessageStore;
 
-public class PassthroughBaseState implements BaseState.Default, BaseState.Mutable {
-
-    private static final long MISSING_SEQUENCE = Long.MIN_VALUE;
-    private final Long2LongHashMap sourceToSequence = new Long2LongHashMap(MISSING_SEQUENCE);
-
-    @Override
-    public boolean allEventsAppliedFor(final int source, final long sequence) {
-        final long appliedSequence = sourceToSequence.get(source);
-        return sequence <= appliedSequence && appliedSequence != MISSING_SEQUENCE;
-    }
-
-    @Override
-    public boolean eventApplied(final int source, final long sequence, final int index) {
-        assert index == 0;
-        return allEventsAppliedFor(source, sequence);
-    }
-
-    @Override
-    public Mutable eventApplied(final Event event) {
-        final Event.Id eventId = event.id();
-        assert eventId.index() == 0;
-        sourceToSequence.put(eventId.source(), eventId.sequence());
-        return this;
-    }
+public interface EventStoreConfig {
+    MessageStore eventStore();
 }

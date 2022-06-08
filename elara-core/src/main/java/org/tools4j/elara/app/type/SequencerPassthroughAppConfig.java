@@ -21,36 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.agent;
+package org.tools4j.elara.app.type;
 
-import org.agrona.concurrent.Agent;
-import org.tools4j.elara.step.PublisherStep;
-import org.tools4j.elara.store.CommittedEventPoller;
+import org.tools4j.elara.app.config.AppConfig;
+import org.tools4j.elara.app.config.EventStoreConfig;
+import org.tools4j.elara.app.config.InOutConfig;
+import org.tools4j.elara.app.config.PluginConfig;
 
-import static java.util.Objects.requireNonNull;
-
-/**
- * Agent to poll and publish events.
- * <p>
- * The agent invokes the output handler with committed events and replay flag during replay.  A tracking poller is used
- * to store the index of the last event passed to the handler.  A second poller is used to also pass replayed events to
- * the output handler.  Using a {@link CommittedEventPoller} as tracking poller guarantees that only committed events
- * are passed to the handler.
- */
-public class PublisherAgent implements Agent {
-    private final PublisherStep publisherStep;
-
-    public PublisherAgent(final PublisherStep publisherStep) {
-        this.publisherStep = requireNonNull(publisherStep);
-    }
-
-    @Override
-    public int doWork() throws Exception {
-        return publisherStep.doWork();
-    }
-
-    @Override
-    public String roleName() {
-        return "elara-pub";
+public interface SequencerPassthroughAppConfig extends AppConfig, EventStoreConfig, InOutConfig, PluginConfig {
+    static SequencerPassthroughAppContext configure() {
+        return SequencerPassthroughAppContext.create();
     }
 }

@@ -21,36 +21,37 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.agent;
+package org.tools4j.elara.plugin.base;
 
-import org.agrona.concurrent.Agent;
-import org.tools4j.elara.step.PublisherStep;
-import org.tools4j.elara.store.CommittedEventPoller;
-
-import static java.util.Objects.requireNonNull;
+import org.agrona.collections.Long2LongHashMap;
+import org.tools4j.elara.event.Event;
 
 /**
- * Agent to poll and publish events.
- * <p>
- * The agent invokes the output handler with committed events and replay flag during replay.  A tracking poller is used
- * to store the index of the last event passed to the handler.  A second poller is used to also pass replayed events to
- * the output handler.  Using a {@link CommittedEventPoller} as tracking poller guarantees that only committed events
- * are passed to the handler.
+ * Single event base state allows only one event per command.
  */
-public class PublisherAgent implements Agent {
-    private final PublisherStep publisherStep;
+public class SingleEventBaseState implements BaseState.Default, BaseState.Mutable {
 
-    public PublisherAgent(final PublisherStep publisherStep) {
-        this.publisherStep = requireNonNull(publisherStep);
+    private static final long MISSING_SEQUENCE = Long.MIN_VALUE;
+    private final Long2LongHashMap sourceToSequence = new Long2LongHashMap(MISSING_SEQUENCE);
+
+    @Override
+    public boolean allEventsAppliedFor(final int source, final long sequence) {
+        final long appliedSequence = sourceToSequence.get(source);
+        return sequence <= appliedSequence && appliedSequence != MISSING_SEQUENCE;
     }
 
     @Override
-    public int doWork() throws Exception {
-        return publisherStep.doWork();
+    public boolean eventApplied(final int source, final long sequence, final int index) {
+        return allEventsAppliedFor(source, sequence);
     }
 
     @Override
-    public String roleName() {
-        return "elara-pub";
+    public Mutable eventApplied(final Event event) {
+        final Event.Id eventId = event.id();
+        if (eventId.index() != 0) {
+            throw new IllegalArgumentException("Only event with index 0 is allowed");
+        }
+        sourceToSequence.put(eventId.source(), eventId.sequence());
+        return this;
     }
 }

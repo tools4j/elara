@@ -32,8 +32,6 @@ import static java.util.Objects.requireNonNull;
 
 final class FeedbackAppContextImpl extends AbstractEventStreamContext<FeedbackAppContextImpl> implements FeedbackAppContext {
 
-    public static final String DEFAULT_THREAD_NAME = "elara-feed";
-
     private MessageSender commandStream;
 
     @Override
@@ -58,8 +56,8 @@ final class FeedbackAppContextImpl extends AbstractEventStreamContext<FeedbackAp
     }
 
     @Override
-    public FeedbackAppContext populateDefaults() {
-        return populateDefaults(DEFAULT_THREAD_NAME);
+    public FeedbackAppContextImpl populateDefaults() {
+        return super.populateDefaults();
     }
 
     @Override

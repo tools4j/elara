@@ -30,8 +30,6 @@ import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.time.TimeSource;
 
-import java.util.concurrent.ThreadFactory;
-
 public interface AppContext extends AppConfig {
     AppContext timeSource(TimeSource timeSource);
     AppContext exceptionHandler(ExceptionHandler exceptionHandler);
@@ -39,6 +37,4 @@ public interface AppContext extends AppConfig {
     AppContext loggerFactory(Logger.Factory loggerFactory);
     AppContext idleStrategy(IdleStrategy idleStrategy);
     AppContext dutyCycleExtraStep(AgentStep step, ExecutionType executionType);
-    AppContext threadFactory(String threadName);
-    AppContext threadFactory(ThreadFactory threadFactory);
 }

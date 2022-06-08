@@ -28,13 +28,12 @@ import org.tools4j.elara.app.config.CommandPollingMode;
 import org.tools4j.elara.app.factory.AllInOneAppFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.output.Output;
 import org.tools4j.elara.store.MessageStore;
 
 import static java.util.Objects.requireNonNull;
 
 final class AllInOneAppContextImpl extends AbstractAppContext<AllInOneAppContextImpl> implements AllInOneAppContext {
-
-    public static final String DEFAULT_THREAD_NAME = "elara-all";
 
     private CommandProcessor commandProcessor;
     private EventApplier eventApplier;
@@ -108,8 +107,8 @@ final class AllInOneAppContextImpl extends AbstractAppContext<AllInOneAppContext
     }
 
     @Override
-    public AllInOneAppContext populateDefaults() {
-        return populateDefaults(DEFAULT_THREAD_NAME);
+    public AllInOneAppContextImpl populateDefaults() {
+        return super.populateDefaults();
     }
 
     @Override
@@ -117,7 +116,7 @@ final class AllInOneAppContextImpl extends AbstractAppContext<AllInOneAppContext
         return this
                 .commandProcessor(app)
                 .eventApplier(app)
-                .output(app)
+                .output(app instanceof Output ? ((Output)app) : Output.NOOP)
                 .populateDefaults();
     }
 
@@ -130,10 +129,10 @@ final class AllInOneAppContextImpl extends AbstractAppContext<AllInOneAppContext
             throw new IllegalArgumentException("Event applier must be set");
         }
         if (commandStore() == null && commandPollingMode() != CommandPollingMode.NO_STORE) {
-            throw new IllegalArgumentException("Command log must be set unless command polling mode is NO_STORE");
+            throw new IllegalArgumentException("Command store must be set unless command polling mode is NO_STORE");
         }
         if (eventStore() == null) {
-            throw new IllegalArgumentException("Event log must be set");
+            throw new IllegalArgumentException("Event store must be set");
         }
         super.validate();
     }

@@ -48,7 +48,7 @@ public class ProcessorAgent implements Agent {
 
     @Override
     public String roleName() {
-        return "elara-core";
+        return "elara-proc";
     }
 
     @Override

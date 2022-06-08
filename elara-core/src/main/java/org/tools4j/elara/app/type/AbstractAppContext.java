@@ -43,7 +43,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -62,7 +61,6 @@ abstract class AbstractAppContext<T extends AbstractAppContext<T>> implements Ap
     private IdleStrategy idleStrategy = new BackoffIdleStrategy(
             100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100));
     private final EnumMap<ExecutionType, List<AgentStep>> extraSteps = new EnumMap<>(ExecutionType.class);
-    private ThreadFactory threadFactory;
     private final DefaultPluginContext plugins = new DefaultPluginContext(this);
 
     abstract protected T self();
@@ -169,22 +167,6 @@ abstract class AbstractAppContext<T extends AbstractAppContext<T>> implements Ap
     }
 
     @Override
-    public ThreadFactory threadFactory() {
-        return threadFactory;
-    }
-
-    @Override
-    public T threadFactory(final ThreadFactory threadFactory) {
-        this.threadFactory = threadFactory;//null allowed here
-        return self();
-    }
-
-    @Override
-    public T threadFactory(final String threadName) {
-        return threadFactory(threadName == null ? null : r -> new Thread(null, r, threadName));
-    }
-
-    @Override
     public T plugin(final Plugin<?> plugin) {
         plugins.plugin(plugin);
         return self();
@@ -213,13 +195,9 @@ abstract class AbstractAppContext<T extends AbstractAppContext<T>> implements Ap
         return plugins.plugins();
     }
 
-    protected T populateDefaults(final String defaultThreadName) {
-        requireNonNull(defaultThreadName);
+    protected T populateDefaults() {
         if (timeSource == null) {
             timeSource = System::currentTimeMillis;
-        }
-        if (threadFactory == null) {
-            threadFactory(defaultThreadName);
         }
         return self();
     }
@@ -228,9 +206,6 @@ abstract class AbstractAppContext<T extends AbstractAppContext<T>> implements Ap
     public void validate() {
         if (timeSource() == null) {
             throw new IllegalArgumentException("Time source must be set");
-        }
-        if (threadFactory() == null) {
-            throw new IllegalArgumentException("Thread factory must be set");
         }
     }
 }

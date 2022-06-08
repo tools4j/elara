@@ -54,7 +54,7 @@ public class CoreAgent implements Agent {
 
     @Override
     public String roleName() {
-        return "elara-full";
+        return "elara-core";
     }
 
     @Override

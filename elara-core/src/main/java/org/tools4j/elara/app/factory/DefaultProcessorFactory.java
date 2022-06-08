@@ -24,6 +24,7 @@
 package org.tools4j.elara.app.factory;
 
 import org.tools4j.elara.app.config.AppConfig;
+import org.tools4j.elara.app.config.EventStoreConfig;
 import org.tools4j.elara.app.config.ProcessorConfig;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.command.CompositeCommandProcessor;
@@ -41,17 +42,20 @@ public class DefaultProcessorFactory implements ProcessorFactory {
 
     private final AppConfig appConfig;
     private final ProcessorConfig processorConfig;
+    private final EventStoreConfig eventStoreConfig;
     private final Supplier<? extends ProcessorFactory> processorSingletons;
     private final Supplier<? extends ApplierFactory> applierSingletons;
     private final Supplier<? extends PluginFactory> pluginSingletons;
 
     public DefaultProcessorFactory(final AppConfig appConfig,
                                    final ProcessorConfig processorConfig,
+                                   final EventStoreConfig eventStoreConfig,
                                    final Supplier<? extends ProcessorFactory> processorSingletons,
                                    final Supplier<? extends ApplierFactory> applierSingletons,
                                    final Supplier<? extends PluginFactory> pluginSingletons) {
         this.appConfig = requireNonNull(appConfig);
         this.processorConfig = requireNonNull(processorConfig);
+        this.eventStoreConfig = requireNonNull(eventStoreConfig);
         this.processorSingletons = requireNonNull(processorSingletons);
         this.applierSingletons = requireNonNull(applierSingletons);
         this.pluginSingletons = requireNonNull(pluginSingletons);
@@ -88,7 +92,7 @@ public class DefaultProcessorFactory implements ProcessorFactory {
                 pluginSingletons.get().baseState(),
                 new DefaultEventRouter(
                         appConfig.timeSource(),
-                        processorConfig.eventStore().appender(),
+                        eventStoreConfig.eventStore().appender(),
                         applierSingletons.get().eventHandler()
                 ),
                 processorSingletons.get().commandProcessor(),

@@ -64,7 +64,7 @@ public class DefaultPluginFactory implements PluginFactory {
         final Plugin.Configuration[] pluginsWithBasePlugin = new Plugin.Configuration[plugins.size() + 1];
         plugins.toArray(pluginsWithBasePlugin);
         pluginsWithBasePlugin[pluginsWithBasePlugin.length - 1] = Plugins.basePlugin().configuration(
-                appConfig, BaseConfiguration.createDefaultBaseState()
+                appConfig, BaseConfiguration.createDefaultBaseState(appConfig)
         );
         return pluginsWithBasePlugin;
     }

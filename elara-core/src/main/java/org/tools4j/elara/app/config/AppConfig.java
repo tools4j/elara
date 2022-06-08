@@ -32,7 +32,6 @@ import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.List;
-import java.util.concurrent.ThreadFactory;
 
 public interface AppConfig {
     TimeSource timeSource();
@@ -41,7 +40,6 @@ public interface AppConfig {
     Logger.Factory loggerFactory();
     IdleStrategy idleStrategy();
     List<AgentStep> dutyCycleExtraSteps(ExecutionType executionType);
-    ThreadFactory threadFactory();
 
     void validate();
     Agent createAgent();

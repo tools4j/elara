@@ -46,6 +46,6 @@ public class SequencerAgent implements Agent {
 
     @Override
     public String roleName() {
-        return "elara-sequencer";
+        return "elara-seq";
     }
 }
