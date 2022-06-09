@@ -54,7 +54,7 @@ public class DefaultEventHandler implements EventHandler {
             skipEvent(event);
         } else {
             applyEvent(event);
-            baseState.eventApplied(event);
+            baseState.applyEvent(event);
         }
     }
 

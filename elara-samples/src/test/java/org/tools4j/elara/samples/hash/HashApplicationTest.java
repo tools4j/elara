@@ -123,7 +123,7 @@ public class HashApplicationTest {
 
         //when
         try (final ElaraRunner runner = HashPassthroughApplication.chronicleQueueWithMetrics(folder, input)) {
-//        try (final ElaraRunner runner = HashPassthroughApplication.chronicleQueueWithFreqMetrics(input)) {
+//        try (final ElaraRunner runner = HashPassthroughApplication.chronicleQueueWithFreqMetrics(folder, input)) {
             runHashApp(n, random, sleepNanos, input, runner);
         }
         try (final ElaraRunner runner = HashPassthroughApplication.publisherWithState(folder, state)) {

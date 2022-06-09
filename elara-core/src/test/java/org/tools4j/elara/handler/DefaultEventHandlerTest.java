@@ -104,7 +104,7 @@ public class DefaultEventHandlerTest {
 
         //then
         inOrder.verify(eventApplier).onEvent(same(event));
-        inOrder.verify(baseState).eventApplied(same(event));
+        inOrder.verify(baseState).applyEvent(same(event));
         inOrder.verifyNoMoreInteractions();
     }
 

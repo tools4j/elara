@@ -46,6 +46,7 @@ public interface BaseState {
     }
 
     interface Mutable extends BaseState {
-        Mutable eventApplied(Event event);
+        Mutable applyEvent(Event event);
+        Mutable applyEvent(int source, long sequence, int index);
     }
 }

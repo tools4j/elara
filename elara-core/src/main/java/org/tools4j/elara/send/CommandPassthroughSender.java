@@ -140,6 +140,11 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
                 if (baseState.allEventsAppliedFor(source(), sequence())) {
                     skipCommand(ac.buffer(), length);
                 } else {
+                    //NOTE: this is about 10% faster than applyEvent(..), but not as nice
+                    //      reason this is not as nice are
+                    //      - metrics plugin cannot capture event applying
+                    //      - no event applier can be registered in a sequencer passthrough app, which otherwise could
+                    //((BaseState.Mutable)baseState).applyEvent(source(), sequence(), INDEX);
                     applyEvent(ac.buffer(), length);
                     ac.commit(HEADER_LENGTH + length);
                 }

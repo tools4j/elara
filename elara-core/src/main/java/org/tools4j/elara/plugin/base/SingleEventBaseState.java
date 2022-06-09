@@ -46,12 +46,17 @@ public class SingleEventBaseState implements BaseState.Default, BaseState.Mutabl
     }
 
     @Override
-    public Mutable eventApplied(final Event event) {
-        final Event.Id eventId = event.id();
-        if (eventId.index() != 0) {
+    public Mutable applyEvent(final int source, final long sequence, final int index) {
+        if (index != 0) {
             throw new IllegalArgumentException("Only event with index 0 is allowed");
         }
-        sourceToSequence.put(eventId.source(), eventId.sequence());
+        sourceToSequence.put(source, sequence);
         return this;
+    }
+
+    @Override
+    public Mutable applyEvent(final Event event) {
+        final Event.Id id = event.id();
+        return applyEvent(id.source(), id.sequence(), id.index());
     }
 }

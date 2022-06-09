@@ -85,7 +85,7 @@ public class SequencerPassthroughAppFactory implements AppFactory {
     }
 
     private ApplierConfig applierConfig() {
-        final EventApplier eventApplier = event -> pluginSingletons().baseState().eventApplied(event);
+        final EventApplier eventApplier = pluginSingletons().baseState()::applyEvent;
         return () -> eventApplier;
     }
 
