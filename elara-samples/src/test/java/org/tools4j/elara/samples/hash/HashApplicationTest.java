@@ -108,6 +108,8 @@ public class HashApplicationTest {
     @Test
     public void passthroughWithMetrics() throws Exception {
         //given
+//        final String folder = "hash-metrics";
+        final String folder = "hash-passthrough";
         final int n = 500_000;
 //        final int n = 5_000_000;
 //        final int n = 50_000_000;
@@ -120,11 +122,11 @@ public class HashApplicationTest {
 //        final long expected = 8536806003277137281L;//50_000_000
 
         //when
-        try (final ElaraRunner runner = HashPassthroughApplication.chronicleQueueWithMetrics(input)) {
+        try (final ElaraRunner runner = HashPassthroughApplication.chronicleQueueWithMetrics(folder, input)) {
 //        try (final ElaraRunner runner = HashPassthroughApplication.chronicleQueueWithFreqMetrics(input)) {
             runHashApp(n, random, sleepNanos, input, runner);
         }
-        try (final ElaraRunner runner = HashPassthroughApplication.publisherWithState(state)) {
+        try (final ElaraRunner runner = HashPassthroughApplication.publisherWithState(folder, state)) {
             while (state.count() < n) {
                 Thread.sleep(50);
             }

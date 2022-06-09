@@ -84,28 +84,30 @@ public class HashPassthroughApplication implements SequencerPassthroughApp {
         }
     }
 
-    public static ElaraRunner chronicleQueueWithMetrics(final AtomicLong input) {
-        return chronicleQueueWithMetrics(input, true);
+    public static ElaraRunner chronicleQueueWithMetrics(final String folder, final AtomicLong input) {
+        return chronicleQueueWithMetrics(folder, input, true);
     }
 
-    public static ElaraRunner chronicleQueueWithFreqMetrics(final AtomicLong input) {
-        return chronicleQueueWithMetrics(input, false);
+    public static ElaraRunner chronicleQueueWithFreqMetrics(final String folder, final AtomicLong input) {
+        return chronicleQueueWithMetrics(folder, input, false);
     }
 
-    private static ElaraRunner chronicleQueueWithMetrics(final AtomicLong input,
+    private static ElaraRunner chronicleQueueWithMetrics(final String folder,
+                                                         final AtomicLong input,
                                                          final boolean timeMetrics) {
-        IoUtil.delete(new File("build/chronicle/hash-metrics"), true);
+        final String path = "build/chronicle/" + folder;
+        IoUtil.delete(new File(path), true);
         final TimeSource pseudoNanoClock = new PseudoMicroClock();
         final ChronicleQueue eq = ChronicleQueue.singleBuilder()
-                .path("build/chronicle/hash-metrics/evt.cq4")
+                .path(path + "/evt.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         final ChronicleQueue tq = timeMetrics ? ChronicleQueue.singleBuilder()
-                .path("build/chronicle/hash-metrics/tim.cq4")
+                .path(path + "/tim.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build() : null;
         final ChronicleQueue fq = ChronicleQueue.singleBuilder()
-                .path("build/chronicle/hash-metrics/frq.cq4")
+                .path(path + "/frq.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         final MetricsContext metricsConfig = MetricsConfig.configure()
@@ -125,10 +127,11 @@ public class HashPassthroughApplication implements SequencerPassthroughApp {
         );
     }
 
-    public static ElaraRunner publisherWithState(final ModifiableState state) {
+    public static ElaraRunner publisherWithState(final String folder, final ModifiableState state) {
+        final String path = "build/chronicle/" + folder;
         final TimeSource pseudoNanoClock = new PseudoMicroClock();
         final ChronicleQueue eq = ChronicleQueue.singleBuilder()
-                .path("build/chronicle/hash-metrics/evt.cq4")
+                .path(path + "/evt.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         return new PublisherWithState(state).launch((Consumer<? super PublisherAppContext>)context -> context
