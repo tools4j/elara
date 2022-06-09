@@ -54,6 +54,15 @@ public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, C
         return this;
     }
 
+    public FlyweightCommand initSilent(final DirectBuffer header,
+                                       final int headerOffset,
+                                       final DirectBuffer payload,
+                                       final int payloadOffset,
+                                       final int payloadSize) {
+        frame.initSilent(header, headerOffset, payload, payloadOffset, payloadSize);
+        return this;
+    }
+
     @Override
     public FlyweightCommand init(final DirectBuffer command, final int offset) {
         frame.init(command, offset);

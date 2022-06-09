@@ -57,6 +57,15 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.I
         return this;
     }
 
+    public FlyweightEvent initSilent(final DirectBuffer header,
+                                     final int headerOffset,
+                                     final DirectBuffer payload,
+                                     final int payloadOffset,
+                                     final int payloadSize) {
+        frame.initSilent(header, headerOffset, payload, payloadOffset, payloadSize);
+        return this;
+    }
+
     @Override
     public FlyweightEvent init(final DirectBuffer event, final int offset) {
         frame.init(event, offset);

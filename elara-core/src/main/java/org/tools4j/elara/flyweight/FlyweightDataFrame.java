@@ -61,6 +61,15 @@ public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFr
         return initPayload(payload, payloadOffset, payloadSize);
     }
 
+    public FlyweightDataFrame initSilent(final DirectBuffer header,
+                                         final int headerOffset,
+                                         final DirectBuffer payload,
+                                         final int payloadOffset,
+                                         final int payloadSize) {
+        this.header.initSilent(header, headerOffset);
+        return initPayload(payload, payloadOffset, payloadSize);
+    }
+
     @Override
     public FlyweightDataFrame init(final DirectBuffer event, final int offset) {
         return this.init(

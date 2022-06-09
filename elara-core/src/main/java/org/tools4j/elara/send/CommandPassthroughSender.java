@@ -23,6 +23,7 @@
  */
 package org.tools4j.elara.send;
 
+import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.exception.DuplicateHandler;
@@ -137,9 +138,9 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
                     ac.buffer().putInt(PAYLOAD_SIZE_OFFSET, length);
                 }
                 if (baseState.allEventsAppliedFor(source(), sequence())) {
-                    skipCommand(ac);
+                    skipCommand(ac.buffer(), length);
                 } else {
-                    applyEvent(ac);
+                    applyEvent(ac.buffer(), length);
                     ac.commit(HEADER_LENGTH + length);
                 }
                 incrementCommandSequence();
@@ -149,10 +150,10 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
             }
         }
 
-        private void skipCommand(final AppendingContext context) {
-            context.buffer().putByte(FLAGS_OFFSET, Flags.NONE);
-            context.buffer().putShort(INDEX_OFFSET, FlyweightCommand.INDEX);
-            skippedCommand.init(context.buffer(), 0);
+        private void skipCommand(final MutableDirectBuffer buffer, final int length) {
+            buffer.putByte(FLAGS_OFFSET, Flags.NONE);
+            buffer.putShort(INDEX_OFFSET, FlyweightCommand.INDEX);
+            skippedCommand.initSilent(buffer, HEADER_OFFSET, buffer, PAYLOAD_OFFSET, length);
             try {
                 duplicateHandler.skipCommandProcessing(skippedCommand);
             } catch (final Throwable t) {
@@ -162,8 +163,8 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
             }
         }
 
-        private void applyEvent(final AppendingContext context) {
-            appliedEvent.init(context.buffer(), 0);
+        private void applyEvent(final DirectBuffer buffer, final int length) {
+            appliedEvent.initSilent(buffer, HEADER_OFFSET, buffer, PAYLOAD_OFFSET, length);
             try {
                 eventApplier.onEvent(appliedEvent);
             } catch (final Throwable t) {

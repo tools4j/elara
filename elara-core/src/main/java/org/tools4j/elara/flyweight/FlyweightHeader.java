@@ -70,7 +70,7 @@ public class FlyweightHeader implements Flyweight<FlyweightHeader>, Header, Fram
         return initSilent(src, srcOffset);
     }
 
-    private FlyweightHeader initSilent(final DirectBuffer src, final int srcOffset) {
+    public FlyweightHeader initSilent(final DirectBuffer src, final int srcOffset) {
         this.header.wrap(src, srcOffset, HEADER_LENGTH);
         return this;
     }

@@ -87,7 +87,7 @@ public final class CommandHandlingSender extends FlyweightCommandSender {
     }
 
     private void invokeCommandHandler(final DirectBuffer payload, final int offset, final int length) {
-        command.init(header, HEADER_OFFSET, payload, offset, length);
+        command.initSilent(header, HEADER_OFFSET, payload, offset, length);
         try {
             commandHandler.onCommand(command);
         } finally {

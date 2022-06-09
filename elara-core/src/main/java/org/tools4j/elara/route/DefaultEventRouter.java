@@ -219,7 +219,7 @@ public class DefaultEventRouter implements EventRouter.Default {
             if (length > 0) {
                 ac.buffer().putInt(PAYLOAD_SIZE_OFFSET, length);
             }
-            flyweightEvent.init(ac.buffer(), 0);
+            flyweightEvent.initSilent(ac.buffer(), HEADER_OFFSET, ac.buffer(), PAYLOAD_OFFSET, length);
             eventApplier.onEvent(flyweightEvent);
             flyweightEvent.reset();
             ++nextIndex;
