@@ -29,7 +29,7 @@ import org.agrona.IoUtil;
 import org.agrona.concurrent.BusySpinIdleStrategy;
 import org.tools4j.elara.app.type.PublisherApp;
 import org.tools4j.elara.app.type.PublisherAppContext;
-import org.tools4j.elara.app.type.SequencerPassthroughApp;
+import org.tools4j.elara.app.type.PassthroughApp;
 import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.plugin.api.Plugins;
@@ -65,7 +65,7 @@ import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_END_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_START_TIME;
 import static org.tools4j.elara.samples.hash.HashApplication.isEven;
 
-public class HashPassthroughApplication implements SequencerPassthroughApp {
+public class HashPassthroughApplication implements PassthroughApp {
     //nothing to add
 
     public static class PublisherWithState implements PublisherApp {

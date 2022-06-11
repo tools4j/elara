@@ -31,15 +31,15 @@ import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
-public interface SequencerPassthroughApp {
+public interface PassthroughApp {
 
     default ElaraRunner launch(final MessageStore eventStore) {
         requireNonNull(eventStore);
         return launch(context -> context.eventStore(eventStore));
     }
 
-    default ElaraRunner launch(final Consumer<? super SequencerPassthroughAppContext> configurator) {
-        final SequencerPassthroughAppContext context = SequencerPassthroughAppConfig.configure();
+    default ElaraRunner launch(final Consumer<? super PassthroughAppContext> configurator) {
+        final PassthroughAppContext context = PassthroughAppConfig.configure();
         configurator.accept(context);
         context.populateDefaults(this);
         return Elara.launch(context);

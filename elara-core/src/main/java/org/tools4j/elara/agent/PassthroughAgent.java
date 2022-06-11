@@ -32,7 +32,7 @@ import static java.util.Objects.requireNonNull;
  * Agent for running the elara tasks required for a passthrough app where commands are directly routed as events with
  * the same payload as the command.
  */
-public class SequencerPassthroughAgent implements Agent {
+public class PassthroughAgent implements Agent {
 
     private final AgentStep sequencerStep;
     private final AgentStep eventStep;
@@ -40,11 +40,11 @@ public class SequencerPassthroughAgent implements Agent {
     private final AgentStep extraStepAlways;
     private final AgentStep extraStepAlwaysWhenEventsApplied;
 
-    public SequencerPassthroughAgent(final AgentStep sequencerStep,
-                                     final AgentStep eventStep,
-                                     final AgentStep publisherStep,
-                                     final AgentStep extraStepAlwaysWhenEventsApplied,
-                                     final AgentStep extraStepAlways) {
+    public PassthroughAgent(final AgentStep sequencerStep,
+                            final AgentStep eventStep,
+                            final AgentStep publisherStep,
+                            final AgentStep extraStepAlwaysWhenEventsApplied,
+                            final AgentStep extraStepAlways) {
         this.sequencerStep = requireNonNull(sequencerStep);
         this.eventStep = requireNonNull(eventStep);
         this.publisherStep = requireNonNull(publisherStep);
@@ -65,14 +65,6 @@ public class SequencerPassthroughAgent implements Agent {
             workDone += extraStepAlways.doWork();
             return workDone;
         }
-        //NOTES:
-        //   1. we don't poll inputs during replay since
-        //       (i) the command time would be difficult to define
-        //      (ii) sources depending on state would operate on incomplete state
-        //   2. we don't poll inputs when there are commands to poll since
-        //       (i) commands should be processed as fast as possible
-        //      (ii) command time more accurately reflects real time, even if app latency is now reflected as 'transfer' time
-        //     (iii) we prefer input back pressure over falling behind as it makes the problem visible and signals it to senders
         return publisherStep.doWork() + sequencerStep.doWork() + extraStepAlwaysWhenEventsApplied.doWork() + extraStepAlways.doWork();
     }
 }

@@ -46,6 +46,7 @@ import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.output.Output.Ack;
+import org.tools4j.elara.plugin.base.EventIdApplier;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
@@ -362,6 +363,18 @@ public class MetricsCapturingInterceptor implements Interceptor {
                 public EventApplier eventApplier() {
                     final EventApplier eventApplier = singletons.get().eventApplier();
                     if (shouldCapture(EVENT_APPLIED_FREQUENCY) || shouldCaptureAnyOf(EVENT)) {//includes APPLYING_START_TIME and APPLYING_END_TIME
+                        if (eventApplier instanceof EventIdApplier) {
+                            final EventIdApplier eventIdApplier = (EventIdApplier)eventApplier;
+                            return (EventIdApplier)(source, sequence, index) -> {
+                                captureTime(APPLYING_START_TIME);
+                                eventIdApplier.onEventId(source, sequence, index);
+                                captureTime(APPLYING_END_TIME);
+                                captureCount(EVENT_APPLIED_FREQUENCY);
+                                if (timeMetricsWriter != null) {
+                                    timeMetricsWriter.writeMetrics(EVENT, source, sequence, (short)index);
+                                }
+                            };
+                        }
                         return event -> {
                             captureTime(APPLYING_START_TIME);
                             eventApplier.onEvent(event);

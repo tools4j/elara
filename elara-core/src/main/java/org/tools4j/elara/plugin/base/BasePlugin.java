@@ -26,7 +26,7 @@ package org.tools4j.elara.plugin.base;
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.ApplierConfig;
 import org.tools4j.elara.app.config.EventStoreConfig;
-import org.tools4j.elara.app.type.SequencerPassthroughAppConfig;
+import org.tools4j.elara.app.type.PassthroughAppConfig;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
@@ -74,7 +74,7 @@ public enum BasePlugin implements SystemPlugin<Mutable> {
     @FunctionalInterface
     public interface BaseConfiguration extends Configuration.Default {
         static BaseState.Mutable createDefaultBaseState(final AppConfig appConfig) {
-            if (appConfig instanceof SequencerPassthroughAppConfig && !(appConfig instanceof ApplierConfig)) {
+            if (appConfig instanceof PassthroughAppConfig && !(appConfig instanceof ApplierConfig)) {
                 return new SingleEventBaseState();
             }
             return new DefaultBaseState();

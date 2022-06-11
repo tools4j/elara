@@ -24,17 +24,17 @@
 package org.tools4j.elara.app.factory;
 
 import org.agrona.concurrent.Agent;
-import org.tools4j.elara.agent.SequencerPassthroughAgent;
+import org.tools4j.elara.agent.PassthroughAgent;
 import org.tools4j.elara.app.config.ApplierConfig;
-import org.tools4j.elara.app.handler.EventApplier;
-import org.tools4j.elara.app.type.SequencerPassthroughAppConfig;
+import org.tools4j.elara.app.type.PassthroughAppConfig;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.plugin.base.EventIdApplier;
 
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
-public class SequencerPassthroughAppFactory implements AppFactory {
+public class PassthroughAppFactory implements AppFactory {
 
     private final PluginFactory pluginSingletons;
     private final SequencerFactory sequencerSingletons;
@@ -44,7 +44,7 @@ public class SequencerPassthroughAppFactory implements AppFactory {
     private final AgentStepFactory agentStepSingletons;
     private final AppFactory appSingletons;
 
-    public SequencerPassthroughAppFactory(final SequencerPassthroughAppConfig config) {
+    public PassthroughAppFactory(final PassthroughAppConfig config) {
         this.pluginSingletons = Singletons.create(new DefaultPluginFactory(config, config, this::pluginSingletons));
 
         final Interceptor interceptor = interceptor(pluginSingletons);
@@ -85,8 +85,8 @@ public class SequencerPassthroughAppFactory implements AppFactory {
     }
 
     private ApplierConfig applierConfig() {
-        final EventApplier eventApplier = pluginSingletons().baseState()::applyEvent;
-        return () -> eventApplier;
+        final EventIdApplier eventIdApplier = pluginSingletons().baseState()::applyEvent;
+        return () -> eventIdApplier;
     }
 
     private <T> Supplier<T> singletonsSupplier(final T factory, final UnaryOperator<T> singletonOp) {
@@ -116,7 +116,7 @@ public class SequencerPassthroughAppFactory implements AppFactory {
 
 
     private AppFactory appFactory() {
-        return () -> new SequencerPassthroughAgent(
+        return () -> new PassthroughAgent(
                 sequencerSingletons.sequencerStep(),
                 applierSingletons.eventPollerStep(),
                 publisherSingletons.publisherStep(),

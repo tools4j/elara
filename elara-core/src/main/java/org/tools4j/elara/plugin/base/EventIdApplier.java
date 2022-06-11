@@ -21,15 +21,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.app.type;
+package org.tools4j.elara.plugin.base;
 
-import org.tools4j.elara.app.config.AppConfig;
-import org.tools4j.elara.app.config.EventStoreConfig;
-import org.tools4j.elara.app.config.InOutConfig;
-import org.tools4j.elara.app.config.PluginConfig;
+import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.event.Event;
 
-public interface SequencerPassthroughAppConfig extends AppConfig, EventStoreConfig, InOutConfig, PluginConfig {
-    static SequencerPassthroughAppContext configure() {
-        return SequencerPassthroughAppContext.create();
+/**
+ * A minimalistic event applier using only the event ID when applying an event.
+ */
+@FunctionalInterface
+public interface EventIdApplier extends EventApplier {
+
+    //NOTE: this method may not be invoked at all, so do not override it!
+    @Override
+    default void onEvent(final Event event) {
+        final Event.Id eventId = event.id();
+        onEventId(eventId.source(), eventId.sequence(), eventId.index());
     }
+
+    void onEventId(int source, long sequence, int index);
 }

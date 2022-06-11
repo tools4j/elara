@@ -43,44 +43,44 @@ import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public interface SequencerPassthroughAppContext extends SequencerPassthroughAppConfig, AppContext, EventStoreContext, InOutContext, PluginContext {
+public interface PassthroughAppContext extends PassthroughAppConfig, AppContext, EventStoreContext, InOutContext, PluginContext {
     @Override
-    SequencerPassthroughAppContext input(Input input);
+    PassthroughAppContext input(Input input);
     @Override
-    SequencerPassthroughAppContext inputs(Input... inputs);
+    PassthroughAppContext inputs(Input... inputs);
     @Override
-    SequencerPassthroughAppContext inputs(Collection<? extends Input> inputs);
+    PassthroughAppContext inputs(Collection<? extends Input> inputs);
     @Override
-    SequencerPassthroughAppContext output(Output output);
+    PassthroughAppContext output(Output output);
     @Override
-    SequencerPassthroughAppContext eventStore(MessageStore eventStore);
+    PassthroughAppContext eventStore(MessageStore eventStore);
     @Override
-    SequencerPassthroughAppContext timeSource(TimeSource timeSource);
+    PassthroughAppContext timeSource(TimeSource timeSource);
 
     @Override
-    SequencerPassthroughAppContext exceptionHandler(ExceptionHandler exceptionHandler);
+    PassthroughAppContext exceptionHandler(ExceptionHandler exceptionHandler);
     @Override
-    SequencerPassthroughAppContext duplicateHandler(DuplicateHandler duplicateHandler);
+    PassthroughAppContext duplicateHandler(DuplicateHandler duplicateHandler);
     @Override
-    SequencerPassthroughAppContext loggerFactory(Logger.Factory loggerFactory);
+    PassthroughAppContext loggerFactory(Logger.Factory loggerFactory);
     @Override
-    SequencerPassthroughAppContext idleStrategy(IdleStrategy idleStrategy);
+    PassthroughAppContext idleStrategy(IdleStrategy idleStrategy);
     @Override
-    SequencerPassthroughAppContext dutyCycleExtraStep(AgentStep step, ExecutionType executionType);
+    PassthroughAppContext dutyCycleExtraStep(AgentStep step, ExecutionType executionType);
 
     @Override
-    SequencerPassthroughAppContext plugin(Plugin<?> plugin);
+    PassthroughAppContext plugin(Plugin<?> plugin);
     @Override
-    <P> SequencerPassthroughAppContext plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider);
+    <P> PassthroughAppContext plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider);
     @Override
-    <P> SequencerPassthroughAppContext plugin(Plugin<P> plugin, Consumer<? super P> pluginStateAware);
+    <P> PassthroughAppContext plugin(Plugin<P> plugin, Consumer<? super P> pluginStateAware);
     @Override
-    <P> SequencerPassthroughAppContext plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider, Consumer<? super P> pluginStateAware);
+    <P> PassthroughAppContext plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider, Consumer<? super P> pluginStateAware);
 
-    SequencerPassthroughAppContext populateDefaults();
-    SequencerPassthroughAppContext populateDefaults(SequencerPassthroughApp app);
+    PassthroughAppContext populateDefaults();
+    PassthroughAppContext populateDefaults(PassthroughApp app);
 
-    static SequencerPassthroughAppContext create() {
-        return new SequencerPassthroughAppContextImpl();
+    static PassthroughAppContext create() {
+        return new PassthroughAppContextImpl();
     }
 }

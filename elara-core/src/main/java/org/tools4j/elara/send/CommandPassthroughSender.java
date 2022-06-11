@@ -33,6 +33,7 @@ import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.flyweight.FlyweightHeader;
 import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.plugin.base.EventIdApplier;
 import org.tools4j.elara.store.ExpandableDirectBuffer;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.store.MessageStore.AppendingContext;
@@ -60,6 +61,7 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
     private final DuplicateHandler duplicateHandler;
     private final MessageStore.Appender eventStoreAppender;
     private final EventApplier eventApplier;
+    private final EventIdApplier eventIdApplierOrNull;
     private final SendingContext sendingContext = new SendingContext();
     private final FlyweightCommand skippedCommand = new FlyweightCommand();
     private final FlyweightEvent appliedEvent = new FlyweightEvent();
@@ -74,6 +76,7 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
         this.baseState = requireNonNull(baseState);
         this.eventStoreAppender = requireNonNull(eventStoreAppender);
         this.eventApplier = requireNonNull(eventApplier);
+        this.eventIdApplierOrNull = eventApplier instanceof EventIdApplier ? (EventIdApplier)eventApplier : null;
         this.exceptionHandler = requireNonNull(exceptionHandler);
         this.duplicateHandler = requireNonNull(duplicateHandler);
     }
@@ -140,11 +143,6 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
                 if (baseState.allEventsAppliedFor(source(), sequence())) {
                     skipCommand(ac.buffer(), length);
                 } else {
-                    //NOTE: this is about 10% faster than applyEvent(..), but not as nice
-                    //      reason this is not as nice are
-                    //      - metrics plugin cannot capture event applying
-                    //      - no event applier can be registered in a sequencer passthrough app, which otherwise could
-                    //((BaseState.Mutable)baseState).applyEvent(source(), sequence(), INDEX);
                     applyEvent(ac.buffer(), length);
                     ac.commit(HEADER_LENGTH + length);
                 }
@@ -169,6 +167,10 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
         }
 
         private void applyEvent(final DirectBuffer buffer, final int length) {
+            if (eventIdApplierOrNull != null) {
+                eventIdApplierOrNull.onEventId(source(), sequence(), INDEX);
+                return;
+            }
             appliedEvent.initSilent(buffer, HEADER_OFFSET, buffer, PAYLOAD_OFFSET, length);
             try {
                 eventApplier.onEvent(appliedEvent);

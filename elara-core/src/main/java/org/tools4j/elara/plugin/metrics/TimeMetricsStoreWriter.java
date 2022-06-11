@@ -58,7 +58,8 @@ public class TimeMetricsStoreWriter {
     }
 
     public int writeMetrics(final Command command) {
-        return writeMetrics(Target.COMMAND, command.id(), FlyweightCommand.INDEX);
+        final Command.Id id = command.id();
+        return writeMetrics(Target.COMMAND, id.source(), id.sequence(), FlyweightCommand.INDEX);
     }
 
     public int writeMetrics(final Target target, final Event event) {
@@ -66,17 +67,18 @@ public class TimeMetricsStoreWriter {
             throw new IllegalArgumentException("Command target not applicable for events");
         }
         final Event.Id id = event.id();
-        return writeMetrics(target, id.commandId(), (short)id.index());
+        return writeMetrics(target, id.source(), id.sequence(), (short)id.index());
     }
 
-    private int writeMetrics(final Target target, final Command.Id commandId, final short index) {
+    public int writeMetrics(final Target target,
+                            final int source,
+                            final long sequence,
+                            final short index) {
         final byte flags = target.flags(configuration.timeMetrics());
         final int count = target.count(flags);
         if (count == 0) {
             return 0;
         }
-        final int source = commandId.source();
-        final long sequence = commandId.sequence();
         try (final AppendingContext context = appender.appending()) {
             final MutableDirectBuffer buffer = context.buffer();
             final int headerLen = writeTimeMetricsHeader(flags, index, source, sequence, timeSource.currentTime(), buffer, 0);

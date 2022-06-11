@@ -24,18 +24,18 @@
 package org.tools4j.elara.app.type;
 
 import org.agrona.concurrent.Agent;
-import org.tools4j.elara.app.factory.SequencerPassthroughAppFactory;
+import org.tools4j.elara.app.factory.PassthroughAppFactory;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.store.MessageStore;
 
 import static java.util.Objects.requireNonNull;
 
-final class SequencerPassthroughAppContextImpl extends AbstractAppContext<SequencerPassthroughAppContextImpl> implements SequencerPassthroughAppContext {
+final class PassthroughAppContextImpl extends AbstractAppContext<PassthroughAppContextImpl> implements PassthroughAppContext {
 
     private MessageStore eventStore;
 
     @Override
-    protected SequencerPassthroughAppContextImpl self() {
+    protected PassthroughAppContextImpl self() {
         return this;
     }
 
@@ -45,18 +45,18 @@ final class SequencerPassthroughAppContextImpl extends AbstractAppContext<Sequen
     }
 
     @Override
-    public SequencerPassthroughAppContext eventStore(final MessageStore eventStore) {
+    public PassthroughAppContext eventStore(final MessageStore eventStore) {
         this.eventStore = requireNonNull(eventStore);
         return this;
     }
 
     @Override
-    public SequencerPassthroughAppContextImpl populateDefaults() {
+    public PassthroughAppContextImpl populateDefaults() {
         return super.populateDefaults();
     }
 
     @Override
-    public SequencerPassthroughAppContext populateDefaults(final SequencerPassthroughApp app) {
+    public PassthroughAppContext populateDefaults(final PassthroughApp app) {
         return this
                 .output(app instanceof Output ? ((Output)app) : Output.NOOP)
                 .populateDefaults();
@@ -73,6 +73,6 @@ final class SequencerPassthroughAppContextImpl extends AbstractAppContext<Sequen
     @Override
     public Agent createAgent() {
         populateDefaults().validate();
-        return new SequencerPassthroughAppFactory(this).agent();
+        return new PassthroughAppFactory(this).agent();
     }
 }
