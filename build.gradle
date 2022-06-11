@@ -40,11 +40,18 @@ defaultTasks 'clean', 'build'
 def projGroup = 'org.tools4j'
 def projVersion = file('version.txt').text.trim()
 
-def agronaVersion = '1.14.0'
-def chronicleVersion = '5.20.108'   //performance degradation after this version!
-def slf4jVersion = '1.7.32'
+def agronaVersion = '1.15.2'
+//def chronicleVersion = '5.23ea8'     //about 1.1M/s, so very slow!!!
+//def chronicleVersion = '5.22.18'     //about 1.1M/s, so very slow!!!
+//def chronicleVersion = '5.21.98'    //about 3.7M/s, ~20% faster than 5.21.99 !! (not reproducible now :-( )
+def chronicleVersion = '5.21.99'
+//def chronicleVersion = '5.20.115' //now fastest ?!? (newest is 123), but still has the garbage!
+//def chronicleVersion = '5.20.123'
+//def chronicleVersion = '5.20.109'
+//def chronicleVersion = '5.19.76'
+def slf4jVersion = '1.7.36'
 def junitVersion = '5.8.2'
-def mockitoVersion = '4.2.0'
+def mockitoVersion = '4.6.1'
 def hdrHistogramVersion = '2.1.12'
 
 ext {
@@ -149,6 +156,10 @@ subprojects {
     }
 
     tasks.withType(Test) {
+
+        enableAssertions = true
+        jvmArgs('-Ddisable.thread.safety=true')
+
         if (JavaVersion.current().isJava9Compatible()) {
             jvmArgs('--add-opens', 'java.base/java.lang.reflect=ALL-UNNAMED')
             jvmArgs('--add-opens', 'java.base/java.net=ALL-UNNAMED')
@@ -159,7 +170,7 @@ subprojects {
         }
 
         useJUnitPlatform {
-            excludeTags 'slow'
+            excludeTags 'perf'
         }
 
         testLogging {
@@ -170,11 +181,26 @@ subprojects {
         reports.html.enabled = false // Disable individual test reports
     }
 
-    task slowTest(type: Test) {
+    task perfTest(type: Test) {
         maxParallelForks = 1
 
+        enableAssertions = false
+        jvmArgs('-Djvm.resource.tracing=false')
+
         useJUnitPlatform {
-            includeTags 'slow'
+            includeTags 'perf'
+        }
+    }
+
+    task profilerTest(type: Test) {
+        maxParallelForks = 1
+
+        enableAssertions = false
+        jvmArgs('-Djvm.resource.tracing=false')
+        jvmArgs('-agentpath:/Applications/JProfiler.app/Contents/Resources/app/bin/macos/libjprofilerti.jnilib=port=8849')
+
+        useJUnitPlatform {
+            includeTags 'perf'
         }
     }
 

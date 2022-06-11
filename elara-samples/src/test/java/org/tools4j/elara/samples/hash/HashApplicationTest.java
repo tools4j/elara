@@ -23,11 +23,13 @@
  */
 package org.tools4j.elara.samples.hash;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.samples.hash.HashApplication.DefaultState;
 import org.tools4j.elara.samples.hash.HashApplication.ModifiableState;
 
+import java.io.File;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
@@ -35,6 +37,8 @@ import java.util.concurrent.locks.LockSupport;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.tools4j.elara.app.config.CommandPollingMode.FROM_END;
+import static org.tools4j.elara.app.config.CommandPollingMode.NO_STORE;
 import static org.tools4j.elara.samples.hash.HashApplication.NULL_VALUE;
 
 /**
@@ -84,46 +88,97 @@ public class HashApplicationTest {
     public void chronicleQueueWithMetrics() throws Exception {
         //given
         final int n = 500_000;
+        final long expected = 8951308420835593941L;//  500_000
+
+        //when
+        final long result = chronicleQueueWithMetrics(n, true, true);
+
+        //then
+        assertEquals(expected, result, "state.hash(" + n + ")");
+    }
+
+    @Test
+    @Tag("perf")
+    public void chronicleQueueWithMetricsPerf() throws Exception {
+        printClassPath();
+        //given
 //        final int n = 5_000_000;
-//        final int n = 50_000_000;
+        final int n = 50_000_000;
+//        final long expected = -4253299023651259134L;//5_000_000
+        final long expected = 8536806003277137281L;//50_000_000
+
+        //when
+        final long result = chronicleQueueWithMetrics(n, false, false);
+
+        //then
+        assertEquals(expected, result, "state.hash(" + n + ")");
+    }
+
+    private long chronicleQueueWithMetrics(final int n,
+                                           final boolean timeMetrics,
+                                           final boolean cmdstore) throws Exception {
+        //given
         final AtomicLong input = new AtomicLong(NULL_VALUE);
         final ModifiableState state = new DefaultState();
         final Random random = new Random(123);
         final long sleepNanos = MICROSECONDS.toNanos(0);
-        final long expected = 8951308420835593941L;//  500_000
-//        final long expected = -4253299023651259134L;//5_000_000
-//        final long expected = 8536806003277137281L;//50_000_000
 
         //when
-        try (final ElaraRunner runner = HashApplication.chronicleQueueWithMetrics(state, input)) {
-//        try (final ElaraRunner runner = HashApplication.chronicleQueueWithFreqMetrics(state, input, FROM_END)) {
-//        try (final ElaraRunner runner = HashApplication.chronicleQueueWithFreqMetrics(state, input, NO_STORE)) {
+        final ElaraRunner elaraRunner = timeMetrics ?
+                HashApplication.chronicleQueueWithMetrics(state, input) :
+                HashApplication.chronicleQueueWithFreqMetrics(state, input, cmdstore ? FROM_END : NO_STORE);
+        try (final ElaraRunner runner = elaraRunner) {
             runHashApp(n, random, sleepNanos, input, runner);
         }
 
         //then
-        assertEquals(expected, state.hash(), "state.hash(" + n + ")");
+        return state.hash();
     }
 
     @Test
     public void passthroughWithMetrics() throws Exception {
         //given
-//        final String folder = "hash-metrics";
-        final String folder = "hash-passthrough";
         final int n = 500_000;
+        final long expected = 8951308420835593941L;//  500_000
+
+        //when
+        final long result = passthroughWithMetrics("hash-passthrough", n, true);
+
+        //then
+        assertEquals(expected, result, "state.hash(" + n + ")");
+    }
+
+    @Test
+    @Tag("perf")
+    public void passthroughWithMetricsPerf() throws Exception {
+        printClassPath();
+        //given
 //        final int n = 5_000_000;
-//        final int n = 50_000_000;
+        final int n = 50_000_000;
+//        final long expected = -4253299023651259134L;//5_000_000
+        final long expected = 8536806003277137281L;//50_000_000
+
+        //when
+        final long result = passthroughWithMetrics("hash-metrics", n, false);
+
+        //then
+        assertEquals(expected, result, "state.hash(" + n + ")");
+    }
+
+    private long passthroughWithMetrics(final String folder,
+                                        final int n,
+                                        final boolean timeMetrics) throws Exception {
+        //given
         final AtomicLong input = new AtomicLong(NULL_VALUE);
         final ModifiableState state = new DefaultState();
         final Random random = new Random(123);
         final long sleepNanos = MICROSECONDS.toNanos(0);
-        final long expected = 8951308420835593941L;//  500_000
-//        final long expected = -4253299023651259134L;//5_000_000
-//        final long expected = 8536806003277137281L;//50_000_000
 
         //when
-        try (final ElaraRunner runner = HashPassthroughApplication.chronicleQueueWithMetrics(folder, input)) {
-//        try (final ElaraRunner runner = HashPassthroughApplication.chronicleQueueWithFreqMetrics(folder, input)) {
+        final ElaraRunner elaraRunner = timeMetrics ?
+                HashPassthroughApplication.chronicleQueueWithMetrics(folder, input) :
+                HashPassthroughApplication.chronicleQueueWithFreqMetrics(folder, input);
+        try (final ElaraRunner runner = elaraRunner) {
             runHashApp(n, random, sleepNanos, input, runner);
         }
         try (final ElaraRunner runner = HashPassthroughApplication.publisherWithState(folder, state)) {
@@ -134,7 +189,7 @@ public class HashApplicationTest {
         }
 
         //then
-        assertEquals(expected, state.hash(), "state.hash(" + n + ")");
+        return state.hash();
     }
 
     private static void runHashApp(final int n,
@@ -158,4 +213,11 @@ public class HashApplicationTest {
         runner.join(200);
     }
 
+    private void printClassPath() {
+        final String classpath = System.getProperty("java.class.path");
+        System.out.println("java.class.path:");
+        for (final String entry : classpath.split(File.pathSeparator)) {
+            System.out.println("\t" + entry);
+        }
+    }
 }

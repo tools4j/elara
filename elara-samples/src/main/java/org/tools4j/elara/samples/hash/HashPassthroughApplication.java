@@ -111,7 +111,8 @@ public class HashPassthroughApplication implements PassthroughApp {
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         final MetricsContext metricsConfig = MetricsConfig.configure()
-                .frequencyMetrics(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, EVENT_APPLIED_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY)
+//                .frequencyMetrics(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, EVENT_APPLIED_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY)
+                .frequencyMetrics(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY)
                 .frequencyMetricInterval(100_000)//micros
                 .frequencyMetricsStore(new ChronicleMessageStore(fq));
         if (timeMetrics) metricsConfig
