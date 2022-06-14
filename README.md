@@ -18,8 +18,8 @@ There are excellent introductions to event sourcing out there.  Some of our favo
 * https://www.youtube.com/watch?v=fhZwzm-d9ys
 * https://martinfowler.com/eaaDev/EventSourcing.html
 
-#### Elara Event Sourcing
-![Elara Event Sourcing](./elara.jpg)
+#### Elara All-In-one App
+![Elara All-In_One App](./doc/elara-all-in-one-app.jpg)
 
 #### Terminology 
 * **Command:** essentially an input message but enriched with timestamp, source and sequence number; can be a state modifying command instruction or a query
