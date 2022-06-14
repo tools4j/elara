@@ -18,19 +18,35 @@ There are excellent introductions to event sourcing out there.  Some of our favo
 * https://www.youtube.com/watch?v=fhZwzm-d9ys
 * https://martinfowler.com/eaaDev/EventSourcing.html
 
-#### Elara All-In-one App
+#### Elara Event Sourcing
+A typical elara event sourcing application performs the following main functions:
+* Creating commands from upstream processes or input sources 
+* Processing commands by routing events; provides access to the application state but modification operations are prohibited 
+* Applying events to update the application state
+* Publishing output to downstream processes from selected events
+
+These main functional modules can be processed in a single process or in separate applications.  Elara supports
+different _application types_ for different subsets of those main modules (some app types include additional function 
+modules as well).
+
+In the simplest case, a single application performs all 4 main functions from above.
+
+#### Elara All-In-One Application
+
+Application type that performs all main functional modules in a single threaded application.
+
 ![Elara All-In_One App](./doc/elara-all-in-one-app.jpg)
 
-#### Terminology 
-* **Command:** essentially an input message but enriched with timestamp, source and sequence number; can be a state modifying command instruction or a query
+### Terminology 
+* **Command:** essentially an input message but enriched with a timestamp and a source ID and a sequence number; can be a state modifying command instruction or a query
 * **Event:** result of processing a command; instruction how to modify state or what output to generate
 * **Command Processor:** handles commands and has read-only access to application state; routes events
 * **Event Applier:** triggered by events (routed or replayed); modifies the application state according to the event instruction
-* **Command Store:** command store which optionally persists all incoming commands before they are passed to the _Command Processor_
+* **Command Store:** (optional) persists all incoming commands before they are passed to the _Command Processor_; useful to replay commands (as opposed to reconstructing the application state from replayed events) 
 * **Event Store:** persisted store with all routed events stored sequentially in appending order
 * **Application State:** transient in-memory state of the application;  can be constructed from events via _Event Applier_
-* **Input:** a source of input messages for instance from an upstream subscription
-* **Output:** transforms selected events into output messages and publishes them to downstream applications
+* **Input:** a source of input messages for instance from an upstream process
+* **Output:** output message created from an event, usually published to a downstream process or system
 
 ### Plugins
 Plugins are optional features that can be configured when defining the application context.  Third party plugins can be
@@ -54,7 +70,6 @@ Elara provides the following default plugins:
                    leader (after applying all events and assuming deterministic application logic);  together with the
                    provided leader change commands applications can use this plugin to support rolling upgrades or 
                    implement manual or automatic fail-over strategies
- 
 
 ### Samples
 
