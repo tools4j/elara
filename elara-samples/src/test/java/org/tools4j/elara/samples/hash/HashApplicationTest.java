@@ -30,6 +30,8 @@ import org.tools4j.elara.samples.hash.HashApplication.DefaultState;
 import org.tools4j.elara.samples.hash.HashApplication.ModifiableState;
 
 import java.io.File;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
@@ -100,7 +102,7 @@ public class HashApplicationTest {
     @Test
     @Tag("perf")
     public void chronicleQueueWithMetricsPerf() throws Exception {
-        printClassPath();
+        printRuntimeArgs();
         //given
 //        final int n = 5_000_000;
         final int n = 50_000_000;
@@ -151,7 +153,7 @@ public class HashApplicationTest {
     @Test
     @Tag("perf")
     public void passthroughWithMetricsPerf() throws Exception {
-        printClassPath();
+        printRuntimeArgs();
         //given
 //        final int n = 5_000_000;
         final int n = 50_000_000;
@@ -213,10 +215,24 @@ public class HashApplicationTest {
         runner.join(200);
     }
 
-    private void printClassPath() {
-        final String classpath = System.getProperty("java.class.path");
+    private void printRuntimeArgs() {
+        final RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+        System.out.println("vm:");
+        System.out.println("\t" + runtimeMxBean.getVmName());
+        System.out.println("\t" + System.getProperty("java.version") + " (build " + runtimeMxBean.getVmVersion() + ")");
+        System.out.println("vm-args:");
+        for (final String arg : runtimeMxBean.getInputArguments()) {
+            System.out.println("\t" + arg);
+        }
+        final String[] classpath = System.getProperty("java.class.path").split(File.pathSeparator);
+        System.out.println("lib-versions:");
+        for (final String entry : classpath) {
+            if (entry.contains("/agrona-") || entry.contains("/chronicle-queue-")) {
+                System.out.println("\t" + entry.substring(entry.lastIndexOf('/') + 1));
+            }
+        }
         System.out.println("java.class.path:");
-        for (final String entry : classpath.split(File.pathSeparator)) {
+        for (final String entry : classpath) {
             System.out.println("\t" + entry);
         }
     }

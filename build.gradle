@@ -1,7 +1,9 @@
+import java.time.Year
+
 /*
 The MIT License (MIT)
 
-Copyright (c) 2020 tools4j.org (Marco Terzer, Anton Anufriev)
+Copyright (c) 2020-2022 tools4j.org (Marco Terzer, Anton Anufriev)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +46,7 @@ def agronaVersion = '1.15.2'
 //def chronicleVersion = '5.23ea8'     //about 1.1M/s, so very slow!!!
 //def chronicleVersion = '5.22.18'     //about 1.1M/s, so very slow!!!
 //def chronicleVersion = '5.21.98'    //about 3.7M/s, ~20% faster than 5.21.99 !! (not reproducible now :-( )
-def chronicleVersion = '5.21.99'
+def chronicleVersion = '5.21.98'
 //def chronicleVersion = '5.20.115' //now fastest ?!? (newest is 123), but still has the garbage!
 //def chronicleVersion = '5.20.123'
 //def chronicleVersion = '5.20.109'
@@ -218,7 +220,7 @@ subprojects {
 
     javadoc {
         title = '<h1>Elara Event Sourcing</h1>'
-        options.bottom = '<i>Copyright &#169; 2020 tools4j.org (Marco Terzer, Anton Anufriev). All Rights Reserved.</i>'
+        options.bottom = "<i>Copyright &#169; 2020-" + Year.now().getValue() + " tools4j.org (Marco Terzer, Anton Anufriev). All Rights Reserved.</i>"
         options.encoding = 'UTF-8'
         options.docEncoding = 'UTF-8'
         options.charSet = 'UTF-8'
