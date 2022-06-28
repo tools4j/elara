@@ -25,13 +25,14 @@ package org.tools4j.elara.logging;
 
 import static org.tools4j.elara.logging.Logger.Level.INFO;
 
-@FunctionalInterface
 public interface Logger {
     enum Level {
         ERROR, WARN, INFO, DEBUG
     }
 
     void log(Level level, CharSequence message);
+
+    void logStackTrace(Level level, Throwable t);
 
     default boolean isEnabled(final Level level) {
         return level.ordinal() <= INFO.ordinal();
@@ -40,5 +41,13 @@ public interface Logger {
     @FunctionalInterface
     interface Factory {
         Logger create(Class<?> clazz);
+    }
+
+    static Logger systemLogger() {
+        return OutputStreamLogger.SYSTEM;
+    }
+
+    static Logger.Factory systemLoggerFactory() {
+        return OutputStreamLogger.SYSTEM_FACTORY;
     }
 }

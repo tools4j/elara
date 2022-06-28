@@ -119,16 +119,26 @@ public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFr
     }
 
     @Override
+    public StringBuilder printTo(final StringBuilder dst) {
+        dst.append("FlyweightDataFrame{");
+        if (valid()) {
+            dst.append("version=").append(header.version());
+            dst.append("|source=").append(header.source());
+            dst.append("|sequence=").append(header.sequence());
+            dst.append("|index=").append(header.index());
+            dst.append("|flags=").append(Flags.toString(header().flags()));
+            dst.append("|type=").append(header.type());
+            dst.append("|time=").append(header.time());
+            dst.append("|payload-size=").append(header.payloadSize());
+        } else {
+            dst.append("???");
+        }
+        dst.append('}');
+        return dst;
+    }
+
+    @Override
     public String toString() {
-        return valid() ? "FlyweightDataFrame{" +
-                "source=" + header().source() +
-                ", type=" + header().type() +
-                ", sequence=" + header().sequence() +
-                ", time=" + header().time() +
-                ", version=" + header().version() +
-                ", flags=" + Flags.toString(header().flags()) +
-                ", index=" + header().index() +
-                ", payload-size=" + header().payloadSize() +
-                '}' : "FlyweightDataFrame";
+        return printTo(new StringBuilder(128)).toString();
     }
 }

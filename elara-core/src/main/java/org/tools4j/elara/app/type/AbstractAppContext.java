@@ -31,6 +31,7 @@ import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.config.PluginContext;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
+import org.tools4j.elara.exception.ExceptionLogger;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.logging.Logger.Factory;
 import org.tools4j.elara.output.Output;
@@ -55,9 +56,9 @@ abstract class AbstractAppContext<T extends AbstractAppContext<T>> implements Ap
     private final List<Input> inputs = new ArrayList<>();
     private Output output = Output.NOOP;
     private TimeSource timeSource;
-    private ExceptionHandler exceptionHandler = ExceptionHandler.DEFAULT;
+    private ExceptionHandler exceptionHandler = ExceptionHandler.systemDefault();
     private Factory loggerFactory = SYSTEM_FACTORY;
-    private DuplicateHandler duplicateHandler = DuplicateHandler.DEFAULT;
+    private DuplicateHandler duplicateHandler = DuplicateHandler.systemDefault();
     private IdleStrategy idleStrategy = new BackoffIdleStrategy(
             100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100));
     private final EnumMap<ExecutionType, List<AgentStep>> extraSteps = new EnumMap<>(ExecutionType.class);
@@ -136,8 +137,12 @@ abstract class AbstractAppContext<T extends AbstractAppContext<T>> implements Ap
     @Override
     public T loggerFactory(final Factory loggerFactory) {
         this.loggerFactory = requireNonNull(loggerFactory);
-        if (duplicateHandler == DuplicateHandler.DEFAULT && loggerFactory != SYSTEM_FACTORY) {
-            duplicateHandler = DuplicateHandler.loggingHandler(loggerFactory);
+        ExceptionLogger exceptionLogger = null;
+        if (duplicateHandler == DuplicateHandler.systemDefault() && loggerFactory != SYSTEM_FACTORY) {
+            duplicateHandler = exceptionLogger = new ExceptionLogger(loggerFactory, true);
+        }
+        if (exceptionHandler == ExceptionHandler.systemDefault() && loggerFactory != SYSTEM_FACTORY) {
+            exceptionHandler = exceptionLogger != null ? exceptionLogger : new ExceptionLogger(loggerFactory, true);
         }
         return self();
     }

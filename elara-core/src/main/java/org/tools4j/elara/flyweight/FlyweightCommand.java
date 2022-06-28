@@ -119,14 +119,25 @@ public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, C
     }
 
     @Override
+    public StringBuilder printTo(final StringBuilder dst) {
+        dst.append("FlyweightCommand{");
+        if (valid()) {
+            final Header header = header();
+            dst.append("version=").append(header.version());
+            dst.append("|source=").append(header.source());
+            dst.append("|sequence=").append(header.sequence());
+            dst.append("|type=").append(header.type());
+            dst.append("|time=").append(header.time());
+            dst.append("|payload-size=").append(header.payloadSize());
+        } else {
+            dst.append("???");
+        }
+        dst.append('}');
+        return dst;
+    }
+
+    @Override
     public String toString() {
-        return valid() ? "FlyweightCommand{" +
-                "source=" + source() +
-                ", type=" + type() +
-                ", sequence=" + sequence() +
-                ", time=" + time() +
-                ", version=" + header().version() +
-                ", payload-size=" + header().payloadSize() +
-                '}' : "FlyweightCommand";
+        return printTo(new StringBuilder(128)).toString();
     }
 }

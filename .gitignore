@@ -13,3 +13,5 @@ out
 *.jfc
 *.jfr
 .DS_Store
+doc/.$*.bkp
+doc/.$*.dtmp

@@ -27,5 +27,7 @@ public interface PlaceholderReplacer {
     String PLACEHOLDER = "{}";
     PlaceholderReplacer replace(long arg);
     PlaceholderReplacer replace(Object arg);
+    PlaceholderReplacer replace(Printable arg);
+    PlaceholderReplacer replace(Throwable arg);
     CharSequence format();
 }

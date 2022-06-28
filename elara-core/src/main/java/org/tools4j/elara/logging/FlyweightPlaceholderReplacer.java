@@ -23,6 +23,7 @@
  */
 package org.tools4j.elara.logging;
 
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
@@ -58,13 +59,45 @@ final class FlyweightPlaceholderReplacer implements PlaceholderReplacer {
 
     @Override
     public FlyweightPlaceholderReplacer replace(final Object arg) {
+        return replace(arg, (obj, builder) -> {
+            if (obj instanceof CharSequence) {
+                builder.append((CharSequence) obj);
+            } else if (obj instanceof Printable) {
+                ((Printable)obj).printTo(builder);
+            } else if (obj instanceof Throwable) {
+                appendThrowable((Throwable)obj, builder);
+            } else {
+                builder.append(obj);
+            }
+        });
+    }
+
+    @Override
+    public FlyweightPlaceholderReplacer replace(final Printable arg) {
+        return replace(arg, Printable::printTo);
+    }
+
+    @Override
+    public FlyweightPlaceholderReplacer replace(final Throwable arg) {
+        return replace(arg, FlyweightPlaceholderReplacer::appendThrowable);
+    }
+
+    private static void appendThrowable(final Throwable throwable, final StringBuilder builder) {
+        builder.append(throwable.getClass().getName());
+        final String message = throwable.getMessage();
+        if (message != null && message.length() > 0) {
+            builder.append(':').append(message);
+        }
+    }
+
+    private <T> FlyweightPlaceholderReplacer replace(final T arg, final BiConsumer<T, StringBuilder> formatter) {
         final int index = message.indexOf(PLACEHOLDER, start);
         if (index >= 0) {
             temp.append(message, start, index);
-            if (arg instanceof CharSequence) {
-                temp.append((CharSequence) arg);
+            if (arg == null) {
+                temp.append((String)null);
             } else {
-                temp.append(arg);
+                formatter.accept(arg, temp);
             }
             start = index + PLACEHOLDER.length();
         }

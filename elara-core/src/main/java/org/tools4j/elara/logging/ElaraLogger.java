@@ -38,6 +38,8 @@ public interface ElaraLogger {
 
     PlaceholderReplacer log(Level level, String message);
 
+    void logStackTrace(Level level, Throwable t);
+
     boolean isEnabled(Level level);
 
     default PlaceholderReplacer error(final String message) {
@@ -51,5 +53,9 @@ public interface ElaraLogger {
     }
     default PlaceholderReplacer debug(final String message) {
         return log(Level.DEBUG, message);
+    }
+
+    default void logStackTrace(Throwable t) {
+        logStackTrace(Level.ERROR, t);
     }
 }

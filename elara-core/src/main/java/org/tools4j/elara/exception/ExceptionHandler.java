@@ -30,28 +30,34 @@ import org.tools4j.elara.event.Event;
 @FunctionalInterface
 public interface ExceptionHandler extends ErrorHandler {
 
-    void handleException(String message, Throwable t);
+    void handleException(String message, Object context, Throwable t);
+
+    default void handleException(final String message, final Throwable t) {
+        handleException(message, null, t);
+    }
 
     default void handleCommandProcessorException(final Command command, final Throwable t) {
-        handleException("Unhandled exception when processing command [" + command + "], e=" + t, t);
+        handleException("Unhandled exception when processing command", command, t);
     }
 
     default void handleEventApplierException(final Event event, final Throwable t) {
-        handleException("Unhandled exception when applying event [" + event + "], e=" + t, t);
+        handleException("Unhandled exception when applying event", event, t);
     }
 
     default void handleEventOutputException(final Event event, final Throwable t) {
-        handleException("Unhandled exception when publishing event [" + event + "], e=" + t, t);
+        handleException("Unhandled exception when publishing event", event, t);
     }
 
     @Override
     default void onError(final Throwable t) {
-        handleException("Unhandled exception, e=" + t, t);
+        handleException("Unhandled exception", null, t);
     }
 
-    ExceptionHandler DEFAULT = (message, t) -> {
-        System.err.println(message);
-        t.printStackTrace();
-    };
+    static ExceptionHandler systemDefault() {
+        return ExceptionLogger.DEFAULT;
+    }
 
+    static ExceptionHandler systemDefaultWithoutStackTrace() {
+        return ExceptionLogger.DEFAULT_WITHOUT_STACK_TRACE;
+    }
 }

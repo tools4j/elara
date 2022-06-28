@@ -61,7 +61,18 @@ public class DefaultElaraLogger implements ElaraLogger {
 
     @Override
     public PlaceholderReplacer log(final Level level, final String message) {
-        return placeholderReplacerSupplier.get().init(levelLogger.get(level), message);
+        if (isEnabled(level)) {
+            return placeholderReplacerSupplier.get().init(levelLogger.get(level), message);
+        } else {
+            return NullPlaceholderReplacer.NULL;
+        }
+    }
+
+    @Override
+    public void logStackTrace(final Level level, final Throwable t) {
+        if (isEnabled(level)) {
+            logger.logStackTrace(level, t);
+        }
     }
 
     @Override

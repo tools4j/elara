@@ -24,10 +24,11 @@
 package org.tools4j.elara.flyweight;
 
 import org.agrona.DirectBuffer;
+import org.tools4j.elara.logging.Printable;
 
 /**
  * A {@link Frame} with {@link #payload()}.
  */
-public interface DataFrame extends Frame, Writable {
+public interface DataFrame extends Frame, Writable, Printable {
     DirectBuffer payload();
 }

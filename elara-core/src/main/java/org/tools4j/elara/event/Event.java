@@ -27,8 +27,9 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.Writable;
+import org.tools4j.elara.logging.Printable;
 
-public interface Event extends Writable {
+public interface Event extends Writable, Printable {
     interface Id {
         Command.Id commandId();
         int source();

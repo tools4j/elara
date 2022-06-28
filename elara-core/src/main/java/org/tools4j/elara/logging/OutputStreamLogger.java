@@ -78,6 +78,11 @@ public class OutputStreamLogger implements Logger {
         log(level == Level.ERROR || level == Level.WARN ? err : out, level, message);
     }
 
+    @Override
+    public void logStackTrace(final Level level, final Throwable t) {
+        t.printStackTrace(level == Level.ERROR || level == Level.WARN ? err : out);
+    }
+
     private void log(final PrintWriter writer, final Level level, final CharSequence message) {
         final long time = System.currentTimeMillis();
         printDate(writer, time);

@@ -31,40 +31,26 @@ package org.tools4j.elara.send;
 public interface SendingResult {
     /** @return the sending {@link Status} */
     Status status();
+
     /** @return true if sending was successful */
     boolean isSent();
-    /** @return true if sending is pending after a timed resend attempt */
-    boolean isPending();
-    /** @return true if sending is neither successful nor pending */
-    boolean isUnsuccessful();
-    /** @return exception that occurred when attempting to send, or null if no exception occurred */
-    Exception exception();
+
     /**
      * Immediately attempts to send the command again after a failed attempt.
      * @return this result with the updated sending result status
      * @throws IllegalStateException if this result does not reflect a failed attempt when retrying
      */
-    SendingResult sendAgainImmediately();
-    /**
-     * Attempts to send the command again after a failed attempt waiting the specified {@code time} before resending.
-     *
-     * @param time the time after which to re-attempt sending of the command
-     * @return this result with the updated sending result status
-     * @throws IllegalStateException if this result does not reflect a failed attempt when retrying
-     */
-    SendingResult sendAgainAfter(long time);
+    SendingResult sendRetry();
 
     /** Status after sending a command */
     enum Status {
         /** Sending was successful */
         SENT,
-        /** Resending was scheduled with a delay and is still pending */
-        PENDING,
         /** Sending failed because the sender is not currently connected to the receiver */
         DISCONNECTED,
         /** Sending failed because the receiver experiences backpressure */
         BACK_PRESSURED,
-        /** Sending failed with an {@link #exception() exception} */
+        /** Sending failed for another reason such as an exception */
         FAILED
     }
 
@@ -74,38 +60,22 @@ public interface SendingResult {
         default boolean isSent() {
             return status() == Status.SENT;
         }
-
-        @Override
-        default boolean isPending() {
-            return status() == Status.PENDING;
-        }
-
-        @Override
-        default boolean isUnsuccessful() {
-            final Status status = status();
-            return status != Status.SENT && status != Status.PENDING;
-        }
     }
 
-    SendingResult SENT = new Default() {
+    SendingResult SENT = new SendingResult() {
         @Override
         public Status status() {
             return Status.SENT;
         }
 
         @Override
-        public Exception exception() {
-            return null;
+        public boolean isSent() {
+            return true;
         }
 
         @Override
-        public SendingResult sendAgainImmediately() {
-            throw new IllegalStateException("Cannot send again after command was successfully sent");
-        }
-
-        @Override
-        public SendingResult sendAgainAfter(final long time) {
-            throw new IllegalStateException("Cannot send again after command was successfully sent");
+        public SendingResult sendRetry() {
+            throw new IllegalStateException("Cannot send again when already sent successfully");
         }
     };
 
@@ -117,18 +87,8 @@ public interface SendingResult {
         }
 
         @Override
-        public Exception exception() {
-            return null;
-        }
-
-        @Override
-        public SendingResult sendAgainImmediately() {
+        public SendingResult sendRetry() {
             return this;
-        }
-
-        @Override
-        public SendingResult sendAgainAfter(final long time) {
-            throw new IllegalStateException("not supported");
         }
     };
 
@@ -140,17 +100,7 @@ public interface SendingResult {
         }
 
         @Override
-        public Exception exception() {
-            return null;
-        }
-
-        @Override
-        public SendingResult sendAgainImmediately() {
-            throw new IllegalStateException("not implemented");//FIXME impl
-        }
-
-        @Override
-        public SendingResult sendAgainAfter(final long time) {
+        public SendingResult sendRetry() {
             throw new IllegalStateException("not implemented");//FIXME impl
         }
     };

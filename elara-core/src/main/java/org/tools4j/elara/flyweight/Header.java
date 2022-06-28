@@ -24,11 +24,12 @@
 package org.tools4j.elara.flyweight;
 
 import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.logging.Printable;
 
 /**
  * A header of a frame as described by {@link FrameDescriptor}.
  */
-public interface Header extends Writable {
+public interface Header extends Writable, Printable {
 
     int source();
 

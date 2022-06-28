@@ -156,16 +156,26 @@ public class FlyweightHeader implements Flyweight<FlyweightHeader>, Header, Fram
     }
 
     @Override
+    public StringBuilder printTo(final StringBuilder dst) {
+        dst.append("FlyweightHeader{");
+        if (valid()) {
+            dst.append("version=").append(version());
+            dst.append("|source=").append(source());
+            dst.append("|sequence=").append(sequence());
+            dst.append("|index=").append(index());
+            dst.append("|flags=").append(Flags.toString(header().flags()));
+            dst.append("|type=").append(type());
+            dst.append("|time=").append(time());
+            dst.append("|payload-size=").append(payloadSize());
+        } else {
+            dst.append("???");
+        }
+        dst.append('}');
+        return dst;
+    }
+
+    @Override
     public String toString() {
-        return valid() ? "FlyweightHeader{" +
-                "source=" + source() +
-                ", type=" + type() +
-                ", sequence=" + sequence() +
-                ", time=" + time() +
-                ", version=" + version() +
-                ", flags=" + Flags.toString(flags()) +
-                ", index=" + index() +
-                ", payload-size=" + payloadSize() +
-                '}' : "FlyweightHeader";
+        return printTo(new StringBuilder(128)).toString();
     }
 }

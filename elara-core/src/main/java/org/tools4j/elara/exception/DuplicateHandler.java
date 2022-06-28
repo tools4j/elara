@@ -25,11 +25,6 @@ package org.tools4j.elara.exception;
 
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.logging.ElaraLogger;
-import org.tools4j.elara.logging.Logger;
-import org.tools4j.elara.logging.Logger.Level;
-
-import static org.tools4j.elara.logging.OutputStreamLogger.SYSTEM_FACTORY;
 
 /**
  * Duplicate commands and events are detected and skipped by the engine.  This handler allows applications to react to
@@ -64,31 +59,9 @@ public interface DuplicateHandler {
         //default is no-op;  apps may want to log something
     }
 
-    /**
-     * Handler logging skipped commands on INFO and skipped events on DEBUG
-     * @param loggerFactory factory to create logger for duplicate handler class
-     * @return a new duplicate handler instance
-     */
-    static DuplicateHandler loggingHandler(final Logger.Factory loggerFactory) {
-        final ElaraLogger logger = ElaraLogger.create(loggerFactory, DuplicateHandler.class);
-        return new DuplicateHandler() {
-            @Override
-            public void skipCommandProcessing(final Command command) {
-                if (logger.isEnabled(Level.INFO)) {
-                    logger.info("Skipping command: {}").replace(command).format();
-                }
-            }
-            @Override
-            public void skipEventApplying(final Event event) {
-                if (logger.isEnabled(Level.DEBUG)) {
-                    logger.debug("Skipping event: {}").replace(event).format();
-                }
-            }
-        };
+    static DuplicateHandler systemDefault() {
+        return ExceptionLogger.DEFAULT;
     }
-
-    /** Default handler logging skipped commands on INFO and skipped events on DEBUG */
-    DuplicateHandler DEFAULT = loggingHandler(SYSTEM_FACTORY);
 
     /** No-op handler silently ignoring all duplicates.*/
     DuplicateHandler NOOP = command -> {};

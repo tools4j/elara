@@ -21,46 +21,33 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.flyweight;
+package org.tools4j.elara.logging;
 
-public enum Flags {
-    ;
-    public static final byte NONE = 0;
-    public static final byte COMMIT = 1;
-    public static final byte ROLLBACK = 2;
+enum NullPlaceholderReplacer implements PlaceholderReplacer {
+    NULL;
 
-    public static final String NONE_STRING = "0";
-    public static final String COMMIT_STRING = "C";
-    public static final String ROLLBACK_STRING = "R";
-
-    private static final int FINAL_MASK = COMMIT | ROLLBACK;
-
-    public static boolean isCommit(final byte flags) {
-        return (flags & COMMIT) != 0;
+    @Override
+    public PlaceholderReplacer replace(final long arg) {
+        return this;
     }
 
-    public static boolean isRollback(final byte flags) {
-        return (flags & ROLLBACK) != 0;
+    @Override
+    public PlaceholderReplacer replace(final Object arg) {
+        return this;
     }
 
-    public static boolean isFinal(final byte flags) {
-        return (flags & FINAL_MASK) != 0;
+    @Override
+    public PlaceholderReplacer replace(final Printable arg) {
+        return this;
     }
 
-    public static boolean isNonFinal(final byte flags) {
-        return (flags & FINAL_MASK) == 0;
+    @Override
+    public PlaceholderReplacer replace(final Throwable arg) {
+        return this;
     }
 
-    public static String toString(final byte flags) {
-        switch (flags) {
-            case NONE:
-                return NONE_STRING;
-            case COMMIT:
-                return COMMIT_STRING;
-            case ROLLBACK:
-                return ROLLBACK_STRING;
-            default:
-                return Integer.toHexString(flags & 0xff);
-        }
+    @Override
+    public CharSequence format() {
+        return "";
     }
 }
