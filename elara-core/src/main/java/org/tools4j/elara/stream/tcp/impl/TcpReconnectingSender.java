@@ -30,9 +30,10 @@ import static java.util.Objects.requireNonNull;
 
 final class TcpReconnectingSender extends AbstractTcpSender {
 
-    private static final DisconnectedSender DISCONNECTED = new DisconnectedSender("TcpSender is not yet connected");
-    private static final DisconnectedSender FAILED = new DisconnectedSender("TcpSender is not connected");
-    private static final DisconnectedSender CLOSED = new DisconnectedSender("TcpSender is closed");
+    private static final DisconnectedSender CLOSED = new DisconnectedSender("TcpSender is closed", () -> {});
+
+    private final DisconnectedSender DISCONNECTED = new DisconnectedSender("TcpSender is not yet connected", this::close);
+    private final DisconnectedSender FAILED = new DisconnectedSender("TcpSender is not connected", this::close);
 
     private AbstractTcpSender sender = DISCONNECTED;
 
@@ -46,8 +47,16 @@ final class TcpReconnectingSender extends AbstractTcpSender {
         }
     }
 
-    void close() {
-        this.sender = CLOSED;
+    @Override
+    public boolean isClosed() {
+        return sender == CLOSED;
+    }
+
+    @Override
+    public void close() {
+        if (sender != CLOSED) {
+            sender = CLOSED;
+        }
     }
 
     void connect(final TcpSender sender) {
@@ -83,14 +92,26 @@ final class TcpReconnectingSender extends AbstractTcpSender {
     private static final class DisconnectedSender extends AbstractTcpSender {
 
         final String message;
+        final Runnable close;
 
-        DisconnectedSender(final String message) {
+        DisconnectedSender(final String message, final Runnable close) {
             this.message = requireNonNull(message);
+            this.close = requireNonNull(close);
         }
 
         @Override
         public boolean isConnected() {
             return false;
+        }
+
+        @Override
+        public boolean isClosed() {
+            return this == CLOSED;
+        }
+
+        @Override
+        public void close() {
+            close.run();
         }
 
         @Override

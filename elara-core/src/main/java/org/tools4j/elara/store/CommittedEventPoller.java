@@ -132,6 +132,11 @@ public class CommittedEventPoller implements Poller {
     }
 
     @Override
+    public boolean isClosed() {
+        return aheadPoller.isClosed();
+    }
+
+    @Override
     public void close() {
         aheadPoller.close();
         eventPoller.close();

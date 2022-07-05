@@ -25,14 +25,14 @@ package org.tools4j.elara.agent;
 
 import org.agrona.concurrent.Agent;
 import org.tools4j.elara.step.AgentStep;
-import org.tools4j.elara.step.PublisherStep;
+import org.tools4j.elara.step.PollerPublisherStep;
 import org.tools4j.elara.step.SequencerStep;
 
 import static java.util.Objects.requireNonNull;
 
 /**
  * Agent for running all elara tasks including {@link SequencerStep},
- * {@link ProcessorAgent processor agent} steps and {@link PublisherStep}.
+ * {@link ProcessorAgent processor agent} steps and {@link PollerPublisherStep}.
  */
 public class AllInOneAgent implements Agent {
 

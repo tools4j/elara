@@ -42,14 +42,12 @@ defaultTasks 'clean', 'build'
 def projGroup = 'org.tools4j'
 def projVersion = file('version.txt').text.trim()
 
-def agronaVersion = '1.15.2'
-//def chronicleVersion = '5.23ea20'   //just under 3.0M/s
-//def chronicleVersion = '5.23ea8'     //about 1.1M/s, so very slow!!!
-//def chronicleVersion = '5.22.18'     //about 1.1M/s, so very slow!!!
-//def chronicleVersion = '5.21.98'    //about 3.7M/s, ~20% faster than 5.21.99 !! (not reproducible now :-( )
+def agronaVersion = '1.16.0'
+//def chronicleVersion = '5.23ea21'//just under 3.0M/s
+//def chronicleVersion = '5.21.99'
 def chronicleVersion = '5.21.98'
-//def chronicleVersion = '5.20.115' //now fastest ?!? (newest is 123), but still has the garbage!
 //def chronicleVersion = '5.20.123'
+//def chronicleVersion = '5.20.115' //now fastest ?!? (newest is 123), but still has the garbage!
 //def chronicleVersion = '5.20.109'
 //def chronicleVersion = '5.19.76'
 def slf4jVersion = '1.7.36'

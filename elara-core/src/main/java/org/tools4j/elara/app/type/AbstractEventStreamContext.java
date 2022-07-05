@@ -27,34 +27,34 @@ import org.tools4j.elara.app.config.EventStreamContext;
 import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.store.MessageStore.Poller;
-import org.tools4j.elara.stream.MessageStream;
-import org.tools4j.elara.stream.StorePollingMessageStream;
+import org.tools4j.elara.stream.MessageReceiver;
+import org.tools4j.elara.stream.StorePollingMessageReceiver;
 
 import static java.util.Objects.requireNonNull;
 
 abstract class AbstractEventStreamContext<T extends AbstractEventStreamContext<T>> extends AbstractAppContext<T> implements EventStreamContext {
 
-    private MessageStream eventStream;
+    private MessageReceiver eventReceiver;
     private EventProcessor eventProcessor;
 
     @Override
-    public MessageStream eventStream() {
-        return eventStream;
+    public MessageReceiver eventStream() {
+        return eventReceiver;
     }
 
     @Override
-    public T eventStore(final MessageStore eventStore) {
-        return eventStream(new StorePollingMessageStream(eventStore));
+    public T eventStream(final MessageStore eventStore) {
+        return eventStream(new StorePollingMessageReceiver(eventStore));
     }
 
     @Override
-    public T eventStore(final Poller eventStorePoller) {
-        return eventStream(new StorePollingMessageStream(eventStorePoller));
+    public T eventStream(final Poller eventStorePoller) {
+        return eventStream(new StorePollingMessageReceiver(eventStorePoller));
     }
 
     @Override
-    public T eventStream(final MessageStream eventStream) {
-        this.eventStream = requireNonNull(eventStream);
+    public T eventStream(final MessageReceiver eventReceiver) {
+        this.eventReceiver = requireNonNull(eventReceiver);
         return self();
     }
 

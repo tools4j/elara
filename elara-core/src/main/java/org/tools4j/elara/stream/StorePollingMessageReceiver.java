@@ -21,45 +21,49 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.impl;
+package org.tools4j.elara.stream;
 
-import org.agrona.LangUtil;
-
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
+import org.agrona.DirectBuffer;
+import org.tools4j.elara.store.MessageStore;
+import org.tools4j.elara.store.MessageStore.Handler.Result;
 
 import static java.util.Objects.requireNonNull;
 
-final class TcpSender extends AbstractTcpSender {
+public class StorePollingMessageReceiver implements MessageReceiver {
 
-    private final SocketChannel socketChannel;
+    private final MessageStore.Poller messageStorePoller;
+    private final MessageStore.Handler storeHandler = this::onMessage;
+    private Handler receiverHandler;
 
-    TcpSender(final SocketChannel socketChannel) {
-        this.socketChannel = requireNonNull(socketChannel);
+    public StorePollingMessageReceiver(final MessageStore messageStore) {
+        this(messageStore.poller());
+    }
+
+    public StorePollingMessageReceiver(final MessageStore.Poller messageStorePoller) {
+        this.messageStorePoller = requireNonNull(messageStorePoller);
     }
 
     @Override
-    public boolean isConnected() {
-        return socketChannel.isConnected();
+    public int poll(final Handler handler) {
+        requireNonNull(handler);
+        if (receiverHandler != handler) {
+            receiverHandler = handler;
+        }
+        return messageStorePoller.poll(storeHandler);
     }
 
-    @Override
-    protected void write(final ByteBuffer buffer) throws IOException {
-        socketChannel.write(buffer);
+    private Result onMessage(final DirectBuffer buffer) {
+        receiverHandler.onMessage(buffer);
+        return Result.POLL;
     }
 
     @Override
     public boolean isClosed() {
-        return !socketChannel.isOpen();
+        return messageStorePoller.isClosed();
     }
 
     @Override
     public void close() {
-        try {
-            socketChannel.close();
-        } catch (final IOException e) {
-            LangUtil.rethrowUnchecked(e);
-        }
+        messageStorePoller.close();
     }
 }

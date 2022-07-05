@@ -160,6 +160,11 @@ public class ChroniclePoller implements Poller {
     }
 
     @Override
+    public boolean isClosed() {
+        return tailer.isClosed();
+    }
+
+    @Override
     public void close() {
         tailer.close();
         buffer.wrap(0, 0);

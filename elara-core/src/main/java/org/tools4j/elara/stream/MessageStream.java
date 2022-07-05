@@ -23,12 +23,9 @@
  */
 package org.tools4j.elara.stream;
 
-import org.agrona.DirectBuffer;
+public interface MessageStream extends AutoCloseable {
+    boolean isClosed();
 
-public interface MessageStream {
-    int poll(Handler handler);
-
-    interface Handler {
-        void onMessage(DirectBuffer message);
-    }
+    @Override
+    void close();
 }

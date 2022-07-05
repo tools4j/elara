@@ -28,9 +28,9 @@ import org.agrona.LangUtil;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.nio.TransportPoller;
-import org.tools4j.elara.stream.MessageStream;
-import org.tools4j.elara.stream.tcp.ClientMessageStream.ConnectHandler;
-import org.tools4j.elara.stream.tcp.ServerMessageStream.AcceptHandler;
+import org.tools4j.elara.stream.MessageReceiver;
+import org.tools4j.elara.stream.tcp.ClientMessageReceiver.ConnectHandler;
+import org.tools4j.elara.stream.tcp.ServerMessageReceiver.AcceptHandler;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -44,7 +44,7 @@ class TcpPoller extends TransportPoller {
 
     protected final int selectNow(final AcceptHandler acceptHandler,
                                   final ConnectHandler connectHandler,
-                                  final MessageStream.Handler messageHandler) {
+                                  final MessageReceiver.Handler messageHandler) {
         try {
             selector.selectNow();
             final int size = selectedKeySet.size();
@@ -77,13 +77,13 @@ class TcpPoller extends TransportPoller {
     protected void onSelectionKey(final SelectionKey key,
                                   final AcceptHandler acceptHandler,
                                   final ConnectHandler connectHandler,
-                                  final MessageStream.Handler messageHandler) throws IOException {
+                                  final MessageReceiver.Handler messageHandler) throws IOException {
         if (key.isReadable()) {
             read(key, messageHandler);
         }
     }
 
-    private void read(final SelectionKey key, final MessageStream.Handler handler) throws IOException{
+    private void read(final SelectionKey key, final MessageReceiver.Handler handler) throws IOException{
         final SocketChannel remote = (SocketChannel) key.channel();
         final int bytes = remote.read(byteBuffer);
         if (bytes > 0) {
@@ -97,4 +97,7 @@ class TcpPoller extends TransportPoller {
         }
     }
 
+    public boolean isClosed() {
+        return !selector.isOpen();
+    }
 }

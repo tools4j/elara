@@ -31,9 +31,9 @@ import org.tools4j.elara.output.Output;
 import org.tools4j.elara.send.CommandHandlingSender;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.step.AgentStep;
-import org.tools4j.elara.step.StreamPublisherStep;
+import org.tools4j.elara.step.ReceiverPublisherStep;
 import org.tools4j.elara.store.MessageStore.Handler.Result;
-import org.tools4j.elara.stream.MessageStream;
+import org.tools4j.elara.stream.MessageReceiver;
 
 import java.util.function.Supplier;
 
@@ -77,8 +77,8 @@ public class StreamPublisherFactory implements PublisherFactory {
         if (inOutSingletons.get().output() == Output.NOOP) {
             return NOOP;
         }
-        final MessageStream eventStream = eventStreamConfig.eventStream();
+        final MessageReceiver eventReceiver = eventStreamConfig.eventStream();
         final OutputHandler outputHandler = publisherSingletons.get().outputHandler();
-        return new StreamPublisherStep(outputHandler, eventStream, appConfig.exceptionHandler());
+        return new ReceiverPublisherStep(outputHandler, eventReceiver, appConfig.exceptionHandler());
     }
 }

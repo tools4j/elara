@@ -51,6 +51,20 @@ final class TcpMulticastSender extends AbstractTcpSender {
     }
 
     @Override
+    public boolean isClosed() {
+        return !isConnected();
+    }
+
+    @Override
+    public void close() {
+        //noinspection ForLoopReplaceableByForEach
+        for (int i = 0; i < senders.size(); i++) {
+            senders.get(i).close();
+        }
+        senders.clear();
+    }
+
+    @Override
     protected void write(final ByteBuffer buffer) throws IOException {
         int size = senders.size();
         for (int i = 0; i < size; ) {

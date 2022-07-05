@@ -46,7 +46,7 @@ import static java.util.Objects.requireNonNull;
  * try-resource block as in the example above then sending will be {@link SendingContext#abort() aborted} automatically
  * if {@link SendingContext#send(int) send(..)} is not called for instance due to an exception.
  */
-public interface MessageSender {
+public interface MessageSender extends MessageStream {
     /**
      * Starts sending of a message and returns the sending context with the buffer for to encode the message directly
      * into the transport buffer.  Encoding and sending is completed with {@link SendingContext#send(int) send(..)}
@@ -201,15 +201,5 @@ public interface MessageSender {
             }
         }
     }
-
-    /**
-     * Provides a sender for disconnected transports.
-     */
-    MessageSender DISCONNECTED = new Buffered(/*FIXME pass some NullBuffer here*/) {
-        @Override
-        public SendingResult sendMessage(final DirectBuffer buffer, final int offset, final int length) {
-            return SendingResult.DISCONNECTED;
-        }
-    };
 
 }

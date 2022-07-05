@@ -198,6 +198,11 @@ public class InMemoryStore implements MessageStore {
             }
 
             @Override
+            public boolean isClosed() {
+                return closed;
+            }
+
+            @Override
             public void close() {
                 closed = true;
             }
@@ -305,6 +310,11 @@ public class InMemoryStore implements MessageStore {
             }
 
             @Override
+            public boolean isClosed() {
+                return closed;
+            }
+
+            @Override
             public void close() {
                 closed = true;
             }
@@ -321,6 +331,11 @@ public class InMemoryStore implements MessageStore {
     }
 
     @Override
+    public boolean isClosed() {
+        return buffers == null;
+    }
+
+    @Override
     public void close() {
         size = 0;
         start = 0;
@@ -328,7 +343,7 @@ public class InMemoryStore implements MessageStore {
     }
 
     private void ensureMessageStoreNotClosed() {
-        if (buffers == null) {
+        if (isClosed()) {
             throw new IllegalStateException("InMemoryStore is closed");
         }
     }

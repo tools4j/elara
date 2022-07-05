@@ -24,8 +24,8 @@
 package org.tools4j.elara.stream.tcp.impl;
 
 import org.agrona.LangUtil;
-import org.tools4j.elara.stream.tcp.ClientMessageStream;
-import org.tools4j.elara.stream.tcp.ServerMessageStream;
+import org.tools4j.elara.stream.tcp.ClientMessageReceiver;
+import org.tools4j.elara.stream.tcp.ServerMessageReceiver;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -33,7 +33,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
-final class ServerPoller extends TcpPoller implements ServerMessageStream {
+final class ServerPoller extends TcpPoller implements ServerMessageReceiver {
 
     private final ServerSocketChannel serverSocketChannel;
     private final FlyweightTcpContext context = new FlyweightTcpContext();
@@ -61,7 +61,7 @@ final class ServerPoller extends TcpPoller implements ServerMessageStream {
     }
 
     @Override
-    protected void onSelectionKey(final SelectionKey key, final AcceptHandler acceptHandler, final ClientMessageStream.ConnectHandler connectHandler, final Handler messageHandler) throws IOException {
+    protected void onSelectionKey(final SelectionKey key, final AcceptHandler acceptHandler, final ClientMessageReceiver.ConnectHandler connectHandler, final Handler messageHandler) throws IOException {
         if (key.isAcceptable()) {
             accept(acceptHandler);
         }

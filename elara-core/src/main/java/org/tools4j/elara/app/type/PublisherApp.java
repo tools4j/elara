@@ -29,7 +29,7 @@ import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.stream.MessageStream;
+import org.tools4j.elara.stream.MessageReceiver;
 
 import java.util.function.Consumer;
 
@@ -42,17 +42,17 @@ public interface PublisherApp extends Output {
 
     default ElaraRunner launch(final MessageStore eventStore) {
         requireNonNull(eventStore);
-        return launch((Consumer<PublisherAppContext>)context -> context.eventStore(eventStore));
+        return launch(context -> context.eventStream(eventStore));
     }
 
     default ElaraRunner launch(final MessageStore.Poller eventStorePoller) {
         requireNonNull(eventStorePoller);
-        return launch((Consumer<PublisherAppContext>)context -> context.eventStore(eventStorePoller));
+        return launch(context -> context.eventStream(eventStorePoller));
     }
 
-    default ElaraRunner launch(final MessageStream eventStream) {
-        requireNonNull(eventStream);
-        return launch((Consumer<PublisherAppContext>)context -> context.eventStream(eventStream));
+    default ElaraRunner launch(final MessageReceiver eventReceiver) {
+        requireNonNull(eventReceiver);
+        return launch(context -> context.eventStream(eventReceiver));
     }
 
     default ElaraRunner launch(final Consumer<? super PublisherAppContext> configurator) {

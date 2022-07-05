@@ -31,7 +31,7 @@ import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.EventContext;
 import org.tools4j.elara.send.InFlightState;
 import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.stream.MessageStream;
+import org.tools4j.elara.stream.MessageReceiver;
 
 import java.util.function.Consumer;
 
@@ -44,17 +44,17 @@ public interface FeedbackApp extends EventProcessor {
 
     default ElaraRunner launch(final MessageStore messageStore) {
         requireNonNull(messageStore);
-        return launch((Consumer<FeedbackAppContext>)context -> context.eventStore(messageStore));
+        return launch(context -> context.eventStream(messageStore));
     }
 
     default ElaraRunner launch(final MessageStore.Poller eventStorePoller) {
         requireNonNull(eventStorePoller);
-        return launch((Consumer<FeedbackAppContext>)context -> context.eventStore(eventStorePoller));
+        return launch(context -> context.eventStream(eventStorePoller));
     }
 
-    default ElaraRunner launch(final MessageStream eventStream) {
-        requireNonNull(eventStream);
-        return launch((Consumer<FeedbackAppContext>)context -> context.eventStream(eventStream));
+    default ElaraRunner launch(final MessageReceiver eventReceiver) {
+        requireNonNull(eventReceiver);
+        return launch(context -> context.eventStream(eventReceiver));
     }
 
     default ElaraRunner launch(final Consumer<? super FeedbackAppContext> configurator) {

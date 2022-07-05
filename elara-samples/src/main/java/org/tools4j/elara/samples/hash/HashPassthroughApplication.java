@@ -47,12 +47,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.plugin.metrics.FrequencyMetric.COMMAND_PROCESSED_FREQUENCY;
 import static org.tools4j.elara.plugin.metrics.FrequencyMetric.DUTY_CYCLE_FREQUENCY;
 import static org.tools4j.elara.plugin.metrics.FrequencyMetric.DUTY_CYCLE_PERFORMED_FREQUENCY;
-import static org.tools4j.elara.plugin.metrics.FrequencyMetric.EVENT_APPLIED_FREQUENCY;
 import static org.tools4j.elara.plugin.metrics.FrequencyMetric.INPUT_RECEIVED_FREQUENCY;
-import static org.tools4j.elara.plugin.metrics.FrequencyMetric.OUTPUT_PUBLISHED_FREQUENCY;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.APPLYING_END_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.APPLYING_START_TIME;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.INPUT_POLLING_TIME;
@@ -136,7 +133,7 @@ public class HashPassthroughApplication implements PassthroughApp {
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         return new PublisherWithState(state).launch((Consumer<? super PublisherAppContext>)context -> context
-                .eventStore(new ChronicleMessageStore(eq))
+                .eventStream(new ChronicleMessageStore(eq))
                 .timeSource(pseudoNanoClock)
                 .idleStrategy(BusySpinIdleStrategy.INSTANCE)
                 .plugin(BasePlugin.INSTANCE, SingleEventBaseState::new)

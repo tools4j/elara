@@ -25,7 +25,6 @@ package org.tools4j.elara.agent;
 
 import org.agrona.concurrent.Agent;
 import org.tools4j.elara.step.AgentStep;
-import org.tools4j.elara.step.PublisherStep;
 import org.tools4j.elara.store.CommittedEventPoller;
 
 import static java.util.Objects.requireNonNull;

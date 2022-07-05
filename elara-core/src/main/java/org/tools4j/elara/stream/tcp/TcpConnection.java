@@ -28,7 +28,7 @@ import org.tools4j.elara.stream.MessageStream;
 
 public interface TcpConnection extends AutoCloseable {
     MessageSender sender();
-    MessageStream stream();
+    MessageStream receiver();
     boolean isConnected();
     boolean isClosed();
 
@@ -37,11 +37,11 @@ public interface TcpConnection extends AutoCloseable {
 
     interface ClientConnection extends TcpConnection {
         @Override
-        ClientMessageStream stream();
+        ClientMessageReceiver receiver();
     }
 
     interface ServerConnection extends TcpConnection {
         @Override
-        ServerMessageStream stream();
+        ServerMessageReceiver receiver();
     }
 }

@@ -97,6 +97,11 @@ public class CommandAppendingSenderTest {
             }
 
             @Override
+            public boolean isClosed() {
+                return false;
+            }
+
+            @Override
             public void close() {
                 //no op
             }

@@ -68,6 +68,11 @@ public class ChronicleMessageStore implements MessageStore {
     }
 
     @Override
+    public boolean isClosed() {
+        return queue.isClosed();
+    }
+
+    @Override
     public void close() {
         queue.close();
     }

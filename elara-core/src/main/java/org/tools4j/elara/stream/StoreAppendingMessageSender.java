@@ -55,6 +55,17 @@ public class StoreAppendingMessageSender implements MessageSender {
         return sendingContext.init(messageStoreAppender.appending());
     }
 
+    @Override
+    public boolean isClosed() {
+        return messageStoreAppender.isClosed();
+    }
+
+    @Override
+    public void close() {
+        sendingContext.close();
+        messageStoreAppender.close();
+    }
+
     private static final class SendingContext implements MessageSender.SendingContext {
 
         AppendingContext context;

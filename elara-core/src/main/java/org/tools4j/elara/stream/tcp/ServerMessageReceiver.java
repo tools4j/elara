@@ -23,9 +23,9 @@
  */
 package org.tools4j.elara.stream.tcp;
 
-import org.tools4j.elara.stream.MessageStream;
+import org.tools4j.elara.stream.MessageReceiver;
 
-public interface ServerMessageStream extends MessageStream {
+public interface ServerMessageReceiver extends MessageReceiver {
 
     int poll(AcceptHandler acceptHandler, Handler messageHandler);
 

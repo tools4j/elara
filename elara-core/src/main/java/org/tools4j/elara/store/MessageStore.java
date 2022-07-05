@@ -30,6 +30,7 @@ public interface MessageStore extends AutoCloseable {
     Appender appender();
     Poller poller();
     Poller poller(String id);
+    boolean isClosed();
     @Override
     void close();
 
@@ -43,6 +44,7 @@ public interface MessageStore extends AutoCloseable {
         }
         AppendingContext appending();
 
+        boolean isClosed();
         @Override
         void close();
     }
@@ -69,6 +71,7 @@ public interface MessageStore extends AutoCloseable {
 
         int poll(Handler handler);
 
+        boolean isClosed();
         @Override
         void close();
     }

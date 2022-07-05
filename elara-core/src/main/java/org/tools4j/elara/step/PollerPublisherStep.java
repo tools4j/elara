@@ -43,7 +43,7 @@ import static java.util.Objects.requireNonNull;
  * the output handler.  Using a {@link CommittedEventPoller} as tracking poller guarantees that only committed events
  * are passed to the handler.
  */
-public class PublisherStep implements AgentStep {
+public class PollerPublisherStep implements AgentStep {
 
     public static final String DEFAULT_POLLER_ID = "elara-publisher";
 
@@ -55,43 +55,43 @@ public class PublisherStep implements AgentStep {
     private Poller replayPoller;
     private int retry;
 
-    private PublisherStep(final OutputHandler handler, final Poller poller, final Poller replayPoller) {
+    private PollerPublisherStep(final OutputHandler handler, final Poller poller, final Poller replayPoller) {
         this.handler = requireNonNull(handler);
         this.poller = requireNonNull(poller);
         this.replayPoller = replayPoller;//nullable
     }
 
-    public static PublisherStep committedEventsPoller(final OutputHandler handler, final MessageStore eventStore) {
+    public static PollerPublisherStep committedEventsPoller(final OutputHandler handler, final MessageStore eventStore) {
         try {
             return committedEventsPoller(handler, eventStore, DEFAULT_POLLER_ID);
         } catch (final UnsupportedOperationException e) {
             //ignore, use non-tracking
-            return new PublisherStep(handler, new CommittedEventPoller(eventStore), null);
+            return new PollerPublisherStep(handler, new CommittedEventPoller(eventStore), null);
         }
     }
 
-    public static PublisherStep committedEventsPoller(final OutputHandler handler, final MessageStore eventStore, final String id) {
-        return new PublisherStep(handler, new CommittedEventPoller(eventStore, id), new CommittedEventPoller(eventStore));
+    public static PollerPublisherStep committedEventsPoller(final OutputHandler handler, final MessageStore eventStore, final String id) {
+        return new PollerPublisherStep(handler, new CommittedEventPoller(eventStore, id), new CommittedEventPoller(eventStore));
     }
 
-    public static PublisherStep allEventsPoller(final OutputHandler handler, final MessageStore eventStore) {
+    public static PollerPublisherStep allEventsPoller(final OutputHandler handler, final MessageStore eventStore) {
         try {
             return allEventsPoller(handler, eventStore, DEFAULT_POLLER_ID);
         } catch (final UnsupportedOperationException e) {
             //ignore, use non-tracking
-            return new PublisherStep(handler, eventStore.poller(), null);
+            return new PollerPublisherStep(handler, eventStore.poller(), null);
         }
     }
 
-    public static PublisherStep allEventsPoller(final OutputHandler handler, final MessageStore eventStore, final String id) {
-        return new PublisherStep(handler, eventStore.poller(id), eventStore.poller());
+    public static PollerPublisherStep allEventsPoller(final OutputHandler handler, final MessageStore eventStore, final String id) {
+        return new PollerPublisherStep(handler, eventStore.poller(id), eventStore.poller());
     }
 
-    public PublisherStep(final OutputHandler handler, final MessageStore messageStore) {
+    public PollerPublisherStep(final OutputHandler handler, final MessageStore messageStore) {
         this(handler, new CommittedEventPoller(messageStore), null);
     }
 
-    public PublisherStep(final OutputHandler handler, final MessageStore messageStore, final String id) {
+    public PollerPublisherStep(final OutputHandler handler, final MessageStore messageStore, final String id) {
         this(handler, new CommittedEventPoller(messageStore, id), messageStore.poller());
     }
 

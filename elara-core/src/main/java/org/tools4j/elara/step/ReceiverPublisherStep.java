@@ -28,37 +28,36 @@ import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.output.Output.Ack;
-import org.tools4j.elara.store.CommittedEventPoller;
-import org.tools4j.elara.stream.MessageStream;
+import org.tools4j.elara.stream.MessageReceiver;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Agent to poll and publish events from a message stream.
+ * Agent to poll and publish events from a message stream via {@link MessageReceiver}.
  */
-public class StreamPublisherStep implements AgentStep {
+public class ReceiverPublisherStep implements AgentStep {
 
     private static final int MAX_RETRIES = 3;
 
     private final OutputHandler handler;
-    private final MessageStream stream;
+    private final MessageReceiver receiver;
     private final ExceptionHandler exceptionHandler;
-    private final MessageStream.Handler streamHandler = this::onMessage;
+    private final MessageReceiver.Handler receiverHandler = this::onMessage;
     private final FlyweightEvent flyweightEvent = new FlyweightEvent();
 
     private Exception outputFailed;
 
-    public StreamPublisherStep(final OutputHandler handler,
-                               final MessageStream stream,
-                               final ExceptionHandler exceptionHandler) {
+    public ReceiverPublisherStep(final OutputHandler handler,
+                                 final MessageReceiver receiver,
+                                 final ExceptionHandler exceptionHandler) {
         this.handler = requireNonNull(handler);
-        this.stream = requireNonNull(stream);
+        this.receiver = requireNonNull(receiver);
         this.exceptionHandler = requireNonNull(exceptionHandler);
     }
 
     @Override
     public int doWork() {
-        return stream.poll(streamHandler);
+        return receiver.poll(receiverHandler);
     }
 
     private void onMessage(final DirectBuffer message) {

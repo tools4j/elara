@@ -28,22 +28,22 @@ import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.SenderSupplier;
-import org.tools4j.elara.stream.MessageStream;
-import org.tools4j.elara.stream.MessageStream.Handler;
+import org.tools4j.elara.stream.MessageReceiver;
+import org.tools4j.elara.stream.MessageReceiver.Handler;
 
 import static java.util.Objects.requireNonNull;
 
 public class CommandMessageInput implements Input {
 
-    private final MessageStream messageStream;
+    private final MessageReceiver messageReceiver;
     private final ExceptionHandler exceptionHandler;
     private final Handler handler = this::onMessage;
     private final FlyweightCommand command = new FlyweightCommand();
 
     private SenderSupplier senderSupplier;
 
-    public CommandMessageInput(final MessageStream messageStream, final ExceptionHandler exceptionHandler) {
-        this.messageStream = requireNonNull(messageStream);
+    public CommandMessageInput(final MessageReceiver messageReceiver, final ExceptionHandler exceptionHandler) {
+        this.messageReceiver = requireNonNull(messageReceiver);
         this.exceptionHandler = requireNonNull(exceptionHandler);
     }
 
@@ -53,7 +53,7 @@ public class CommandMessageInput implements Input {
         if (this.senderSupplier != senderSupplier) {
             this.senderSupplier = senderSupplier;
         }
-        return messageStream.poll(handler);
+        return messageReceiver.poll(handler);
     }
 
     private void onMessage(final DirectBuffer message) {

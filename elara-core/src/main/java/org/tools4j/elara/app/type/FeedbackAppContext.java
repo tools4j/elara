@@ -39,8 +39,8 @@ import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.store.MessageStore.Poller;
+import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageSender;
-import org.tools4j.elara.stream.MessageStream;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.Collection;
@@ -50,11 +50,11 @@ import java.util.function.Supplier;
 public interface FeedbackAppContext extends FeedbackAppConfig, AppContext, EventStreamContext, CommandStreamContext, PluginContext {
 
     @Override
-    FeedbackAppContext eventStore(MessageStore eventStore);
+    FeedbackAppContext eventStream(MessageStore eventStore);
     @Override
-    FeedbackAppContext eventStore(Poller eventStorePoller);
+    FeedbackAppContext eventStream(Poller eventStorePoller);
     @Override
-    FeedbackAppContext eventStream(MessageStream eventStream);
+    FeedbackAppContext eventStream(MessageReceiver eventReceiver);
     @Override
     FeedbackAppContext eventProcessor(EventProcessor eventProcessor);
     @Override

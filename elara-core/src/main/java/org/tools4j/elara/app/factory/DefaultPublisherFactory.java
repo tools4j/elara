@@ -32,7 +32,7 @@ import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.base.SingleEventBaseState;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.step.AgentStep;
-import org.tools4j.elara.step.PublisherStep;
+import org.tools4j.elara.step.PollerPublisherStep;
 import org.tools4j.elara.store.MessageStore;
 
 import java.util.function.Supplier;
@@ -86,8 +86,8 @@ public class DefaultPublisherFactory implements PublisherFactory {
         final OutputHandler outputHandler = publisherSingletons.get().outputHandler();
         final BaseState baseState = pluginSingletons.get().baseState();
         if (baseState instanceof SingleEventBaseState) {
-            return PublisherStep.allEventsPoller(outputHandler, eventStore);
+            return PollerPublisherStep.allEventsPoller(outputHandler, eventStore);
         }
-        return PublisherStep.committedEventsPoller(outputHandler, eventStore);
+        return PollerPublisherStep.committedEventsPoller(outputHandler, eventStore);
     }
 }

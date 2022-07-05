@@ -170,6 +170,11 @@ public class ChronicleAppender implements MessageStore.Appender {
     }
 
     @Override
+    public boolean isClosed() {
+        return appender.isClosed();
+    }
+
+    @Override
     public void close() {
         appender.close();
         bytesWrapper.wrap(0, 0);

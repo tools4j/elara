@@ -148,6 +148,11 @@ public class DefaultIndexTrackingPoller implements IndexTrackingPoller {
     }
 
     @Override
+    public boolean isClosed() {
+        return poller.isClosed();
+    }
+
+    @Override
     public void close() {
         poller.close();
     }

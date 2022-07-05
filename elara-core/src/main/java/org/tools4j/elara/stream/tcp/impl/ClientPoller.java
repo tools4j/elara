@@ -24,15 +24,15 @@
 package org.tools4j.elara.stream.tcp.impl;
 
 import org.agrona.LangUtil;
-import org.tools4j.elara.stream.tcp.ClientMessageStream;
-import org.tools4j.elara.stream.tcp.ServerMessageStream.AcceptHandler;
+import org.tools4j.elara.stream.tcp.ClientMessageReceiver;
+import org.tools4j.elara.stream.tcp.ServerMessageReceiver.AcceptHandler;
 
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
-final class ClientPoller extends TcpPoller implements ClientMessageStream {
+final class ClientPoller extends TcpPoller implements ClientMessageReceiver {
 
     private final SocketChannel socketChannel;
     private final FlyweightTcpContext context = new FlyweightTcpContext();

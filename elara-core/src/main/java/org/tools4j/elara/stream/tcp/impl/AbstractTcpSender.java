@@ -74,7 +74,8 @@ abstract class AbstractTcpSender extends MessageSender.Buffered {
             write(buf);
             return SendingResult.SENT;
         } catch (final IOException e) {
-            return SendingResult.FAILED;//FIXME log + handle exception
+            //FIXME log + handle exception
+            return SendingResult.FAILED;
         }
     }
 

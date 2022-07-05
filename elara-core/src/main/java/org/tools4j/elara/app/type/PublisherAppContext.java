@@ -37,7 +37,7 @@ import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.store.MessageStore.Poller;
-import org.tools4j.elara.stream.MessageStream;
+import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.function.Consumer;
@@ -46,11 +46,11 @@ import java.util.function.Supplier;
 public interface PublisherAppContext extends PublisherAppConfig, AppContext, EventStreamContext, PluginContext {
 
     @Override
-    PublisherAppContext eventStore(MessageStore eventStore);
+    PublisherAppContext eventStream(MessageStore eventStore);
     @Override
-    PublisherAppContext eventStore(Poller eventStorePoller);
+    PublisherAppContext eventStream(Poller eventStorePoller);
     @Override
-    PublisherAppContext eventStream(MessageStream eventStream);
+    PublisherAppContext eventStream(MessageReceiver eventReceiver);
     @Override
     PublisherAppContext eventProcessor(EventProcessor eventProcessor);
 

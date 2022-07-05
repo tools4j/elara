@@ -24,36 +24,11 @@
 package org.tools4j.elara.stream;
 
 import org.agrona.DirectBuffer;
-import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.store.MessageStore.Handler.Result;
 
-import static java.util.Objects.requireNonNull;
+public interface MessageReceiver extends MessageStream {
+    int poll(Handler handler);
 
-public class StorePollingMessageStream implements MessageStream {
-
-    private final MessageStore.Poller messageStorePoller;
-    private final MessageStore.Handler storeHandler = this::onMessage;
-    private MessageStream.Handler streamHandler;
-
-    public StorePollingMessageStream(final MessageStore messageStore) {
-        this(messageStore.poller());
-    }
-
-    public StorePollingMessageStream(final MessageStore.Poller messageStorePoller) {
-        this.messageStorePoller = requireNonNull(messageStorePoller);
-    }
-
-    @Override
-    public int poll(final Handler handler) {
-        requireNonNull(handler);
-        if (streamHandler != handler) {
-            streamHandler = handler;
-        }
-        return messageStorePoller.poll(storeHandler);
-    }
-
-    private Result onMessage(final DirectBuffer buffer) {
-        streamHandler.onMessage(buffer);
-        return Result.POLL;
+    interface Handler {
+        void onMessage(DirectBuffer message);
     }
 }

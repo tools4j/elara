@@ -24,7 +24,7 @@
 package org.tools4j.elara.stream.tcp.impl;
 
 import org.tools4j.elara.stream.MessageSender;
-import org.tools4j.elara.stream.tcp.ServerMessageStream;
+import org.tools4j.elara.stream.tcp.ServerMessageReceiver;
 import org.tools4j.elara.stream.tcp.TcpConnection.ServerConnection;
 import org.tools4j.elara.stream.tcp.TcpEndpoints;
 
@@ -33,11 +33,11 @@ import java.net.SocketAddress;
 public class TcpServerConnection implements ServerConnection {
 
     private final TcpMulticastSender sender;
-    private final AcceptingMessageStream stream;
+    private final AcceptingMessageReceiver receiver;
 
     public TcpServerConnection(final SocketAddress bindAddress) {
         this.sender = new TcpMulticastSender();
-        this.stream = new AcceptingMessageStream(bindAddress);
+        this.receiver = new AcceptingMessageReceiver(bindAddress);
     }
 
     @Override
@@ -46,8 +46,8 @@ public class TcpServerConnection implements ServerConnection {
     }
 
     @Override
-    public ServerMessageStream stream() {
-        return stream;
+    public ServerMessageReceiver receiver() {
+        return receiver;
     }
 
     @Override
@@ -57,21 +57,22 @@ public class TcpServerConnection implements ServerConnection {
 
     @Override
     public boolean isClosed() {
-        return stream.isClosed();
+        return receiver.isClosed();
     }
 
     @Override
     public void close() {
-        if (stream.close()) {
+        if (!receiver.isClosed()) {
+            receiver.close();
             sender.removeAll();
         }
     }
 
-    private class AcceptingMessageStream implements ServerMessageStream {
+    private class AcceptingMessageReceiver implements ServerMessageReceiver {
         ServerPoller poller;
         AcceptHandler acceptHandler;
-        final AcceptHandler senderInitilisingHandler = this::onAccept;
-        AcceptingMessageStream(final SocketAddress bindAddress) {
+        final AcceptHandler senderInitialisingHandler = this::onAccept;
+        AcceptingMessageReceiver(final SocketAddress bindAddress) {
             poller = new ServerPoller(bindAddress);
         }
 
@@ -88,21 +89,21 @@ public class TcpServerConnection implements ServerConnection {
         @Override
         public int poll(final Handler handler) {
             if (poller != null) {
-                return poller.poll(senderInitilisingHandler, handler);
+                return poller.poll(senderInitialisingHandler, handler);
             }
             return 0;
         }
 
-        boolean isClosed() {
+        @Override
+        public boolean isClosed() {
             return poller == null;
         }
 
-        boolean close() {
-            if (poller == null) {
-                return false;
+        @Override
+        public void close() {
+            if (poller != null) {
+                poller = null;
             }
-            poller = null;
-            return true;
         }
 
         private void onAccept(final TcpEndpoints endpoints) {

@@ -24,7 +24,7 @@
 package org.tools4j.elara.stream.tcp.impl;
 
 import org.tools4j.elara.stream.MessageSender;
-import org.tools4j.elara.stream.tcp.ClientMessageStream;
+import org.tools4j.elara.stream.tcp.ClientMessageReceiver;
 import org.tools4j.elara.stream.tcp.TcpConnection.ClientConnection;
 import org.tools4j.elara.stream.tcp.TcpEndpoints;
 
@@ -34,24 +34,21 @@ import static java.util.Objects.requireNonNull;
 
 public class TcpClientConnection implements ClientConnection {
 
-    private final ConnectingMessageStream stream;
+    private final ConnectingMessageReceiver receiver;
     private final TcpReconnectingSender sender = new TcpReconnectingSender();
 
     public TcpClientConnection(final SocketAddress connectAddress) {
-        this.stream = new ConnectingMessageStream(connectAddress);
+        this.receiver = new ConnectingMessageReceiver(connectAddress);
     }
 
     @Override
     public MessageSender sender() {
-        if (isClosed() || !sender.isRealSender()) {
-            return MessageSender.DISCONNECTED;
-        }
         return sender;
     }
 
     @Override
-    public ClientMessageStream stream() {
-        return stream;
+    public ClientMessageReceiver receiver() {
+        return receiver;
     }
 
     @Override
@@ -61,20 +58,20 @@ public class TcpClientConnection implements ClientConnection {
 
     @Override
     public boolean isClosed() {
-        return stream.isClosed();
+        return receiver.isClosed();
     }
 
     @Override
     public void close() {
-        stream.close();
+        receiver.close();
     }
 
-    private class ConnectingMessageStream implements ClientMessageStream {
+    private class ConnectingMessageReceiver implements ClientMessageReceiver {
         final SocketAddress connecctAddress;
         ClientPoller poller;
         ConnectHandler connectHandler;
         final ConnectHandler senderInitilisingHandler = this::onConnect;
-        ConnectingMessageStream(final SocketAddress connecctAddress) {
+        ConnectingMessageReceiver(final SocketAddress connecctAddress) {
             this.connecctAddress = requireNonNull(connecctAddress);
             poller = new ClientPoller(connecctAddress);
         }
@@ -112,11 +109,13 @@ public class TcpClientConnection implements ClientConnection {
             return 0;
         }
 
-        boolean isClosed() {
+        @Override
+        public boolean isClosed() {
             return poller == null;
         }
 
-        void close() {
+        @Override
+        public void close() {
             if (poller != null) {
                 poller = null;
                 sender.close();
