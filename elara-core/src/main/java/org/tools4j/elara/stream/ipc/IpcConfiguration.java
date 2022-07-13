@@ -21,10 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream;
+package org.tools4j.elara.stream.ipc;
 
-public interface MessageStream extends AutoCloseable {
-    boolean isClosed();
-    @Override
-    void close();
+import org.tools4j.elara.logging.Logger;
+
+public interface IpcConfiguration {
+    Logger.Factory loggerFactory();
+
+    Cardinality senderCardinality();
+    int maxMessagesReceivedPerPoll();
+    int retryOpenInterval();
 }

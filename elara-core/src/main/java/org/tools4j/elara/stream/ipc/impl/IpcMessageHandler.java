@@ -21,10 +21,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream;
+package org.tools4j.elara.stream.ipc.impl;
 
-public interface MessageStream extends AutoCloseable {
-    boolean isClosed();
+import org.agrona.DirectBuffer;
+import org.agrona.MutableDirectBuffer;
+import org.agrona.concurrent.MessageHandler;
+import org.agrona.concurrent.UnsafeBuffer;
+import org.tools4j.elara.stream.MessageReceiver.Handler;
+
+final class IpcMessageHandler implements MessageHandler {
+
+    private final DirectBuffer message = new UnsafeBuffer(0, 0);
+    private Handler handler;
+
     @Override
-    void close();
+    public void onMessage(final int msgTypeId, final MutableDirectBuffer buffer, final int offset, final int length) {
+        message.wrap(buffer, offset, length);
+        handler.onMessage(message);
+        message.wrap(0, 0);
+    }
+
+    IpcMessageHandler init(final Handler handler) {
+        if (this.handler != handler) {
+            this.handler = handler;
+        }
+        return this;
+    }
 }

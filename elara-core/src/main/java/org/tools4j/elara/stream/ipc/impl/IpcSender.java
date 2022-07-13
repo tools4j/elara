@@ -21,10 +21,46 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream;
+package org.tools4j.elara.stream.ipc.impl;
 
-public interface MessageStream extends AutoCloseable {
-    boolean isClosed();
+import org.agrona.DirectBuffer;
+import org.agrona.concurrent.ringbuffer.RingBuffer;
+import org.tools4j.elara.send.SendingResult;
+import org.tools4j.elara.stream.MessageSender;
+import org.tools4j.elara.stream.ipc.IpcConfiguration;
+
+import java.nio.ByteBuffer;
+
+import static java.util.Objects.requireNonNull;
+
+public class IpcSender extends MessageSender.Buffered {
+
+    private final RingBuffer ringBuffer;
+
+    public IpcSender(final ByteBuffer buffer, final IpcConfiguration config) {
+        this(RingBuffers.create(buffer, config));
+    }
+
+    public IpcSender(final RingBuffer ringBuffer) {
+        this.ringBuffer = requireNonNull(ringBuffer);
+    }
+
     @Override
-    void close();
+    public SendingResult sendMessage(final DirectBuffer buffer, final int offset, final int length) {
+        if (RingBuffers.write(ringBuffer, buffer, offset, length)) {
+            return SendingResult.SENT;
+        }
+        return isClosed() ? SendingResult.CLOSED : SendingResult.BACK_PRESSURED;
+    }
+
+    @Override
+    public boolean isClosed() {
+        return RingBuffers.isClosed(ringBuffer);
+    }
+
+    @Override
+    public void close() {
+        RingBuffers.close(ringBuffer);
+    }
+
 }

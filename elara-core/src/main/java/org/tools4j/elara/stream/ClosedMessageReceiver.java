@@ -23,8 +23,19 @@
  */
 package org.tools4j.elara.stream;
 
-public interface MessageStream extends AutoCloseable {
-    boolean isClosed();
+final class ClosedMessageReceiver implements MessageReceiver {
     @Override
-    void close();
+    public int poll(final Handler handler) {
+        return 0;
+    }
+
+    @Override
+    public boolean isClosed() {
+        return true;
+    }
+
+    @Override
+    public void close() {
+        //no-op
+    }
 }

@@ -111,9 +111,9 @@ public final class CommandMessageSender extends FlyweightCommandSender {
                 if (length > 0) {
                     mc.buffer().putInt(PAYLOAD_SIZE_OFFSET, length);
                 }
-                mc.send(HEADER_LENGTH + length);
+                final SendingResult result = mc.send(HEADER_LENGTH + length);
                 incrementCommandSequence();
-                return SendingResult.SENT;
+                return result;
             } finally {
                 context = null;
             }

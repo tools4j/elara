@@ -21,10 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream;
+package org.tools4j.elara.stream.ipc;
 
-public interface MessageStream extends AutoCloseable {
+import org.tools4j.elara.stream.MessageReceiver;
+import org.tools4j.elara.stream.MessageSender;
+
+public interface SharedBuffer extends AutoCloseable {
+    MessageSender sender();
+    MessageSender senderForCurrentThread();
+    MessageReceiver receiver();
+
+    boolean isMapped();
     boolean isClosed();
+
     @Override
     void close();
 }

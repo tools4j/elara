@@ -21,27 +21,45 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp;
+package org.tools4j.elara.stream.ipc.impl;
 
+import org.agrona.concurrent.ringbuffer.RingBuffer;
 import org.tools4j.elara.stream.MessageReceiver;
-import org.tools4j.elara.stream.MessageSender;
+import org.tools4j.elara.stream.ipc.IpcConfiguration;
 
-public interface TcpConnection extends AutoCloseable {
-    MessageSender sender();
-    MessageReceiver receiver();
-    boolean isConnected();
-    boolean isClosed();
+import java.nio.ByteBuffer;
+
+import static java.util.Objects.requireNonNull;
+
+public class IpcReceiver implements MessageReceiver {
+
+    private final RingBuffer ringBuffer;
+    private final int maxMessagesPerPoll;
+    private final IpcMessageHandler messageHandler = new IpcMessageHandler();
+
+    public IpcReceiver(final ByteBuffer buffer, final IpcConfiguration config) {
+        this(RingBuffers.create(buffer, config), config);
+    }
+
+    public IpcReceiver(final RingBuffer ringBuffer, final IpcConfiguration config) {
+        this.ringBuffer = requireNonNull(ringBuffer);
+        this.maxMessagesPerPoll = Math.max(1, config.maxMessagesReceivedPerPoll());
+    }
 
     @Override
-    void close();
-
-    interface ClientConnection extends TcpConnection {
-        @Override
-        ClientMessageReceiver receiver();
+    public int poll(final Handler handler) {
+        requireNonNull(handler);
+        return ringBuffer.read(messageHandler.init(handler), maxMessagesPerPoll);
     }
 
-    interface ServerConnection extends TcpConnection {
-        @Override
-        ServerMessageReceiver receiver();
+    @Override
+    public boolean isClosed() {
+        return RingBuffers.isClosed(ringBuffer);
     }
+
+    @Override
+    public void close() {
+        RingBuffers.close(ringBuffer);
+    }
+
 }

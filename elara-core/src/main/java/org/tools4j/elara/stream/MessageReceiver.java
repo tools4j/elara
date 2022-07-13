@@ -31,4 +31,6 @@ public interface MessageReceiver extends MessageStream {
     interface Handler {
         void onMessage(DirectBuffer message);
     }
+
+    MessageReceiver CLOSED = new ClosedMessageReceiver();
 }

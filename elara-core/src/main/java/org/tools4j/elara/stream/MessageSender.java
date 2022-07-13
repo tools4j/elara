@@ -202,4 +202,5 @@ public interface MessageSender extends MessageStream {
         }
     }
 
+    MessageSender CLOSED = new ClosedMessageSender();
 }
