@@ -231,9 +231,9 @@ public class HashApplicationTest {
                 System.out.println("\t" + entry.substring(entry.lastIndexOf('/') + 1));
             }
         }
-        System.out.println("java.class.path:");
-        for (final String entry : classpath) {
-            System.out.println("\t" + entry);
-        }
+//        System.out.println("java.class.path:");
+//        for (final String entry : classpath) {
+//            System.out.println("\t" + entry);
+//        }
     }
 }
