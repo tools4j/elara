@@ -38,22 +38,22 @@ abstract class AbstractEventStreamContext<T extends AbstractEventStreamContext<T
     private EventProcessor eventProcessor;
 
     @Override
-    public MessageReceiver eventStream() {
+    public MessageReceiver eventReceiver() {
         return eventReceiver;
     }
 
     @Override
-    public T eventStream(final MessageStore eventStore) {
-        return eventStream(new StorePollingMessageReceiver(eventStore));
+    public T eventStore(final MessageStore eventStore) {
+        return eventReceiver(new StorePollingMessageReceiver(eventStore));
     }
 
     @Override
-    public T eventStream(final Poller eventStorePoller) {
-        return eventStream(new StorePollingMessageReceiver(eventStorePoller));
+    public T eventStore(final Poller eventStorePoller) {
+        return eventReceiver(new StorePollingMessageReceiver(eventStorePoller));
     }
 
     @Override
-    public T eventStream(final MessageReceiver eventReceiver) {
+    public T eventReceiver(final MessageReceiver eventReceiver) {
         this.eventReceiver = requireNonNull(eventReceiver);
         return self();
     }
@@ -71,8 +71,8 @@ abstract class AbstractEventStreamContext<T extends AbstractEventStreamContext<T
 
     @Override
     public void validate() {
-        if (eventStream() == null) {
-            throw new IllegalArgumentException("Event stream must be set");
+        if (eventReceiver() == null) {
+            throw new IllegalArgumentException("Event receiver or event store must be set");
         }
         if (eventProcessor() == null) {
             throw new IllegalArgumentException("Event processor must be set");

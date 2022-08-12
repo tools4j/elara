@@ -133,7 +133,7 @@ public class HashPassthroughApplication implements PassthroughApp {
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         return new PublisherWithState(state).launch((Consumer<? super PublisherAppContext>)context -> context
-                .eventStream(new ChronicleMessageStore(eq))
+                .eventStore(new ChronicleMessageStore(eq))
                 .timeSource(pseudoNanoClock)
                 .idleStrategy(BusySpinIdleStrategy.INSTANCE)
                 .plugin(BasePlugin.INSTANCE, SingleEventBaseState::new)

@@ -28,7 +28,7 @@ import org.tools4j.elara.output.Output;
 import org.tools4j.elara.stream.MessageReceiver;
 
 public interface EventStreamConfig {
-    MessageReceiver eventStream();
+    MessageReceiver eventReceiver();
     EventProcessor eventProcessor();
     Output output();
 }

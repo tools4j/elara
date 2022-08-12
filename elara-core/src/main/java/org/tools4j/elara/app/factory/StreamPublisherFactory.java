@@ -77,7 +77,7 @@ public class StreamPublisherFactory implements PublisherFactory {
         if (inOutSingletons.get().output() == Output.NOOP) {
             return NOOP;
         }
-        final MessageReceiver eventReceiver = eventStreamConfig.eventStream();
+        final MessageReceiver eventReceiver = eventStreamConfig.eventReceiver();
         final OutputHandler outputHandler = publisherSingletons.get().outputHandler();
         return new ReceiverPublisherStep(outputHandler, eventReceiver, appConfig.exceptionHandler());
     }

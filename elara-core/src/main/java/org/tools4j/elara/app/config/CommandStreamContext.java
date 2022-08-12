@@ -30,8 +30,8 @@ import org.tools4j.elara.stream.MessageSender;
 import java.util.Collection;
 
 public interface CommandStreamContext extends CommandStreamConfig {
-    CommandStreamContext commandStream(MessageStore commandStore);
-    CommandStreamContext commandStream(MessageSender commandStream);
+    CommandStreamContext commandStore(MessageStore commandStore);
+    CommandStreamContext commandSender(MessageSender commandStream);
     CommandStreamContext input(Input input);
     CommandStreamContext inputs(Input... inputs);
     CommandStreamContext inputs(Collection<? extends Input> inputs);

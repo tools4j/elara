@@ -32,7 +32,7 @@ import static java.util.Objects.requireNonNull;
 
 final class FeedbackAppContextImpl extends AbstractEventStreamContext<FeedbackAppContextImpl> implements FeedbackAppContext {
 
-    private MessageSender commandStream;
+    private MessageSender commandSender;
 
     @Override
     protected FeedbackAppContextImpl self() {
@@ -40,18 +40,18 @@ final class FeedbackAppContextImpl extends AbstractEventStreamContext<FeedbackAp
     }
 
     @Override
-    public MessageSender commandStream() {
-        return commandStream;
+    public MessageSender commandSender() {
+        return commandSender;
     }
 
     @Override
-    public FeedbackAppContext commandStream(final MessageStore commandStore) {
-        return commandStream(new StoreAppendingMessageSender(commandStore));
+    public FeedbackAppContext commandStore(final MessageStore commandStore) {
+        return commandSender(new StoreAppendingMessageSender(commandStore));
     }
 
     @Override
-    public FeedbackAppContext commandStream(final MessageSender commandStream) {
-        this.commandStream = requireNonNull(commandStream);
+    public FeedbackAppContext commandSender(final MessageSender commandStream) {
+        this.commandSender = requireNonNull(commandStream);
         return this;
     }
 
@@ -69,8 +69,8 @@ final class FeedbackAppContextImpl extends AbstractEventStreamContext<FeedbackAp
 
     @Override
     public void validate() {
-        if (commandStream() == null) {
-            throw new IllegalArgumentException("Command stream must be set");
+        if (commandSender() == null) {
+            throw new IllegalArgumentException("Command sender or command store must be set");
         }
         super.validate();
     }

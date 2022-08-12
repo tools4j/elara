@@ -50,17 +50,17 @@ import java.util.function.Supplier;
 public interface FeedbackAppContext extends FeedbackAppConfig, AppContext, EventStreamContext, CommandStreamContext, PluginContext {
 
     @Override
-    FeedbackAppContext eventStream(MessageStore eventStore);
+    FeedbackAppContext eventStore(MessageStore eventStore);
     @Override
-    FeedbackAppContext eventStream(Poller eventStorePoller);
+    FeedbackAppContext eventStore(Poller eventStorePoller);
     @Override
-    FeedbackAppContext eventStream(MessageReceiver eventReceiver);
+    FeedbackAppContext eventReceiver(MessageReceiver eventReceiver);
     @Override
     FeedbackAppContext eventProcessor(EventProcessor eventProcessor);
     @Override
-    FeedbackAppContext commandStream(MessageStore commandStore);
+    FeedbackAppContext commandStore(MessageStore commandStore);
     @Override
-    FeedbackAppContext commandStream(MessageSender commandSender);
+    FeedbackAppContext commandSender(MessageSender commandSender);
 
     @Override
     FeedbackAppContext input(Input input);
