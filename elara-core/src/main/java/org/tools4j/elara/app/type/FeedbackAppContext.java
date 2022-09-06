@@ -30,7 +30,6 @@ import org.tools4j.elara.app.config.EventStreamContext;
 import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.config.PluginContext;
 import org.tools4j.elara.app.handler.EventProcessor;
-import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.logging.Logger;
@@ -75,8 +74,6 @@ public interface FeedbackAppContext extends FeedbackAppConfig, AppContext, Event
     FeedbackAppContext timeSource(TimeSource timeSource);
     @Override
     FeedbackAppContext exceptionHandler(ExceptionHandler exceptionHandler);
-    @Override
-    FeedbackAppContext duplicateHandler(DuplicateHandler duplicateHandler);
     @Override
     FeedbackAppContext loggerFactory(Logger.Factory loggerFactory);
     @Override

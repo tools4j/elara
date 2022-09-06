@@ -23,8 +23,10 @@
  */
 package org.tools4j.elara.app.config;
 
+import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.store.MessageStore;
 
 public interface EventStoreConfig {
     MessageStore eventStore();
+    DuplicateHandler duplicateHandler();
 }

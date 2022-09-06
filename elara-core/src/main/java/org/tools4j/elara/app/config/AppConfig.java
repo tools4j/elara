@@ -25,7 +25,6 @@ package org.tools4j.elara.app.config;
 
 import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.IdleStrategy;
-import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.step.AgentStep;
@@ -36,7 +35,6 @@ import java.util.List;
 public interface AppConfig {
     TimeSource timeSource();
     ExceptionHandler exceptionHandler();
-    DuplicateHandler duplicateHandler();
     Logger.Factory loggerFactory();
     IdleStrategy idleStrategy();
     List<AgentStep> dutyCycleExtraSteps(ExecutionType executionType);

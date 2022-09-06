@@ -97,7 +97,7 @@ public class DefaultProcessorFactory implements ProcessorFactory {
                 ),
                 processorSingletons.get().commandProcessor(),
                 appConfig.exceptionHandler(),
-                appConfig.duplicateHandler()
+                eventStoreConfig.duplicateHandler()
         );
     }
 }

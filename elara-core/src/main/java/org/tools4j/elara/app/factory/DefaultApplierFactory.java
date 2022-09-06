@@ -91,7 +91,7 @@ public class DefaultApplierFactory implements ApplierFactory {
                 pluginSingletons.get().baseState(),
                 applierSingletons.get().eventApplier(),
                 appConfig.exceptionHandler(),
-                appConfig.duplicateHandler()
+                eventStoreConfig.duplicateHandler()
         );
     }
 

@@ -24,7 +24,6 @@
 package org.tools4j.elara.app.config;
 
 import org.agrona.concurrent.IdleStrategy;
-import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.step.AgentStep;
@@ -33,7 +32,6 @@ import org.tools4j.elara.time.TimeSource;
 public interface AppContext extends AppConfig {
     AppContext timeSource(TimeSource timeSource);
     AppContext exceptionHandler(ExceptionHandler exceptionHandler);
-    AppContext duplicateHandler(DuplicateHandler duplicateHandler);
     AppContext loggerFactory(Logger.Factory loggerFactory);
     AppContext idleStrategy(IdleStrategy idleStrategy);
     AppContext dutyCycleExtraStep(AgentStep step, ExecutionType executionType);

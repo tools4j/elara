@@ -62,7 +62,7 @@ public class PassthroughSequencerFactory implements SequencerFactory {
     public SenderSupplier senderSupplier() {
         final CommandPassthroughSender commandSender = new CommandPassthroughSender(
                 appConfig.timeSource(), pluginSingletons.get().baseState(), eventStoreConfig.eventStore().appender(),
-                applierSingletons.get().eventApplier(), appConfig.exceptionHandler(), appConfig.duplicateHandler());
+                applierSingletons.get().eventApplier(), appConfig.exceptionHandler(), eventStoreConfig.duplicateHandler());
         return new DefaultSenderSupplier(commandSender);
     }
 

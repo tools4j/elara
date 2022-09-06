@@ -29,7 +29,6 @@ import org.tools4j.elara.app.config.EventStreamContext;
 import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.config.PluginContext;
 import org.tools4j.elara.app.handler.EventProcessor;
-import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.output.Output;
@@ -61,8 +60,6 @@ public interface PublisherAppContext extends PublisherAppConfig, AppContext, Eve
 
     @Override
     PublisherAppContext exceptionHandler(ExceptionHandler exceptionHandler);
-    @Override
-    PublisherAppContext duplicateHandler(DuplicateHandler duplicateHandler);
     @Override
     PublisherAppContext loggerFactory(Logger.Factory loggerFactory);
     @Override

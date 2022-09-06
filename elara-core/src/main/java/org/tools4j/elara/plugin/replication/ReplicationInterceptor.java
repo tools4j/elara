@@ -108,7 +108,7 @@ class ReplicationInterceptor implements Interceptor {
                         ),
                         commandProcessor(),
                         appConfig.exceptionHandler(),
-                        appConfig.duplicateHandler()
+                        eventStoreConfig.duplicateHandler()
                 );
             }
         };

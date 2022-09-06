@@ -118,12 +118,10 @@ abstract class AbstractAppContext<T extends AbstractAppContext<T>> implements Ap
         return self();
     }
 
-    @Override
     public DuplicateHandler duplicateHandler() {
         return duplicateHandler;
     }
 
-    @Override
     public T duplicateHandler(final DuplicateHandler duplicateHandler) {
         this.duplicateHandler = requireNonNull(duplicateHandler);
         return self();
