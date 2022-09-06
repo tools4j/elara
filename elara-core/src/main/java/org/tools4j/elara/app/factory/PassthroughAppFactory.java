@@ -63,7 +63,7 @@ public class PassthroughAppFactory implements AppFactory {
                 Singletons::create
         ));
         this.publisherSingletons = interceptor.publisherFactory(singletonsSupplier(
-                (PublisherFactory)new DefaultPublisherFactory(config, config, this::publisherSingletons, this::sequencerSingletons, this::inOutSingletons, this::pluginSingletons),
+                (PublisherFactory)new DefaultPublisherFactory(config, config, this::publisherSingletons, this::inOutSingletons, this::pluginSingletons),
                 Singletons::create
         ));
         this.agentStepSingletons = interceptor.agentStepFactory(singletonsSupplier(

@@ -39,7 +39,6 @@ import org.tools4j.elara.samples.bank.command.BankCommand;
 import org.tools4j.elara.samples.bank.command.CommandType;
 import org.tools4j.elara.samples.bank.event.EventType;
 import org.tools4j.elara.samples.bank.state.Bank;
-import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.store.InMemoryStore;
 import org.tools4j.elara.store.MessageStore;
@@ -112,7 +111,7 @@ public class BankApplication implements AllInOneApp, Output {
     }
 
     @Override
-    public Ack publish(final Event event, final boolean replay, final int retry, final CommandSender loopback) {
+    public Ack publish(final Event event, final boolean replay, final int retry) {
         System.out.println("published: " + event + ", replay=" + replay + ", retry=" + retry + ", payload=" + payloadFor(event));
         return Ack.COMMIT;
     }

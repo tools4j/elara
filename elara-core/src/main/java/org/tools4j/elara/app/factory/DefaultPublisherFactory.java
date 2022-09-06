@@ -30,7 +30,6 @@ import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.base.SingleEventBaseState;
-import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.step.PollerPublisherStep;
 import org.tools4j.elara.store.MessageStore;
@@ -38,43 +37,30 @@ import org.tools4j.elara.store.MessageStore;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.send.SenderSupplier.LOOPBACK_SOURCE;
 import static org.tools4j.elara.step.AgentStep.NOOP;
 
 public class DefaultPublisherFactory implements PublisherFactory {
     private final AppConfig appConfig;
     private final EventStoreConfig eventStoreConfig;
     private final Supplier<? extends PublisherFactory> publisherSingletons;
-    private final Supplier<? extends SequencerFactory> sequencerSingletons;
     private final Supplier<? extends InOutFactory> inOutSingletons;
     private final Supplier<? extends PluginFactory> pluginSingletons;
 
     public DefaultPublisherFactory(final AppConfig appConfig,
                                    final EventStoreConfig eventStoreConfig,
                                    final Supplier<? extends PublisherFactory> publisherSingletons,
-                                   final Supplier<? extends SequencerFactory> sequencerSingletons,
                                    final Supplier<? extends InOutFactory> inOutSingletons,
                                    final Supplier<? extends PluginFactory> pluginSingletons) {
         this.appConfig = requireNonNull(appConfig);
         this.eventStoreConfig = requireNonNull(eventStoreConfig);
         this.publisherSingletons = requireNonNull(publisherSingletons);
-        this.sequencerSingletons = requireNonNull(sequencerSingletons);
         this.inOutSingletons = requireNonNull(inOutSingletons);
         this.pluginSingletons = requireNonNull(pluginSingletons);
     }
 
     @Override
-    public CommandSender loopbackCommandSender() {
-        return sequencerSingletons.get().senderSupplier().senderFor(
-                LOOPBACK_SOURCE, appConfig.timeSource().currentTime()
-        );
-    }
-
-    @Override
     public OutputHandler outputHandler() {
-        return new DefaultOutputHandler(
-                inOutSingletons.get().output(), publisherSingletons.get().loopbackCommandSender(), appConfig.exceptionHandler()
-        );
+        return new DefaultOutputHandler(inOutSingletons.get().output(), appConfig.exceptionHandler());
     }
 
     @Override

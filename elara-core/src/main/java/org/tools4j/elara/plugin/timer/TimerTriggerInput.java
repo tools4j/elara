@@ -31,7 +31,6 @@ import org.tools4j.elara.time.TimeSource;
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.timer.TimerCommands.TRIGGER_TIMER;
 import static org.tools4j.elara.plugin.timer.TimerCommands.triggerTimer;
-import static org.tools4j.elara.send.SenderSupplier.LOOPBACK_SOURCE;
 
 public final class TimerTriggerInput implements Input {
 
@@ -42,9 +41,6 @@ public final class TimerTriggerInput implements Input {
     private boolean timerTriggerPending;
 
     public TimerTriggerInput(final int source, final TimeSource timeSource, final TimerState timerState) {
-        if (source == LOOPBACK_SOURCE) {
-            throw new IllegalArgumentException("Source "  + LOOPBACK_SOURCE + " is reserved for loopback");
-        }
         this.source = source;
         this.timeSource = requireNonNull(timeSource);
         this.timerState = requireNonNull(timerState);

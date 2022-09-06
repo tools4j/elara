@@ -31,6 +31,7 @@ import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.input.SimpleSequenceGenerator;
 import org.tools4j.elara.output.Output;
+import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.plugin.api.Plugin.NullState;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.api.TypeRange;
@@ -41,7 +42,9 @@ import org.tools4j.elara.step.AgentStep;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.plugin.boot.BootCommands.SIGNAL_APP_INITIALISATION_COMPLETE;
 import static org.tools4j.elara.plugin.boot.BootCommands.SIGNAL_APP_INITIALISATION_START;
+import static org.tools4j.elara.plugin.boot.BootEvents.APP_INITIALISATION_STARTED;
 
 /**
  * A plugin that issues commands and events related to booting an elara application to indicate that the application has
@@ -75,14 +78,23 @@ public class BootPlugin implements SystemPlugin<NullState> {
         requireNonNull(appConfig);
         requireNonNull(pluginState);
         return new Configuration.Default() {
-            Supplier<? extends SequencerFactory> sequencerSingletons;
+            SenderSupplier senderSupplier;
+
+            void sendBootCommand(final int type) {
+                if (senderSupplier == null) {
+                    throw new IllegalStateException("No factory available for sender supplier");
+                }
+                senderSupplier
+                        .senderFor(commandSource, sequenceGenerator.nextSequence())
+                        .sendCommandWithoutPayload(type);
+            }
 
             @Override
             public Interceptor interceptor(final BaseState.Mutable baseState) {
                 return new Interceptor() {
                     @Override
                     public SequencerFactory sequencerFactory(final Supplier<? extends SequencerFactory> singletons) {
-                        sequencerSingletons = singletons;
+                        senderSupplier = singletons.get().senderSupplier();
                         return null;
                     }
                 };
@@ -92,11 +104,7 @@ public class BootPlugin implements SystemPlugin<NullState> {
             public AgentStep step(final BaseState baseState, final ExecutionType executionType) {
                 if (executionType == ExecutionType.INIT_ONCE_ONLY) {
                     return () -> {
-                        if (sequencerSingletons != null) {
-                            appendAppInitStartCommand(sequencerSingletons.get().senderSupplier());
-                        } else {
-                            throw new IllegalStateException("No factory available for sender supplier");
-                        }
+                        sendBootCommand(SIGNAL_APP_INITIALISATION_START);
                         return 1;
                     };
                 }
@@ -105,7 +113,13 @@ public class BootPlugin implements SystemPlugin<NullState> {
 
             @Override
             public Output output(final BaseState baseState) {
-                return new BootOutput();
+                return (event, replay, retry) -> {
+                    if (!replay && retry == 0 && event.type() == APP_INITIALISATION_STARTED) {
+                        sendBootCommand(SIGNAL_APP_INITIALISATION_COMPLETE);
+                        return Ack.COMMIT;
+                    }
+                    return Ack.IGNORED;
+                };
             }
 
             @Override
@@ -115,9 +129,4 @@ public class BootPlugin implements SystemPlugin<NullState> {
         };
     }
 
-    private void appendAppInitStartCommand(final SenderSupplier senderSupplier) {
-        senderSupplier
-                .senderFor(commandSource, sequenceGenerator.nextSequence())
-                .sendCommandWithoutPayload(SIGNAL_APP_INITIALISATION_START);
-    }
 }

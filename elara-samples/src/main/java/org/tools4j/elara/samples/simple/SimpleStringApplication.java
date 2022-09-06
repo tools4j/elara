@@ -33,7 +33,6 @@ import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.run.ElaraRunner;
-import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.store.InMemoryStore;
 
@@ -66,7 +65,7 @@ public class SimpleStringApplication implements AllInOneApp, Output {
     }
 
     @Override
-    public Ack publish(final Event event, final boolean replay, final int retry, final CommandSender loopback) {
+    public Ack publish(final Event event, final boolean replay, final int retry) {
         System.out.println("published: " + event + ", replay=" + replay + ", retry=" + retry + ", payload=" + payloadFor(event.type(), event.payload()));
         return Ack.COMMIT;
     }

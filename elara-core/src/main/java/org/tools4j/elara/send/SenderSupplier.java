@@ -24,7 +24,6 @@
 package org.tools4j.elara.send;
 
 public interface SenderSupplier {
-    int LOOPBACK_SOURCE = -1;
     CommandSender senderFor(int source);
     CommandSender senderFor(int source, long sequence);
 }

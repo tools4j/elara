@@ -28,11 +28,8 @@ import org.tools4j.elara.app.config.EventStreamConfig;
 import org.tools4j.elara.handler.DefaultOutputHandler;
 import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.output.Output;
-import org.tools4j.elara.send.CommandHandlingSender;
-import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.step.ReceiverPublisherStep;
-import org.tools4j.elara.store.MessageStore.Handler.Result;
 import org.tools4j.elara.stream.MessageReceiver;
 
 import java.util.function.Supplier;
@@ -60,16 +57,8 @@ public class StreamPublisherFactory implements PublisherFactory {
     }
 
     @Override
-    public CommandSender loopbackCommandSender() {
-        //FIXME this is NOOP loopback sender
-        return new CommandHandlingSender(64, appConfig.timeSource(), command -> Result.POLL);
-    }
-
-    @Override
     public OutputHandler outputHandler() {
-        return new DefaultOutputHandler(
-                inOutSingletons.get().output(), publisherSingletons.get().loopbackCommandSender(), appConfig.exceptionHandler()
-        );
+        return new DefaultOutputHandler(inOutSingletons.get().output(), appConfig.exceptionHandler());
     }
 
     @Override

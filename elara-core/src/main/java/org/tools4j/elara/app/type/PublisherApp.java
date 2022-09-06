@@ -27,7 +27,6 @@ import org.tools4j.elara.event.Event;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
-import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.stream.MessageReceiver;
 
@@ -38,7 +37,7 @@ import static java.util.Objects.requireNonNull;
 public interface PublisherApp extends Output {
 
     @Override
-    Ack publish(Event event, boolean replay, int retry, CommandSender loopback);
+    Ack publish(Event event, boolean replay, int retry);
 
     default ElaraRunner launch(final MessageStore eventStore) {
         requireNonNull(eventStore);

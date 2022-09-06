@@ -36,7 +36,6 @@ import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin.Configuration;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.base.BaseState.Mutable;
-import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.stream.MessageStream;
@@ -219,11 +218,6 @@ final class Singletons {
         requireNonNull(factory);
         final Singletons singletons = new Singletons();
         return new PublisherFactory() {
-            @Override
-            public CommandSender loopbackCommandSender() {
-                return singletons.getOrCreate("loopbackCommandSender", CommandSender.class, factory, PublisherFactory::loopbackCommandSender);
-            }
-
             @Override
             public OutputHandler outputHandler() {
                 return singletons.getOrCreate("outputHandler", OutputHandler.class, factory, PublisherFactory::outputHandler);

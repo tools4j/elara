@@ -27,28 +27,23 @@ import org.tools4j.elara.event.Event;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.output.Output.Ack;
-import org.tools4j.elara.send.CommandSender;
 
 import static java.util.Objects.requireNonNull;
 
 public class DefaultOutputHandler implements OutputHandler {
 
     private final Output output;
-    private final CommandSender loopbackSender;
     private final ExceptionHandler exceptionHandler;
 
-    public DefaultOutputHandler(final Output output,
-                                final CommandSender loopbackSender,
-                                final ExceptionHandler exceptionHandler) {
+    public DefaultOutputHandler(final Output output, final ExceptionHandler exceptionHandler) {
         this.output = requireNonNull(output);
-        this.loopbackSender = requireNonNull(loopbackSender);
         this.exceptionHandler = requireNonNull(exceptionHandler);
     }
 
     @Override
     public Ack publish(final Event event, final boolean replay, final int retry) {
         try {
-            return output.publish(event, replay, retry, loopbackSender);
+            return output.publish(event, replay, retry);
         } catch (final Throwable t) {
             exceptionHandler.handleEventOutputException(event, t);
             return Ack.COMMIT;//to retry handle exception and be explicit

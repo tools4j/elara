@@ -27,9 +27,9 @@ import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.wire.WireType;
 import org.agrona.IoUtil;
 import org.agrona.concurrent.BusySpinIdleStrategy;
+import org.tools4j.elara.app.type.PassthroughApp;
 import org.tools4j.elara.app.type.PublisherApp;
 import org.tools4j.elara.app.type.PublisherAppContext;
-import org.tools4j.elara.app.type.PassthroughApp;
 import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.plugin.api.Plugins;
@@ -39,7 +39,6 @@ import org.tools4j.elara.plugin.metrics.MetricsConfig;
 import org.tools4j.elara.plugin.metrics.MetricsContext;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.samples.hash.HashApplication.ModifiableState;
-import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.time.TimeSource;
 
 import java.io.File;
@@ -73,7 +72,7 @@ public class HashPassthroughApplication implements PassthroughApp {
         }
 
         @Override
-        public Ack publish(final Event event, final boolean replay, final int retry, final CommandSender loopback) {
+        public Ack publish(final Event event, final boolean replay, final int retry) {
             final long eventValue = event.payload().getLong(0);
             final long updateValue = isEven(state.hash()) ? eventValue : ~eventValue;
             state.update(updateValue);

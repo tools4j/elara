@@ -426,9 +426,9 @@ public class MetricsCapturingInterceptor implements Interceptor {
                         return output;
                     }
                     if (shouldCapture(OUTPUT_PUBLISHED_FREQUENCY) || shouldCaptureAnyOf(OUTPUT)) {
-                        return (event, replay, retry, loopback) -> {
+                        return (event, replay, retry) -> {
                             captureTime(OUTPUT_START_TIME);
-                            final Ack ack = output.publish(event, replay, retry, loopback);
+                            final Ack ack = output.publish(event, replay, retry);
                             if (ack == Ack.IGNORED) {
                                 state.clear(OUTPUT_START_TIME);
                             } else {
@@ -455,11 +455,6 @@ public class MetricsCapturingInterceptor implements Interceptor {
                 shouldCapture(OUTPUT_POLLING_TIME) ||
                 shouldCapture(OUTPUT_POLL_FREQUENCY)) {
             return new PublisherFactory() {
-                @Override
-                public CommandSender loopbackCommandSender() {
-                    return singletons.get().loopbackCommandSender();
-                }
-
                 @Override
                 public OutputHandler outputHandler() {
                     final OutputHandler outputHandler = singletons.get().outputHandler();

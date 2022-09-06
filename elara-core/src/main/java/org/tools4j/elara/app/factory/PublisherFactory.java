@@ -24,11 +24,9 @@
 package org.tools4j.elara.app.factory;
 
 import org.tools4j.elara.handler.OutputHandler;
-import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.step.AgentStep;
 
 public interface PublisherFactory {
-    CommandSender loopbackCommandSender();
     OutputHandler outputHandler();
     AgentStep publisherStep();
 }
