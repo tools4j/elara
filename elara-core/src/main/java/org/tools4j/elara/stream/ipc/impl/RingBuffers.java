@@ -36,7 +36,7 @@ import java.nio.ByteBuffer;
 
 enum RingBuffers {
     ;
-    private static final int MSG_TYPE_ID = 0;
+    private static final int MSG_TYPE_ID = 1;
 
     static boolean write(final RingBuffer ringBuffer, final DirectBuffer buffer, final int offset, final int length) {
         if (ringBuffer.write(MSG_TYPE_ID, buffer, offset, length)) {

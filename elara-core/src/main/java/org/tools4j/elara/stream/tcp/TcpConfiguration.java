@@ -36,12 +36,14 @@ public interface TcpConfiguration {
          * @return reconnect timeout in milliseconds, zero or negative to not attempt at all
          */
         long reconnectTimeoutMillis();
+        ConnectListener connectListener();
     }
 
     interface ServerConfiguration extends TcpConfiguration {
         int acceptConnectionsMax();
         DisconnectPolicy disconnectPolicy();
         SendingStrategy sendingStrategy();
+        AcceptListener acceptListener();
 
         enum DisconnectPolicy {
             DISCONNECT_NEWEST,

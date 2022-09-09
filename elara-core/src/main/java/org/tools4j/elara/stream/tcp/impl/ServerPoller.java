@@ -23,9 +23,9 @@
  */
 package org.tools4j.elara.stream.tcp.impl;
 
+import org.agrona.CloseHelper;
 import org.agrona.LangUtil;
-import org.tools4j.elara.stream.tcp.ClientMessageReceiver;
-import org.tools4j.elara.stream.tcp.ServerMessageReceiver;
+import org.tools4j.elara.stream.tcp.AcceptListener;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -33,17 +33,20 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
-final class ServerPoller extends TcpPoller implements ServerMessageReceiver {
+import static java.util.Objects.requireNonNull;
+
+final class ServerPoller extends TcpPoller {
 
     private final ServerSocketChannel serverSocketChannel;
-    private final FlyweightTcpContext context = new FlyweightTcpContext();
+    private final AcceptListener acceptListener;
 
-    ServerPoller(final SocketAddress bindAddress) {
+    ServerPoller(final SocketAddress bindAddress, final AcceptListener acceptListener) {
         try {
             this.serverSocketChannel = ServerSocketChannel.open();
-            serverSocketChannel.configureBlocking(false);
-            serverSocketChannel.bind(bindAddress);
-            serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+            this.acceptListener = requireNonNull(acceptListener);
+            this.serverSocketChannel.configureBlocking(false);
+            this.serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+            this.serverSocketChannel.bind(bindAddress);
         } catch (final IOException e) {
             LangUtil.rethrowUnchecked(e);
             throw new RuntimeException(e);//we never get here
@@ -51,27 +54,23 @@ final class ServerPoller extends TcpPoller implements ServerMessageReceiver {
     }
 
     @Override
-    public int poll(final Handler handler) {
-        return poll(endpoints -> {}, handler);
-    }
-
-    @Override
-    public int poll(final AcceptHandler acceptHandler, final Handler messageHandler) {
-        return selectNow(acceptHandler, endpoints -> {}, messageHandler);
-    }
-
-    @Override
-    protected void onSelectionKey(final SelectionKey key, final AcceptHandler acceptHandler, final ClientMessageReceiver.ConnectHandler connectHandler, final Handler messageHandler) throws IOException {
+    protected void onSelectionKey(final SelectionKey key) throws IOException {
         if (key.isAcceptable()) {
-            accept(acceptHandler);
+            final SocketChannel socketChannel = serverSocketChannel.accept();
+            socketChannel.configureBlocking(false);
+            socketChannel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+            acceptListener.onAccept(serverSocketChannel, socketChannel);
         }
     }
 
-    private void accept(final AcceptHandler acceptHandler) throws IOException {
-        final SocketChannel socketChannel = serverSocketChannel.accept();
-        socketChannel.configureBlocking(false);
-        socketChannel.register(selector, SelectionKey.OP_READ);
-        acceptHandler.onAccept(context.init(socketChannel));
+    @Override
+    public void close() {
+        super.close();
+        CloseHelper.quietClose(serverSocketChannel);
     }
 
+    @Override
+    public String toString() {
+        return "ServerPoller{" + serverSocketChannel.socket().getLocalSocketAddress() + '}';
+    }
 }

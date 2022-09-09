@@ -34,14 +34,4 @@ public interface TcpConnection extends AutoCloseable {
 
     @Override
     void close();
-
-    interface ClientConnection extends TcpConnection {
-        @Override
-        ClientMessageReceiver receiver();
-    }
-
-    interface ServerConnection extends TcpConnection {
-        @Override
-        ServerMessageReceiver receiver();
-    }
 }

@@ -23,14 +23,10 @@
  */
 package org.tools4j.elara.stream.tcp;
 
-import org.tools4j.elara.stream.MessageReceiver;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 
-public interface ClientMessageReceiver extends MessageReceiver {
-
-    int poll(ConnectHandler connectHandler, Handler messageHandler);
-
-    @FunctionalInterface
-    interface ConnectHandler {
-        void onConnect(TcpEndpoints endpoints);
-    }
+@FunctionalInterface
+public interface AcceptListener {
+    void onAccept(ServerSocketChannel serverChannel, SocketChannel clientChannel);
 }

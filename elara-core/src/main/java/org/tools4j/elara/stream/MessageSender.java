@@ -119,7 +119,7 @@ public interface MessageSender extends MessageStream {
     }
 
     /**
-     * Provides default implementation for transports with support encoding directly into the transport buffer.
+     * Provides default implementation for transports with support for encoding directly into the transport buffer.
      */
     interface Direct extends MessageSender {
         @Override

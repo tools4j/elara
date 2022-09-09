@@ -23,26 +23,29 @@
  */
 package org.tools4j.elara.stream.tcp.impl;
 
+import org.agrona.CloseHelper;
 import org.agrona.LangUtil;
-import org.tools4j.elara.stream.tcp.ClientMessageReceiver;
-import org.tools4j.elara.stream.tcp.ServerMessageReceiver.AcceptHandler;
+import org.tools4j.elara.stream.tcp.ConnectListener;
 
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
-final class ClientPoller extends TcpPoller implements ClientMessageReceiver {
+import static java.util.Objects.requireNonNull;
+
+final class ClientPoller extends TcpPoller {
 
     private final SocketChannel socketChannel;
-    private final FlyweightTcpContext context = new FlyweightTcpContext();
+    private final ConnectListener connectListener;
 
-    ClientPoller(final SocketAddress connectAddress) {
+    ClientPoller(final SocketAddress connectAddress, final ConnectListener connectListener) {
         try {
             this.socketChannel = SocketChannel.open();
-            socketChannel.configureBlocking(false);
-            socketChannel.connect(connectAddress);
-            socketChannel.register(selector, SelectionKey.OP_CONNECT);
+            this.connectListener = requireNonNull(connectListener);
+            this.socketChannel.configureBlocking(false);
+            this.socketChannel.register(selector, SelectionKey.OP_CONNECT);
+            this.socketChannel.connect(connectAddress);
         } catch (final IOException e) {
             LangUtil.rethrowUnchecked(e);
             throw new RuntimeException(e);//we never get here
@@ -50,26 +53,25 @@ final class ClientPoller extends TcpPoller implements ClientMessageReceiver {
     }
 
     @Override
-    public int poll(final Handler handler) {
-        return poll(endpoints -> {}, handler);
+    public void close() {
+        super.close();
+        CloseHelper.quietClose(socketChannel);
     }
 
     @Override
-    public int poll(final ConnectHandler connectHandler, final Handler messageHandler) {
-        return selectNow(endpoints -> {}, connectHandler, messageHandler);
+    protected void onSelectionKey(final SelectionKey key) throws IOException {
+        if (key.isConnectable() && socketChannel.finishConnect()) {
+            socketChannel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+            connectListener.onConnect(socketChannel);
+        }
+    }
+
+    public boolean isConnected() {
+        return socketChannel.isConnected();
     }
 
     @Override
-    protected void onSelectionKey(final SelectionKey key, final AcceptHandler acceptHandler, final ConnectHandler connectHandler, final Handler messageHandler) throws IOException {
-        if (key.isConnectable()) {
-            finishConnect(connectHandler);
-        }
+    public String toString() {
+        return "ClientPoller{" + socketChannel.socket().getLocalAddress() + '}';
     }
-
-    private void finishConnect(final ConnectHandler connectHandler) throws IOException {
-        if (socketChannel.finishConnect()) {
-            connectHandler.onConnect(context.init(socketChannel));
-        }
-    }
-
 }

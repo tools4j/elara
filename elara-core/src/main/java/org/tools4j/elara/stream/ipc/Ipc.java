@@ -40,12 +40,18 @@ import java.nio.ByteBuffer;
 
 import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
 import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
+import static org.agrona.concurrent.ringbuffer.RingBufferDescriptor.TRAILER_LENGTH;
 
 public enum Ipc {
     ;
 
     public static MessageSender newSender(final File file, final int length, final IpcConfiguration config) {
-        return new IpcSender(IoUtil.mapNewFile(file, length), config);
+        final File dir = file.getParentFile();
+        if (dir != null) {
+            IoUtil.ensureDirectoryExists(dir, dir.getAbsolutePath());
+        }
+        IoUtil.deleteIfExists(file);
+        return new IpcSender(IoUtil.mapNewFile(file, length + TRAILER_LENGTH), config);
     }
 
     public static MessageSender openSender(final File file, final IpcConfiguration config) {

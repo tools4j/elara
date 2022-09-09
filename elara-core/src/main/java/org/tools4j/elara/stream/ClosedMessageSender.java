@@ -62,6 +62,7 @@ final class ClosedMessageSender implements MessageSender {
                 abort();
                 throw new IllegalStateException("Sending context not closed");
             }
+            closed = false;
             return this;
         }
 
@@ -78,6 +79,7 @@ final class ClosedMessageSender implements MessageSender {
             if (closed) {
                 throw new IllegalStateException("Sending context is closed");
             }
+            closed = true;
             return SendingResult.CLOSED;
         }
 

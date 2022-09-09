@@ -31,4 +31,8 @@ public interface IpcConfiguration {
     Cardinality senderCardinality();
     int maxMessagesReceivedPerPoll();
     int retryOpenInterval();
+
+    static IpcContext configure() {
+        return IpcContext.create();
+    }
 }

@@ -21,45 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.impl;
+package org.tools4j.elara.stream.ipc;
 
-import org.agrona.LangUtil;
+import org.tools4j.elara.logging.Logger;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
+public interface IpcContext extends IpcConfiguration {
+    IpcContext loggerFactory(Logger.Factory loggerFactory);
+    IpcContext senderCardinality(Cardinality cardinality);
+    IpcContext maxMessagesReceivedPerPoll(int maxMessages);
+    IpcContext retryOpenInterval(int interval);
 
-import static java.util.Objects.requireNonNull;
-
-final class TcpSender extends AbstractTcpSender {
-
-    private final SocketChannel socketChannel;
-
-    TcpSender(final SocketChannel socketChannel) {
-        this.socketChannel = requireNonNull(socketChannel);
-    }
-
-    @Override
-    public boolean isConnected() {
-        return socketChannel.isConnected();
-    }
-
-    @Override
-    protected void write(final ByteBuffer buffer) throws IOException {
-        socketChannel.write(buffer);
-    }
-
-    @Override
-    public boolean isClosed() {
-        return !socketChannel.isOpen();
-    }
-
-    @Override
-    public void close() {
-        try {
-            socketChannel.close();
-        } catch (final IOException e) {
-            LangUtil.rethrowUnchecked(e);
-        }
+    static IpcContext create() {
+        return new IpcContextImpl();
     }
 }

@@ -25,8 +25,6 @@ package org.tools4j.elara.stream.tcp;
 
 import org.tools4j.elara.stream.tcp.TcpConfiguration.ClientConfiguration;
 import org.tools4j.elara.stream.tcp.TcpConfiguration.ServerConfiguration;
-import org.tools4j.elara.stream.tcp.TcpConnection.ClientConnection;
-import org.tools4j.elara.stream.tcp.TcpConnection.ServerConnection;
 import org.tools4j.elara.stream.tcp.impl.TcpClientConnection;
 import org.tools4j.elara.stream.tcp.impl.TcpServerConnection;
 
@@ -35,28 +33,30 @@ import java.net.SocketAddress;
 
 public enum Tcp {
     ;
-    public static ServerConnection bind(final String address, final int port) {
+    public static TcpConnection bind(final String address, final int port) {
         return bind(new InetSocketAddress(address, port));
     }
 
-    public static ServerConnection bind(final SocketAddress address) {
-        return bind(address, null);//FIXME configure
+    public static TcpConnection bind(final SocketAddress address) {
+//        return bind(address, null);//FIXME configure
+        return new TcpServerConnection(address, (serverChannel, clientChannel) -> {});
     }
 
-    public static ServerConnection bind(final SocketAddress address, final ServerConfiguration configuration) {
-        return new TcpServerConnection(address);
+    public static TcpConnection bind(final SocketAddress address, final ServerConfiguration configuration) {
+        return new TcpServerConnection(address, configuration.acceptListener());
     }
 
-    public static ClientConnection connect(final String address, final int port) {
+    public static TcpConnection connect(final String address, final int port) {
         return connect(new InetSocketAddress(address, port));
     }
 
-    public static ClientConnection connect(final SocketAddress address) {
-        return connect(address, null);//FIXME configure
+    public static TcpConnection connect(final SocketAddress address) {
+//        return connect(address, null);//FIXME configure
+        return new TcpClientConnection(address, channel -> {});
     }
 
-    public static ClientConnection connect(final SocketAddress address, final ClientConfiguration configuration) {
-        return new TcpClientConnection(address);
+    public static TcpConnection connect(final SocketAddress address, final ClientConfiguration configuration) {
+        return new TcpClientConnection(address, configuration.connectListener());
     }
 
 }

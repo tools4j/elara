@@ -24,67 +24,86 @@
 package org.tools4j.elara.stream.tcp.impl;
 
 import org.agrona.BufferUtil;
+import org.agrona.DirectBuffer;
 import org.agrona.LangUtil;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.nio.TransportPoller;
 import org.tools4j.elara.stream.MessageReceiver;
-import org.tools4j.elara.stream.tcp.ClientMessageReceiver.ConnectHandler;
-import org.tools4j.elara.stream.tcp.ServerMessageReceiver.AcceptHandler;
+import org.tools4j.elara.stream.MessageReceiver.Handler;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
-class TcpPoller extends TransportPoller {
+abstract class TcpPoller extends TransportPoller {
 
     private final MutableDirectBuffer directBuffer = new UnsafeBuffer(0, 0);
-    private final ByteBuffer byteBuffer = BufferUtil.allocateDirectAligned(4096, 64);//FIXME make capacity configurable
 
-    protected final int selectNow(final AcceptHandler acceptHandler,
-                                  final ConnectHandler connectHandler,
-                                  final MessageReceiver.Handler messageHandler) {
+    private ByteBuffer byteBuffer = BufferUtil.allocateDirectAligned(4096, 64);//FIXME make capacity configurable
+
+    protected final int selectNow(final MessageReceiver.Handler messageHandler) {
+        return selectNow(messageHandler, null, 0, 0);
+    }
+
+    protected final int selectNow(final DirectBuffer buffer, final int offset, final int length) {
+        return selectNow(null, buffer, offset, length);
+    }
+
+    private int selectNow(final MessageReceiver.Handler messageHandler,
+                          final DirectBuffer buffer, final int offset, final int length) {
         try {
             selector.selectNow();
             final int size = selectedKeySet.size();
             if (size == 0) {
                 return 0;
             }
+            int result = 0;
+            ByteBuffer byteBuffer = null;
             IOException exception = null;
             for (int i = 0; i < size; i++) {
+                final SelectionKey key = selectedKeySet.keys()[i];
+                result |= key.readyOps();
                 try {
-                    onSelectionKey(selectedKeySet.keys()[i], acceptHandler, connectHandler, messageHandler);
+                    byteBuffer = onSelectionKey(key, messageHandler, buffer, offset, length, byteBuffer);
                 } catch (final IOException e) {
-                    if (exception == null) {
-                        exception = e;
-                    } else {
-                        e.addSuppressed(e);
-                    }
+                    exception = exceptionOrSuppress(exception, e);
                 }
             }
             selectedKeySet.clear();
             if (exception != null) {
                 throw exception;
             }
-            return size;
+            return result;
         } catch (final IOException e) {
             LangUtil.rethrowUnchecked(e);
         }
         return 0;
     }
 
-    protected void onSelectionKey(final SelectionKey key,
-                                  final AcceptHandler acceptHandler,
-                                  final ConnectHandler connectHandler,
-                                  final MessageReceiver.Handler messageHandler) throws IOException {
-        if (key.isReadable()) {
-            read(key, messageHandler);
+    private ByteBuffer onSelectionKey(final SelectionKey key,
+                                      final Handler handler,
+                                      final DirectBuffer buffer, final int offset, final int length,
+                                      final ByteBuffer byteBufferOrNull) throws IOException {
+        onSelectionKey(key);
+        if (key.isReadable() && handler != null) {
+            read(key, handler);
         }
+        if (key.isWritable() && buffer != null) {
+            final ByteBuffer byteBuffer = byteBufferOrNull != null ? byteBufferOrNull :
+                    toByteBuffer(buffer, offset, length);
+            write(key, byteBuffer);
+            return byteBuffer;
+        }
+        return byteBufferOrNull;
     }
+
+    abstract protected void onSelectionKey(SelectionKey key) throws IOException;
 
     private void read(final SelectionKey key, final MessageReceiver.Handler handler) throws IOException{
         final SocketChannel remote = (SocketChannel) key.channel();
+        byteBuffer.clear();
         final int bytes = remote.read(byteBuffer);
         if (bytes > 0) {
             try {
@@ -97,7 +116,54 @@ class TcpPoller extends TransportPoller {
         }
     }
 
+    private void write(final SelectionKey key, final ByteBuffer buffer) throws IOException {
+        final SocketChannel remote = (SocketChannel) key.channel();
+        if (buffer.remaining() > 0) {
+            final int limit = buffer.limit();
+            final int pos = buffer.position();
+            try {
+                remote.write(buffer);
+            } finally {
+                buffer.limit(limit);
+                buffer.position(pos);
+            }
+        }
+    }
+
+    private ByteBuffer toByteBuffer(final DirectBuffer buffer, final int offset, final int length) {
+        ByteBuffer buf = buffer.byteBuffer();
+        if (buf != null) {
+            final int adj = buffer.wrapAdjustment();
+            buf.limit(adj + offset + length);
+            buf.position(adj + offset);
+        } else {
+            final byte[] arr = buffer.byteArray();
+            if (arr == null) {
+                throw new IllegalArgumentException("Unsupported buffer, only ByteBuffer or byte array backed buffers are supported");
+            }
+            if (byteBuffer == null || byteBuffer.capacity() < length) {
+                buf = byteBuffer = BufferUtil.allocateDirectAligned(Math.max(1024, length), 64);
+            } else {
+                buf = byteBuffer;
+            }
+            buf.clear();
+            final int adj = buffer.wrapAdjustment();
+            buf.put(arr, adj + offset, length);
+            buf.limit(length);
+            buf.position(0);
+        }
+        return buf;
+    }
+
     public boolean isClosed() {
         return !selector.isOpen();
+    }
+
+    private static <T extends Throwable> T exceptionOrSuppress(final T throwable, final T next) {
+        if (throwable == null) {
+            return next;
+        }
+        throwable.addSuppressed(next);
+        return throwable;
     }
 }
