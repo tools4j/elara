@@ -64,6 +64,7 @@ final class RingBufferImpl implements RingBuffer {
         if (readLength > 0) {
             final int length = Math.min(readLength, maxLength);
             buffer.getBytes(readOffset, target, targetOffset, length);
+            readCommit0(length);
             return length;
         }
         return 0;
@@ -75,6 +76,7 @@ final class RingBufferImpl implements RingBuffer {
         if (readLength > 0) {
             final int length = Math.min(readLength, maxLength);
             buffer.getBytes(readOffset, target, targetOffset, length);
+            readCommit0(length);
             return length;
         }
         return 0;
