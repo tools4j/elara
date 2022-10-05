@@ -23,10 +23,12 @@
  */
 package org.tools4j.elara.stream;
 
+import org.agrona.ExpandableArrayBuffer;
+import org.agrona.IoUtil;
 import org.agrona.LangUtil;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
-import org.agrona.nio.TransportPoller;
+import org.agrona.concurrent.ringbuffer.OneToOneRingBuffer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -41,108 +43,49 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.Objects.requireNonNull;
+import static org.agrona.concurrent.ringbuffer.RingBufferDescriptor.TRAILER_LENGTH;
 
 class MessageStreamTest {
 
     private static final int MESSAGE_COUNT = 20;
     private static final int MESSAGE_BYTES = 100;
 
-    private abstract static class Poller extends TransportPoller {
-        int selectNow() {
-            try {
-                selector.selectNow();
-                final int size = selectedKeySet.size();
-                if (size == 0) {
-                    return 0;
-                }
-                IOException exception = null;
-                for (int i = 0; i < size; i++) {
-                    try {
-                        onSelectionKey(selectedKeySet.keys()[i]);
-                    } catch (final IOException e) {
-                        if (exception == null) {
-                            exception = e;
-                        } else {
-                            e.addSuppressed(e);
-                        }
-                    }
-                }
-                selectedKeySet.clear();
-                if (exception != null) {
-                    throw exception;
-                }
-                return size;
-            } catch (final IOException e) {
-                LangUtil.rethrowUnchecked(e);
-            }
-            return 0;
-        }
-
-        abstract protected void onSelectionKey(SelectionKey key) throws IOException;
-    }
-
     @Test
-    void selectorTest() throws Exception {
-        final SocketAddress address = new InetSocketAddress("localhost", nextFreePort());
+    void ringBufferTest() throws Exception {
+        final File file = new File("build/stream/ipc.map");
+        IoUtil.deleteIfExists(file);
+        IoUtil.ensureDirectoryExists(file.getParentFile(), file.getParentFile().getAbsolutePath());
+
+        OneToOneRingBuffer buffer = new OneToOneRingBuffer(
+                new UnsafeBuffer(IoUtil.mapNewFile(file, (1<<24) + TRAILER_LENGTH))
+        );
 
         final AtomicBoolean running = new AtomicBoolean(true);
-        final ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
-        final Poller serverPoller = new Poller() {
-            {
-                serverSocketChannel.configureBlocking(false);
-                serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-                serverSocketChannel.bind(address);
-            }
-            @Override
-            protected void onSelectionKey(final SelectionKey key) throws IOException {
-                if (key.isAcceptable()) {
-                    final SocketChannel socketChannel = serverSocketChannel.accept();
-                    socketChannel.configureBlocking(false);
-                    socketChannel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-                }
-                if (key.isReadable()) {
-                    final byte[] bytes = new byte[128];
-                    ((SocketChannel)key.channel()).read(ByteBuffer.wrap(bytes));
-                    System.out.println("RECEIVED: " + new String(bytes).trim());
-                    running.set(false);
-                }
-            }
+        final MutableDirectBuffer writeBuffer = new ExpandableArrayBuffer();
+        final Runnable producer = () -> {
+            final int len = writeBuffer.putStringAscii(0, "Hello world!");
+            buffer.write(1, writeBuffer, 0, len);
+//            System.out.println("SENT");
         };
-
-        final SocketChannel socketChannel = SocketChannel.open();
-        final Poller clientPoller = new Poller() {
-            {
-                socketChannel.configureBlocking(false);
-                socketChannel.register(selector, SelectionKey.OP_CONNECT);
-                socketChannel.connect(address);
-            }
-            @Override
-            protected void onSelectionKey(final SelectionKey key) throws IOException {
-                if (key.isConnectable() && socketChannel.finishConnect()) {
-                    socketChannel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-                }
-                if (key.isWritable()) {
-                    socketChannel.write(ByteBuffer.wrap("Hello world!!".getBytes()));
-                    System.out.println("SENT");
-                }
-            }
+        final Runnable consumer = () -> {
+            buffer.read((msgTypeId, buf, index, length) -> {
+                final String s = buf.getStringAscii(index);
+//                System.out.println("RECEIVED: " + s);
+                running.set(false);
+            });
         };
 
         final Thread server = new Thread(null, () -> {
             while (running.get()) {
-                serverPoller.selectNow();
+                producer.run();
             }
         }, "server");
         final Thread client = new Thread(null, () -> {
             while (running.get()) {
-                clientPoller.selectNow();
+                consumer.run();
             }
         }, "client");
 
