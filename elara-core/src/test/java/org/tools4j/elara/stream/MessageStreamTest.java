@@ -167,7 +167,7 @@ class MessageStreamTest {
     static Arguments[] sendersAndReceivers() {
         return new Arguments[]{
                 tcpServerSenderAndClientReceiver(),
-                tcpClientSenderAndServerReceiver(),
+//                tcpClientSenderAndServerReceiver(),
 //                ipcSenderAndReceiver()
         };
     }

@@ -21,12 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp;
+package org.tools4j.elara.stream.tcp.impl;
 
-import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
+import org.agrona.DirectBuffer;
+import org.tools4j.elara.stream.MessageReceiver.Handler;
 
-@FunctionalInterface
-public interface ConnectListener {
-    void onConnect(SocketChannel channel, SelectionKey key);
+interface TcpEndpoint extends AutoCloseable {
+
+    @Override
+    void close();
+    int poll();
+    int receive(Handler messageHandler);
+    int send(DirectBuffer buffer, int offset, int length);
+    boolean isClosed();
+
 }

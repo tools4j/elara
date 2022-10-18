@@ -23,36 +23,29 @@
  */
 package org.tools4j.elara.stream.tcp.impl;
 
-import org.agrona.BufferUtil;
-import org.agrona.DirectBuffer;
 import org.agrona.LangUtil;
-import org.agrona.MutableDirectBuffer;
-import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.nio.TransportPoller;
-import org.tools4j.elara.stream.MessageReceiver;
-import org.tools4j.elara.stream.MessageReceiver.Handler;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.Selector;
 
-abstract class TcpPoller extends TransportPoller {
+class TcpPoller extends TransportPoller {
 
-    private final MutableDirectBuffer directBuffer = new UnsafeBuffer(0, 0);
-
-    private ByteBuffer byteBuffer = BufferUtil.allocateDirectAligned(4096, 64);//FIXME make capacity configurable
-
-    protected final int selectNow(final MessageReceiver.Handler messageHandler) {
-        return selectNow(messageHandler, null, 0, 0);
+    @FunctionalInterface
+    interface SelectionHandler {
+        int OK = 0;
+        int BACK_PRESSURE = Integer.MIN_VALUE >> 1;
+        int MESSAGE_TOO_LARGE = Integer.MIN_VALUE >> 2;
+        SelectionHandler NO_OP = key -> OK;
+        int onSelectionKey(SelectionKey key) throws IOException;
     }
 
-    protected final int selectNow(final DirectBuffer buffer, final int offset, final int length) {
-        return selectNow(null, buffer, offset, length);
+    final Selector selector() {
+        return selector;
     }
 
-    private int selectNow(final MessageReceiver.Handler messageHandler,
-                          final DirectBuffer buffer, final int offset, final int length) {
+    final int selectNow(final SelectionHandler selectionHandler) {
         try {
             selector.selectNow();
             final int size = selectedKeySet.size();
@@ -60,13 +53,12 @@ abstract class TcpPoller extends TransportPoller {
                 return 0;
             }
             int result = 0;
-            ByteBuffer byteBuffer = null;
             IOException exception = null;
             for (int i = 0; i < size; i++) {
                 final SelectionKey key = selectedKeySet.keys()[i];
                 result |= key.readyOps();
                 try {
-                    byteBuffer = onSelectionKey(key, messageHandler, buffer, offset, length, byteBuffer);
+                    result |= selectionHandler.onSelectionKey(key);
                 } catch (final IOException e) {
                     exception = exceptionOrSuppress(exception, e);
                 }
@@ -76,86 +68,13 @@ abstract class TcpPoller extends TransportPoller {
                 throw exception;
             }
             return result;
-        } catch (final IOException e) {
+        } catch (final Exception e) {
             LangUtil.rethrowUnchecked(e);
         }
         return 0;
     }
 
-    private ByteBuffer onSelectionKey(final SelectionKey key,
-                                      final Handler handler,
-                                      final DirectBuffer buffer, final int offset, final int length,
-                                      final ByteBuffer byteBufferOrNull) throws IOException {
-        onSelectionKey(key);
-        if (key.isReadable() && handler != null) {
-            read(key, handler);
-        }
-        if (key.isWritable() && buffer != null) {
-            final ByteBuffer byteBuffer = byteBufferOrNull != null ? byteBufferOrNull :
-                    toByteBuffer(buffer, offset, length);
-            write(key, byteBuffer);
-            return byteBuffer;
-        }
-        return byteBufferOrNull;
-    }
-
-    abstract protected void onSelectionKey(SelectionKey key) throws IOException;
-
-    private void read(final SelectionKey key, final MessageReceiver.Handler handler) throws IOException{
-        final SocketChannel remote = (SocketChannel) key.channel();
-        byteBuffer.clear();
-        final int bytes = remote.read(byteBuffer);
-        if (bytes > 0) {
-            try {
-                directBuffer.wrap(byteBuffer, 0, bytes);
-                handler.onMessage(directBuffer);
-            } finally {
-                directBuffer.wrap(0, 0);
-                byteBuffer.clear();
-            }
-        }
-    }
-
-    private void write(final SelectionKey key, final ByteBuffer buffer) throws IOException {
-        final SocketChannel remote = (SocketChannel) key.channel();
-        if (buffer.remaining() > 0) {
-            final int limit = buffer.limit();
-            final int pos = buffer.position();
-            try {
-                remote.write(buffer);
-            } finally {
-                buffer.limit(limit);
-                buffer.position(pos);
-            }
-        }
-    }
-
-    private ByteBuffer toByteBuffer(final DirectBuffer buffer, final int offset, final int length) {
-        ByteBuffer buf = buffer.byteBuffer();
-        if (buf != null) {
-            final int adj = buffer.wrapAdjustment();
-            buf.limit(adj + offset + length);
-            buf.position(adj + offset);
-        } else {
-            final byte[] arr = buffer.byteArray();
-            if (arr == null) {
-                throw new IllegalArgumentException("Unsupported buffer, only ByteBuffer or byte array backed buffers are supported");
-            }
-            if (byteBuffer == null || byteBuffer.capacity() < length) {
-                buf = byteBuffer = BufferUtil.allocateDirectAligned(Math.max(1024, length), 64);
-            } else {
-                buf = byteBuffer;
-            }
-            buf.clear();
-            final int adj = buffer.wrapAdjustment();
-            buf.put(arr, adj + offset, length);
-            buf.limit(length);
-            buf.position(0);
-        }
-        return buf;
-    }
-
-    public boolean isClosed() {
+    boolean isClosed() {
         return !selector.isOpen();
     }
 

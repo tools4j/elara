@@ -24,15 +24,13 @@
 package org.tools4j.elara.stream.tcp.impl;
 
 import org.agrona.CloseHelper;
-import org.agrona.DirectBuffer;
-import org.tools4j.elara.send.SendingResult;
 import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.tcp.ConnectListener;
 import org.tools4j.elara.stream.tcp.TcpConnection;
 
 import java.net.SocketAddress;
-import java.nio.channels.SelectionKey;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -40,16 +38,18 @@ public class TcpClientConnection implements TcpConnection {
 
     private final SocketAddress connectAddress;
     private final ConnectListener connectListener;
-    private final TcpClientReceiver receiver;
-    private final TcpClientSender sender;
-    private ClientPoller poller;
+    private final Supplier<? extends RingBuffer> ringBufferFactory;
+    private final TcpClientReceiver receiver = new TcpClientReceiver();
+    private final TcpClientSender sender = new TcpClientSender();
+    private TcpClient client;
 
-    public TcpClientConnection(final SocketAddress connectAddress, final ConnectListener connectListener) {
+    public TcpClientConnection(final SocketAddress connectAddress,
+                               final ConnectListener connectListener,
+                               final int bufferCapacity) {
         this.connectAddress = requireNonNull(connectAddress);
         this.connectListener = requireNonNull(connectListener);
-        this.receiver = new TcpClientReceiver();
-        this.sender = new TcpClientSender();
-        this.poller  = new ClientPoller(connectAddress, connectListener);
+        this.ringBufferFactory = RingBuffer.factory(bufferCapacity);
+        this.client = new TcpClient(connectAddress, connectListener, ringBufferFactory);
     }
 
     @Override
@@ -64,57 +64,26 @@ public class TcpClientConnection implements TcpConnection {
 
     @Override
     public boolean isConnected() {
-        return poller != null && poller.isConnected();
+        return client != null && client.isConnected();
     }
 
     @Override
     public boolean isClosed() {
-        return poller == null;
+        return client == null;
     }
 
     @Override
     public void close() {
-        if (poller != null) {
-            CloseHelper.quietClose(poller);
-            poller = null;
+        if (client != null) {
+            CloseHelper.quietClose(client);
+            client = null;
         }
     }
 
-    private void reconnect() {
-        if (poller != null) {
-            CloseHelper.quietClose(poller);
-            poller = new ClientPoller(connectAddress, connectListener);
-        }
-    }
-
-    private final class TcpClientReceiver implements MessageReceiver {
-        @Override
-        public int poll(final Handler handler) {
-            if (poller != null) {
-                try {
-                    return 0 != (poller.selectNow(handler) & SelectionKey.OP_READ) ? 1 : 0;
-                } catch (final Exception e) {
-                    reconnect();
-                    //FIXME log
-                    throw e;
-                }
-            }
-            return 0;
-        }
-
-        @Override
-        public boolean isClosed() {
-            return TcpClientConnection.this.isClosed();
-        }
-
-        @Override
-        public void close() {
-            TcpClientConnection.this.close();
-        }
-
-        @Override
-        public String toString() {
-            return "TcpClientReceiver{" + connectAddress + '}';
+    public void reconnect() {
+        if (client != null) {
+            CloseHelper.quietClose(client);
+            client = new TcpClient(connectAddress, connectListener, ringBufferFactory);
         }
     }
 
@@ -123,38 +92,38 @@ public class TcpClientConnection implements TcpConnection {
         return "TcpClientConnection{" + connectAddress + '}';
     }
 
-    private final class TcpClientSender extends MessageSender.Buffered {
+    private final class TcpClientReceiver extends TcpReceiver {
+        String name;
+        TcpClientReceiver() {
+            super(() -> client);
+        }
+
         @Override
-        public SendingResult sendMessage(final DirectBuffer buffer, final int offset, final int length) {
-            if (isClosed()) {
-                return SendingResult.CLOSED;
-            }
+        public int poll(final Handler handler) {
             try {
-                final int readyOps = poller.selectNow(buffer, offset, length);
-                if (0 != (readyOps & SelectionKey.OP_WRITE)) {
-                    return SendingResult.SENT;
-                }
-                return isConnected() ? SendingResult.BACK_PRESSURED : SendingResult.DISCONNECTED;
+                return super.poll(handler);
             } catch (final Exception e) {
                 reconnect();
-                //FIXME log
-                return SendingResult.FAILED;
+                throw e;
             }
-        }
-
-        @Override
-        public boolean isClosed() {
-            return TcpClientConnection.this.isClosed();
-        }
-
-        @Override
-        public void close() {
-            TcpClientConnection.this.close();
         }
 
         @Override
         public String toString() {
-            return "TcpClientSender{" + connectAddress + '}';
+            return name != null ? name : (name = "TcpClientReceiver{" + connectAddress + '}');
         }
     }
+
+    private final class TcpClientSender extends TcpSender {
+        String name;
+        TcpClientSender() {
+            super(TcpClientConnection.this, () -> client);
+        }
+
+        @Override
+        public String toString() {
+            return name != null ? name : (name = "TcpClientSender{" + connectAddress + '}');
+        }
+    }
+
 }

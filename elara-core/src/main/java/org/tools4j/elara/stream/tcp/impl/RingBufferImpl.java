@@ -40,10 +40,27 @@ final class RingBufferImpl implements RingBuffer {
     private int writeOffset;
 
     RingBufferImpl(final int bufferSize) {
+        validateBufferSize(bufferSize);
+        this.buffer = new UnsafeBuffer(BufferUtil.allocateDirectAligned(bufferSize, ALIGNMENT));
+    }
+
+    static void validateBufferSize(final int bufferSize) {
         if (bufferSize < ALIGNMENT) {
             throw new IllegalArgumentException("Buffer size must be at least " + ALIGNMENT);
         }
-        this.buffer = new UnsafeBuffer(BufferUtil.allocateDirectAligned(bufferSize, ALIGNMENT));
+    }
+
+    @Override
+    public int readUnsignedByte(final boolean commit) {
+        final int readLength = readLength();
+        if (readLength >= Byte.BYTES) {
+            final int value = 0xff & buffer.getByte(readOffset);
+            if (commit) {
+                readCommit0(Byte.BYTES);
+            }
+            return value;
+        }
+        return -1;
     }
 
     @Override
@@ -56,7 +73,7 @@ final class RingBufferImpl implements RingBuffer {
             }
             return value;
         }
-        return -1;
+        return -1L;
     }
 
     public int read(final MutableDirectBuffer target, final int targetOffset, final int maxLength) {
@@ -111,6 +128,17 @@ final class RingBufferImpl implements RingBuffer {
             return byteBuffer;
         }
         return null;
+    }
+
+    @Override
+    public boolean writeUnsignedByte(final byte value) {
+        final int writeLength = writeLength();
+        if (writeLength >= Byte.BYTES) {
+            buffer.putByte(writeOffset, value);
+            writeCommit0(Byte.BYTES);
+            return true;
+        }
+        return false;
     }
 
     @Override

@@ -23,28 +23,39 @@
  */
 package org.tools4j.elara.stream.tcp.impl;
 
-import org.agrona.CloseHelper;
+import org.agrona.DirectBuffer;
 import org.agrona.LangUtil;
+import org.tools4j.elara.stream.MessageReceiver.Handler;
 import org.tools4j.elara.stream.tcp.ConnectListener;
+import org.tools4j.elara.stream.tcp.impl.TcpPoller.SelectionHandler;
 
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
-final class ClientPoller extends TcpPoller {
+final class TcpClient implements TcpEndpoint {
 
     private final SocketChannel socketChannel;
     private final ConnectListener connectListener;
+    private final ReceiverPoller receiverPoller;
+    private final SenderPoller senderPoller;
+    private final SelectionHandler connectHandler = this::onSelectionKey;
 
-    ClientPoller(final SocketAddress connectAddress, final ConnectListener connectListener) {
+    TcpClient(final SocketAddress connectAddress,
+              final ConnectListener connectListener,
+              final Supplier<? extends RingBuffer> ringBufferFactory) {
         try {
             this.socketChannel = SocketChannel.open();
             this.connectListener = requireNonNull(connectListener);
+            this.receiverPoller = new ReceiverPoller(ringBufferFactory);
+            this.senderPoller = new SenderPoller(ringBufferFactory);
             this.socketChannel.configureBlocking(false);
-            this.socketChannel.register(selector, SelectionKey.OP_CONNECT);
+            this.socketChannel.register(receiverPoller.selector(), SelectionKey.OP_CONNECT + SelectionKey.OP_READ);
+            this.socketChannel.register(senderPoller.selector(), SelectionKey.OP_CONNECT + SelectionKey.OP_WRITE);
             this.socketChannel.connect(connectAddress);
         } catch (final IOException e) {
             LangUtil.rethrowUnchecked(e);
@@ -54,16 +65,37 @@ final class ClientPoller extends TcpPoller {
 
     @Override
     public void close() {
-        super.close();
-        CloseHelper.quietClose(socketChannel);
+        try {
+            receiverPoller.close();
+            senderPoller.close();
+            socketChannel.close();
+        } catch (final Exception ex) {
+            LangUtil.rethrowUnchecked(ex);
+        }
     }
 
     @Override
-    protected void onSelectionKey(final SelectionKey key) throws IOException {
+    public int poll() {
+        receiverPoller.selectNow(connectHandler);
+        senderPoller.selectNow(connectHandler);
+        return SelectionHandler.OK;
+    }
+
+    @Override
+    public int receive(final Handler messageHandler) {
+        return receiverPoller.selectNow(connectHandler, messageHandler);
+    }
+
+    @Override
+    public int send(final DirectBuffer buffer, final int offset, final int length) {
+       return senderPoller.selectNow(connectHandler, buffer, offset, length);
+    }
+
+    private int onSelectionKey(final SelectionKey key) throws IOException {
         if (key.isConnectable() && socketChannel.finishConnect()) {
-            socketChannel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-            connectListener.onConnect(socketChannel);
+            connectListener.onConnect(socketChannel, key);
         }
+        return SelectionHandler.OK;
     }
 
     public boolean isConnected() {
@@ -71,7 +103,12 @@ final class ClientPoller extends TcpPoller {
     }
 
     @Override
+    public boolean isClosed() {
+        return !socketChannel.isOpen();
+    }
+
+    @Override
     public String toString() {
-        return "ClientPoller{" + socketChannel.socket().getLocalAddress() + '}';
+        return "TcpClient{" + socketChannel.socket().getLocalAddress() + '}';
     }
 }

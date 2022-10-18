@@ -27,6 +27,7 @@ import org.tools4j.elara.logging.Logger;
 
 public interface TcpConfiguration {
     Logger.Factory loggerFactory();
+    int bufferCapacity();
 
     interface ClientConfiguration extends TcpConfiguration {
         /**

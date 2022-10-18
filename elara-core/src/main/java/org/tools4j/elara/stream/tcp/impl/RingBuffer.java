@@ -27,6 +27,7 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 
 import java.nio.ByteBuffer;
+import java.util.function.Supplier;
 
 interface RingBuffer {
 
@@ -42,6 +43,7 @@ interface RingBuffer {
     void reset();
     void reset(int readOffset, int writeOffset);
 
+    int readUnsignedByte(boolean commit);
     long readUnsignedInt(boolean commit);
     int read(MutableDirectBuffer target, int targetOffset, int maxLength);
     int read(ByteBuffer target, int targetOffset, int maxLength);
@@ -52,6 +54,7 @@ interface RingBuffer {
     boolean readSkip(int bytes);
     boolean readSkipEndGap(int minBytes);
 
+    boolean writeUnsignedByte(byte value);
     boolean writeUnsignedInt(int value);
     boolean write(DirectBuffer source, int offset, int length);
     boolean write(ByteBuffer source, int offset, int length);
@@ -61,4 +64,9 @@ interface RingBuffer {
     void writeCommit(int bytes);
     boolean writeSkip(int bytes);
     boolean writeSkipEndGap(int minBytes);
+
+    static Supplier<RingBuffer> factory(final int bufferSize) {
+        RingBufferImpl.validateBufferSize(bufferSize);
+        return () -> new RingBufferImpl(bufferSize);
+    }
 }

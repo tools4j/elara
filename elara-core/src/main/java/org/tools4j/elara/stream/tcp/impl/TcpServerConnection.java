@@ -24,8 +24,6 @@
 package org.tools4j.elara.stream.tcp.impl;
 
 import org.agrona.CloseHelper;
-import org.agrona.DirectBuffer;
-import org.tools4j.elara.send.SendingResult;
 import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.tcp.AcceptListener;
@@ -44,18 +42,17 @@ public class TcpServerConnection implements TcpConnection {
 
     private final SocketAddress bindAddress;
     private final AcceptListener acceptListener;
-    private final TcpMulticastSender sender;
-    private final TcpServerReceiver receiver;
-    private final AcceptListener acceptHandler = this::onAccept;
+    private final TcpMulticastSender sender = new TcpMulticastSender();
+    private final TcpServerReceiver receiver = new TcpServerReceiver();;
     private final List<SocketChannel> accepted = new ArrayList<>();
-    private ServerPoller poller;
+    private TcpServer server;
 
-    public TcpServerConnection(final SocketAddress bindAddress, final AcceptListener acceptListener) {
+    public TcpServerConnection(final SocketAddress bindAddress,
+                               final AcceptListener acceptListener,
+                               final int bufferCapacity) {
         this.bindAddress = requireNonNull(bindAddress);
         this.acceptListener = requireNonNull(acceptListener);
-        this.sender = new TcpMulticastSender();
-        this.receiver = new TcpServerReceiver();
-        this.poller = new ServerPoller(bindAddress, acceptHandler);
+        this.server = new TcpServer(bindAddress, this::onAccept, RingBuffer.factory(bufferCapacity));
     }
 
     @Override
@@ -70,7 +67,7 @@ public class TcpServerConnection implements TcpConnection {
 
     @Override
     public boolean isConnected() {
-        if (poller == null || accepted.isEmpty()) {
+        if (server == null || accepted.isEmpty()) {
             return false;
         }
         boolean connected = false;
@@ -89,22 +86,26 @@ public class TcpServerConnection implements TcpConnection {
 
     @Override
     public boolean isClosed() {
-        return poller == null;
+        return server == null;
     }
 
     @Override
     public void close() {
-        if (poller != null) {
+        if (server != null) {
             CloseHelper.quietCloseAll(accepted);
             accepted.clear();
-            CloseHelper.quietClose(poller);
-            poller = null;
+            CloseHelper.quietClose(server);
+            server = null;
         }
     }
 
-    private void onAccept(final ServerSocketChannel serverChannel, final SocketChannel clientChannel) {
-        accepted.add(clientChannel);
-        acceptListener.onAccept(serverChannel, clientChannel);
+    private void onAccept(final ServerSocketChannel serverChannel,
+                          final SocketChannel clientChannel,
+                          final SelectionKey key) {
+        if (!accepted.contains(clientChannel)) {
+            accepted.add(clientChannel);
+        }
+        acceptListener.onAccept(serverChannel, clientChannel, key);
     }
 
     @Override
@@ -112,58 +113,27 @@ public class TcpServerConnection implements TcpConnection {
         return "TcpServerConnection{" + bindAddress + '}';
     }
 
-    private final class TcpServerReceiver implements MessageReceiver {
-        @Override
-        public int poll(final Handler handler) {
-            if (poller != null) {
-                return 0 != (poller.selectNow(handler) & SelectionKey.OP_READ) ? 1 : 0;
-            }
-            return 0;
-        }
-
-        @Override
-        public boolean isClosed() {
-            return TcpServerConnection.this.isClosed();
-        }
-
-        @Override
-        public void close() {
-            TcpServerConnection.this.close();
+    private final class TcpServerReceiver extends TcpReceiver {
+        String name;
+        TcpServerReceiver() {
+            super(() -> server);
         }
 
         @Override
         public String toString() {
-            return "TcpServerReceiver{" + bindAddress + '}';
+            return name != null ? name : (name = "TcpServerReceiver{" + bindAddress + '}');
         }
     }
 
-    private final class TcpMulticastSender extends MessageSender.Buffered {
-        @Override
-        public SendingResult sendMessage(final DirectBuffer buffer, final int offset, final int length) {
-            final int readyOps = poller.selectNow(buffer, offset, length);
-            if (0 != (readyOps & SelectionKey.OP_WRITE)) {
-                return SendingResult.SENT;
-            }
-            if (isConnected()) {
-                return SendingResult.BACK_PRESSURED;
-            }
-            return isClosed() ? SendingResult.CLOSED : SendingResult.DISCONNECTED;
-        }
-
-
-        @Override
-        public boolean isClosed() {
-            return TcpServerConnection.this.isClosed();
-        }
-
-        @Override
-        public void close() {
-            TcpServerConnection.this.close();
+    private final class TcpMulticastSender extends TcpSender {
+        String name;
+        TcpMulticastSender() {
+            super(TcpServerConnection.this, () -> server);
         }
 
         @Override
         public String toString() {
-            return "TcpServerSender{" + bindAddress + '}';
+            return name != null ? name : (name = "TcpMulticastSender{" + bindAddress + '}');
         }
     }
 }

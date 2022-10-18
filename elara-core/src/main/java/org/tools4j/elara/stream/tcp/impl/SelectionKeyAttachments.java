@@ -21,12 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp;
+package org.tools4j.elara.stream.tcp.impl;
 
 import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
+import java.util.function.Supplier;
 
-@FunctionalInterface
-public interface ConnectListener {
-    void onConnect(SocketChannel channel, SelectionKey key);
+enum SelectionKeyAttachments {
+    ;
+    static RingBuffer fetchOrAttach(final SelectionKey key, final Supplier<? extends RingBuffer> ringBufferFactory) {
+        RingBuffer ringBuffer = (RingBuffer)key.attachment();
+        if (ringBuffer == null) {
+            ringBuffer = ringBufferFactory.get();
+            key.attach(ringBuffer);
+        }
+        return ringBuffer;
+    }
 }

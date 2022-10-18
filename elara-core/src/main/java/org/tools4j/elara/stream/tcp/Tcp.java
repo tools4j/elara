@@ -39,11 +39,11 @@ public enum Tcp {
 
     public static TcpConnection bind(final SocketAddress address) {
 //        return bind(address, null);//FIXME configure
-        return new TcpServerConnection(address, (serverChannel, clientChannel) -> {});
+        return new TcpServerConnection(address, (serverChannel, clientChannel, key) -> {}, 1024);
     }
 
     public static TcpConnection bind(final SocketAddress address, final ServerConfiguration configuration) {
-        return new TcpServerConnection(address, configuration.acceptListener());
+        return new TcpServerConnection(address, configuration.acceptListener(), 1024);
     }
 
     public static TcpConnection connect(final String address, final int port) {
@@ -52,11 +52,11 @@ public enum Tcp {
 
     public static TcpConnection connect(final SocketAddress address) {
 //        return connect(address, null);//FIXME configure
-        return new TcpClientConnection(address, channel -> {});
+        return new TcpClientConnection(address, (channel, key) -> {}, 1024);
     }
 
     public static TcpConnection connect(final SocketAddress address, final ClientConfiguration configuration) {
-        return new TcpClientConnection(address, configuration.connectListener());
+        return new TcpClientConnection(address, configuration.connectListener(), 1024);
     }
 
 }
