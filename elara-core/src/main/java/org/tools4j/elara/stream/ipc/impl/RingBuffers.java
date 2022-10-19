@@ -32,7 +32,10 @@ import org.agrona.concurrent.ringbuffer.OneToOneRingBuffer;
 import org.agrona.concurrent.ringbuffer.RingBuffer;
 import org.tools4j.elara.stream.ipc.IpcConfiguration;
 
+import java.io.File;
 import java.nio.ByteBuffer;
+
+import static org.agrona.concurrent.ringbuffer.RingBufferDescriptor.TRAILER_LENGTH;
 
 enum RingBuffers {
     ;
@@ -62,6 +65,17 @@ enum RingBuffers {
             IoUtil.unmap(byteBuffer);
         }
         ringBuffer.buffer().wrap(0, 0);
+    }
+
+    static RingBuffer newFileMapped(final File file, final int length, final IpcConfiguration config) {
+        final File dir = file.getParentFile();
+        if (dir != null && config.newFileCreateParentDirs()) {
+            IoUtil.ensureDirectoryExists(dir, dir.getAbsolutePath());
+        }
+        if (config.newFileDeleteIfPresent()) {
+            IoUtil.deleteIfExists(file);
+        }
+        return create(IoUtil.mapNewFile(file, length + TRAILER_LENGTH), config);
     }
 
     static RingBuffer create(final ByteBuffer buffer, final IpcConfiguration config) {

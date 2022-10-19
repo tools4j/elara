@@ -23,13 +23,9 @@
  */
 package org.tools4j.elara.stream;
 
-import org.agrona.ExpandableArrayBuffer;
-import org.agrona.IoUtil;
 import org.agrona.LangUtil;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
-import org.agrona.concurrent.ringbuffer.OneToOneRingBuffer;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -43,58 +39,14 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.SocketAddress;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.Objects.requireNonNull;
-import static org.agrona.concurrent.ringbuffer.RingBufferDescriptor.TRAILER_LENGTH;
+import static org.tools4j.elara.stream.ipc.Cardinality.ONE;
 
 class MessageStreamTest {
 
     private static final int MESSAGE_COUNT = 20;
     private static final int MESSAGE_BYTES = 100;
-
-    @Test
-    void ringBufferTest() throws Exception {
-        final File file = new File("build/stream/ipc.map");
-        IoUtil.deleteIfExists(file);
-        IoUtil.ensureDirectoryExists(file.getParentFile(), file.getParentFile().getAbsolutePath());
-
-        OneToOneRingBuffer buffer = new OneToOneRingBuffer(
-                new UnsafeBuffer(IoUtil.mapNewFile(file, (1<<24) + TRAILER_LENGTH))
-        );
-
-        final AtomicBoolean running = new AtomicBoolean(true);
-        final MutableDirectBuffer writeBuffer = new ExpandableArrayBuffer();
-        final Runnable producer = () -> {
-            final int len = writeBuffer.putStringAscii(0, "Hello world!");
-            buffer.write(1, writeBuffer, 0, len);
-//            System.out.println("SENT");
-        };
-        final Runnable consumer = () -> {
-            buffer.read((msgTypeId, buf, index, length) -> {
-                final String s = buf.getStringAscii(index);
-//                System.out.println("RECEIVED: " + s);
-                running.set(false);
-            });
-        };
-
-        final Thread server = new Thread(null, () -> {
-            while (running.get()) {
-                producer.run();
-            }
-        }, "server");
-        final Thread client = new Thread(null, () -> {
-            while (running.get()) {
-                consumer.run();
-            }
-        }, "client");
-
-        client.start();
-        server.start();
-
-        client.join();
-        server.join();
-    }
 
     @ParameterizedTest(name = "sendAndReceiveMessages: {0} --> {1}")
     @MethodSource("sendersAndReceivers")
@@ -156,28 +108,23 @@ class MessageStreamTest {
         };
     }
 
-    private static void sleep(final long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (final InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-    }
-
     static Arguments[] sendersAndReceivers() {
         return new Arguments[]{
                 tcpServerSenderAndClientReceiver(),
                 tcpClientSenderAndServerReceiver(),
                 ipcSenderToReceiverFile(),
-//                ipcSenderFileToReceiver()
+                ipcSenderFileToReceiver()
         };
     }
 
     private static Arguments ipcSenderToReceiverFile() {
         final File file = new File("build/stream/ipc-receiver.map");
         final int length = 1 << 24;
-        final IpcConfiguration config = IpcConfiguration.configure();
-
+        final IpcConfiguration config = IpcConfiguration.configure()
+                .senderCardinality(ONE)
+                .maxMessagesReceivedPerPoll(2)
+                .newFileCreateParentDirs(true)
+                .newFileDeleteIfPresent(true);
         return Arguments.of(
                 Ipc.retryOpenSender(file, config),
                 Ipc.newReceiver(file, length, config)
@@ -187,8 +134,11 @@ class MessageStreamTest {
     private static Arguments ipcSenderFileToReceiver() {
         final File file = new File("build/stream/ipc-sender.map");
         final int length = 1 << 24;
-        final IpcConfiguration config = IpcConfiguration.configure();
-
+        final IpcConfiguration config = IpcConfiguration.configure()
+                .senderCardinality(ONE)
+                .maxMessagesReceivedPerPoll(2)
+                .newFileCreateParentDirs(true)
+                .newFileDeleteIfPresent(true);
         return Arguments.of(
                 Ipc.newSender(file, length, config),
                 Ipc.retryOpenReceiver(file, config)

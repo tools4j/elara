@@ -33,7 +33,8 @@ final class IpcContextImpl implements IpcContext {
     private Logger.Factory loggerFactory = Logger.systemLoggerFactory();
     private Cardinality senderCardinality = Cardinality.ONE;
     private int maxMessagesReceivedPerPoll = 1;
-    private int retryOpenInterval = 10;
+    private boolean newFileCreateParentDirs = true;
+    private boolean newFileDeleteIfPresent = false;
 
     @Override
     public Factory loggerFactory() {
@@ -51,8 +52,13 @@ final class IpcContextImpl implements IpcContext {
     }
 
     @Override
-    public int retryOpenInterval() {
-        return retryOpenInterval;
+    public boolean newFileCreateParentDirs() {
+        return newFileCreateParentDirs;
+    }
+
+    @Override
+    public boolean newFileDeleteIfPresent() {
+        return newFileDeleteIfPresent;
     }
 
     @Override
@@ -63,7 +69,7 @@ final class IpcContextImpl implements IpcContext {
 
     @Override
     public IpcContext senderCardinality(final Cardinality cardinality) {
-        this.senderCardinality = requireNonNull(senderCardinality);
+        this.senderCardinality = requireNonNull(cardinality);
         return this;
     }
 
@@ -72,16 +78,29 @@ final class IpcContextImpl implements IpcContext {
         if (maxMessages <= 0) {
             throw new IllegalArgumentException("Max messages received per poll must be positive but was " + maxMessages);
         }
-        this.maxMessagesReceivedPerPoll = requireNonNull(maxMessages);
+        this.maxMessagesReceivedPerPoll = maxMessages;
         return this;
     }
 
     @Override
-    public IpcContext retryOpenInterval(final int interval) {
-        if (interval <= 0) {
-            throw new IllegalArgumentException("Retry open interval must be positive but was " + interval);
-        }
-        this.retryOpenInterval = interval;
+    public IpcContext newFileCreateParentDirs(final boolean create) {
+        this.newFileCreateParentDirs = create;
         return this;
+    }
+
+    @Override
+    public IpcContext newFileDeleteIfPresent(final boolean delete) {
+        this.newFileDeleteIfPresent = delete;
+        return this;
+    }
+
+    @Override
+    public String toString() {
+        return "IpcContext:" +
+                "loggerFactory=" + loggerFactory +
+                "|senderCardinality=" + senderCardinality +
+                "|maxMessagesReceivedPerPoll=" + maxMessagesReceivedPerPoll +
+                "|newFileCreateParentDirs=" + newFileCreateParentDirs +
+                "|newFileDeleteIfPresent=" + newFileDeleteIfPresent;
     }
 }

@@ -29,7 +29,8 @@ public interface IpcContext extends IpcConfiguration {
     IpcContext loggerFactory(Logger.Factory loggerFactory);
     IpcContext senderCardinality(Cardinality cardinality);
     IpcContext maxMessagesReceivedPerPoll(int maxMessages);
-    IpcContext retryOpenInterval(int interval);
+    IpcContext newFileCreateParentDirs(boolean create);
+    IpcContext newFileDeleteIfPresent(boolean delete);
 
     static IpcContext create() {
         return new IpcContextImpl();

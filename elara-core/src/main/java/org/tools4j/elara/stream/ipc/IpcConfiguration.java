@@ -27,10 +27,10 @@ import org.tools4j.elara.logging.Logger;
 
 public interface IpcConfiguration {
     Logger.Factory loggerFactory();
-
     Cardinality senderCardinality();
     int maxMessagesReceivedPerPoll();
-    int retryOpenInterval();
+    boolean newFileCreateParentDirs();
+    boolean newFileDeleteIfPresent();
 
     static IpcContext configure() {
         return IpcContext.create();

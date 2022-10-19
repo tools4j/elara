@@ -38,24 +38,14 @@ import org.tools4j.elara.stream.ipc.impl.RingBufferRetryOpener;
 import java.io.File;
 import java.nio.ByteBuffer;
 
-import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
 import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
 import static org.agrona.concurrent.ringbuffer.RingBufferDescriptor.TRAILER_LENGTH;
 
 public enum Ipc {
     ;
 
-    private static void mkParentDirs(final File file) {
-        final File dir = file.getParentFile();
-        if (dir != null) {
-            IoUtil.ensureDirectoryExists(dir, dir.getAbsolutePath());
-        }
-    }
-
     public static MessageSender newSender(final File file, final int length, final IpcConfiguration config) {
-        mkParentDirs(file);
-        IoUtil.deleteIfExists(file);
-        return new IpcSender(IoUtil.mapNewFile(file, length + TRAILER_LENGTH), config);
+        return new IpcSender(file, length, config);
     }
 
     public static MessageSender openSender(final File file, final IpcConfiguration config) {
@@ -63,21 +53,19 @@ public enum Ipc {
     }
 
     public static MessageSender retryOpenSender(final File file, final IpcConfiguration config) {
-        return new IpcRetryOpenSender(new RingBufferRetryOpener(file, READ_WRITE, config));
+        return new IpcRetryOpenSender(new RingBufferRetryOpener(file, config));
     }
 
     public static MessageReceiver newReceiver(final File file, final int length, final IpcConfiguration config) {
-        mkParentDirs(file);
-        IoUtil.deleteIfExists(file);
-        return new IpcReceiver(IoUtil.mapNewFile(file, length + TRAILER_LENGTH), config);
+        return new IpcReceiver(file, length, config);
     }
 
     public static MessageReceiver openReceiver(final File file, final IpcConfiguration config) {
-        return new IpcReceiver(IoUtil.mapExistingFile(file, READ_ONLY, file.getAbsolutePath()), config);
+        return new IpcReceiver(IoUtil.mapExistingFile(file, READ_WRITE, file.getAbsolutePath()), config);
     }
 
     public static MessageReceiver retryOpenReceiver(final File file, final IpcConfiguration config) {
-        return new IpcRetryOpenReceiver(new RingBufferRetryOpener(file, READ_ONLY, config), config);
+        return new IpcRetryOpenReceiver(new RingBufferRetryOpener(file, config), config);
     }
 
     public static SharedBuffer share(final ByteBuffer buffer, final IpcConfiguration config) {

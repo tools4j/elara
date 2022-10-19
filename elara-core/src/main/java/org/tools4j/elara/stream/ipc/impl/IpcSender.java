@@ -29,6 +29,7 @@ import org.tools4j.elara.send.SendingResult;
 import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.ipc.IpcConfiguration;
 
+import java.io.File;
 import java.nio.ByteBuffer;
 
 import static java.util.Objects.requireNonNull;
@@ -36,6 +37,10 @@ import static java.util.Objects.requireNonNull;
 public class IpcSender extends MessageSender.Buffered {
 
     private final RingBuffer ringBuffer;
+
+    public IpcSender(final File file, final int length, final IpcConfiguration config) {
+        this(RingBuffers.newFileMapped(file, length, config));
+    }
 
     public IpcSender(final ByteBuffer buffer, final IpcConfiguration config) {
         this(RingBuffers.create(buffer, config));

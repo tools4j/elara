@@ -29,24 +29,22 @@ import org.tools4j.elara.stream.ipc.IpcConfiguration;
 
 import java.io.File;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileChannel.MapMode;
 import java.util.function.Supplier;
 
+import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
 import static java.util.Objects.requireNonNull;
 
 public class RingBufferRetryOpener implements Supplier<RingBuffer>, AutoCloseable {
 
     private final File file;
-    private final FileChannel.MapMode mapMode;
     private final IpcConfiguration config;
     private final String description;
     private RingBuffer ringBuffer;
     private boolean closed;
 
-    public RingBufferRetryOpener(final File file,
-                                 final FileChannel.MapMode mapMode,
-                                 final IpcConfiguration config) {
+    public RingBufferRetryOpener(final File file, final IpcConfiguration config) {
         this.file = requireNonNull(file);
-        this.mapMode = requireNonNull(mapMode);
         this.config = requireNonNull(config);
         this.description = file.getAbsolutePath();
     }
@@ -59,7 +57,7 @@ public class RingBufferRetryOpener implements Supplier<RingBuffer>, AutoCloseabl
         if (closed || !file.exists()) {
             return null;
         }
-        ringBuffer = RingBuffers.create(IoUtil.mapExistingFile(file, mapMode, description), config);
+        ringBuffer = RingBuffers.create(IoUtil.mapExistingFile(file, READ_WRITE, description), config);
         return ringBuffer;
     }
 
