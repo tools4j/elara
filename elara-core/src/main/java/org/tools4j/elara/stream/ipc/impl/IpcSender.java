@@ -63,4 +63,8 @@ public class IpcSender extends MessageSender.Buffered {
         RingBuffers.close(ringBuffer);
     }
 
+    @Override
+    public String toString() {
+        return "IpcSender";
+    }
 }

@@ -38,9 +38,9 @@ public class IpcRingBuffer implements SharedBuffer {
 
     private final RingBuffer ringBuffer;
     private final IpcConfiguration config;
+    private final ThreadLocal<MessageSender> senderThreadLocal;
     private MessageSender sender;
     private MessageReceiver receiver;
-    private ThreadLocal<MessageSender> senderThreadLocal;
 
     public IpcRingBuffer(final ByteBuffer buffer, final IpcConfiguration config) {
         this(RingBuffers.create(buffer, config), config);

@@ -82,4 +82,8 @@ public class IpcRetryOpenSender extends MessageSender.Buffered {
         }
     }
 
+    @Override
+    public String toString() {
+        return "IpcRetryOpenSender";
+    }
 }

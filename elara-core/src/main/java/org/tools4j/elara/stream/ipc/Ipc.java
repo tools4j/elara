@@ -45,11 +45,15 @@ import static org.agrona.concurrent.ringbuffer.RingBufferDescriptor.TRAILER_LENG
 public enum Ipc {
     ;
 
-    public static MessageSender newSender(final File file, final int length, final IpcConfiguration config) {
+    private static void mkParentDirs(final File file) {
         final File dir = file.getParentFile();
         if (dir != null) {
             IoUtil.ensureDirectoryExists(dir, dir.getAbsolutePath());
         }
+    }
+
+    public static MessageSender newSender(final File file, final int length, final IpcConfiguration config) {
+        mkParentDirs(file);
         IoUtil.deleteIfExists(file);
         return new IpcSender(IoUtil.mapNewFile(file, length + TRAILER_LENGTH), config);
     }
@@ -63,7 +67,9 @@ public enum Ipc {
     }
 
     public static MessageReceiver newReceiver(final File file, final int length, final IpcConfiguration config) {
-        return new IpcReceiver(IoUtil.mapNewFile(file, length), config);
+        mkParentDirs(file);
+        IoUtil.deleteIfExists(file);
+        return new IpcReceiver(IoUtil.mapNewFile(file, length + TRAILER_LENGTH), config);
     }
 
     public static MessageReceiver openReceiver(final File file, final IpcConfiguration config) {

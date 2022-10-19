@@ -76,4 +76,9 @@ public class IpcRetryOpenReceiver implements MessageReceiver {
         }
         closed = true;
     }
+
+    @Override
+    public String toString() {
+        return "IpcRetryOpenReceiver";
+    }
 }

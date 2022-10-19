@@ -62,4 +62,8 @@ public class IpcReceiver implements MessageReceiver {
         RingBuffers.close(ringBuffer);
     }
 
+    @Override
+    public String toString() {
+        return "IpcReceiver";
+    }
 }

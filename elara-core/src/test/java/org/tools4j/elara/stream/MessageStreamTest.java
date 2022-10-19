@@ -168,12 +168,24 @@ class MessageStreamTest {
         return new Arguments[]{
                 tcpServerSenderAndClientReceiver(),
                 tcpClientSenderAndServerReceiver(),
-//                ipcSenderAndReceiver()
+                ipcSenderToReceiverFile(),
+//                ipcSenderFileToReceiver()
         };
     }
 
-    private static Arguments ipcSenderAndReceiver() {
-        final File file = new File("build/stream/ipc.map");
+    private static Arguments ipcSenderToReceiverFile() {
+        final File file = new File("build/stream/ipc-receiver.map");
+        final int length = 1 << 24;
+        final IpcConfiguration config = IpcConfiguration.configure();
+
+        return Arguments.of(
+                Ipc.retryOpenSender(file, config),
+                Ipc.newReceiver(file, length, config)
+        );
+    }
+
+    private static Arguments ipcSenderFileToReceiver() {
+        final File file = new File("build/stream/ipc-sender.map");
         final int length = 1 << 24;
         final IpcConfiguration config = IpcConfiguration.configure();
 
