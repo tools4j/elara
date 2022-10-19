@@ -28,8 +28,6 @@ import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.send.SendingResult;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * Facilitates sending of messages on arbitrary transport.
  * <p>
@@ -136,69 +134,19 @@ public interface MessageSender extends MessageStream {
      * into a reusable buffer if necessary.
      */
     abstract class Buffered implements MessageSender {
-        private final MutableDirectBuffer buffer;
-        private final BufferingSendingContext context = new BufferingSendingContext();
+        private final BufferingSendingContext context;
 
         public Buffered() {
             this(new ExpandableDirectByteBuffer(4096));
         }
 
         public Buffered(final MutableDirectBuffer buffer) {
-            this.buffer = requireNonNull(buffer);
+            this.context = new BufferingSendingContext(this, buffer);
         }
 
         @Override
         public SendingContext sendingMessage() {
             return context.init();
-        }
-
-        private final class BufferingSendingContext implements SendingContext {
-            boolean closed;
-            BufferingSendingContext init() {
-                if (!closed) {
-                    abort();
-                    throw new IllegalStateException("Sending context not closed");
-                }
-                closed = false;
-                return this;
-            }
-
-            MutableDirectBuffer unclosedBuffer() {
-                if (closed) {
-                    throw new IllegalStateException("Sending context closed");
-                }
-                return buffer;
-            }
-
-            @Override
-            public MutableDirectBuffer buffer() {
-                return unclosedBuffer();
-            }
-
-            @Override
-            public SendingResult send(final int length) {
-                if (length < 0) {
-                    throw new IllegalArgumentException("Length cannot be negative: " + length);
-                }
-                final DirectBuffer buffer = unclosedBuffer();
-                try {
-                    return sendMessage(buffer, 0, length);
-                } finally {
-                    closed = true;
-                }
-            }
-
-            @Override
-            public void abort() {
-                if (!closed) {
-                    closed = true;
-                }
-            }
-
-            @Override
-            public boolean isClosed() {
-                return closed;
-            }
         }
     }
 
