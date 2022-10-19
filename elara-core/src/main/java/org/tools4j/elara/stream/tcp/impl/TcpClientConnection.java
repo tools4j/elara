@@ -24,6 +24,8 @@
 package org.tools4j.elara.stream.tcp.impl;
 
 import org.agrona.CloseHelper;
+import org.agrona.DirectBuffer;
+import org.tools4j.elara.send.SendingResult;
 import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.tcp.ConnectListener;
@@ -118,6 +120,17 @@ public class TcpClientConnection implements TcpConnection {
         String name;
         TcpClientSender() {
             super(TcpClientConnection.this, () -> client);
+        }
+
+        @Override
+        public SendingResult sendMessage(final DirectBuffer buffer, final int offset, final int length) {
+            final SendingResult result = super.sendMessage(buffer, offset, length);
+            if (result != SendingResult.SENT) {
+                if (client != null && client.isClosed()) {
+                    reconnect();
+                }
+            }
+            return result;
         }
 
         @Override

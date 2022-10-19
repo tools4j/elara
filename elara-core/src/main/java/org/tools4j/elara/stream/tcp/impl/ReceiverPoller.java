@@ -49,7 +49,7 @@ final class ReceiverPoller extends TcpPoller {
         this.ringBufferFactory = requireNonNull(ringBufferFactory);
     }
 
-    int selectNow(final SelectionHandler selectionHandler, final Handler messageHandler) {
+    int selectNow(final SelectionHandler selectionHandler, final Handler messageHandler) throws IOException {
         if (this.selectionHandler != selectionHandler) {
             this.selectionHandler = requireNonNull(selectionHandler);
         }

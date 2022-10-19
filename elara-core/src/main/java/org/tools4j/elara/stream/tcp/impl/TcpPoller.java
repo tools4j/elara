@@ -23,7 +23,6 @@
  */
 package org.tools4j.elara.stream.tcp.impl;
 
-import org.agrona.LangUtil;
 import org.agrona.nio.TransportPoller;
 
 import java.io.IOException;
@@ -45,33 +44,28 @@ class TcpPoller extends TransportPoller {
         return selector;
     }
 
-    final int selectNow(final SelectionHandler selectionHandler) {
-        try {
-            selector.selectNow();
-            final int size = selectedKeySet.size();
-            if (size == 0) {
-                return 0;
-            }
-            int result = 0;
-            IOException exception = null;
-            for (int i = 0; i < size; i++) {
-                final SelectionKey key = selectedKeySet.keys()[i];
-                result |= key.readyOps();
-                try {
-                    result |= selectionHandler.onSelectionKey(key);
-                } catch (final IOException e) {
-                    exception = exceptionOrSuppress(exception, e);
-                }
-            }
-            selectedKeySet.clear();
-            if (exception != null) {
-                throw exception;
-            }
-            return result;
-        } catch (final Exception e) {
-            LangUtil.rethrowUnchecked(e);
+    final int selectNow(final SelectionHandler selectionHandler) throws IOException {
+        selector.selectNow();
+        final int size = selectedKeySet.size();
+        if (size == 0) {
+            return 0;
         }
-        return 0;
+        int result = 0;
+        IOException exception = null;
+        for (int i = 0; i < size; i++) {
+            final SelectionKey key = selectedKeySet.keys()[i];
+            result |= key.readyOps();
+            try {
+                result |= selectionHandler.onSelectionKey(key);
+            } catch (final IOException e) {
+                exception = exceptionOrSuppress(exception, e);
+            }
+        }
+        selectedKeySet.clear();
+        if (exception != null) {
+            throw exception;
+        }
+        return result;
     }
 
     boolean isClosed() {

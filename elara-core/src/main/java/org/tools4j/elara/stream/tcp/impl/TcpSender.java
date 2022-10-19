@@ -30,6 +30,7 @@ import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.tcp.TcpConnection;
 import org.tools4j.elara.stream.tcp.impl.TcpPoller.SelectionHandler;
 
+import java.net.ConnectException;
 import java.nio.channels.SelectionKey;
 import java.util.function.Supplier;
 
@@ -66,6 +67,8 @@ class TcpSender extends  MessageSender.Buffered {
                 }
             }
             return connection.isConnected() ? SendingResult.BACK_PRESSURED : SendingResult.DISCONNECTED;
+        } catch (final ConnectException e) {
+            return SendingResult.DISCONNECTED;
         } catch (final Exception e) {
             //FIXME log or handle
             LangUtil.rethrowUnchecked(e);

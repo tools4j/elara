@@ -26,13 +26,15 @@ package org.tools4j.elara.stream.tcp.impl;
 import org.agrona.DirectBuffer;
 import org.tools4j.elara.stream.MessageReceiver.Handler;
 
+import java.io.IOException;
+
 interface TcpEndpoint extends AutoCloseable {
 
     @Override
     void close();
-    int poll();
-    int receive(Handler messageHandler);
-    int send(DirectBuffer buffer, int offset, int length);
+    int poll() throws IOException;
+    int receive(Handler messageHandler) throws IOException;
+    int send(DirectBuffer buffer, int offset, int length) throws IOException;
     boolean isClosed();
 
 }

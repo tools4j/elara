@@ -77,19 +77,19 @@ final class TcpServer implements TcpEndpoint {
     }
 
     @Override
-    public int poll() {
+    public int poll() throws IOException {
         receiverPoller.selectNow(receiverAcceptHandler);
         senderPoller.selectNow(senderAcceptHandler);
         return SelectionHandler.OK;
     }
 
     @Override
-    public int receive(final Handler messageHandler) {
+    public int receive(final Handler messageHandler) throws IOException {
         return receiverPoller.selectNow(receiverAcceptHandler, messageHandler);
     }
 
     @Override
-    public int send(final DirectBuffer buffer, final int offset, final int length) {
+    public int send(final DirectBuffer buffer, final int offset, final int length) throws IOException {
         return senderPoller.selectNow(senderAcceptHandler, buffer, offset, length);
     }
 

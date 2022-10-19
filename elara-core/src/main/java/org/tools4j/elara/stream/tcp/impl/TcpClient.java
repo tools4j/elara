@@ -75,20 +75,20 @@ final class TcpClient implements TcpEndpoint {
     }
 
     @Override
-    public int poll() {
+    public int poll() throws IOException {
         receiverPoller.selectNow(connectHandler);
         senderPoller.selectNow(connectHandler);
         return SelectionHandler.OK;
     }
 
     @Override
-    public int receive(final Handler messageHandler) {
+    public int receive(final Handler messageHandler) throws IOException {
         return receiverPoller.selectNow(connectHandler, messageHandler);
     }
 
     @Override
-    public int send(final DirectBuffer buffer, final int offset, final int length) {
-       return senderPoller.selectNow(connectHandler, buffer, offset, length);
+    public int send(final DirectBuffer buffer, final int offset, final int length) throws IOException {
+        return senderPoller.selectNow(connectHandler, buffer, offset, length);
     }
 
     private int onSelectionKey(final SelectionKey key) throws IOException {

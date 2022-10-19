@@ -56,7 +56,7 @@ class TcpReceiver implements MessageReceiver {
         } catch (final Exception e) {
             //FIXME log or handle
             LangUtil.rethrowUnchecked(e);
-            throw e;
+            return 0;
         }
     }
 

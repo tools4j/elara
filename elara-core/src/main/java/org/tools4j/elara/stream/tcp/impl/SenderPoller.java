@@ -48,7 +48,7 @@ final class SenderPoller extends TcpPoller {
     }
 
     int selectNow(final SelectionHandler selectionHandler,
-                  final DirectBuffer buffer, final int offset, final int length) {
+                  final DirectBuffer buffer, final int offset, final int length) throws IOException {
         if (this.selectionHandler != selectionHandler) {
             this.selectionHandler = requireNonNull(selectionHandler);
         }
