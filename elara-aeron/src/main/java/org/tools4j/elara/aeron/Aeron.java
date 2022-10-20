@@ -71,6 +71,10 @@ public class Aeron implements AutoCloseable {
         return senderFor(aeron.addPublication(channel, streamId));
     }
 
+    public AeronSender openExclusiveIpcSender(final int streamId) {
+        return openExclusiveSender("aeron:ipc", streamId);
+    }
+
     public AeronSender openExclusiveSender(final String channel, final int streamId) {
         return senderFor(aeron.addExclusivePublication(channel, streamId));
     }

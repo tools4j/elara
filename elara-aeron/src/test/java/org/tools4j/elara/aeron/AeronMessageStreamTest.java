@@ -74,7 +74,7 @@ class AeronMessageStreamTest extends MessageStreamTest {
     private static Arguments aeronIpcSenderAndReceiver() {
         final int streamId = 123;
         return Arguments.of(
-                aeron.openIpcSender(streamId),
+                aeron.openExclusiveIpcSender(streamId),
                 aeron.openIpcReceiver(streamId)
         );
     }
