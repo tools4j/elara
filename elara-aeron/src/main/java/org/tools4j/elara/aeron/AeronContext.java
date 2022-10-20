@@ -21,19 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.ipc;
+package org.tools4j.elara.aeron;
 
-import org.tools4j.elara.logging.Logger;
+public interface AeronContext extends AeronConfig {
+    AeronContext  senderInitialBufferSize(int bytes);
+    AeronContext  senderMaxRetriesAfterAdminAction(int maxRetries);
+    AeronContext  receiverFragmentLimit(int limit);
+    AeronContext  receiverFragmentAssemblerInitialBufferSize(int bytes);
 
-public interface IpcConfiguration {
-    Logger.Factory loggerFactory();
-    Cardinality senderCardinality();
-    int senderInitialBufferSize();
-    int maxMessagesReceivedPerPoll();
-    boolean newFileCreateParentDirs();
-    boolean newFileDeleteIfPresent();
-
-    static IpcContext configure() {
-        return IpcContext.create();
+    static AeronContext create() {
+        return new AeronContextImpl();
     }
 }

@@ -21,56 +21,45 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.ipc.impl;
+package org.tools4j.elara.aeron;
 
-import org.agrona.DirectBuffer;
-import org.agrona.concurrent.ringbuffer.RingBuffer;
-import org.tools4j.elara.send.SendingResult;
-import org.tools4j.elara.stream.MessageSender;
-import org.tools4j.elara.stream.ipc.IpcConfiguration;
-
-import java.io.File;
-import java.nio.ByteBuffer;
+import io.aeron.FragmentAssembler;
+import io.aeron.Subscription;
+import org.tools4j.elara.stream.MessageReceiver;
 
 import static java.util.Objects.requireNonNull;
 
-public class IpcSender extends MessageSender.Buffered {
+public class AeronReceiver implements MessageReceiver {
 
-    private final RingBuffer ringBuffer;
+    private final Subscription subscription;
+    private final AeronMessageHandler aeronMessageHandler;
+    private final int fragmentLimit;
+    private String name;
 
-    public IpcSender(final File file, final int length, final IpcConfiguration config) {
-        this(RingBuffers.newFileMapped(file, length, config), config);
-    }
-
-    public IpcSender(final ByteBuffer buffer, final IpcConfiguration config) {
-        this(RingBuffers.create(buffer, config), config);
-    }
-
-    public IpcSender(final RingBuffer ringBuffer, final IpcConfiguration config) {
-        super(config.senderInitialBufferSize());
-        this.ringBuffer = requireNonNull(ringBuffer);
+    public AeronReceiver(final Subscription subscription, final AeronConfig config) {
+        this.subscription = requireNonNull(subscription);
+        this.aeronMessageHandler = new AeronMessageHandler(fragmentHandler -> new FragmentAssembler(fragmentHandler,
+                config.receiverFragmentAssemblerInitialBufferSize(), true));
+        this.fragmentLimit = config.receiverFragmentLimit();
     }
 
     @Override
-    public SendingResult sendMessage(final DirectBuffer buffer, final int offset, final int length) {
-        if (RingBuffers.write(ringBuffer, buffer, offset, length)) {
-            return SendingResult.SENT;
-        }
-        return isClosed() ? SendingResult.CLOSED : SendingResult.BACK_PRESSURED;
+    public int poll(final Handler handler) {
+        return subscription.poll(aeronMessageHandler.init(handler), fragmentLimit);
     }
 
     @Override
     public boolean isClosed() {
-        return RingBuffers.isClosed(ringBuffer);
+        return subscription.isClosed();
     }
 
     @Override
     public void close() {
-        RingBuffers.close(ringBuffer);
+        subscription.close();
     }
 
     @Override
     public String toString() {
-        return "IpcSender";
+        return name != null ? name : (name = "AeronReceiver{" + subscription.channel() + ":" + subscription.streamId() + '}');
     }
 }

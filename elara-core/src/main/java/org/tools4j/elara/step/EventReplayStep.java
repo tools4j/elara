@@ -26,8 +26,6 @@ package org.tools4j.elara.step;
 import org.agrona.DirectBuffer;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.handler.EventHandler;
-import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.elara.plugin.base.SingleEventBaseState;
 import org.tools4j.elara.store.CommittedEventPoller;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.store.MessageStore.Handler;

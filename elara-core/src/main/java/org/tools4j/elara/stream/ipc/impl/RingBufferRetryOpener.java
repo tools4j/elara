@@ -28,8 +28,6 @@ import org.agrona.concurrent.ringbuffer.RingBuffer;
 import org.tools4j.elara.stream.ipc.IpcConfiguration;
 
 import java.io.File;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileChannel.MapMode;
 import java.util.function.Supplier;
 
 import static java.nio.channels.FileChannel.MapMode.READ_WRITE;

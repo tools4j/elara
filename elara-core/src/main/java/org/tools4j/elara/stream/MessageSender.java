@@ -136,8 +136,8 @@ public interface MessageSender extends MessageStream {
     abstract class Buffered implements MessageSender {
         private final BufferingSendingContext context;
 
-        public Buffered() {
-            this(new ExpandableDirectByteBuffer(4096));
+        public Buffered(final int initialBufferSize) {
+            this(new ExpandableDirectByteBuffer(initialBufferSize));
         }
 
         public Buffered(final MutableDirectBuffer buffer) {

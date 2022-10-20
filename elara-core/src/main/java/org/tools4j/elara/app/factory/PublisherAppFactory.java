@@ -24,20 +24,13 @@
 package org.tools4j.elara.app.factory;
 
 import org.agrona.concurrent.Agent;
-import org.tools4j.elara.agent.AllInOneAgent;
 import org.tools4j.elara.agent.PublisherAgent;
-import org.tools4j.elara.app.config.CommandPollingMode;
-import org.tools4j.elara.app.config.EventStoreConfig;
 import org.tools4j.elara.app.config.InOutConfig;
-import org.tools4j.elara.app.type.AllInOneAppConfig;
-import org.tools4j.elara.app.type.PublisherApp;
 import org.tools4j.elara.app.type.PublisherAppConfig;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.stream.MessageStream;
 
 import java.util.Collections;
 import java.util.List;

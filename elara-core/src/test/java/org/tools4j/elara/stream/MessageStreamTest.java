@@ -46,14 +46,14 @@ import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.tools4j.elara.stream.ipc.Cardinality.ONE;
 
-class MessageStreamTest {
+public class MessageStreamTest {
 
-    private static final int MESSAGE_COUNT = 1000;
+    private static final int MESSAGE_COUNT = 1_000;
     private static final int MESSAGE_BYTES = 100;
 
     @ParameterizedTest(name = "sendAndReceiveMessages: {0} --> {1}")
     @MethodSource("sendersAndReceivers")
-    void sendAndReceiveMessages(final MessageSender sender, final MessageReceiver receiver) throws Exception {
+    protected void sendAndReceiveMessages(final MessageSender sender, final MessageReceiver receiver) throws Exception {
         //given
         final LongArrayList senderResults = new LongArrayList();
         final LongArrayList receiverResults = new LongArrayList();
@@ -87,6 +87,7 @@ class MessageStreamTest {
         return () -> {
             final MutableDirectBuffer message = new UnsafeBuffer(new byte[MESSAGE_BYTES]);
             long hash = 0;
+            int retries = 0;
             for (int i = 0; i < MESSAGE_COUNT; i++) {
                 long mhash = 0;
                 for (int j = 0; j < MESSAGE_BYTES; j++) {
@@ -96,10 +97,11 @@ class MessageStreamTest {
                 }
                 hash = hash(hash, mhash);
                 while (sender.sendMessage(message, 0, MESSAGE_BYTES) != SendingResult.SENT) {
-                    //keep going
+                    retries++;
                 }
             }
-            System.out.println(sender + " sent: " + MESSAGE_COUNT + " [" + MESSAGE_BYTES + " bytes each, hash=" + toHexString(hash) + "]");
+            System.out.println(sender + " sent: " + MESSAGE_COUNT + " [" + MESSAGE_BYTES + " bytes each" +
+                    ", retries=" + retries + ", hash=" + toHexString(hash) + "]");
             results.addLong(MESSAGE_COUNT);
             results.addLong(MESSAGE_BYTES);
             results.addLong(hash);
@@ -190,7 +192,7 @@ class MessageStreamTest {
         );
     }
 
-    private static int nextFreePort() {
+    public static int nextFreePort() {
         try (final ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();
         } catch (final IOException e) {

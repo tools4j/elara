@@ -28,6 +28,7 @@ import org.agrona.DirectBuffer;
 import org.agrona.concurrent.ringbuffer.RingBuffer;
 import org.tools4j.elara.send.SendingResult;
 import org.tools4j.elara.stream.MessageSender;
+import org.tools4j.elara.stream.ipc.IpcConfiguration;
 
 import java.util.function.Supplier;
 
@@ -39,7 +40,9 @@ public class IpcRetryOpenSender extends MessageSender.Buffered {
     private RingBuffer ringBuffer;
     private boolean closed;
 
-    public IpcRetryOpenSender(final Supplier<? extends RingBuffer> ringBufferSupplier) {
+    public IpcRetryOpenSender(final Supplier<? extends RingBuffer> ringBufferSupplier,
+                              final IpcConfiguration config) {
+        super(config.senderInitialBufferSize());
         this.ringBufferSupplier = requireNonNull(ringBufferSupplier);
     }
 

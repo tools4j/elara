@@ -28,6 +28,7 @@ import org.tools4j.elara.logging.Logger;
 public interface IpcContext extends IpcConfiguration {
     IpcContext loggerFactory(Logger.Factory loggerFactory);
     IpcContext senderCardinality(Cardinality cardinality);
+    IpcContext senderInitialBufferSize(int bytes);
     IpcContext maxMessagesReceivedPerPoll(int maxMessages);
     IpcContext newFileCreateParentDirs(boolean create);
     IpcContext newFileDeleteIfPresent(boolean delete);

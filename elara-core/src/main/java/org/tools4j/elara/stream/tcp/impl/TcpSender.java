@@ -42,6 +42,7 @@ class TcpSender extends  MessageSender.Buffered {
     private final Supplier<? extends TcpEndpoint> endpointSupplier;
 
     TcpSender(final TcpConnection connection, final Supplier<? extends TcpEndpoint> endpointSupplier) {
+        super(4096);//FIXME configure
         this.connection = requireNonNull(connection);
         this.endpointSupplier = requireNonNull(endpointSupplier);
     }

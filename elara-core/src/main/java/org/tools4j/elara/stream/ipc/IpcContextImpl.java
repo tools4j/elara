@@ -32,6 +32,7 @@ final class IpcContextImpl implements IpcContext {
 
     private Logger.Factory loggerFactory = Logger.systemLoggerFactory();
     private Cardinality senderCardinality = Cardinality.ONE;
+    private int senderInitialBufferSize = 4096;
     private int maxMessagesReceivedPerPoll = 1;
     private boolean newFileCreateParentDirs = true;
     private boolean newFileDeleteIfPresent = false;
@@ -44,6 +45,11 @@ final class IpcContextImpl implements IpcContext {
     @Override
     public Cardinality senderCardinality() {
         return senderCardinality;
+    }
+
+    @Override
+    public int senderInitialBufferSize() {
+        return senderInitialBufferSize;
     }
 
     @Override
@@ -74,6 +80,15 @@ final class IpcContextImpl implements IpcContext {
     }
 
     @Override
+    public IpcContext senderInitialBufferSize(final int bytes) {
+        if (bytes < 0) {
+            throw new IllegalArgumentException("Initial sender buffer size cannot be negative: " + bytes);
+        }
+        senderInitialBufferSize = bytes;
+        return this;
+    }
+
+    @Override
     public IpcContext maxMessagesReceivedPerPoll(final int maxMessages) {
         if (maxMessages <= 0) {
             throw new IllegalArgumentException("Max messages received per poll must be positive but was " + maxMessages);
@@ -99,6 +114,7 @@ final class IpcContextImpl implements IpcContext {
         return "IpcContext:" +
                 "loggerFactory=" + loggerFactory +
                 "|senderCardinality=" + senderCardinality +
+                "|senderInitialBufferSize=" + senderInitialBufferSize +
                 "|maxMessagesReceivedPerPoll=" + maxMessagesReceivedPerPoll +
                 "|newFileCreateParentDirs=" + newFileCreateParentDirs +
                 "|newFileDeleteIfPresent=" + newFileDeleteIfPresent;

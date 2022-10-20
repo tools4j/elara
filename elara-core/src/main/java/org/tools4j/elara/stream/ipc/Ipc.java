@@ -39,7 +39,6 @@ import java.io.File;
 import java.nio.ByteBuffer;
 
 import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
-import static org.agrona.concurrent.ringbuffer.RingBufferDescriptor.TRAILER_LENGTH;
 
 public enum Ipc {
     ;
@@ -53,7 +52,7 @@ public enum Ipc {
     }
 
     public static MessageSender retryOpenSender(final File file, final IpcConfiguration config) {
-        return new IpcRetryOpenSender(new RingBufferRetryOpener(file, config));
+        return new IpcRetryOpenSender(new RingBufferRetryOpener(file, config), config);
     }
 
     public static MessageReceiver newReceiver(final File file, final int length, final IpcConfiguration config) {
