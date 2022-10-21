@@ -29,7 +29,7 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.send.SendingResult;
 
 /**
- * Facilitates sending of messages on arbitrary transport.
+ * Facilitates sending of messages on arbitrary transport media.
  * <p>
  * Message sending can be done in two ways: messages already stored in a buffer can be sent via one of the
  * {@link #sendMessage(DirectBuffer, int, int) sendMessage(..)} methods.  Alternatively the message can be encoded into
@@ -45,16 +45,6 @@ import org.tools4j.elara.send.SendingResult;
  * if {@link SendingContext#send(int) send(..)} is not called for instance due to an exception.
  */
 public interface MessageSender extends MessageStream {
-    /**
-     * Starts sending of a message and returns the sending context with the buffer for to encode the message directly
-     * into the transport buffer.  Encoding and sending is completed with {@link SendingContext#send(int) send(..)}
-     * and is recommended to be performed inside a try-resource block; see {@link MessageSender class documentation} for
-     * an example.
-     *
-     * @return the context for message encoding and sending
-     */
-    SendingContext sendingMessage();
-
     /***
      * Sends the message already encoded in the given buffer.
      *
@@ -64,6 +54,16 @@ public interface MessageSender extends MessageStream {
      * @return the result indicating whether sending was successful, with options to resend after failures
      */
     SendingResult sendMessage(DirectBuffer buffer, int offset, int length);
+
+    /**
+     * Starts sending of a message and returns the sending context with the buffer for to encode the message directly
+     * into the transport buffer.  Encoding and sending is completed with {@link SendingContext#send(int) send(..)}
+     * and is recommended to be performed inside a try-resource block; see {@link MessageSender class documentation} for
+     * an example.
+     *
+     * @return the context for message encoding and sending
+     */
+    SendingContext sendingMessage();
 
     /**
      * Context object returned by {@link #sendingMessage()} allowing for zero copy encoding of messages directly into
@@ -136,10 +136,18 @@ public interface MessageSender extends MessageStream {
     abstract class Buffered implements MessageSender {
         private final BufferingSendingContext context;
 
+        /**
+         * Constructor with initial buffer size
+         * @param initialBufferSize the initial capacity of the buffer used to code messages to
+         */
         public Buffered(final int initialBufferSize) {
             this(new ExpandableDirectByteBuffer(initialBufferSize));
         }
 
+        /**
+         * Constructor with buffer used for messages encoded with this sender
+         * @param buffer the buffer used to code messages to
+         */
         public Buffered(final MutableDirectBuffer buffer) {
             this.context = new BufferingSendingContext(this, buffer);
         }
@@ -150,5 +158,6 @@ public interface MessageSender extends MessageStream {
         }
     }
 
+    /** No-op constant for a message sender that has been closed */
     MessageSender CLOSED = new ClosedMessageSender();
 }

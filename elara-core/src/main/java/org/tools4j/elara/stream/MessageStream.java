@@ -23,8 +23,19 @@
  */
 package org.tools4j.elara.stream;
 
+/**
+ * A message stream is a {@link MessageSender sender} or {@link MessageReceiver receiver} of byte messages.
+ */
 public interface MessageStream extends AutoCloseable {
+    /**
+     * Returns true if this message stream is closed.
+     * @return true if closed
+     */
     boolean isClosed();
+
+    /**
+     * Closes this message stream, rendering it unavailable for subsequent sending or receiving of messages.
+     */
     @Override
     void close();
 }
