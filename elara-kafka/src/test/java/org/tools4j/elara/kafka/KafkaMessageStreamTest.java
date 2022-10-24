@@ -43,14 +43,22 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+
 class KafkaMessageStreamTest extends MessageStreamTest {
 
     private static final String TOPIC = "elara-stream";
 
     private static EmbeddedKafkaCluster cluster;
 
+    static void assumeNotWindows() {
+        final String osName = System.getProperty("os.name");
+        assumeFalse(osName.toLowerCase().contains("win"), "Test is currently supported on windows, os=" + osName);
+    }
+
     @BeforeAll
     static void startKafkaCluster() throws InterruptedException, IOException {
+        assumeNotWindows();
         cluster = new EmbeddedKafkaCluster(1);
         cluster.start();
         cluster.createTopic(TOPIC);

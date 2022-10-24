@@ -52,6 +52,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.tools4j.elara.kafka.KafkaMessageStreamTest.assumeNotWindows;
 import static org.tools4j.elara.store.MessageStore.Handler.Result.POLL;
 
 /**
@@ -64,7 +65,8 @@ class KafkaMessageStoreTest {
     private static EmbeddedKafkaCluster cluster;
 
     @BeforeAll
-    static void startKafkaCluster() throws IOException, InterruptedException {
+    static void startKafkaCluster() throws IOException {
+        assumeNotWindows();
         cluster = new EmbeddedKafkaCluster(1);
         cluster.start();
     }
