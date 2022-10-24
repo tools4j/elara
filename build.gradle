@@ -51,9 +51,11 @@ def chronicleVersion = '5.21.98'
 //def chronicleVersion = '5.20.115' //now fastest ?!? (newest is 123), but still has the garbage!
 //def chronicleVersion = '5.20.109'
 //def chronicleVersion = '5.19.76'
+def kafkaVersion = '3.3.1'
 def slf4jVersion = '2.0.3'
 def junitVersion = '5.9.1'
 def mockitoVersion = '4.8.1'
+def hamcrestVersion = '2.2'
 def hdrHistogramVersion = '2.1.12'
 
 ext {
@@ -406,6 +408,66 @@ project(':elara-aeron') {
 
     signing {
         sign publishing.publications.elaraAeron
+    }
+}
+project(':elara-kafka') {
+    apply plugin: 'maven-publish'
+    apply plugin: 'signing'
+    apply plugin: 'biz.aQute.bnd.builder'
+
+    dependencies {
+        api project(':elara-core')
+        api "org.apache.kafka:kafka-clients:${kafkaVersion}"
+        testCompile project(':elara-core').sourceSets.test.output
+        testCompile "org.apache.kafka:kafka_2.13:${kafkaVersion}"
+        testCompile "org.apache.kafka:kafka_2.13:${kafkaVersion}:test"
+        testCompile "org.apache.kafka:kafka-streams:${kafkaVersion}"
+        testCompile "org.apache.kafka:kafka-streams:${kafkaVersion}:test"
+        testCompile "org.apache.kafka:kafka-clients:${kafkaVersion}:test"
+        testRuntimeOnly "org.hamcrest:hamcrest-core:${hamcrestVersion}"
+    }
+
+    jar {
+        bnd """
+            Automatic-Module-Name:  org.tools4j.elara-kafka
+            Bundle-Name:            org.tools4j.elara-kafka
+            Bundle-SymbolicName:    org.tools4j.elara-kafka
+            Implementation-Title:   Elara
+            Implementation-Vendor:  tools4j.org
+            Implementation-Version: ${projVersion}
+            -exportcontents: org.tools4j.elara, org.tools4j.elara.*
+            # Suppress headers that reduce reproducibility.
+            -reproducible: true
+            -noextraheaders: true
+        """
+    }
+
+    java {
+        withSourcesJar()
+        withJavadocJar()
+    }
+
+    publishing {
+        publications {
+            elaraKafka(MavenPublication) {
+                from components.java
+                pom(projectPom)
+            }
+        }
+
+        repositories {
+            maven {
+                url = !isReleaseVersion ? snapshotsRepoUrl : releasesRepoUrl
+                credentials {
+                    username = ossrhUsername
+                    password = ossrhPassword
+                }
+            }
+        }
+    }
+
+    signing {
+        sign publishing.publications.elaraKafka
     }
 }
 

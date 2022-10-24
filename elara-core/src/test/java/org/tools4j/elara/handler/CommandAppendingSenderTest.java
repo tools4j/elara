@@ -37,6 +37,7 @@ import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.send.CommandAppendingSender;
 import org.tools4j.elara.send.DefaultSenderSupplier;
 import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.store.DirectAppender;
 import org.tools4j.elara.store.MessageStore.Appender;
 import org.tools4j.elara.store.MessageStore.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
@@ -66,7 +67,7 @@ public class CommandAppendingSenderTest {
     @BeforeEach
     public void init() {
         commandStore = new ArrayList<>();
-        senderSupplier = new DefaultSenderSupplier(new CommandAppendingSender(timeSource, new Appender() {
+        senderSupplier = new DefaultSenderSupplier(new CommandAppendingSender(timeSource, new DirectAppender() {
             @Override
             public AppendingContext appending() {
                 return new AppendingContext() {

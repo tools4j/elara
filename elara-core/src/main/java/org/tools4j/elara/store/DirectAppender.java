@@ -21,24 +21,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream;
+package org.tools4j.elara.store;
+
+import org.agrona.DirectBuffer;
+import org.tools4j.elara.store.MessageStore.Appender;
+import org.tools4j.elara.store.MessageStore.AppendingContext;
 
 /**
- * Receiver that is already closed used by {@link MessageReceiver#CLOSED}.
+ * Provides default implementation for stores without direct appending support to encode directly into the store buffer.
  */
-final class ClosedMessageReceiver implements MessageReceiver {
-    @Override
-    public int poll(final Handler handler) {
-        return 0;
-    }
+public interface DirectAppender extends Appender {
 
-    @Override
-    public boolean isClosed() {
-        return true;
-    }
-
-    @Override
-    public void close() {
-        //no-op
+    default void append(DirectBuffer buffer, int offset, int length) {
+        try (final AppendingContext ctxt = appending()) {
+            ctxt.buffer().putBytes(0, buffer, offset, length);
+            ctxt.commit(length);
+        }
     }
 }

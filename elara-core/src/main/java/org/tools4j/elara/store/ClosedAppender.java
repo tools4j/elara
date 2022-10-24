@@ -21,15 +21,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream;
+package org.tools4j.elara.store;
 
-/**
- * Receiver that is already closed used by {@link MessageReceiver#CLOSED}.
- */
-final class ClosedMessageReceiver implements MessageReceiver {
+import org.agrona.DirectBuffer;
+import org.tools4j.elara.store.MessageStore.Appender;
+import org.tools4j.elara.store.MessageStore.AppendingContext;
+
+final class ClosedAppender implements Appender {
+
     @Override
-    public int poll(final Handler handler) {
-        return 0;
+    public AppendingContext appending() {
+        throw new IllegalStateException("Appender is closed");
+    }
+
+    @Override
+    public void append(final DirectBuffer buffer, final int offset, final int length) {
+        throw new IllegalStateException("Appender is closed");
     }
 
     @Override
