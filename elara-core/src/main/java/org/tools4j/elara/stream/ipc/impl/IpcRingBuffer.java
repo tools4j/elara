@@ -53,7 +53,7 @@ public class IpcRingBuffer implements SharedBuffer {
     public IpcRingBuffer(final RingBuffer ringBuffer, final IpcConfiguration config) {
         this.ringBuffer = requireNonNull(ringBuffer);
         this.config = requireNonNull(config);
-        this.senderThreadLocal = ThreadLocal.withInitial(() -> new IpcSender(ringBuffer, config));
+        this.senderThreadLocal = ThreadLocal.withInitial(() -> new IpcBufferedSender(ringBuffer, config));
     }
 
     @Override
@@ -62,7 +62,7 @@ public class IpcRingBuffer implements SharedBuffer {
             if (isClosed()) {
                 return MessageSender.CLOSED;
             }
-            sender = new IpcSender(ringBuffer, config);
+            sender = new IpcBufferedSender(ringBuffer, config);
         }
         return sender;
     }

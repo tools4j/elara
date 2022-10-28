@@ -31,9 +31,9 @@ import org.tools4j.elara.stream.MessageSender.SendingContext;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Sending context used by {@link MessageSender.Buffered}, kept out of MessageSender to keep its interface cleaner.
+ * Buffered sending context for instance used by {@link MessageSender.Buffered}.
  */
-final class BufferingSendingContext implements SendingContext {
+public class BufferingSendingContext implements SendingContext {
     private final MessageSender sender;
     private final MutableDirectBuffer buffer;
     private boolean closed;
@@ -43,7 +43,7 @@ final class BufferingSendingContext implements SendingContext {
         this.buffer = requireNonNull(buffer);
     }
 
-    BufferingSendingContext init() {
+    protected BufferingSendingContext init() {
         if (!closed) {
             abort();
             throw new IllegalStateException("Sending context not closed");
@@ -52,7 +52,7 @@ final class BufferingSendingContext implements SendingContext {
         return this;
     }
 
-    MutableDirectBuffer unclosedBuffer() {
+    private MutableDirectBuffer unclosedBuffer() {
         if (closed) {
             throw new IllegalStateException("Sending context closed");
         }

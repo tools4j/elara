@@ -31,6 +31,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.tools4j.elara.send.SendingResult;
+import org.tools4j.elara.stream.ipc.AllocationStrategy;
 import org.tools4j.elara.stream.ipc.Ipc;
 import org.tools4j.elara.stream.ipc.IpcConfiguration;
 import org.tools4j.elara.stream.tcp.Tcp;
@@ -143,16 +144,28 @@ public class MessageStreamTest {
         return new Arguments[]{
                 tcpServerSenderAndClientReceiver(),
                 tcpClientSenderAndServerReceiver(),
-                ipcSenderToReceiverFile(),
-                ipcSenderFileToReceiver()
+                ipcBufferedSenderToReceiverFile(),
+                ipcBufferedSenderFileToReceiver(),
+                ipcDirectSenderToReceiverFile(),
+                ipcDirectSenderFileToReceiver()
         };
     }
 
-    private static Arguments ipcSenderToReceiverFile() {
-        final File file = new File("build/stream/ipc-receiver.map");
+    private static Arguments ipcBufferedSenderToReceiverFile() {
+        return ipcSenderToReceiverFile(AllocationStrategy.DYNAMIC);
+    }
+
+    private static Arguments ipcDirectSenderToReceiverFile() {
+        return ipcSenderToReceiverFile(AllocationStrategy.FIXED);
+    }
+
+    private static Arguments ipcSenderToReceiverFile(final AllocationStrategy allocationStrategy) {
+        final File file = new File("build/stream/ipc-receiver-" + allocationStrategy + ".map");
         final int length = 1 << 24;
         final IpcConfiguration config = IpcConfiguration.configure()
                 .senderCardinality(ONE)
+                .senderInitialBufferSize(2 * MESSAGE_BYTES)
+                .senderAllocationStrategy(allocationStrategy)
                 .maxMessagesReceivedPerPoll(2)
                 .newFileCreateParentDirs(true)
                 .newFileDeleteIfPresent(true);
@@ -162,11 +175,21 @@ public class MessageStreamTest {
         );
     }
 
-    private static Arguments ipcSenderFileToReceiver() {
-        final File file = new File("build/stream/ipc-sender.map");
+    private static Arguments ipcBufferedSenderFileToReceiver() {
+        return ipcSenderFileToReceiver(AllocationStrategy.DYNAMIC);
+    }
+
+    private static Arguments ipcDirectSenderFileToReceiver() {
+        return ipcSenderFileToReceiver(AllocationStrategy.FIXED);
+    }
+
+    private static Arguments ipcSenderFileToReceiver(final AllocationStrategy allocationStrategy) {
+        final File file = new File("build/stream/ipc-sender-" + allocationStrategy + ".map");
         final int length = 1 << 24;
         final IpcConfiguration config = IpcConfiguration.configure()
                 .senderCardinality(ONE)
+                .senderInitialBufferSize(2 * MESSAGE_BYTES)
+                .senderAllocationStrategy(allocationStrategy)
                 .maxMessagesReceivedPerPoll(2)
                 .newFileCreateParentDirs(true)
                 .newFileDeleteIfPresent(true);

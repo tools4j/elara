@@ -29,6 +29,7 @@ public interface IpcContext extends IpcConfiguration {
     IpcContext loggerFactory(Logger.Factory loggerFactory);
     IpcContext senderCardinality(Cardinality cardinality);
     IpcContext senderInitialBufferSize(int bytes);
+    IpcContext senderAllocationStrategy(AllocationStrategy strategy);
     IpcContext maxMessagesReceivedPerPoll(int maxMessages);
     IpcContext newFileCreateParentDirs(boolean create);
     IpcContext newFileDeleteIfPresent(boolean delete);

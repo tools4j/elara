@@ -28,15 +28,17 @@ import org.agrona.concurrent.AtomicBuffer;
 import org.agrona.concurrent.ringbuffer.RingBuffer;
 import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageSender;
+import org.tools4j.elara.stream.ipc.impl.IpcBufferedSender;
+import org.tools4j.elara.stream.ipc.impl.IpcDirectSender;
 import org.tools4j.elara.stream.ipc.impl.IpcReceiver;
 import org.tools4j.elara.stream.ipc.impl.IpcRetryOpenReceiver;
 import org.tools4j.elara.stream.ipc.impl.IpcRetryOpenSender;
 import org.tools4j.elara.stream.ipc.impl.IpcRingBuffer;
-import org.tools4j.elara.stream.ipc.impl.IpcSender;
 import org.tools4j.elara.stream.ipc.impl.RingBufferRetryOpener;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
 
 import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
 
@@ -44,11 +46,16 @@ public enum Ipc {
     ;
 
     public static MessageSender newSender(final File file, final int length, final IpcConfiguration config) {
-        return new IpcSender(file, length, config);
+        return config.senderAllocationStrategy() == AllocationStrategy.FIXED ?
+                new IpcDirectSender(file, length, config) :
+                new IpcBufferedSender(file, length, config);
     }
 
     public static MessageSender openSender(final File file, final IpcConfiguration config) {
-        return new IpcSender(IoUtil.mapExistingFile(file, READ_WRITE, file.getAbsolutePath()), config);
+        final MappedByteBuffer mappedByteBuffer = IoUtil.mapExistingFile(file, READ_WRITE, file.getAbsolutePath());
+        return config.senderAllocationStrategy() == AllocationStrategy.FIXED ?
+                new IpcDirectSender(mappedByteBuffer, config) :
+                new IpcBufferedSender(mappedByteBuffer, config);
     }
 
     public static MessageSender retryOpenSender(final File file, final IpcConfiguration config) {

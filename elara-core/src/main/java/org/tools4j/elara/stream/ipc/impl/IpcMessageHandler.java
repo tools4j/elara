@@ -29,6 +29,9 @@ import org.agrona.concurrent.MessageHandler;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.stream.MessageReceiver.Handler;
 
+import static org.tools4j.elara.stream.ipc.impl.RingBuffers.LENGTH_PREFIXED_MSG_TYPE_ID;
+import static org.tools4j.elara.stream.ipc.impl.RingBuffers.PLAIN_MSG_TYPE_ID;
+
 final class IpcMessageHandler implements MessageHandler {
 
     private final DirectBuffer message = new UnsafeBuffer(0, 0);
@@ -36,7 +39,14 @@ final class IpcMessageHandler implements MessageHandler {
 
     @Override
     public void onMessage(final int msgTypeId, final MutableDirectBuffer buffer, final int offset, final int length) {
-        message.wrap(buffer, offset, length);
+        if (msgTypeId == PLAIN_MSG_TYPE_ID) {
+            message.wrap(buffer, offset, length);
+        } else if (msgTypeId == LENGTH_PREFIXED_MSG_TYPE_ID) {
+            final int messageLength = buffer.getInt(offset);
+            message.wrap(buffer, offset + Integer.BYTES, messageLength);
+        } else {
+            throw new IllegalArgumentException("Unsupported msgTypeId: " + msgTypeId);
+        }
         handler.onMessage(message);
         message.wrap(0, 0);
     }

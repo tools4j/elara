@@ -23,18 +23,7 @@
  */
 package org.tools4j.elara.stream.ipc;
 
-import org.tools4j.elara.logging.Logger;
-
-public interface IpcConfiguration {
-    Logger.Factory loggerFactory();
-    Cardinality senderCardinality();
-    int senderInitialBufferSize();
-    AllocationStrategy senderAllocationStrategy();
-    int maxMessagesReceivedPerPoll();
-    boolean newFileCreateParentDirs();
-    boolean newFileDeleteIfPresent();
-
-    static IpcContext configure() {
-        return IpcContext.create();
-    }
+public enum AllocationStrategy {
+    FIXED,
+    DYNAMIC
 }

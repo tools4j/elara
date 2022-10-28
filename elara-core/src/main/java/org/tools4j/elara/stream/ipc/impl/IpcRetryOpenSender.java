@@ -23,27 +23,34 @@
  */
 package org.tools4j.elara.stream.ipc.impl;
 
-import org.agrona.CloseHelper;
 import org.agrona.DirectBuffer;
+import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.concurrent.ringbuffer.RingBuffer;
 import org.tools4j.elara.send.SendingResult;
+import org.tools4j.elara.stream.BufferingSendingContext;
 import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.ipc.IpcConfiguration;
 
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.stream.ipc.AllocationStrategy.FIXED;
 
-public class IpcRetryOpenSender extends MessageSender.Buffered {
+public class IpcRetryOpenSender implements MessageSender {
 
     private final Supplier<? extends RingBuffer> ringBufferSupplier;
-    private RingBuffer ringBuffer;
+    private final BiFunction<? super RingBuffer, ? super IpcConfiguration, ? extends MessageSender> senderFactory;
+    private final IpcConfiguration config;
+    private MessageSender sender;
+    private BufferedContext bufferedContext;
     private boolean closed;
 
     public IpcRetryOpenSender(final Supplier<? extends RingBuffer> ringBufferSupplier,
                               final IpcConfiguration config) {
-        super(config.senderInitialBufferSize());
         this.ringBufferSupplier = requireNonNull(ringBufferSupplier);
+        this.senderFactory = config.senderAllocationStrategy() == FIXED ? IpcDirectSender::new : IpcBufferedSender::new;
+        this.config = requireNonNull(config);
     }
 
     @Override
@@ -56,9 +63,9 @@ public class IpcRetryOpenSender extends MessageSender.Buffered {
         if (closed) {
             return;
         }
-        RingBuffers.close(ringBuffer);
-        if (ringBufferSupplier instanceof AutoCloseable) {
-            CloseHelper.quietClose((AutoCloseable)ringBufferSupplier);
+        if (sender != null) {
+            sender.close();
+            sender = null;
         }
         closed = true;
     }
@@ -66,17 +73,14 @@ public class IpcRetryOpenSender extends MessageSender.Buffered {
     @Override
     public SendingResult sendMessage(final DirectBuffer buffer, final int offset, final int length) {
         try {
-            if (ringBuffer == null) {
+            if (sender == null) {
                 if (closed) {
                     return SendingResult.CLOSED;
                 }
-                ringBuffer = ringBufferSupplier.get();
+                sender = tryOpenSender();
             }
-            if (ringBuffer != null) {
-                if (RingBuffers.write(ringBuffer, buffer, offset, length)) {
-                    return SendingResult.SENT;
-                }
-                return SendingResult.BACK_PRESSURED;
+            if (sender != null) {
+                return sender.sendMessage(buffer, offset, length);
             }
             return SendingResult.DISCONNECTED;
         } catch (final Exception e) {
@@ -86,7 +90,43 @@ public class IpcRetryOpenSender extends MessageSender.Buffered {
     }
 
     @Override
+    public SendingContext sendingMessage() {
+        if (sender == null) {
+            if (closed) {
+                return CLOSED.sendingMessage();
+            }
+            sender = tryOpenSender();
+        }
+        if (sender != null) {
+            return sender.sendingMessage();
+        }
+        if (bufferedContext == null) {
+            bufferedContext = new BufferedContext();
+        }
+        return bufferedContext.init();
+    }
+
+    private MessageSender tryOpenSender() {
+        final RingBuffer ringBuffer = ringBufferSupplier.get();
+        if (ringBuffer != null) {
+            return senderFactory.apply(ringBuffer, config);
+        }
+        return null;
+    }
+
+    @Override
     public String toString() {
         return "IpcRetryOpenSender";
+    }
+
+    private final class BufferedContext extends BufferingSendingContext {
+        BufferedContext() {
+            super(IpcRetryOpenSender.this, new ExpandableDirectByteBuffer(config.senderInitialBufferSize()));
+        }
+
+        @Override
+        protected BufferingSendingContext init() {
+            return super.init();
+        }
     }
 }

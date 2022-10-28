@@ -34,19 +34,19 @@ import java.nio.ByteBuffer;
 
 import static java.util.Objects.requireNonNull;
 
-public class IpcSender extends MessageSender.Buffered {
+public class IpcBufferedSender extends MessageSender.Buffered {
 
     private final RingBuffer ringBuffer;
 
-    public IpcSender(final File file, final int length, final IpcConfiguration config) {
+    public IpcBufferedSender(final File file, final int length, final IpcConfiguration config) {
         this(RingBuffers.newFileMapped(file, length, config), config);
     }
 
-    public IpcSender(final ByteBuffer buffer, final IpcConfiguration config) {
+    public IpcBufferedSender(final ByteBuffer buffer, final IpcConfiguration config) {
         this(RingBuffers.create(buffer, config), config);
     }
 
-    public IpcSender(final RingBuffer ringBuffer, final IpcConfiguration config) {
+    public IpcBufferedSender(final RingBuffer ringBuffer, final IpcConfiguration config) {
         super(config.senderInitialBufferSize());
         this.ringBuffer = requireNonNull(ringBuffer);
     }
@@ -71,6 +71,6 @@ public class IpcSender extends MessageSender.Buffered {
 
     @Override
     public String toString() {
-        return "IpcSender";
+        return "IpcBufferedSender";
     }
 }

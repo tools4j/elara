@@ -39,10 +39,11 @@ import static org.agrona.concurrent.ringbuffer.RingBufferDescriptor.TRAILER_LENG
 
 enum RingBuffers {
     ;
-    private static final int MSG_TYPE_ID = 1;
+    static final int PLAIN_MSG_TYPE_ID = 1;
+    static final int LENGTH_PREFIXED_MSG_TYPE_ID = 2;
 
     static boolean write(final RingBuffer ringBuffer, final DirectBuffer buffer, final int offset, final int length) {
-        if (ringBuffer.write(MSG_TYPE_ID, buffer, offset, length)) {
+        if (ringBuffer.write(PLAIN_MSG_TYPE_ID, buffer, offset, length)) {
             return true;
         }
         if (length <= ringBuffer.maxMsgLength()) {
