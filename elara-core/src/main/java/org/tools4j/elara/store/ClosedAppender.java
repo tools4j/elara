@@ -21,54 +21,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream;
+package org.tools4j.elara.store;
 
 import org.agrona.DirectBuffer;
-import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.store.MessageStore.Handler.Result;
+import org.tools4j.elara.store.MessageStore.Appender;
+import org.tools4j.elara.store.MessageStore.AppendingContext;
 
-import static java.util.Objects.requireNonNull;
+final class ClosedAppender implements Appender {
 
-public class StorePollingMessageReceiver implements MessageReceiver {
-
-    private final MessageStore.Poller messageStorePoller;
-    private final MessageStore.Handler storeHandler = this::onMessage;
-    private Handler receiverHandler;
-
-    public StorePollingMessageReceiver(final MessageStore messageStore) {
-        this(messageStore.poller());
-    }
-
-    public StorePollingMessageReceiver(final MessageStore.Poller messageStorePoller) {
-        this.messageStorePoller = requireNonNull(messageStorePoller);
+    @Override
+    public AppendingContext appending() {
+        throw new IllegalStateException("Appender is closed");
     }
 
     @Override
-    public String toString() {
-        return "StorePollingMessageReceiver";
-    }
-
-    @Override
-    public int poll(final Handler handler) {
-        requireNonNull(handler);
-        if (receiverHandler != handler) {
-            receiverHandler = handler;
-        }
-        return messageStorePoller.poll(storeHandler);
-    }
-
-    private Result onMessage(final DirectBuffer buffer) {
-        receiverHandler.onMessage(buffer);
-        return Result.POLL;
+    public void append(final DirectBuffer buffer, final int offset, final int length) {
+        throw new IllegalStateException("Appender is closed");
     }
 
     @Override
     public boolean isClosed() {
-        return messageStorePoller.isClosed();
+        return true;
     }
 
     @Override
     public void close() {
-        messageStorePoller.close();
+        //no-op
     }
 }
