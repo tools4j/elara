@@ -44,6 +44,11 @@ public class StorePollingMessageReceiver implements MessageReceiver {
     }
 
     @Override
+    public String toString() {
+        return "StorePollingMessageReceiver";
+    }
+
+    @Override
     public int poll(final Handler handler) {
         requireNonNull(handler);
         if (receiverHandler != handler) {

@@ -35,7 +35,7 @@ import static java.util.Objects.requireNonNull;
 public class BufferingSendingContext implements SendingContext {
     private final MessageSender sender;
     private final MutableDirectBuffer buffer;
-    private boolean closed;
+    private boolean closed = true;
 
     public BufferingSendingContext(final MessageSender sender, final MutableDirectBuffer buffer) {
         this.sender = requireNonNull(sender);

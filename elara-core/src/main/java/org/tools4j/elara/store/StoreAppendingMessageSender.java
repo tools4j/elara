@@ -66,6 +66,11 @@ public class StoreAppendingMessageSender implements MessageSender {
         messageStoreAppender.close();
     }
 
+    @Override
+    public String toString() {
+        return "StoreAppendingMessageSender";
+    }
+
     private static final class SendingContext implements MessageSender.SendingContext {
 
         AppendingContext context;

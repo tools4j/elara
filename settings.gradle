@@ -3,4 +3,5 @@ include (
     'elara-core',
     'elara-chronicle',
     'elara-aeron',
+    'elara-kafka',
     'elara-samples')

@@ -30,6 +30,7 @@ import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.store.MessageStore.Appender;
 import org.tools4j.elara.store.MessageStore.AppendingContext;
 import org.tools4j.elara.store.MessageStore.Handler;
@@ -48,14 +49,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.tools4j.elara.store.MessageStore.Handler.Result.POLL;
 
 /**
- * Unit test for {@link ChronicleMessageStore}.
+ * Unit test for {@link MessageStore}.
  */
-class ChronicleMessageStoreTest {
+class MessageStoreTest {
 
     @Test
     public void appendAndPoll(final TestInfo testInfo) {
         //given
-        final ChronicleMessageStore messageStore = chronicleMessageStore(testInfo);
+        final MessageStore messageStore = chronicleMessageStore(testInfo);
 
         //when + then
         final DirectBuffer[] messages = append(messageStore);
@@ -68,7 +69,7 @@ class ChronicleMessageStoreTest {
     @Test
     public void appending(final TestInfo testInfo) {
         //given
-        final ChronicleMessageStore messageStore = chronicleMessageStore(testInfo);
+        final MessageStore messageStore = chronicleMessageStore(testInfo);
 
         //when + then
         final DirectBuffer[] messages = appending(messageStore);
@@ -80,7 +81,7 @@ class ChronicleMessageStoreTest {
     public void appendingFromMultipleThreads(final TestInfo testInfo) throws InterruptedException {
         //given
         final int nThreads = 5;
-        final ChronicleMessageStore messageStore = chronicleMessageStore(testInfo);
+        final MessageStore messageStore = chronicleMessageStore(testInfo);
         ConcurrentLinkedQueue<DirectBuffer> messageQueue = new ConcurrentLinkedQueue<>();
 
         //when
@@ -107,7 +108,7 @@ class ChronicleMessageStoreTest {
     @Test
     public void appendingWithAbort(final TestInfo testInfo) {
         //given
-        final ChronicleMessageStore messageStore = chronicleMessageStore(testInfo);
+        final MessageStore messageStore = chronicleMessageStore(testInfo);
 
         //when + then
         final DirectBuffer[] messages = appendingWithAbort(messageStore);
@@ -176,7 +177,7 @@ class ChronicleMessageStoreTest {
         assertEquals(1, poller.sequence(), "[secondEntryId]poller.sequence");
     }
 
-    private DirectBuffer[] append(final ChronicleMessageStore messageStore) {
+    private DirectBuffer[] append(final MessageStore messageStore) {
         //given
         final DirectBuffer[] messages = new DirectBuffer[]{
                 message("Hi!"),
@@ -196,7 +197,7 @@ class ChronicleMessageStoreTest {
         return messages;
     }
 
-    private DirectBuffer[] appending(final ChronicleMessageStore messageStore) {
+    private DirectBuffer[] appending(final MessageStore messageStore) {
         //given
         final DirectBuffer[] messages = new DirectBuffer[]{
                 message("Hi!"),
@@ -219,7 +220,7 @@ class ChronicleMessageStoreTest {
         return messages;
     }
 
-    private DirectBuffer[] appendingWithAbort(final ChronicleMessageStore messageStore) {
+    private DirectBuffer[] appendingWithAbort(final MessageStore messageStore) {
         //given
         final DirectBuffer[] messages = new DirectBuffer[]{
                 message("Hi!"),

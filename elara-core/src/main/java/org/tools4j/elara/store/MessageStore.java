@@ -36,17 +36,13 @@ public interface MessageStore extends AutoCloseable {
 
 
     interface Appender extends AutoCloseable {
-        default void append(DirectBuffer buffer, int offset, int length) {
-            try (final AppendingContext ctxt = appending()) {
-                ctxt.buffer().putBytes(0, buffer, offset, length);
-                ctxt.commit(length);
-            }
-        }
+        void append(DirectBuffer buffer, int offset, int length);
         AppendingContext appending();
-
         boolean isClosed();
         @Override
         void close();
+
+        Appender CLOSED = new ClosedAppender();
     }
 
     interface Poller extends AutoCloseable {

@@ -27,6 +27,9 @@ import org.agrona.DirectBuffer;
 import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
 
+/**
+ * Sender that is already closed used by {@link MessageSender#CLOSED}.
+ */
 final class ClosedMessageSender implements MessageSender {
 
     private final ClosedSenderContext sendingContext = new ClosedSenderContext();
@@ -49,6 +52,11 @@ final class ClosedMessageSender implements MessageSender {
     @Override
     public void close() {
         //no-op
+    }
+
+    @Override
+    public String toString() {
+        return "ClosedMessageSender";
     }
 
     private static final class ClosedSenderContext implements SendingContext {

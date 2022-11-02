@@ -21,29 +21,37 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream;
+package org.tools4j.elara.kafka;
 
-/**
- * Receiver that is already closed used by {@link MessageReceiver#CLOSED}.
- */
-final class ClosedMessageReceiver implements MessageReceiver {
-    @Override
-    public int poll(final Handler handler) {
-        return 0;
+import org.agrona.DirectBuffer;
+import org.agrona.concurrent.UnsafeBuffer;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.Serializer;
+
+enum Codec {
+    ;
+    static final ByteArrayDeserializer BYTE_ARRAY_DESERIALIZER = new ByteArrayDeserializer();
+    static final Serializer<DirectBuffer> DIRECT_BUFFER_SERIALIZER = (topic, data) -> toByteArray(data);
+
+    static Deserializer<DirectBuffer> directBufferDeserializer() {
+        final DirectBuffer view = new UnsafeBuffer(0, 0);
+        return (topic, data) -> {
+            view.wrap(data);
+            return view;
+        };
     }
 
-    @Override
-    public boolean isClosed() {
-        return true;
+    static <T> Serializer<T> cast(final Serializer<? super T> serializer) {
+        //NOTE: this cast is totally safe, it is just to fix poor use of generics in Kafka
+        //noinspection unchecked
+        return (Serializer<T>)(serializer);
     }
 
-    @Override
-    public void close() {
-        //no-op
+    private static byte[] toByteArray(final DirectBuffer data) {
+        final byte[] bytes = new byte[data.capacity()];
+        data.getBytes(0, bytes);
+        return bytes;
     }
 
-    @Override
-    public String toString() {
-        return "ClosedMessageReceiver";
-    }
 }
