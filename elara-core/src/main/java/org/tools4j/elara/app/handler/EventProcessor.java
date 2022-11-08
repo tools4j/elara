@@ -60,9 +60,9 @@ public interface EventProcessor {
     }
 
     /**
-     * Invoked to process the given event.  This can be the most recently received event, or a deferred event that is
-     * processed after bringing the application state up to date.  Returning {@link Ack#DEFERRED} if the no command was
-     * in-flight has no effect and is ignored.
+     * Invoked to process the given event.  This can be the event most recently received, or a deferred event that is
+     * now processed after having brought the application state up to date.  Returning {@link Ack#DEFERRED} if no
+     * command was in-flight will be processed immediately and have the same effect as returning {@link Ack#PROCESSED}.
      *
      * @param event         the processed event (most recent or deferred)
      * @param context       context with information about processed and most-recent event

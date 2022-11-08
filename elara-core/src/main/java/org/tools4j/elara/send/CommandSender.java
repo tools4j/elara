@@ -28,6 +28,7 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.command.CommandType;
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.stream.SendingResult;
 
 /**
  * Facilitates sending of commands when

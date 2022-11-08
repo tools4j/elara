@@ -53,9 +53,9 @@ import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.CommandSender.SendingContext;
 import org.tools4j.elara.send.SenderSupplier;
-import org.tools4j.elara.send.SendingResult;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore.Handler.Result;
+import org.tools4j.elara.stream.SendingResult;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.function.Supplier;

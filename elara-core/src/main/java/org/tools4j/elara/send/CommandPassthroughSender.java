@@ -37,6 +37,7 @@ import org.tools4j.elara.plugin.base.EventIdApplier;
 import org.tools4j.elara.store.ExpandableDirectBuffer;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.store.MessageStore.AppendingContext;
+import org.tools4j.elara.stream.SendingResult;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;

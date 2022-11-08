@@ -27,8 +27,8 @@ import org.tools4j.elara.app.config.EventStreamContext;
 import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.store.MessageStore.Poller;
+import org.tools4j.elara.store.StorePollingMessageReceiver;
 import org.tools4j.elara.stream.MessageReceiver;
-import org.tools4j.elara.stream.StorePollingMessageReceiver;
 
 import static java.util.Objects.requireNonNull;
 

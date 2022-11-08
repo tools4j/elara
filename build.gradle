@@ -243,6 +243,60 @@ subprojects {
     }
 }
 
+project(':elara-stream') {
+    apply plugin: 'maven-publish'
+    apply plugin: 'signing'
+    apply plugin: 'biz.aQute.bnd.builder'
+    apply plugin: 'io.freefair.javadoc-links'
+
+    dependencies {
+        api "org.agrona:agrona:${agronaVersion}"
+    }
+
+    jar {
+        bnd """
+            Automatic-Module-Name:  org.tools4j.elara-stream
+            Bundle-Name:            org.tools4j.elara-stream
+            Bundle-SymbolicName:    org.tools4j.elara-stream
+            Implementation-Title:   Elara
+            Implementation-Vendor:  tools4j.org
+            Implementation-Version: ${projVersion}
+            -exportcontents: org.tools4j.elara, org.tools4j.elara.*
+            # Suppress headers that reduce reproducibility.
+            -reproducible: true
+            -noextraheaders: true
+        """
+    }
+
+    java {
+        withSourcesJar()
+        withJavadocJar()
+    }
+
+    publishing {
+        publications {
+            elaraStream(MavenPublication) {
+                from components.java
+                pom(projectPom)
+            }
+        }
+
+        repositories {
+            maven {
+                url = !isReleaseVersion ? snapshotsRepoUrl : releasesRepoUrl
+                credentials {
+                    username = ossrhUsername
+                    password = ossrhPassword
+                }
+            }
+        }
+    }
+
+    signing {
+        sign publishing.publications.elaraStream
+    }
+}
+
 project(':elara-core') {
     apply plugin: 'maven-publish'
     apply plugin: 'signing'
@@ -251,6 +305,7 @@ project(':elara-core') {
 
     dependencies {
         api "org.agrona:agrona:${agronaVersion}"
+        api project(':elara-stream')
     }
 
     jar {
@@ -361,7 +416,7 @@ project(':elara-aeron') {
         api project(':elara-core')
         api "io.aeron:aeron-client:${aeronVersion}"
         api "org.agrona:agrona:${agronaVersion}"
-        testCompile project(':elara-core').sourceSets.test.output
+        testCompile project(':elara-stream').sourceSets.test.output
         testCompile "io.aeron:aeron-driver:${aeronVersion}"
     }
 

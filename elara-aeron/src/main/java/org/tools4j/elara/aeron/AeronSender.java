@@ -25,8 +25,8 @@ package org.tools4j.elara.aeron;
 
 import io.aeron.Publication;
 import org.agrona.DirectBuffer;
-import org.tools4j.elara.send.SendingResult;
 import org.tools4j.elara.stream.MessageSender;
+import org.tools4j.elara.stream.SendingResult;
 
 import static java.util.Objects.requireNonNull;
 

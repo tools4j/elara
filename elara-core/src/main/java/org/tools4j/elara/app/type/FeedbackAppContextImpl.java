@@ -25,8 +25,8 @@ package org.tools4j.elara.app.type;
 
 import org.agrona.concurrent.Agent;
 import org.tools4j.elara.store.MessageStore;
+import org.tools4j.elara.store.StoreAppendingMessageSender;
 import org.tools4j.elara.stream.MessageSender;
-import org.tools4j.elara.stream.StoreAppendingMessageSender;
 
 import static java.util.Objects.requireNonNull;
 
