@@ -23,8 +23,9 @@
  */
 package org.tools4j.elara.stream.tcp;
 
-import org.tools4j.elara.stream.tcp.TcpConfiguration.ClientConfiguration;
-import org.tools4j.elara.stream.tcp.TcpConfiguration.ServerConfiguration;
+import org.tools4j.elara.stream.tcp.config.TcpClientConfiguration;
+import org.tools4j.elara.stream.tcp.config.TcpConfiguration;
+import org.tools4j.elara.stream.tcp.config.TcpServerConfiguration;
 import org.tools4j.elara.stream.tcp.impl.TcpClientConnection;
 import org.tools4j.elara.stream.tcp.impl.TcpServerConnection;
 
@@ -38,12 +39,11 @@ public enum Tcp {
     }
 
     public static TcpConnection bind(final SocketAddress address) {
-//        return bind(address, null);//FIXME configure
-        return new TcpServerConnection(address, (serverChannel, clientChannel, key) -> {}, 4096);
+        return bind(address, TcpConfiguration.configureServer().populateDefaults());
     }
 
-    public static TcpConnection bind(final SocketAddress address, final ServerConfiguration configuration) {
-        return new TcpServerConnection(address, configuration.acceptListener(), 4096);
+    public static TcpConnection bind(final SocketAddress address, final TcpServerConfiguration configuration) {
+        return new TcpServerConnection(address, configuration.acceptListener(), configuration.bufferCapacity());
     }
 
     public static TcpConnection connect(final String address, final int port) {
@@ -51,12 +51,11 @@ public enum Tcp {
     }
 
     public static TcpConnection connect(final SocketAddress address) {
-//        return connect(address, null);//FIXME configure
-        return new TcpClientConnection(address, (channel, key) -> {}, 4096);
+        return connect(address, TcpConfiguration.configureClient().populateDefaults());
     }
 
-    public static TcpConnection connect(final SocketAddress address, final ClientConfiguration configuration) {
-        return new TcpClientConnection(address, configuration.connectListener(), 4096);
+    public static TcpConnection connect(final SocketAddress address, final TcpClientConfiguration configuration) {
+        return new TcpClientConnection(address, configuration.connectListener(), configuration.bufferCapacity());
     }
 
 }

@@ -23,6 +23,7 @@
  */
 package org.tools4j.elara.logging;
 
+import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.logging.Logger.Level.INFO;
 
 public interface Logger {
@@ -49,5 +50,24 @@ public interface Logger {
 
     static Logger.Factory systemLoggerFactory() {
         return OutputStreamLogger.SYSTEM_FACTORY;
+    }
+
+    static Logger threadSafe(final Logger logger) {
+        requireNonNull(logger);
+        return new Logger() {
+            @Override
+            public void log(final Level level, final CharSequence message) {
+                synchronized (logger) {
+                    logger.log(level, message);
+                }
+            }
+
+            @Override
+            public void logStackTrace(final Level level, final Throwable t) {
+                synchronized (logger) {
+                    logger.logStackTrace(level, t);
+                }
+            }
+        };
     }
 }

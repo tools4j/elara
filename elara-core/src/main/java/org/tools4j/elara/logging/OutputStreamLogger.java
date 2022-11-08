@@ -94,6 +94,7 @@ public class OutputStreamLogger implements Logger {
         writer.print(' ');
         printMessage(writer, message);
         writer.println();
+        writer.flush();
     }
 
     private void printMessage(final PrintWriter writer, final CharSequence message) {

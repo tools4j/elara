@@ -21,41 +21,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.logging;
+package org.tools4j.elara.stream.tcp.config;
 
-import org.tools4j.elara.logging.Logger.Factory;
-import org.tools4j.elara.logging.Logger.Level;
+import org.tools4j.elara.stream.tcp.AcceptListener;
 
-public interface ElaraLogger {
+public interface TcpServerConfiguration extends TcpConfiguration {
+    int acceptConnectionsMax();
 
-    static ElaraLogger create(final Factory loggerFactory, final Class<?> clazz) {
-        return DefaultElaraLogger.create(loggerFactory.create(clazz));
+    DisconnectPolicy disconnectPolicy();
+
+    SendingStrategy sendingStrategy();
+
+    AcceptListener acceptListener();
+
+    enum DisconnectPolicy {
+        DISCONNECT_NEWEST,
+        DISCONNECT_OLDEST
     }
 
-    static ElaraLogger threadSafe(final Factory loggerFactory, final Class<?> clazz) {
-        return DefaultElaraLogger.threadLocal(Logger.threadSafe(loggerFactory.create(clazz)));
+    enum SendingStrategy {
+        MULTICAST,
+        SINGLE_NEWEST,
+        SINGLE_ROUND_ROBIN
     }
 
-    PlaceholderReplacer log(Level level, String message);
-
-    void logStackTrace(Level level, Throwable t);
-
-    boolean isEnabled(Level level);
-
-    default PlaceholderReplacer error(final String message) {
-        return log(Level.ERROR, message);
-    }
-    default PlaceholderReplacer warn(final String message) {
-        return log(Level.WARN, message);
-    }
-    default PlaceholderReplacer info(final String message) {
-        return log(Level.INFO, message);
-    }
-    default PlaceholderReplacer debug(final String message) {
-        return log(Level.DEBUG, message);
-    }
-
-    default void logStackTrace(Throwable t) {
-        logStackTrace(Level.ERROR, t);
+    static TcpServerContext configure() {
+        return TcpServerContext.create();
     }
 }

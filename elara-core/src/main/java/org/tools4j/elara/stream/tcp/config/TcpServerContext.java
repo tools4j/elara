@@ -21,41 +21,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.logging;
+package org.tools4j.elara.stream.tcp.config;
 
-import org.tools4j.elara.logging.Logger.Factory;
-import org.tools4j.elara.logging.Logger.Level;
+import org.tools4j.elara.logging.Logger;
+import org.tools4j.elara.stream.tcp.AcceptListener;
 
-public interface ElaraLogger {
+public interface TcpServerContext extends TcpServerConfiguration {
+    TcpServerContext loggerFactory(Logger.Factory factory);
+    TcpServerContext bufferCapacity(int capacity);
+    TcpServerContext acceptConnectionsMax(int acceptConnectionsMax);
+    TcpServerContext disconnectPolicy(DisconnectPolicy policy);
+    TcpServerContext sendingStrategy(SendingStrategy strategy);
+    TcpServerContext acceptListener(AcceptListener listener);
+    TcpServerContext populateDefaults();
 
-    static ElaraLogger create(final Factory loggerFactory, final Class<?> clazz) {
-        return DefaultElaraLogger.create(loggerFactory.create(clazz));
-    }
-
-    static ElaraLogger threadSafe(final Factory loggerFactory, final Class<?> clazz) {
-        return DefaultElaraLogger.threadLocal(Logger.threadSafe(loggerFactory.create(clazz)));
-    }
-
-    PlaceholderReplacer log(Level level, String message);
-
-    void logStackTrace(Level level, Throwable t);
-
-    boolean isEnabled(Level level);
-
-    default PlaceholderReplacer error(final String message) {
-        return log(Level.ERROR, message);
-    }
-    default PlaceholderReplacer warn(final String message) {
-        return log(Level.WARN, message);
-    }
-    default PlaceholderReplacer info(final String message) {
-        return log(Level.INFO, message);
-    }
-    default PlaceholderReplacer debug(final String message) {
-        return log(Level.DEBUG, message);
-    }
-
-    default void logStackTrace(Throwable t) {
-        logStackTrace(Level.ERROR, t);
+    static TcpServerContext create() {
+        return new TcpContextImpl();
     }
 }

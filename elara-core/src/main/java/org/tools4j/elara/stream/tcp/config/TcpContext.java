@@ -21,41 +21,36 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp;
+package org.tools4j.elara.stream.tcp.config;
 
 import org.tools4j.elara.logging.Logger;
+import org.tools4j.elara.stream.tcp.AcceptListener;
+import org.tools4j.elara.stream.tcp.ConnectListener;
 
-public interface TcpConfiguration {
-    Logger.Factory loggerFactory();
-    int bufferCapacity();
+public interface TcpContext extends TcpClientContext, TcpServerContext {
+    @Override
+    TcpContext loggerFactory(Logger.Factory factory);
+    @Override
+    TcpContext bufferCapacity(int capacity);
 
-    interface ClientConfiguration extends TcpConfiguration {
-        /**
-         * Returns the timeout in milliseconds after which new reconnect attempts are made;
-         * returning zero or a negative value disables reconnect attempts altogether.
-         *
-         * @return reconnect timeout in milliseconds, zero or negative to not attempt at all
-         */
-        long reconnectTimeoutMillis();
-        ConnectListener connectListener();
+    @Override
+    TcpContext reconnectTimeoutMillis(long timeoutMillis);
+    @Override
+    TcpContext connectListener(ConnectListener listener);
+
+    @Override
+    TcpContext acceptConnectionsMax(int acceptConnectionsMax);
+    @Override
+    TcpContext disconnectPolicy(DisconnectPolicy policy);
+    @Override
+    TcpContext sendingStrategy(SendingStrategy strategy);
+    @Override
+    TcpContext acceptListener(AcceptListener listener);
+
+    @Override
+    TcpContext populateDefaults();
+
+    static TcpContext create() {
+        return new TcpContextImpl();
     }
-
-    interface ServerConfiguration extends TcpConfiguration {
-        int acceptConnectionsMax();
-        DisconnectPolicy disconnectPolicy();
-        SendingStrategy sendingStrategy();
-        AcceptListener acceptListener();
-
-        enum DisconnectPolicy {
-            DISCONNECT_NEWEST,
-            DISCONNECT_OLDEST
-        }
-
-        enum SendingStrategy {
-            MULTICAST,
-            SINGLE_NEWEST,
-            SINGLE_ROUND_ROBIN
-        }
-    }
-
 }
