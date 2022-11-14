@@ -413,7 +413,7 @@ project(':elara-aeron') {
     apply plugin: 'biz.aQute.bnd.builder'
 
     dependencies {
-        api project(':elara-core')
+        api project(':elara-stream')
         api "io.aeron:aeron-client:${aeronVersion}"
         api "org.agrona:agrona:${agronaVersion}"
         testCompile project(':elara-stream').sourceSets.test.output
