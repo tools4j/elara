@@ -30,11 +30,11 @@ buildscript {
 }
 
 plugins {
-    id 'java-library'
     id 'idea'
-    id 'io.freefair.javadoc-links' version '4.1.6' apply false
-    id 'biz.aQute.bnd.builder' version '5.0.0' apply false
-    id "com.github.hierynomus.license" version "0.15.0" apply false
+    id 'java-library'
+    id 'io.freefair.javadoc-links' version '6.5.1' apply false
+    id 'biz.aQute.bnd.builder' version '6.3.1' apply false
+    id 'com.github.hierynomus.license' version "0.16.1" apply false
 }
 
 defaultTasks 'clean', 'build'
@@ -43,7 +43,7 @@ def projGroup = 'org.tools4j'
 def projVersion = file('version.txt').text.trim()
 
 def agronaVersion = '1.17.1'
-def aeronVersion = '1.39.0'
+def aeronVersion = '1.40.0'
 //def chronicleVersion = '5.23ea23'//just under 3.0M/s
 //def chronicleVersion = '5.21.99'
 def chronicleVersion = '5.21.98'
@@ -123,8 +123,11 @@ allprojects {
 
 subprojects {
     apply plugin: 'java-library'
-    apply plugin: 'license'
-    //apply plugin: 'io.freefair.javadoc-links'
+    apply plugin: 'com.github.hierynomus.license'
+    apply plugin: 'maven-publish'
+    apply plugin: 'signing'
+    apply plugin: 'biz.aQute.bnd.builder'
+    apply plugin: 'io.freefair.javadoc-links'
 
     dependencies {
         testImplementation "org.mockito:mockito-junit-jupiter:${mockitoVersion}"
@@ -246,11 +249,6 @@ subprojects {
 }
 
 project(':elara-stream') {
-    apply plugin: 'maven-publish'
-    apply plugin: 'signing'
-    apply plugin: 'biz.aQute.bnd.builder'
-    apply plugin: 'io.freefair.javadoc-links'
-
     dependencies {
         api "org.agrona:agrona:${agronaVersion}"
     }
@@ -300,11 +298,6 @@ project(':elara-stream') {
 }
 
 project(':elara-core') {
-    apply plugin: 'maven-publish'
-    apply plugin: 'signing'
-    apply plugin: 'biz.aQute.bnd.builder'
-    apply plugin: 'io.freefair.javadoc-links'
-
     dependencies {
         api "org.agrona:agrona:${agronaVersion}"
         api project(':elara-stream')
@@ -355,10 +348,6 @@ project(':elara-core') {
 }
 
 project(':elara-chronicle') {
-    apply plugin: 'maven-publish'
-    apply plugin: 'signing'
-    apply plugin: 'biz.aQute.bnd.builder'
-
     dependencies {
         api project(':elara-core')
         api "net.openhft:chronicle-queue:${chronicleVersion}"
@@ -410,16 +399,12 @@ project(':elara-chronicle') {
 }
 
 project(':elara-aeron') {
-    apply plugin: 'maven-publish'
-    apply plugin: 'signing'
-    apply plugin: 'biz.aQute.bnd.builder'
-
     dependencies {
         api project(':elara-stream')
         api "io.aeron:aeron-client:${aeronVersion}"
         api "org.agrona:agrona:${agronaVersion}"
-        testCompile project(':elara-stream').sourceSets.test.output
-        testCompile "io.aeron:aeron-driver:${aeronVersion}"
+        testImplementation project(':elara-stream').sourceSets.test.output
+        testImplementation "io.aeron:aeron-driver:${aeronVersion}"
     }
 
     jar {
@@ -466,19 +451,15 @@ project(':elara-aeron') {
     }
 }
 project(':elara-kafka') {
-    apply plugin: 'maven-publish'
-    apply plugin: 'signing'
-    apply plugin: 'biz.aQute.bnd.builder'
-
     dependencies {
         api project(':elara-stream')
         api "org.apache.kafka:kafka-clients:${kafkaVersion}"
-        testCompile project(':elara-stream').sourceSets.test.output
-        testCompile "org.apache.kafka:kafka_2.13:${kafkaVersion}"
-        testCompile "org.apache.kafka:kafka_2.13:${kafkaVersion}:test"
-        testCompile "org.apache.kafka:kafka-streams:${kafkaVersion}"
-        testCompile "org.apache.kafka:kafka-streams:${kafkaVersion}:test"
-        testCompile "org.apache.kafka:kafka-clients:${kafkaVersion}:test"
+        testImplementation project(':elara-stream').sourceSets.test.output
+        testImplementation "org.apache.kafka:kafka_2.13:${kafkaVersion}"
+        testImplementation "org.apache.kafka:kafka_2.13:${kafkaVersion}:test"
+        testImplementation "org.apache.kafka:kafka-streams:${kafkaVersion}"
+        testImplementation "org.apache.kafka:kafka-streams:${kafkaVersion}:test"
+        testImplementation "org.apache.kafka:kafka-clients:${kafkaVersion}:test"
         testRuntimeOnly "org.hamcrest:hamcrest-core:${hamcrestVersion}"
     }
 
@@ -527,9 +508,6 @@ project(':elara-kafka') {
 }
 
 project(':elara-samples') {
-    apply plugin: 'maven-publish'
-    apply plugin: 'signing'
-
     dependencies {
         api project(':elara-core')
         api project(':elara-chronicle')
