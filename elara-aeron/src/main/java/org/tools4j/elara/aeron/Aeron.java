@@ -44,7 +44,7 @@ public class Aeron implements AutoCloseable {
     }
 
     public static Aeron connect(final AeronConfig config) {
-        return new Aeron(io.aeron.Aeron.connect(), config);
+        return use(io.aeron.Aeron.connect(), config);
     }
 
     public static Aeron connect(final Context context) {
@@ -52,7 +52,15 @@ public class Aeron implements AutoCloseable {
     }
 
     public static Aeron connect(final Context context, final AeronConfig config) {
-        return new Aeron(io.aeron.Aeron.connect(context), config);
+        return use(io.aeron.Aeron.connect(context), config);
+    }
+
+    public static Aeron use(final io.aeron.Aeron aeron) {
+        return new Aeron(aeron, AeronConfig.configure());
+    }
+
+    public static Aeron use(final io.aeron.Aeron aeron, final AeronConfig config) {
+        return new Aeron(aeron, config);
     }
 
     public io.aeron.Aeron aeron() {
@@ -63,16 +71,8 @@ public class Aeron implements AutoCloseable {
         return config;
     }
 
-    public AeronSender openIpcSender(final int streamId) {
-        return openSender("aeron:ipc", streamId);
-    }
-
     public AeronSender openSender(final String channel, final int streamId) {
         return senderFor(aeron.addPublication(channel, streamId));
-    }
-
-    public AeronSender openExclusiveIpcSender(final int streamId) {
-        return openExclusiveSender("aeron:ipc", streamId);
     }
 
     public AeronSender openExclusiveSender(final String channel, final int streamId) {
@@ -83,16 +83,20 @@ public class Aeron implements AutoCloseable {
         return new AeronSender(publication, config);
     }
 
-    public AeronReceiver openIpcReceiver(final int streamId) {
-        return openReceiver("aeron:ipc", streamId);
+    public AeronReceiver openReceiver(final String channel, final int streamId) {
+        return openReceiver(channel, streamId, true);
     }
 
-    public AeronReceiver openReceiver(final String channel, final int streamId) {
-        return receiverFor(aeron.addSubscription(channel, streamId));
+    public AeronReceiver openReceiver(final String channel, final int streamId, final boolean useFragmentAssembler) {
+        return receiverFor(aeron.addSubscription(channel, streamId), useFragmentAssembler);
     }
 
     public AeronReceiver receiverFor(final Subscription subscription) {
-        return new AeronReceiver(subscription, config);
+        return receiverFor(subscription, true);
+    }
+
+    public AeronReceiver receiverFor(final Subscription subscription, final boolean useFragmentAssembler) {
+        return new AeronReceiver(subscription, config, useFragmentAssembler);
     }
 
     public boolean isClosed() {

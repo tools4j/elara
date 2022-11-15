@@ -23,8 +23,9 @@
  */
 package org.tools4j.elara.aeron;
 
-import io.aeron.FragmentAssembler;
 import io.aeron.Subscription;
+import io.aeron.logbuffer.FragmentHandler;
+import io.aeron.logbuffer.Header;
 import org.tools4j.elara.stream.MessageReceiver;
 
 import static java.util.Objects.requireNonNull;
@@ -36,11 +37,25 @@ public class AeronReceiver implements MessageReceiver {
     private final int fragmentLimit;
     private String name;
 
-    public AeronReceiver(final Subscription subscription, final AeronConfig config) {
+    public AeronReceiver(final Subscription subscription, final AeronConfig config, final boolean useFragmentAssembler) {
         this.subscription = requireNonNull(subscription);
-        this.aeronMessageHandler = new AeronMessageHandler(fragmentHandler -> new FragmentAssembler(fragmentHandler,
-                config.receiverFragmentAssemblerInitialBufferSize(), true));
+        this.aeronMessageHandler = new AeronMessageHandler(config, useFragmentAssembler);
         this.fragmentLimit = config.receiverFragmentLimit();
+    }
+
+    /**
+     * @return the underlying aeron subscription
+     */
+    public Subscription subscription() {
+        return subscription;
+    }
+
+    /**
+     * Header passed to {@link FragmentHandler}, only non-null during {@link #poll(Handler) poll(..)} invocation.
+     * @return the fragment header (of last fragment for assembled messages), or null if not currently polling
+     */
+    public Header header() {
+        return aeronMessageHandler.fragmentHeader();
     }
 
     @Override

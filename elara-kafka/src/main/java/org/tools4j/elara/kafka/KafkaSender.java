@@ -85,6 +85,14 @@ public class KafkaSender extends MessageSender.Buffered {
         return buffer -> new ProducerRecord<>(topic, keySerializer.serialize(topic, buffer), valueSerializer.serialize(topic, buffer));
     }
 
+    /**
+     * Returns the underlying Kafka producer, or null if this sender has already been closed.
+     * @return underlying Kafka producer, or null if closed.
+     */
+    public Producer<?, ?> producer() {
+        return recordSender.producer;
+    }
+
     @Override
     public SendingResult sendMessage(final DirectBuffer buffer, final int offset, final int length) {
         if (recordSender != null) {

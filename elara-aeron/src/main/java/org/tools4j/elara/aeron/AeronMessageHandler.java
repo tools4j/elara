@@ -30,39 +30,38 @@ import org.agrona.DirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.stream.MessageReceiver.Handler;
 
-import java.util.function.Function;
-
-final class AeronMessageHandler implements FragmentHandler {
-
-    private final FragmentHandler fragmentAssembler;
+final class AeronMessageHandler {
     private final DirectBuffer message = new UnsafeBuffer(0, 0);
+    private final FragmentHandler fragmentHandler;
+    private Header fragmentHeader;
     private Handler handler;
 
-    AeronMessageHandler(final Function<? super FragmentHandler, ? extends FragmentAssembler> assemblerFactory) {
-        this.fragmentAssembler = assemblerFactory.apply(
-                (FragmentHandler)(buffer, offset, length, header) -> onMessage(buffer, offset, length)
-        );
+    AeronMessageHandler(final AeronConfig config, final boolean useFragmentAssembler) {
+        this.fragmentHandler = useFragmentAssembler ?
+                new FragmentAssembler(this::onFragment, config.receiverFragmentAssemblerInitialBufferSize(), true) :
+                this::onFragment;
+
     }
 
-    AeronMessageHandler init(final Handler handler) {
+    FragmentHandler init(final Handler handler) {
         if (this.handler != handler) {
             this.handler = handler;
         }
-        return this;
+        return fragmentHandler;
     }
 
-    @Override
-    public void onFragment(final DirectBuffer buffer, final int offset, final int length, final Header header) {
-        fragmentAssembler.onFragment(buffer, offset, length, header);
+    Header fragmentHeader() {
+        return fragmentHeader;
     }
 
-    private void onMessage(final DirectBuffer buffer, final int offset, final int length) {
+    private void onFragment(final DirectBuffer buffer, final int offset, final int length, final Header header) {
         try {
             message.wrap(buffer, offset, length);
+            fragmentHeader = header;
             handler.onMessage(message);
         } finally {
+            fragmentHeader = null;
             message.wrap(0, 0);
         }
     }
-
 }

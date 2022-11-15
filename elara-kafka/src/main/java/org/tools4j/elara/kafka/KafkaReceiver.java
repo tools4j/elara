@@ -58,6 +58,22 @@ public class KafkaReceiver implements MessageReceiver {
         return record -> valueDeserializer.deserialize(record.topic(), record.headers(), record.value());
     }
 
+    /**
+     * Returns the underlying Kafka consumer, or null if this receiver has already been closed.
+     * @return underlying Kafka consumer, or null if closed.
+     */
+    public Consumer<?, ?> consumer() {
+        return recordReceiver.consumer;
+    }
+
+    /**
+     * Consumer record associated with message currently handled, only non-null during {@link #poll(Handler) poll(..)} invocation.
+     * @return the current consumer record, or null if not currently polling
+     */
+    public ConsumerRecord<?, ?> consumerRecord() {
+        return recordReceiver.consumerRecord;
+    }
+
     @Override
     public int poll(final Handler handler) {
         return recordReceiver.poll(handler);
@@ -84,6 +100,7 @@ public class KafkaReceiver implements MessageReceiver {
     private static class RecordReceiver<K, V> implements java.util.function.Consumer<ConsumerRecord<K, V>> {
         Consumer<K, V> consumer;
         Handler handler;
+        ConsumerRecord<K, V> consumerRecord;
         final Function<? super ConsumerRecord<K, V>, ? extends DirectBuffer> recordTranslator;
         final Duration pollDuration;
 
@@ -97,7 +114,12 @@ public class KafkaReceiver implements MessageReceiver {
 
         @Override
         public void accept(final ConsumerRecord<K, V> record) {
-            handler.onMessage(recordTranslator.apply(record));
+            consumerRecord = record;
+            try {
+                handler.onMessage(recordTranslator.apply(record));
+            } finally {
+                consumerRecord = null;
+            }
         }
 
         int poll(final Handler handler) {
@@ -107,7 +129,6 @@ public class KafkaReceiver implements MessageReceiver {
             if (consumer != null) {
                 final ConsumerRecords<K, V> records = consumer.poll(pollDuration);
                 records.forEach(this);
-                consumer.commitAsync();
                 return records.count();
             }
             return 0;

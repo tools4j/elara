@@ -42,6 +42,13 @@ public class AeronSender extends MessageSender.Buffered {
         this.maxRetriesAfterAdminAction = config.senderMaxRetriesAfterAdminAction();
     }
 
+    /**
+     * @return the underlying aeron publication
+     */
+    public Publication publication() {
+        return publication;
+    }
+
     @Override
     public SendingResult sendMessage(final DirectBuffer buffer, final int offset, final int length) {
         long result = publication.offer(buffer, offset, length);

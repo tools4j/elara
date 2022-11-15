@@ -74,8 +74,8 @@ class AeronMessageStreamTest extends MessageStreamTest {
     private static Arguments aeronIpcSenderAndReceiver() {
         final int streamId = 123;
         return Arguments.of(
-                aeron.openExclusiveIpcSender(streamId),
-                aeron.openIpcReceiver(streamId)
+                aeron.openExclusiveSender("aeron:ipc", streamId),
+                aeron.openReceiver("aeron:ipc", streamId, false)
         );
     }
 
@@ -85,7 +85,7 @@ class AeronMessageStreamTest extends MessageStreamTest {
         final String url = "aeron:udp?endpoint=localhost:" + port;
         return Arguments.of(
                 aeron.openSender(url, streamId),
-                aeron.openReceiver(url, streamId)
+                aeron.openReceiver(url, streamId, false)
         );
     }
 }
