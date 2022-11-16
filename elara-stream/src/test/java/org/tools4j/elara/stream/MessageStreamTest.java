@@ -48,7 +48,7 @@ import static org.tools4j.elara.stream.ipc.Cardinality.ONE;
 
 public class MessageStreamTest {
 
-    private static final int MESSAGE_COUNT = 1_000;
+    private static final long MESSAGE_COUNT = 1_000;
     private static final int MESSAGE_BYTES = 100;
 
     @ParameterizedTest(name = "sendAndReceiveMessages: {0} --> {1}")
@@ -88,6 +88,7 @@ public class MessageStreamTest {
             final MutableDirectBuffer message = new UnsafeBuffer(new byte[MESSAGE_BYTES]);
             long hash = 0;
             int retries = 0;
+            long timeStart = 0;
             for (int i = 0; i < MESSAGE_COUNT; i++) {
                 long mhash = 0;
                 for (int j = 0; j < MESSAGE_BYTES; j++) {
@@ -96,12 +97,18 @@ public class MessageStreamTest {
                     mhash = hash(mhash, val);
                 }
                 hash = hash(hash, mhash);
+                long time = i == 0 ? System.nanoTime() : 0;
                 while (sender.sendMessage(message, 0, MESSAGE_BYTES) != SendingResult.SENT) {
                     retries++;
+                    time = i == 0 ? System.nanoTime() : 0;
+                }
+                if (i == 0) {
+                    timeStart = time;
                 }
             }
+            final long timeEnd = System.nanoTime();
             System.out.println(sender + " sent: " + MESSAGE_COUNT + " [" + MESSAGE_BYTES + " bytes each" +
-                    ", retries=" + retries + ", hash=" + toHexString(hash) + "]");
+                    ", retries=" + retries + ", time=" + (timeEnd - timeStart) / 1e9f + "s, hash=" + toHexString(hash) + "]");
             results.addLong(MESSAGE_COUNT);
             results.addLong(MESSAGE_BYTES);
             results.addLong(hash);
@@ -114,6 +121,7 @@ public class MessageStreamTest {
             final long[] bytesPtr = {0};
             final int[] receivedPtr = {0};
             final long[] hashPtr = {0};
+            final long[] times = {0, 0};
             final MessageReceiver.Handler handler = message -> {
                 long hash = 0;
                 for (int i = 0; i < message.capacity(); i++) {
@@ -126,13 +134,20 @@ public class MessageStreamTest {
             };
             int count = 0;
             while (bytesPtr[0] < MESSAGE_COUNT * MESSAGE_BYTES) {
+                final long time = count == 0 ? System.nanoTime() : 0;
                 final int polled = receiver.poll(handler);
                 if (polled > 0) {
+                    if (count == 0) {
+                        times[0] = time;
+                    }
+                    count += polled;
                 }
-                count += polled;
             }
-//            assert count == receivedPtr[0];
-            System.out.println(receiver + " received: " + receivedPtr[0] + " [" + (bytesPtr[0] / receivedPtr[0]) + " bytes each, " + bytesPtr[0] + " bytes total, hash=" + toHexString(hashPtr[0]) + ")");
+            times[1] = System.nanoTime();
+//            assert count == receivedPtr[0];//does not hold for TCP due to connect which also returns polled > 0
+            System.out.println(receiver + " received: " + receivedPtr[0] + " [" + (bytesPtr[0] / receivedPtr[0]) +
+                    " bytes each, " + bytesPtr[0] + " bytes total, time=" + (times[1] - times[0]) / 1e9f +
+                    "s, hash=" + toHexString(hashPtr[0]) + ")");
             results.addLong(receivedPtr[0]);
             results.addLong(bytesPtr[0] / receivedPtr[0]);
             results.addLong(hashPtr[0]);
@@ -146,7 +161,7 @@ public class MessageStreamTest {
                 ipcBufferedSenderToReceiverFile(),
                 ipcBufferedSenderFileToReceiver(),
                 ipcDirectSenderToReceiverFile(),
-                ipcDirectSenderFileToReceiver()
+                ipcDirectSenderFileToReceiver(),
         };
     }
 
@@ -184,7 +199,7 @@ public class MessageStreamTest {
 
     private static Arguments ipcSenderFileToReceiver(final AllocationStrategy allocationStrategy) {
         final File file = new File("build/stream/ipc-sender-" + allocationStrategy + ".map");
-        final int length = 1 << 24;
+        final int length = 1 << 14;
         final IpcConfiguration config = IpcConfiguration.configure()
                 .senderCardinality(ONE)
                 .senderInitialBufferSize(2 * MESSAGE_BYTES)
