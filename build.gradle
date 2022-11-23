@@ -52,6 +52,9 @@ def chronicleVersion = '5.21.98'
 //def chronicleVersion = '5.20.109'
 //def chronicleVersion = '5.19.76'
 def kafkaVersion = '3.3.1'
+def websocketApiVersion = '2.1.0'
+def tyrusStandaloneClientVersion="2.1.1"
+def jettyWebsocketVersion="11.0.12"
 def slf4jVersion = '2.0.3'
 def junitVersion = '5.9.1'
 def mockitoVersion = '4.8.1'
@@ -127,7 +130,8 @@ subprojects {
     apply plugin: 'maven-publish'
     apply plugin: 'signing'
     apply plugin: 'biz.aQute.bnd.builder'
-    apply plugin: 'io.freefair.javadoc-links'
+    //seems very slow:
+    //apply plugin: 'io.freefair.javadoc-links'
 
     dependencies {
         testImplementation "org.mockito:mockito-junit-jupiter:${mockitoVersion}"
@@ -450,6 +454,7 @@ project(':elara-aeron') {
         sign publishing.publications.elaraAeron
     }
 }
+
 project(':elara-kafka') {
     dependencies {
         api project(':elara-stream')
@@ -504,6 +509,61 @@ project(':elara-kafka') {
 
     signing {
         sign publishing.publications.elaraKafka
+    }
+}
+
+project(':elara-websocket') {
+    dependencies {
+        api project(':elara-stream')
+        api "org.agrona:agrona:${agronaVersion}"
+        api "jakarta.websocket:jakarta.websocket-api:${websocketApiVersion}"
+        api "jakarta.websocket:jakarta.websocket-client-api:${websocketApiVersion}"
+        testImplementation project(':elara-stream').sourceSets.test.output
+        //testImplementation "org.glassfish.tyrus.bundles:tyrus-standalone-client:${tyrusStandaloneClientVersion}"
+        testImplementation "org.eclipse.jetty.websocket:websocket-jakarta-client:${jettyWebsocketVersion}"
+    }
+
+    jar {
+        bnd """
+            Automatic-Module-Name:  org.tools4j.elara-websocket
+            Bundle-Name:            org.tools4j.elara-websocket
+            Bundle-SymbolicName:    org.tools4j.elara-websocket
+            Implementation-Title:   Elara
+            Implementation-Vendor:  tools4j.org
+            Implementation-Version: ${projVersion}
+            -exportcontents: org.tools4j.elara, org.tools4j.elara.*
+            # Suppress headers that reduce reproducibility.
+            -reproducible: true
+            -noextraheaders: true
+        """
+    }
+
+    java {
+        withSourcesJar()
+        withJavadocJar()
+    }
+
+    publishing {
+        publications {
+            elaraWebsocket(MavenPublication) {
+                from components.java
+                pom(projectPom)
+            }
+        }
+
+        repositories {
+            maven {
+                url = !isReleaseVersion ? snapshotsRepoUrl : releasesRepoUrl
+                credentials {
+                    username = ossrhUsername
+                    password = ossrhPassword
+                }
+            }
+        }
+    }
+
+    signing {
+        sign publishing.publications.elaraWebsocket
     }
 }
 
