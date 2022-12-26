@@ -1,5 +1,3 @@
-import java.time.Year
-
 /*
 The MIT License (MIT)
 
@@ -22,7 +20,9 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
- */
+*/
+import java.time.Year
+
 buildscript {
     repositories {
         mavenCentral()
@@ -519,8 +519,8 @@ project(':elara-websocket') {
         api "jakarta.websocket:jakarta.websocket-api:${websocketApiVersion}"
         api "jakarta.websocket:jakarta.websocket-client-api:${websocketApiVersion}"
         testImplementation project(':elara-stream').sourceSets.test.output
-        //testImplementation "org.glassfish.tyrus.bundles:tyrus-standalone-client:${tyrusStandaloneClientVersion}"
         testImplementation "org.eclipse.jetty.websocket:websocket-jakarta-client:${jettyWebsocketVersion}"
+        testImplementation "org.eclipse.jetty.websocket:websocket-jakarta-server:${jettyWebsocketVersion}"
     }
 
     jar {

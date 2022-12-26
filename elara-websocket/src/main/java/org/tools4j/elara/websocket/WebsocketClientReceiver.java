@@ -23,10 +23,6 @@
  */
 package org.tools4j.elara.websocket;
 
-import org.agrona.DirectBuffer;
-import org.agrona.concurrent.UnsafeBuffer;
-import org.tools4j.elara.stream.MessageReceiver;
-
 import jakarta.websocket.ClientEndpointConfig;
 import jakarta.websocket.CloseReason;
 import jakarta.websocket.Endpoint;
@@ -34,10 +30,13 @@ import jakarta.websocket.EndpointConfig;
 import jakarta.websocket.MessageHandler;
 import jakarta.websocket.Session;
 import jakarta.websocket.WebSocketContainer;
+import org.agrona.DirectBuffer;
+import org.agrona.concurrent.UnsafeBuffer;
+import org.tools4j.elara.stream.MessageReceiver;
+
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayDeque;
-import java.util.Queue;
+import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.Objects.requireNonNull;
@@ -48,9 +47,9 @@ public class WebsocketClientReceiver implements MessageReceiver {
     private final ClientEndpointConfig config;
     private final URI path;
     private final Endpoint endpoint = new ClientEndpoint();
-    private final Queue<byte[]> messages = new ArrayDeque<>();
+    private final ByteFragmentStore byteFragmentStore = new ByteFragmentStore(4096, 256);//FIXME config
     private final AtomicBoolean closed = new AtomicBoolean();
-    private final DirectBuffer buffer = new UnsafeBuffer(0, 0);
+    private final DirectBuffer view = new UnsafeBuffer(0, 0);
     private Session session;
     private boolean error;
 
@@ -77,10 +76,7 @@ public class WebsocketClientReceiver implements MessageReceiver {
         if (session == null) {
             reconnect();
         }
-        final byte[] message;
-        synchronized (this) {
-            message = messages.poll();
-        }
+        final DirectBuffer message = byteFragmentStore.readNext(view);
         if (message != null) {
             handle(message, handler);
             return 1;
@@ -88,12 +84,11 @@ public class WebsocketClientReceiver implements MessageReceiver {
         return 0;
     }
 
-    private void handle(final byte[] message, final Handler handler) {
+    private void handle(final DirectBuffer message, final Handler handler) {
         try {
-            buffer.wrap(message);
-            handler.onMessage(buffer);
+            handler.onMessage(message);
         } finally {
-            buffer.wrap(0, 0);
+            byteFragmentStore.consume(message);
         }
     }
 
@@ -107,7 +102,7 @@ public class WebsocketClientReceiver implements MessageReceiver {
         closed.set(true);
     }
 
-    private class ClientEndpoint extends Endpoint implements MessageHandler.Whole<byte[]> {
+    private class ClientEndpoint extends Endpoint implements MessageHandler.Partial<ByteBuffer> {
         @Override
         public void onOpen(final Session session, final EndpointConfig config) {
             synchronized (WebsocketClientReceiver.this) {
@@ -142,10 +137,9 @@ public class WebsocketClientReceiver implements MessageReceiver {
         }
 
         @Override
-        public void onMessage(final byte[] message) {
-            synchronized (WebsocketClientReceiver.this) {
-                messages.add(message);
-            }
+        public void onMessage(final ByteBuffer partialMessage, final boolean last) {
+            byteFragmentStore.add(partialMessage, last);
         }
     }
+
 }
