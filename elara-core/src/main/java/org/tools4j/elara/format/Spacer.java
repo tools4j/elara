@@ -37,8 +37,8 @@ enum Spacer {
      *
      * @param formatter             original formatter to get the value
      * @param spaceChar             the space character
-     * @param placeholderToSpaceOut the place holders for which to replace value with space chars
-     * @return formatter that spaces out some of the values
+     * @param placeholderToSpaceOut the placeholders for which to replace value with space chars
+     * @return formatter that spaces out some values
      */
     static <M> ValueFormatter<M> spacer(final ValueFormatter<M> formatter, final char spaceChar, final String... placeholderToSpaceOut) {
         requireNonNull(formatter);
