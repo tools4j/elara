@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2022 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,20 +21,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.impl;
+package org.tools4j.elara.stream.nio;
 
 import org.agrona.DirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ByteChannel;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
-final class SenderPoller extends TcpPoller {
+public final class SenderPoller extends NioPoller {
 
     private final Supplier<? extends RingBuffer> ringBufferFactory;
     private final DirectBuffer readBuffer = new UnsafeBuffer(0, 0);
@@ -42,12 +42,12 @@ final class SenderPoller extends TcpPoller {
 
     private SelectionHandler selectionHandler = SelectionHandler.NO_OP;
 
-    SenderPoller(final Supplier<? extends RingBuffer> ringBufferFactory) {
+    public SenderPoller(final Supplier<? extends RingBuffer> ringBufferFactory) {
         this.ringBufferFactory = requireNonNull(ringBufferFactory);
     }
 
-    int selectNow(final SelectionHandler selectionHandler,
-                  final DirectBuffer buffer, final int offset, final int length) throws IOException {
+    public int selectNow(final SelectionHandler selectionHandler,
+                         final DirectBuffer buffer, final int offset, final int length) throws IOException {
         if (this.selectionHandler != selectionHandler) {
             this.selectionHandler = requireNonNull(selectionHandler);
         }
@@ -63,26 +63,24 @@ final class SenderPoller extends TcpPoller {
         if (!key.isWritable()) {
             return SelectionHandler.OK;
         }
-        final SocketChannel channel = (SocketChannel) key.channel();
+        final ByteChannel channel = (ByteChannel) key.channel();
         final RingBuffer ringBuffer = SelectionKeyAttachments.fetchOrAttach(key, ringBufferFactory);
-        final boolean tryWrite = writeRemaining(channel, ringBuffer);
+        result = checkCacheMessageLengthAndPayload(ringBuffer);
+        if (result != SelectionHandler.OK) {
+            if (result != SelectionHandler.BACK_PRESSURE || !writeRemaining(channel, ringBuffer)) {
+                return result;
+            }
+        }
         result = checkCacheMessageLengthAndPayload(ringBuffer);
         if (result != SelectionHandler.OK) {
             return result;
         }
-        if (tryWrite) {
-            if (writeMessageLength(channel, ringBuffer)) {
-                writeOrCacheMessagePayload(channel, ringBuffer);
-            } else {
-                cacheMessagePayload(ringBuffer);
-            }
-        } else {
-            cacheMessageLengthAndPayload(ringBuffer);
-        }
+        cacheMessageLengthAndPayload(ringBuffer);
+        writeRemaining(channel, ringBuffer);
         return SelectionHandler.OK;
     }
 
-    private boolean writeRemaining(final SocketChannel channel, final RingBuffer ringBuffer) throws IOException {
+    private boolean writeRemaining(final ByteChannel channel, final RingBuffer ringBuffer) throws IOException {
         ByteBuffer buffer = ringBuffer.readOrNull();
         if (buffer == null) {
             //no remaining
@@ -107,19 +105,19 @@ final class SenderPoller extends TcpPoller {
         return totalLength <= ringBuffer.capacity() ? SelectionHandler.BACK_PRESSURE : SelectionHandler.MESSAGE_TOO_LARGE;
     }
 
-    private boolean writeMessageLength(final SocketChannel channel, final RingBuffer ringBuffer) throws IOException {
+    private boolean writeMessageLength(final ByteChannel channel, final RingBuffer ringBuffer) throws IOException {
         cacheMessageLength(ringBuffer);
         return writeRemaining(channel, ringBuffer);
     }
 
-    private void writeOrCacheMessagePayload(final SocketChannel channel, final RingBuffer ringBuffer) throws IOException {
+    private void writeOrCacheMessagePayload(final ByteChannel channel, final RingBuffer ringBuffer) throws IOException {
         if (!writeMessagePayloadDirect(channel, ringBuffer)) {
             cacheMessagePayload(ringBuffer);
             writeRemaining(channel, ringBuffer);
         }
     }
 
-    private boolean writeMessagePayloadDirect(final SocketChannel channel, final RingBuffer ringBuffer) throws IOException {
+    private boolean writeMessagePayloadDirect(final ByteChannel channel, final RingBuffer ringBuffer) throws IOException {
         final ByteBuffer buffer = readBuffer.byteBuffer();
         if (buffer == null) {
             return false;

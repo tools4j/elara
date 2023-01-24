@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2022 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageSender;
-import org.tools4j.elara.stream.MessageStreamTest;
+import org.tools4j.elara.stream.MessageStreamRunner;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -45,8 +45,11 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
-class KafkaMessageStreamTest extends MessageStreamTest {
+class KafkaMessageStreamTest {
 
+    private static final long MESSAGE_COUNT = 1_000_000;
+    private static final int MESSAGE_BYTES = 100;
+    private static final long MAX_WAIT_MILLIS = 30_000;
     private static final String TOPIC = "elara-stream";
 
     private static EmbeddedKafkaCluster cluster;
@@ -78,9 +81,9 @@ class KafkaMessageStreamTest extends MessageStreamTest {
 
     @ParameterizedTest(name = "sendAndReceiveMessages: {0} --> {1}")
     @MethodSource("kafkaSendersAndReceivers")
-    @Override
-    protected void sendAndReceiveMessages(final MessageSender sender, final MessageReceiver receiver) throws Exception {
-        super.sendAndReceiveMessages(sender, receiver);
+    void sendAndReceiveMessages(final MessageSender sender, final MessageReceiver receiver) throws Exception {
+        new MessageStreamRunner(MESSAGE_COUNT, MESSAGE_BYTES)
+                .sendAndReceiveMessages(sender, receiver, MAX_WAIT_MILLIS);
     }
 
     static Arguments[] kafkaSendersAndReceivers() {

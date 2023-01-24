@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2022 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,37 +21,35 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.impl;
+package org.tools4j.elara.stream.udp.impl;
 
 import org.agrona.CloseHelper;
 import org.agrona.DirectBuffer;
 import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.SendingResult;
-import org.tools4j.elara.stream.tcp.ConnectListener;
-import org.tools4j.elara.stream.tcp.TcpConnection;
+import org.tools4j.elara.stream.nio.BiDirectional;
+import org.tools4j.elara.stream.nio.NioReceiver;
+import org.tools4j.elara.stream.nio.NioSender;
+import org.tools4j.elara.stream.nio.RingBuffer;
 
 import java.net.SocketAddress;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
-public class TcpClientConnection implements TcpConnection {
+public class UdpClient implements BiDirectional {
 
     private final SocketAddress connectAddress;
-    private final ConnectListener connectListener;
     private final Supplier<? extends RingBuffer> ringBufferFactory;
-    private final TcpClientReceiver receiver = new TcpClientReceiver();
-    private final TcpClientSender sender = new TcpClientSender();
-    private TcpClient client;
+    private final UcpClientReceiver receiver = new UcpClientReceiver();
+    private final UcpClientSender sender = new UcpClientSender();
+    private UdpClientEndpoint client;
 
-    public TcpClientConnection(final SocketAddress connectAddress,
-                               final ConnectListener connectListener,
-                               final int bufferCapacity) {
+    public UdpClient(final SocketAddress connectAddress, final int bufferCapacity) {
         this.connectAddress = requireNonNull(connectAddress);
-        this.connectListener = requireNonNull(connectListener);
         this.ringBufferFactory = RingBuffer.factory(bufferCapacity);
-        this.client = new TcpClient(connectAddress, connectListener, ringBufferFactory);
+        this.client = new UdpClientEndpoint(connectAddress, ringBufferFactory);
     }
 
     @Override
@@ -65,8 +63,8 @@ public class TcpClientConnection implements TcpConnection {
     }
 
     @Override
-    public boolean isConnected() {
-        return client != null && client.isConnected();
+    public int poll() {
+        return 0;
     }
 
     @Override
@@ -85,18 +83,18 @@ public class TcpClientConnection implements TcpConnection {
     public void reconnect() {
         if (client != null) {
             CloseHelper.quietClose(client);
-            client = new TcpClient(connectAddress, connectListener, ringBufferFactory);
+            client = new UdpClientEndpoint(connectAddress, ringBufferFactory);
         }
     }
 
     @Override
     public String toString() {
-        return "TcpClientConnection{" + connectAddress + '}';
+        return "UdpClient{" + connectAddress + '}';
     }
 
-    private final class TcpClientReceiver extends TcpReceiver {
+    private final class UcpClientReceiver extends NioReceiver {
         String name;
-        TcpClientReceiver() {
+        UcpClientReceiver() {
             super(() -> client);
         }
 
@@ -112,14 +110,14 @@ public class TcpClientConnection implements TcpConnection {
 
         @Override
         public String toString() {
-            return name != null ? name : (name = "TcpClientReceiver{" + connectAddress + '}');
+            return name != null ? name : (name = "UcpClientReceiver{" + connectAddress + '}');
         }
     }
 
-    private final class TcpClientSender extends TcpSender {
+    private final class UcpClientSender extends NioSender {
         String name;
-        TcpClientSender() {
-            super(TcpClientConnection.this, () -> client);
+        UcpClientSender() {
+            super(() -> client);
         }
 
         @Override
@@ -135,7 +133,7 @@ public class TcpClientConnection implements TcpConnection {
 
         @Override
         public String toString() {
-            return name != null ? name : (name = "TcpClientSender{" + connectAddress + '}');
+            return name != null ? name : (name = "UcpClientSender{" + connectAddress + '}');
         }
     }
 

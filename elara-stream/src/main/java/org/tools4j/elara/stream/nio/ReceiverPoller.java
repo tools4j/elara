@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2022 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.impl;
+package org.tools4j.elara.stream.nio;
 
 import org.agrona.DirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
@@ -29,13 +29,15 @@ import org.tools4j.elara.stream.MessageReceiver.Handler;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ByteChannel;
+import java.nio.channels.Channel;
+import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
-final class ReceiverPoller extends TcpPoller {
+public final class ReceiverPoller extends NioPoller {
 
     private final Supplier<? extends RingBuffer> ringBufferFactory;
     private final DirectBuffer readBuffer = new UnsafeBuffer(0, 0);
@@ -44,11 +46,11 @@ final class ReceiverPoller extends TcpPoller {
     private SelectionHandler selectionHandler = SelectionHandler.NO_OP;
     private Handler messageHandler = message -> {};
 
-    ReceiverPoller(final Supplier<? extends RingBuffer> ringBufferFactory) {
+    public ReceiverPoller(final Supplier<? extends RingBuffer> ringBufferFactory) {
         this.ringBufferFactory = requireNonNull(ringBufferFactory);
     }
 
-    int selectNow(final SelectionHandler selectionHandler, final Handler messageHandler) throws IOException {
+    public int selectNow(final SelectionHandler selectionHandler, final Handler messageHandler) throws IOException {
         if (this.selectionHandler != selectionHandler) {
             this.selectionHandler = requireNonNull(selectionHandler);
         }
@@ -74,8 +76,15 @@ final class ReceiverPoller extends TcpPoller {
     private void readFromChannel(final SelectionKey key, final RingBuffer ringBuffer) throws IOException {
         final ByteBuffer buffer = ringBuffer.writeOrNull();
         if (buffer != null) {
-            final SocketChannel channel = (SocketChannel) key.channel();
-            ringBuffer.writeCommit(channel.read(buffer));
+            final Channel channel = key.channel();
+            if (channel instanceof DatagramChannel && !((DatagramChannel)channel).isConnected()) {
+                final DatagramChannel datagramChannel = (DatagramChannel) channel;
+                final int pos = buffer.position();
+                datagramChannel.receive(buffer);
+                ringBuffer.writeCommit(buffer.position() - pos);
+            } else {
+                ringBuffer.writeCommit(((ByteChannel)channel).read(buffer));
+            }
         }
     }
 

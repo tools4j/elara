@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2022 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.impl;
+package org.tools4j.elara.stream.nio;
 
 import org.agrona.LangUtil;
 import org.tools4j.elara.stream.MessageReceiver;
@@ -31,17 +31,17 @@ import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
-class TcpReceiver implements MessageReceiver {
+public class NioReceiver implements MessageReceiver {
 
-    private final Supplier<? extends TcpEndpoint> endpointSupplier;
+    private final Supplier<? extends NioEndpoint> endpointSupplier;
 
-    TcpReceiver(final Supplier<? extends TcpEndpoint> endpointSupplier) {
+    public NioReceiver(final Supplier<? extends NioEndpoint> endpointSupplier) {
         this.endpointSupplier = requireNonNull(endpointSupplier);
     }
 
     @Override
     public int poll(final Handler handler) {
-        final TcpEndpoint endpoint = endpointSupplier.get();
+        final NioEndpoint endpoint = endpointSupplier.get();
         if (endpoint == null) {
             return 0;
         }
@@ -67,7 +67,7 @@ class TcpReceiver implements MessageReceiver {
 
     @Override
     public void close() {
-        final TcpEndpoint endpoint = endpointSupplier.get();
+        final NioEndpoint endpoint = endpointSupplier.get();
         if (endpoint != null) {
             endpoint.close();
         }

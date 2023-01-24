@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2022 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,9 +32,14 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageSender;
-import org.tools4j.elara.stream.MessageStreamTest;
+import org.tools4j.elara.stream.MessageStreamRunner;
+import org.tools4j.elara.stream.Network;
 
-class AeronMessageStreamTest extends MessageStreamTest {
+class AeronMessageStreamTest {
+
+    private static final long MESSAGE_COUNT = 1_000_000;
+    private static final int MESSAGE_BYTES = 100;
+    private static final long MAX_WAIT_MILLIS = 30_000;
 
     private static MediaDriver mediaDriver;
     private static Aeron aeron;
@@ -59,9 +64,9 @@ class AeronMessageStreamTest extends MessageStreamTest {
 
     @ParameterizedTest(name = "sendAndReceiveMessages: {0} --> {1}")
     @MethodSource("aeronSendersAndReceivers")
-    @Override
-    protected void sendAndReceiveMessages(final MessageSender sender, final MessageReceiver receiver) throws Exception {
-        super.sendAndReceiveMessages(sender, receiver);
+    void sendAndReceiveMessages(final MessageSender sender, final MessageReceiver receiver) throws Exception {
+        new MessageStreamRunner(MESSAGE_COUNT, MESSAGE_BYTES)
+                .sendAndReceiveMessages(sender, receiver, MAX_WAIT_MILLIS);
     }
 
     static Arguments[] aeronSendersAndReceivers() {
@@ -80,7 +85,7 @@ class AeronMessageStreamTest extends MessageStreamTest {
     }
 
     private static Arguments aeronUdpSenderAndReceiver() {
-        final int port = nextFreePort();
+        final int port = Network.nextFreePort();
         final int streamId = 456;
         final String url = "aeron:udp?endpoint=localhost:" + port;
         return Arguments.of(

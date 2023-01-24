@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2022 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.impl;
+package org.tools4j.elara.stream.nio;
 
 import org.agrona.nio.TransportPoller;
 
@@ -29,22 +29,13 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 
-class TcpPoller extends TransportPoller {
+class NioPoller extends TransportPoller {
 
-    @FunctionalInterface
-    interface SelectionHandler {
-        int OK = 0;
-        int BACK_PRESSURE = Integer.MIN_VALUE >> 1;
-        int MESSAGE_TOO_LARGE = Integer.MIN_VALUE >> 2;
-        SelectionHandler NO_OP = key -> OK;
-        int onSelectionKey(SelectionKey key) throws IOException;
-    }
-
-    final Selector selector() {
+    public final Selector selector() {
         return selector;
     }
 
-    final int selectNow(final SelectionHandler selectionHandler) throws IOException {
+    public final int selectNow(final SelectionHandler selectionHandler) throws IOException {
         selector.selectNow();
         final int size = selectedKeySet.size();
         if (size == 0) {

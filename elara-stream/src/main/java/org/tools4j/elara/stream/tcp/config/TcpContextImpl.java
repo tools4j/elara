@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2022 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,8 +31,9 @@ import static java.util.Objects.requireNonNull;
 class TcpContextImpl implements TcpContext {
 
     private static final int MIN_BUFFER_CAPACITY = 64;
+    private static final int DEFAULT_BUFFER_CAPACITY = 1 << 14;
 
-    private int bufferCapacity = 4096;
+    private int bufferCapacity = DEFAULT_BUFFER_CAPACITY;
     private long reconnectTimeoutMillis = 10_000;
     private ConnectListener connectListener = null;
     private int acceptConnectionsMax = -1;

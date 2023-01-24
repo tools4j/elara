@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2022 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,14 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.impl;
+package org.tools4j.elara.stream.nio;
 
 import org.agrona.DirectBuffer;
 import org.agrona.LangUtil;
 import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.SendingResult;
-import org.tools4j.elara.stream.tcp.TcpConnection;
-import org.tools4j.elara.stream.tcp.impl.TcpPoller.SelectionHandler;
 
 import java.net.ConnectException;
 import java.nio.channels.SelectionKey;
@@ -36,20 +34,18 @@ import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
-class TcpSender extends  MessageSender.Buffered {
+public class NioSender extends MessageSender.Buffered {
 
-    private final TcpConnection connection;
-    private final Supplier<? extends TcpEndpoint> endpointSupplier;
+    private final Supplier<? extends NioEndpoint> endpointSupplier;
 
-    TcpSender(final TcpConnection connection, final Supplier<? extends TcpEndpoint> endpointSupplier) {
+    public NioSender(final Supplier<? extends NioEndpoint> endpointSupplier) {
         super(4096);//FIXME configure
-        this.connection = requireNonNull(connection);
         this.endpointSupplier = requireNonNull(endpointSupplier);
     }
 
     @Override
     public SendingResult sendMessage(final DirectBuffer buffer, final int offset, final int length) {
-        final TcpEndpoint endpoint = endpointSupplier.get();
+        final NioEndpoint endpoint = endpointSupplier.get();
         if (endpoint == null) {
             return SendingResult.CLOSED;
         }
@@ -67,7 +63,7 @@ class TcpSender extends  MessageSender.Buffered {
                     return SendingResult.BACK_PRESSURED;
                 }
             }
-            return connection.isConnected() ? SendingResult.BACK_PRESSURED : SendingResult.DISCONNECTED;
+            return endpoint.isConnected() ? SendingResult.BACK_PRESSURED : SendingResult.DISCONNECTED;
         } catch (final ConnectException e) {
             return SendingResult.DISCONNECTED;
         } catch (final Exception e) {
@@ -84,7 +80,7 @@ class TcpSender extends  MessageSender.Buffered {
 
     @Override
     public void close() {
-        final TcpEndpoint endpoint = endpointSupplier.get();
+        final NioEndpoint endpoint = endpointSupplier.get();
         if (endpoint != null) {
             endpoint.close();
         }

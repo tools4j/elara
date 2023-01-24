@@ -21,16 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.impl;
+package org.tools4j.elara.stream.udp.impl;
 
 import org.agrona.CloseHelper;
 import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageSender;
+import org.tools4j.elara.stream.nio.BiDirectional;
 import org.tools4j.elara.stream.nio.NioReceiver;
 import org.tools4j.elara.stream.nio.NioSender;
 import org.tools4j.elara.stream.nio.RingBuffer;
-import org.tools4j.elara.stream.tcp.AcceptListener;
-import org.tools4j.elara.stream.tcp.TcpConnection;
 
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
@@ -39,24 +38,23 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
-public class TcpServer implements TcpConnection {
+public class UdpServer implements BiDirectional {
 
     private final SocketAddress bindAddress;
-    private final TcpMulticastSender sender = new TcpMulticastSender();
-    private final TcpServerReceiver receiver = new TcpServerReceiver();;
-    private TcpServerEndpoint server;
+    private final UdpServerSender sender = new UdpServerSender();
+    private final UdpServerReceiver receiver = new UdpServerReceiver();;
+    private UdpServerEndpoint server;
 
-    public TcpServer(final SocketAddress bindAddress,
-                     final AcceptListener acceptListener,
-                     final int bufferCapacity) {
+    public UdpServer(final SocketAddress bindAddress, final int bufferCapacity) {
         this.bindAddress = requireNonNull(bindAddress);
-        this.server = new TcpServerEndpoint(bindAddress, acceptListener, RingBuffer.factory(bufferCapacity));
+        this.server = new UdpServerEndpoint(bindAddress, RingBuffer.factory(bufferCapacity));
     }
 
     @Override
     public int poll() {
-        return server != null ? server.poll() : 0;
+        return 0;
     }
+
     @Override
     public MessageSender sender() {
         return sender;
@@ -68,11 +66,6 @@ public class TcpServer implements TcpConnection {
     }
 
     private final List<SocketChannel> accepted = new ArrayList<>();
-
-    @Override
-    public boolean isConnected() {
-        return server != null && server.isConnected();
-    }
 
     @Override
     public boolean isClosed() {
@@ -91,30 +84,30 @@ public class TcpServer implements TcpConnection {
 
     @Override
     public String toString() {
-        return "TcpServer{" + bindAddress + '}';
+        return "UdpServer{" + bindAddress + '}';
     }
 
-    private final class TcpServerReceiver extends NioReceiver {
+    private final class UdpServerReceiver extends NioReceiver {
         String name;
-        TcpServerReceiver() {
+        UdpServerReceiver() {
             super(() -> server);
         }
 
         @Override
         public String toString() {
-            return name != null ? name : (name = "TcpServerReceiver{" + bindAddress + '}');
+            return name != null ? name : (name = "UdpServerReceiver{" + bindAddress + '}');
         }
     }
 
-    private final class TcpMulticastSender extends NioSender {
+    private final class UdpServerSender extends NioSender {
         String name;
-        TcpMulticastSender() {
+        UdpServerSender() {
             super(() -> server);
         }
 
         @Override
         public String toString() {
-            return name != null ? name : (name = "TcpMulticastSender{" + bindAddress + '}');
+            return name != null ? name : (name = "UdpServerSender{" + bindAddress + '}');
         }
     }
 }

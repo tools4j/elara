@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2022 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,92 +23,128 @@
  */
 package org.tools4j.elara.stream.tcp.impl;
 
+import org.agrona.CloseHelper;
 import org.agrona.DirectBuffer;
-import org.agrona.LangUtil;
-import org.tools4j.elara.stream.MessageReceiver.Handler;
+import org.tools4j.elara.stream.MessageReceiver;
+import org.tools4j.elara.stream.MessageSender;
+import org.tools4j.elara.stream.SendingResult;
+import org.tools4j.elara.stream.nio.NioReceiver;
+import org.tools4j.elara.stream.nio.NioSender;
+import org.tools4j.elara.stream.nio.RingBuffer;
 import org.tools4j.elara.stream.tcp.ConnectListener;
-import org.tools4j.elara.stream.tcp.impl.TcpPoller.SelectionHandler;
+import org.tools4j.elara.stream.tcp.TcpConnection;
 
-import java.io.IOException;
 import java.net.SocketAddress;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
-final class TcpClient implements TcpEndpoint {
+public class TcpClient implements TcpConnection {
 
-    private final SocketChannel socketChannel;
+    private final SocketAddress connectAddress;
     private final ConnectListener connectListener;
-    private final ReceiverPoller receiverPoller;
-    private final SenderPoller senderPoller;
-    private final SelectionHandler connectHandler = this::onSelectionKey;
+    private final Supplier<? extends RingBuffer> ringBufferFactory;
+    private final TcpClientReceiver receiver = new TcpClientReceiver();
+    private final TcpClientSender sender = new TcpClientSender();
+    private TcpClientEndpoint client;
 
-    TcpClient(final SocketAddress connectAddress,
-              final ConnectListener connectListener,
-              final Supplier<? extends RingBuffer> ringBufferFactory) {
-        try {
-            this.socketChannel = SocketChannel.open();
-            this.connectListener = requireNonNull(connectListener);
-            this.receiverPoller = new ReceiverPoller(ringBufferFactory);
-            this.senderPoller = new SenderPoller(ringBufferFactory);
-            this.socketChannel.configureBlocking(false);
-            this.socketChannel.register(receiverPoller.selector(), SelectionKey.OP_CONNECT + SelectionKey.OP_READ);
-            this.socketChannel.register(senderPoller.selector(), SelectionKey.OP_CONNECT + SelectionKey.OP_WRITE);
-            this.socketChannel.connect(connectAddress);
-        } catch (final IOException e) {
-            LangUtil.rethrowUnchecked(e);
-            throw new RuntimeException(e);//we never get here
-        }
+    public TcpClient(final SocketAddress connectAddress,
+                     final ConnectListener connectListener,
+                     final int bufferCapacity) {
+        this.connectAddress = requireNonNull(connectAddress);
+        this.connectListener = requireNonNull(connectListener);
+        this.ringBufferFactory = RingBuffer.factory(bufferCapacity);
+        this.client = new TcpClientEndpoint(connectAddress, connectListener, ringBufferFactory);
     }
 
     @Override
-    public void close() {
-        try {
-            receiverPoller.close();
-            senderPoller.close();
-            socketChannel.close();
-        } catch (final Exception ex) {
-            LangUtil.rethrowUnchecked(ex);
-        }
+    public MessageSender sender() {
+        return sender;
     }
 
     @Override
-    public int poll() throws IOException {
-        receiverPoller.selectNow(connectHandler);
-        senderPoller.selectNow(connectHandler);
-        return SelectionHandler.OK;
+    public MessageReceiver receiver() {
+        return receiver;
     }
 
     @Override
-    public int receive(final Handler messageHandler) throws IOException {
-        return receiverPoller.selectNow(connectHandler, messageHandler);
+    public int poll() {
+        return client != null ? client.poll() : 0;
     }
 
     @Override
-    public int send(final DirectBuffer buffer, final int offset, final int length) throws IOException {
-        return senderPoller.selectNow(connectHandler, buffer, offset, length);
-    }
-
-    private int onSelectionKey(final SelectionKey key) throws IOException {
-        if (key.isConnectable() && socketChannel.finishConnect()) {
-            connectListener.onConnect(socketChannel, key);
-        }
-        return SelectionHandler.OK;
-    }
-
     public boolean isConnected() {
-        return socketChannel.isConnected();
+        return client != null && client.isConnected();
     }
 
     @Override
     public boolean isClosed() {
-        return !socketChannel.isOpen();
+        return client == null;
+    }
+
+    @Override
+    public void close() {
+        if (client != null) {
+            CloseHelper.quietClose(client);
+            client = null;
+        }
+    }
+
+    public void reconnect() {
+        if (client != null) {
+            CloseHelper.quietClose(client);
+            client = new TcpClientEndpoint(connectAddress, connectListener, ringBufferFactory);
+        }
     }
 
     @Override
     public String toString() {
-        return "TcpClient{" + socketChannel.socket().getLocalAddress() + '}';
+        return "TcpClient{" + connectAddress + '}';
     }
+
+    private final class TcpClientReceiver extends NioReceiver {
+        String name;
+        TcpClientReceiver() {
+            super(() -> client);
+        }
+
+        @Override
+        public int poll(final Handler handler) {
+            try {
+                return super.poll(handler);
+            } catch (final Exception e) {
+                reconnect();
+                throw e;
+            }
+        }
+
+        @Override
+        public String toString() {
+            return name != null ? name : (name = "TcpClientReceiver{" + connectAddress + '}');
+        }
+    }
+
+    private final class TcpClientSender extends NioSender {
+        String name;
+        TcpClientSender() {
+            super(() -> client);
+        }
+
+        @Override
+        public SendingResult sendMessage(final DirectBuffer buffer, final int offset, final int length) {
+            final SendingResult result = super.sendMessage(buffer, offset, length);
+            if (result != SendingResult.SENT) {
+                if (client != null && client.isClosed()) {
+                    reconnect();
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return name != null ? name : (name = "TcpClientSender{" + connectAddress + '}');
+        }
+    }
+
 }

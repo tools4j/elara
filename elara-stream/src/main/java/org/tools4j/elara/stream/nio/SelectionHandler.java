@@ -21,37 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.kafka;
+package org.tools4j.elara.stream.nio;
 
-import org.agrona.DirectBuffer;
-import org.agrona.concurrent.UnsafeBuffer;
-import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.apache.kafka.common.serialization.Deserializer;
-import org.apache.kafka.common.serialization.Serializer;
+import java.io.IOException;
+import java.nio.channels.SelectionKey;
 
-enum Codec {
-    ;
-    static final ByteArrayDeserializer BYTE_ARRAY_DESERIALIZER = new ByteArrayDeserializer();
-    static final Serializer<DirectBuffer> DIRECT_BUFFER_SERIALIZER = (topic, data) -> toByteArray(data);
+@FunctionalInterface
+public interface SelectionHandler {
+    int OK = 0;
+    int BACK_PRESSURE = Integer.MIN_VALUE >> 1;
+    int MESSAGE_TOO_LARGE = Integer.MIN_VALUE >> 2;
+    SelectionHandler NO_OP = key -> OK;
 
-    static Deserializer<DirectBuffer> directBufferDeserializer() {
-        final DirectBuffer view = new UnsafeBuffer(0, 0);
-        return (topic, data) -> {
-            view.wrap(data);
-            return view;
-        };
-    }
-
-    static <T> Serializer<T> cast(final Serializer<? super T> serializer) {
-        //NOTE: this cast is totally safe, it is just to fix poor use of generics in Kafka
-        //noinspection unchecked
-        return (Serializer<T>)(serializer);
-    }
-
-    private static byte[] toByteArray(final DirectBuffer data) {
-        final byte[] bytes = new byte[data.capacity()];
-        data.getBytes(0, bytes);
-        return bytes;
-    }
-
+    int onSelectionKey(SelectionKey key) throws IOException;
 }

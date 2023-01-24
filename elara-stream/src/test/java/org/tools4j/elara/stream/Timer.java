@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2022 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,19 +21,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.impl;
+package org.tools4j.elara.stream;
 
-import java.nio.channels.SelectionKey;
-import java.util.function.Supplier;
+public class Timer {
 
-enum SelectionKeyAttachments {
-    ;
-    static RingBuffer fetchOrAttach(final SelectionKey key, final Supplier<? extends RingBuffer> ringBufferFactory) {
-        RingBuffer ringBuffer = (RingBuffer)key.attachment();
-        if (ringBuffer == null) {
-            ringBuffer = ringBufferFactory.get();
-            key.attach(ringBuffer);
-        }
-        return ringBuffer;
+    private final long durationMillis;
+    private final long startTimeMillis;
+
+    private Timer(final long durationMillis, final long startTimeMillis) {
+        this.durationMillis = durationMillis;
+        this.startTimeMillis = startTimeMillis;
     }
+
+    public static Timer start(final long durationMillis) {
+        return new Timer(durationMillis, System.currentTimeMillis());
+    }
+
+    public long remainingMillis() {
+        return durationMillis - (System.currentTimeMillis() - startTimeMillis);
+    }
+
 }

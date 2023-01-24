@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2022 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,20 +21,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.impl;
+package org.tools4j.elara.stream.nio;
 
 import org.agrona.DirectBuffer;
 import org.tools4j.elara.stream.MessageReceiver.Handler;
 
 import java.io.IOException;
 
-interface TcpEndpoint extends AutoCloseable {
+public interface NioEndpoint extends AutoCloseable {
 
     @Override
     void close();
-    int poll() throws IOException;
     int receive(Handler messageHandler) throws IOException;
     int send(DirectBuffer buffer, int offset, int length) throws IOException;
+    boolean isConnected();
     boolean isClosed();
 
 }

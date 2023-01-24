@@ -21,41 +21,42 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp;
+package org.tools4j.elara.stream.udp;
 
+import org.tools4j.elara.stream.nio.BiDirectional;
 import org.tools4j.elara.stream.tcp.config.TcpClientConfiguration;
 import org.tools4j.elara.stream.tcp.config.TcpConfiguration;
 import org.tools4j.elara.stream.tcp.config.TcpServerConfiguration;
-import org.tools4j.elara.stream.tcp.impl.TcpClient;
-import org.tools4j.elara.stream.tcp.impl.TcpServer;
+import org.tools4j.elara.stream.udp.impl.UdpClient;
+import org.tools4j.elara.stream.udp.impl.UdpServer;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-public enum Tcp {
+public enum Udp {
     ;
-    public static TcpConnection bind(final String address, final int port) {
+    public static BiDirectional bind(final String address, final int port) {
         return bind(new InetSocketAddress(address, port));
     }
 
-    public static TcpConnection bind(final SocketAddress address) {
+    public static BiDirectional bind(final SocketAddress address) {
         return bind(address, TcpConfiguration.configureServer().populateDefaults());
     }
 
-    public static TcpConnection bind(final SocketAddress address, final TcpServerConfiguration configuration) {
-        return new TcpServer(address, configuration.acceptListener(), configuration.bufferCapacity());
+    public static BiDirectional bind(final SocketAddress address, final TcpServerConfiguration configuration) {
+        return new UdpServer(address, configuration.bufferCapacity());
     }
 
-    public static TcpConnection connect(final String address, final int port) {
+    public static BiDirectional connect(final String address, final int port) {
         return connect(new InetSocketAddress(address, port));
     }
 
-    public static TcpConnection connect(final SocketAddress address) {
+    public static BiDirectional connect(final SocketAddress address) {
         return connect(address, TcpConfiguration.configureClient().populateDefaults());
     }
 
-    public static TcpConnection connect(final SocketAddress address, final TcpClientConfiguration configuration) {
-        return new TcpClient(address, configuration.connectListener(), configuration.bufferCapacity());
+    public static BiDirectional connect(final SocketAddress address, final TcpClientConfiguration configuration) {
+        return new UdpClient(address, configuration.bufferCapacity());
     }
 
 }
