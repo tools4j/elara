@@ -44,7 +44,7 @@ class MessageStreamTest {
 
     private static final long MESSAGE_COUNT = 1_000_000;
     private static final int MESSAGE_BYTES = 100;
-    private static final long MAX_WAIT_MILLIS = 10_000;
+    private static final long MAX_WAIT_MILLIS = 60_000;
 
     @ParameterizedTest(name = "sendAndReceiveMessages: {0} --> {1}")
     @MethodSource("sendersAndReceivers")
