@@ -35,6 +35,10 @@ import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.MessageStreamRunner;
 import org.tools4j.elara.stream.Network;
 
+import static org.agrona.SystemUtil.isWindows;
+import static org.agrona.SystemUtil.osName;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+
 class AeronMessageStreamTest {
 
     private static final long MESSAGE_COUNT = 1_000_000;
@@ -44,8 +48,13 @@ class AeronMessageStreamTest {
     private static MediaDriver mediaDriver;
     private static Aeron aeron;
 
+    static void assumeNotWindows() {
+        assumeFalse(isWindows(), "Test is currently supported on windows, os=" + osName());
+    }
+
     @BeforeAll
     static void startAeron() {
+        assumeNotWindows();
         mediaDriver = MediaDriver.launchEmbedded();
         aeron = Aeron.connect(new Context().aeronDirectoryName(mediaDriver.aeronDirectoryName()));
     }

@@ -57,14 +57,14 @@ public class MessageStreamRunner {
         final LongArrayList receiverResults = new LongArrayList();
         final Thread senderThread = new Thread(null, senderLoop(sender, senderResults), "sender");
         final Thread receiverThread = new Thread(null, receiverLoop(receiver, receiverResults), "receiver");
-        final Timer timer = Timer.start(maxWaitMillis);
+        final Timer timer = maxWaitMillis <= 0 ? null : Timer.start(maxWaitMillis);
 
         //when
         receiverThread.start();
         senderThread.start();
 
-        senderThread.join(Math.max(1, timer.remainingMillis()));
-        receiverThread.join(Math.max(1, timer.remainingMillis()));
+        senderThread.join(timer == null ? 0 : Math.max(1, timer.remainingMillis()));
+        receiverThread.join(timer == null ? 0 : Math.max(1, timer.remainingMillis()));
 
         sender.close();
         receiver.close();

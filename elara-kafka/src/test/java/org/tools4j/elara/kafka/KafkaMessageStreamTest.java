@@ -43,6 +43,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.agrona.SystemUtil.isWindows;
+import static org.agrona.SystemUtil.osName;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 class KafkaMessageStreamTest {
@@ -55,8 +57,7 @@ class KafkaMessageStreamTest {
     private static EmbeddedKafkaCluster cluster;
 
     static void assumeNotWindows() {
-        final String osName = System.getProperty("os.name");
-        assumeFalse(osName.toLowerCase().contains("win"), "Test is currently supported on windows, os=" + osName);
+        assumeFalse(isWindows(), "Test is currently supported on windows, os=" + osName());
     }
 
     @BeforeAll
