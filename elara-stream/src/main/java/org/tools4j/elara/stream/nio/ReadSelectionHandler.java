@@ -31,45 +31,50 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.Channel;
-import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.stream.nio.SelectionHandler.MESSAGE_TOO_LARGE;
+import static org.tools4j.elara.stream.nio.SelectionHandler.OK;
 
-public final class ReceiverPoller extends NioPoller {
+public class ReadSelectionHandler {
 
     private final Supplier<? extends RingBuffer> ringBufferFactory;
-    private final NioHeader header;
-    private final DirectBuffer headerBuffer = new UnsafeBuffer(0, 0);
+    private final SelectionHandler baseHandler;
+    private final SelectionHandler readHandler = this::onSelectionKey;
     private final DirectBuffer readBuffer = new UnsafeBuffer(0, 0);
-    private final SelectionHandler chainedHandler = this::onSelectionKey;
 
-    private SelectionHandler selectionHandler = SelectionHandler.NO_OP;
+    private NioHeader header;
     private Handler messageHandler = message -> {};
 
-    public ReceiverPoller(final Supplier<? extends RingBuffer> ringBufferFactory, final NioHeader header) {
-        this.ringBufferFactory = requireNonNull(ringBufferFactory);
-        this.header = requireNonNull(header);
+    public ReadSelectionHandler(final Supplier<? extends RingBuffer> ringBufferFactory) {
+        this(ringBufferFactory, SelectionHandler.NO_OP);
     }
 
-    public int selectNow(final SelectionHandler selectionHandler, final Handler messageHandler) throws IOException {
-        if (this.selectionHandler != selectionHandler) {
-            this.selectionHandler = requireNonNull(selectionHandler);
+    public ReadSelectionHandler(final Supplier<? extends RingBuffer> ringBufferFactory,
+                                final SelectionHandler baseHandler) {
+        this.ringBufferFactory = requireNonNull(ringBufferFactory);
+        this.baseHandler = requireNonNull(baseHandler);
+    }
+
+    public SelectionHandler init(final NioHeader header, final Handler messageHandler) {
+        if (this.header != header) {
+            this.header = requireNonNull(header);
         }
         if (this.messageHandler != messageHandler) {
             this.messageHandler = requireNonNull(messageHandler);
         }
-        return selectNow(chainedHandler);
+        return readHandler;
     }
 
     private int onSelectionKey(final SelectionKey key) throws IOException {
-        final int result = selectionHandler.onSelectionKey(key);
-        if (result != SelectionHandler.OK) {
+        final int result = baseHandler.onSelectionKey(key);
+        if (result != OK) {
             return result;
         }
         if (!key.isReadable()) {
-            return SelectionHandler.OK;
+            return OK;
         }
         final RingBuffer ringBuffer = SelectionKeyAttachments.fetchOrAttach(key, ringBufferFactory);
         readFromChannel(key, ringBuffer);
@@ -79,51 +84,50 @@ public final class ReceiverPoller extends NioPoller {
     private void readFromChannel(final SelectionKey key, final RingBuffer ringBuffer) throws IOException {
         final ByteBuffer buffer = ringBuffer.writeOrNull();
         if (buffer != null) {
-            final Channel channel = key.channel();
-            if (channel instanceof DatagramChannel && !((DatagramChannel)channel).isConnected()) {
-                final DatagramChannel datagramChannel = (DatagramChannel) channel;
-                final int pos = buffer.position();
-                datagramChannel.receive(buffer);
-                ringBuffer.writeCommit(buffer.position() - pos);
-            } else {
-                ringBuffer.writeCommit(((ByteChannel)channel).read(buffer));
-            }
+            ringBuffer.writeCommit(readFromChannel(key.channel(), buffer));
         }
+    }
+
+    protected int readFromChannel(final Channel channel, final ByteBuffer buffer) throws IOException {
+        return ((ByteChannel)channel).read(buffer);
     }
 
     private int handleMessages(final RingBuffer ringBuffer) {
-        int readLength = ringBuffer.readLength();
-        while (readLength >= header.headerLength()) {
-            ringBuffer.readWrap(headerBuffer, header.headerLength());
-            final int messageLength = header.payloadLength(headerBuffer);
-            readLength -= header.headerLength();
-            if (readLength < messageLength) {
-                if (ringBuffer.capacity() < messageLength + header.headerLength()) {
+        while (ringBuffer.readWrap(header.buffer(), header.headerLength())) {
+            final int payloadLength = header.payloadLength();
+            final int remaining = ringBuffer.readLength() - header.headerLength();
+            if (remaining < payloadLength) {
+                if (ringBuffer.capacity() < payloadLength + header.headerLength()) {
                     ringBuffer.reset();
-                    return SelectionHandler.MESSAGE_TOO_LARGE;
+                    return MESSAGE_TOO_LARGE;
                 }
                 break;
             }
-            ringBuffer.readCommit(header.headerLength());
-            handleMessage(ringBuffer, messageLength);
-            readLength = ringBuffer.readLength();
+            handleMessage(header, ringBuffer, payloadLength);
         }
         movePartialMessagesToStart(ringBuffer);
-        return SelectionHandler.OK;
+        return OK;
     }
 
-    private void handleMessage(final RingBuffer ringBuffer, final int length) {
-        ringBuffer.readWrap(readBuffer, length);
+    //PRECONDITION: header is wrapped
+    private void handleMessage(final NioHeader header, final RingBuffer ringBuffer, final int payloadLength) {
+        ringBuffer.readCommit(header.headerLength());
+        ringBuffer.readWrap(readBuffer, payloadLength);
         try {
-            messageHandler.onMessage(readBuffer);
+            handleMessage(header, readBuffer);
         } finally {
+            ringBuffer.readCommit(payloadLength);
             readBuffer.wrap(0, 0);
-            ringBuffer.readCommit(length);
+            header.buffer().wrap(0, 0);
         }
+    }
+
+    protected void handleMessage(final NioHeader header, final DirectBuffer payload) {
+        messageHandler.onMessage(payload);
     }
 
     private void movePartialMessagesToStart(final RingBuffer ringBuffer) {
-        if (ringBuffer.readWrap(readBuffer)) {
+        if (ringBuffer.writeOffset() < ringBuffer.readOffset() && ringBuffer.readWrap(readBuffer)) {
             final int readLength = readBuffer.capacity();
             ringBuffer.readCommit(readLength);
             ringBuffer.write(readBuffer, 0, readLength);

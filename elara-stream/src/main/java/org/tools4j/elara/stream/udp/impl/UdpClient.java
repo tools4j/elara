@@ -29,6 +29,7 @@ import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.SendingResult;
 import org.tools4j.elara.stream.nio.BiDirectional;
+import org.tools4j.elara.stream.nio.NioHeader.MutableNioHeader;
 import org.tools4j.elara.stream.nio.NioReceiver;
 import org.tools4j.elara.stream.nio.NioSender;
 import org.tools4j.elara.stream.nio.RingBuffer;
@@ -41,7 +42,7 @@ import static java.util.Objects.requireNonNull;
 public class UdpClient implements BiDirectional {
     private final SocketAddress connectAddress;
     private final Supplier<? extends RingBuffer> ringBufferFactory;
-    private final UcpClientReceiver receiver = new UcpClientReceiver();
+    private final UcpClientReceiver receiver = new UcpClientReceiver(new UdpHeader());
     private final UcpClientSender sender = new UcpClientSender(new UdpHeader());
     private UdpClientEndpoint client;
 
@@ -92,10 +93,11 @@ public class UdpClient implements BiDirectional {
     }
 
     private final class UcpClientReceiver extends NioReceiver {
-        final UdpHeader header = new UdpHeader();
+        final UdpHeader header;
         String name;
-        UcpClientReceiver() {
-            super(() -> client);
+        UcpClientReceiver(final UdpHeader header) {
+            super(() -> client, header);
+            this.header = requireNonNull(header);
         }
 
         @Override
@@ -117,16 +119,24 @@ public class UdpClient implements BiDirectional {
     private final class UcpClientSender extends NioSender {
         final UdpHeader header;
         String name;
+        long sequence;
         UcpClientSender(final UdpHeader header) {
             super(() -> client, header);
             this.header = requireNonNull(header);
         }
 
         @Override
+        protected void writeHeader(final MutableNioHeader header, final int payloadLength) {
+            assert this.header == header;
+            super.writeHeader(header, payloadLength);
+            this.header.sequence(sequence);
+        }
+
+        @Override
         public SendingResult sendMessage(final DirectBuffer buffer, final int offset, final int length) {
             final SendingResult result = super.sendMessage(buffer, offset, length);
             if (result == SendingResult.SENT) {
-                header.incrementSequence();
+                sequence++;
                 return SendingResult.SENT;
             }
             if (client != null && client.isClosed()) {

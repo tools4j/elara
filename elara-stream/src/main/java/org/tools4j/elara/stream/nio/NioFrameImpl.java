@@ -23,17 +23,41 @@
  */
 package org.tools4j.elara.stream.nio;
 
-import org.agrona.DirectBuffer;
+import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
+import org.agrona.concurrent.UnsafeBuffer;
+import org.tools4j.elara.stream.nio.NioHeader.MutableNioHeader;
 
-public interface NioHeader {
-    int headerLength();
-    DirectBuffer buffer();
-    int payloadLength();
+import static java.util.Objects.requireNonNull;
 
-    interface MutableNioHeader extends NioHeader {
-        @Override
-        MutableDirectBuffer buffer();
-        void payloadLength(int length);
+final class NioFrameImpl implements NioFrame {
+    private final MutableNioHeader header;
+    private final MutableDirectBuffer frame;
+    private final MutableDirectBuffer payload;
+
+    NioFrameImpl(final MutableNioHeader header, final int initialCapacity) {
+        this(header, new ExpandableDirectByteBuffer(initialCapacity));
+    }
+
+    NioFrameImpl(final MutableNioHeader header, final MutableDirectBuffer frame) {
+        this.frame = requireNonNull(frame);
+        this.header = requireNonNull(header);
+        this.payload = new UnsafeBuffer(frame, header.headerLength(), frame.capacity() - header.headerLength());
+        header.buffer().wrap(frame, 0, header.headerLength());
+    }
+
+    @Override
+    public MutableNioHeader header() {
+        return header;
+    }
+
+    @Override
+    public MutableDirectBuffer frame() {
+        return frame;
+    }
+
+    @Override
+    public MutableDirectBuffer payload() {
+        return payload;
     }
 }

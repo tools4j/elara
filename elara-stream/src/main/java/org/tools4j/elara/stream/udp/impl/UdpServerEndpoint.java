@@ -27,32 +27,43 @@ import org.agrona.DirectBuffer;
 import org.agrona.LangUtil;
 import org.tools4j.elara.stream.MessageReceiver.Handler;
 import org.tools4j.elara.stream.nio.NioEndpoint;
-import org.tools4j.elara.stream.nio.ReceiverPoller;
+import org.tools4j.elara.stream.nio.NioHeader;
+import org.tools4j.elara.stream.nio.NioPoller;
+import org.tools4j.elara.stream.nio.ReadSelectionHandler;
 import org.tools4j.elara.stream.nio.RingBuffer;
-import org.tools4j.elara.stream.nio.SelectionHandler;
+import org.tools4j.elara.stream.nio.WriteSelectionHandler;
 
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.StandardSocketOptions;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.util.function.Supplier;
 
-import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.stream.nio.SelectionHandler.DISCONNECTED;
 
 final class UdpServerEndpoint implements NioEndpoint {
 
     private final DatagramChannel datagramChannel;
-    private final ReceiverPoller receiverPoller;
+    private final ReadSelectionHandler readSelectionHandler;
+    private final WriteSelectionHandler writeSelectionHandler;
+    private final NioPoller receiverPoller = new NioPoller();
+    private final NioPoller senderPoller = new NioPoller();
+    private SocketAddress lastSourceAddress;
 
-    UdpServerEndpoint(final SocketAddress bindAddress, final ReceiverPoller receiverPoller) {
+
+    UdpServerEndpoint(final SocketAddress bindAddress,
+                      final Supplier<? extends RingBuffer> ringBufferFactory) {
         try {
             this.datagramChannel = DatagramChannel.open()
                     .setOption(StandardSocketOptions.SO_REUSEADDR, true);
+            this.readSelectionHandler = new UdpReadHandler(ringBufferFactory);
+            this.writeSelectionHandler = new UdpWriteHandler(ringBufferFactory);
             this.datagramChannel.configureBlocking(false);
             this.datagramChannel.register(receiverPoller.selector(), SelectionKey.OP_READ);
             this.datagramChannel.bind(bindAddress);
-            this.receiverPoller = requireNonNull(receiverPoller);
         } catch (final IOException e) {
             LangUtil.rethrowUnchecked(e);
             throw new RuntimeException(e);//we never get here
@@ -70,13 +81,13 @@ final class UdpServerEndpoint implements NioEndpoint {
     }
 
     @Override
-    public int receive(final Handler messageHandler) throws IOException {
-        return receiverPoller.selectNow(SelectionHandler.NO_OP, messageHandler);
+    public int receive(final NioHeader header, final Handler messageHandler) throws IOException {
+        return receiverPoller.selectNow(readSelectionHandler.init(header, messageHandler));
     }
 
     @Override
     public int send(final DirectBuffer buffer, final int offset, final int length) throws IOException {
-        throw new UnsupportedOperationException();
+        return senderPoller.selectNow(writeSelectionHandler.init(buffer, offset, length));
     }
 
     @Override
@@ -92,5 +103,38 @@ final class UdpServerEndpoint implements NioEndpoint {
     @Override
     public String toString() {
         return "TcpServer{" + datagramChannel.socket().getLocalSocketAddress() + '}';
+    }
+
+    private class UdpReadHandler extends ReadSelectionHandler {
+        public UdpReadHandler(final Supplier<? extends RingBuffer> ringBufferFactory) {
+            super(ringBufferFactory);
+        }
+
+        @Override
+        protected int readFromChannel(final Channel channel, final ByteBuffer buffer) throws IOException {
+            final DatagramChannel datagramChannel = (DatagramChannel) channel;
+            final int pos = buffer.position();
+            final SocketAddress sourceAddress = datagramChannel.receive(buffer);
+            if (sourceAddress != null) {
+                lastSourceAddress = sourceAddress;
+                return buffer.position() - pos;
+            }
+            return 0;
+        }
+    }
+
+    private class UdpWriteHandler extends WriteSelectionHandler {
+        public UdpWriteHandler(final Supplier<? extends RingBuffer> ringBufferFactory) {
+            super(ringBufferFactory);
+        }
+
+        @Override
+        protected int writeToChannel(final Channel channel, final ByteBuffer buffer) throws IOException {
+            if (lastSourceAddress != null) {
+                return DISCONNECTED;
+            }
+            final DatagramChannel datagramChannel = (DatagramChannel) channel;
+            return datagramChannel.send(buffer, lastSourceAddress);
+        }
     }
 }

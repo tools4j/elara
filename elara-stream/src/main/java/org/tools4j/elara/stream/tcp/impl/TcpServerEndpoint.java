@@ -28,10 +28,12 @@ import org.agrona.DirectBuffer;
 import org.agrona.LangUtil;
 import org.tools4j.elara.stream.MessageReceiver.Handler;
 import org.tools4j.elara.stream.nio.NioEndpoint;
-import org.tools4j.elara.stream.nio.ReceiverPoller;
+import org.tools4j.elara.stream.nio.NioHeader;
+import org.tools4j.elara.stream.nio.NioPoller;
+import org.tools4j.elara.stream.nio.ReadSelectionHandler;
 import org.tools4j.elara.stream.nio.RingBuffer;
 import org.tools4j.elara.stream.nio.SelectionHandler;
-import org.tools4j.elara.stream.nio.SenderPoller;
+import org.tools4j.elara.stream.nio.WriteSelectionHandler;
 import org.tools4j.elara.stream.tcp.AcceptListener;
 
 import java.io.IOException;
@@ -50,10 +52,12 @@ final class TcpServerEndpoint implements NioEndpoint {
 
     private final ServerSocketChannel serverSocketChannel;
     private final AcceptListener acceptListener;
-    private final ReceiverPoller receiverPoller;
-    private final SenderPoller senderPoller;
+    private final ReadSelectionHandler readSelectionHandler;
+    private final WriteSelectionHandler writeSelectionHandler;
     private final SelectionHandler receiverAcceptHandler = key -> onSelectionKey(key, SelectionKey.OP_READ);
     private final SelectionHandler senderAcceptHandler = key -> onSelectionKey(key, SelectionKey.OP_WRITE);
+    private final NioPoller receiverPoller = new NioPoller();
+    private final NioPoller senderPoller = new NioPoller();
     private final List<SocketChannel> accepted = new ArrayList<>();
 
     TcpServerEndpoint(final SocketAddress bindAddress,
@@ -63,8 +67,8 @@ final class TcpServerEndpoint implements NioEndpoint {
             this.serverSocketChannel = ServerSocketChannel.open()
                     .setOption(StandardSocketOptions.SO_REUSEADDR, true);
             this.acceptListener = requireNonNull(acceptListener);
-            this.receiverPoller = new ReceiverPoller(ringBufferFactory, TcpHeader.INSTANCE);
-            this.senderPoller = new SenderPoller(ringBufferFactory);
+            this.readSelectionHandler = new ReadSelectionHandler(ringBufferFactory, receiverAcceptHandler);
+            this.writeSelectionHandler = new WriteSelectionHandler(ringBufferFactory, senderAcceptHandler);
             this.serverSocketChannel.configureBlocking(false);
             this.serverSocketChannel.register(senderPoller.selector(), SelectionKey.OP_ACCEPT);
             this.serverSocketChannel.register(receiverPoller.selector(), SelectionKey.OP_ACCEPT);
@@ -108,13 +112,13 @@ final class TcpServerEndpoint implements NioEndpoint {
     }
 
     @Override
-    public int receive(final Handler messageHandler) throws IOException {
-        return receiverPoller.selectNow(receiverAcceptHandler, messageHandler);
+    public int receive(final NioHeader header, final Handler messageHandler) throws IOException {
+        return receiverPoller.selectNow(readSelectionHandler.init(header, messageHandler));
     }
 
     @Override
     public int send(final DirectBuffer buffer, final int offset, final int length) throws IOException {
-        return senderPoller.selectNow(senderAcceptHandler, buffer, offset, length);
+        return senderPoller.selectNow(writeSelectionHandler.init(buffer, offset, length));
     }
 
     private int onSelectionKey(final SelectionKey key, final int registerOps) throws IOException {

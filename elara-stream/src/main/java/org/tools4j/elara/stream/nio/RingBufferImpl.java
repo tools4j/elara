@@ -163,7 +163,7 @@ final class RingBufferImpl implements RingBuffer {
     @Override
     public void readCommit(final int bytes) {
         if (!readSkip(bytes)) {
-            throw new IllegalArgumentException("Cannot commit " + bytes + " bytes, only " + writeLength() +
+            throw new IllegalArgumentException("Cannot commit " + bytes + " bytes, only " + readLength() +
                     " are available for reading");
         }
     }

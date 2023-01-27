@@ -23,46 +23,42 @@
  */
 package org.tools4j.elara.stream.udp.impl;
 
-import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.stream.nio.NioHeader;
+import org.agrona.concurrent.UnsafeBuffer;
+import org.tools4j.elara.stream.nio.NioHeader.MutableNioHeader;
 
-final class UdpHeader implements NioHeader {
-    final static int LENGTH = 16;
-    final static int POS_PAYLOAD_LENGTH = 0;
-    final static int POS_SEQUENCE = 8;
+final class UdpHeader implements MutableNioHeader {
+    public final static int HEADER_LENGTH = 16;
+    private static final int POS_PAYLOAD_LENGTH = 0;
+    private static final int POS_SEQUENCE = 8;
 
-    private long sequence;
+    private final MutableDirectBuffer buffer = new UnsafeBuffer(0, 0);
 
     @Override
     public int headerLength() {
-        return LENGTH;
+        return HEADER_LENGTH;
     }
 
     @Override
-    public void write(final MutableDirectBuffer header, final DirectBuffer payload, final int payloadLength) {
-        header.putInt(POS_PAYLOAD_LENGTH, payloadLength);
-        header.putLong(POS_SEQUENCE, sequence);
+    public MutableDirectBuffer buffer() {
+        return buffer;
     }
-
-    int outOfSequenceCount;
 
     @Override
-    public int payloadLength(final DirectBuffer frame) {
-        final int payloadLength = frame.getInt(POS_PAYLOAD_LENGTH);
-        final long sequence = frame.getLong(POS_SEQUENCE);
-        if (this.sequence != sequence) {
-            System.err.println("Unexpected sequence " + sequence + " when expecting " + this.sequence);
-            outOfSequenceCount++;
-            if (outOfSequenceCount > 10) {
-                throw new IllegalArgumentException("Unexpected sequence " + sequence + " when expecting " + this.sequence);
-            }
-        }
-        this.sequence = sequence + 1;
-        return payloadLength;
+    public int payloadLength() {
+        return buffer.getInt(POS_PAYLOAD_LENGTH);
     }
 
-    void incrementSequence() {
-        sequence++;
+    public long sequence() {
+        return buffer.getLong(POS_SEQUENCE);
+    }
+
+    @Override
+    public void payloadLength(final int length) {
+        buffer.putInt(POS_PAYLOAD_LENGTH, length);
+    }
+
+    public void sequence(final long sequence) {
+        buffer.putLong(POS_SEQUENCE, sequence);
     }
 }

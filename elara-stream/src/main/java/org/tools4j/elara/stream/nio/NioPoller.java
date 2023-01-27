@@ -29,13 +29,13 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 
-class NioPoller extends TransportPoller {
+public final class NioPoller extends TransportPoller {
 
-    public final Selector selector() {
+    public Selector selector() {
         return selector;
     }
 
-    public final int selectNow(final SelectionHandler selectionHandler) throws IOException {
+    public int selectNow(final SelectionHandler selectionHandler) throws IOException {
         selector.selectNow();
         final int size = selectedKeySet.size();
         if (size == 0) {

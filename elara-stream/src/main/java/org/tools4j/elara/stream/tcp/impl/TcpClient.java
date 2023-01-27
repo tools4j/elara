@@ -104,7 +104,7 @@ public class TcpClient implements TcpConnection {
     private final class TcpClientReceiver extends NioReceiver {
         String name;
         TcpClientReceiver() {
-            super(() -> client);
+            super(() -> client, new TcpHeader());
         }
 
         @Override
@@ -126,7 +126,7 @@ public class TcpClient implements TcpConnection {
     private final class TcpClientSender extends NioSender {
         String name;
         TcpClientSender() {
-            super(() -> client, TcpHeader.INSTANCE);
+            super(() -> client, new TcpHeader());
         }
 
         @Override

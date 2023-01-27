@@ -29,9 +29,9 @@ import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.SendingResult;
 import org.tools4j.elara.stream.nio.BiDirectional;
+import org.tools4j.elara.stream.nio.NioHeader.MutableNioHeader;
 import org.tools4j.elara.stream.nio.NioReceiver;
 import org.tools4j.elara.stream.nio.NioSender;
-import org.tools4j.elara.stream.nio.ReceiverPoller;
 import org.tools4j.elara.stream.nio.RingBuffer;
 
 import java.net.SocketAddress;
@@ -50,8 +50,7 @@ public class UdpServer implements BiDirectional {
 
     public UdpServer(final SocketAddress bindAddress, final int bufferCapacity) {
         this.bindAddress = requireNonNull(bindAddress);
-        this.server = new UdpServerEndpoint(bindAddress,
-                new ReceiverPoller(RingBuffer.factory(bufferCapacity), receiver.header));
+        this.server = new UdpServerEndpoint(bindAddress, RingBuffer.factory(bufferCapacity));
     }
 
     @Override
@@ -93,10 +92,11 @@ public class UdpServer implements BiDirectional {
 
     private final class UdpServerReceiver extends NioReceiver {
         final UdpHeader header;
+        long sequence;
         String name;
         UdpServerReceiver(final UdpHeader header) {
-            super(() -> server);
-            this.header = header;
+            super(() -> server, header);
+            this.header = requireNonNull(header);
         }
 
         @Override
@@ -116,6 +116,7 @@ public class UdpServer implements BiDirectional {
 
     private final class UdpServerSender extends NioSender {
         final UdpHeader header;
+        long sequence;
         String name;
         UdpServerSender(final UdpHeader header) {
             super(() -> server, header);
@@ -123,10 +124,17 @@ public class UdpServer implements BiDirectional {
         }
 
         @Override
+        protected void writeHeader(final MutableNioHeader header, final int payloadLength) {
+            assert this.header == header;
+            super.writeHeader(header, payloadLength);
+            this.header.sequence(sequence);
+        }
+
+        @Override
         public SendingResult sendMessage(final DirectBuffer buffer, final int offset, final int length) {
             final SendingResult result = super.sendMessage(buffer, offset, length);
             if (result == SendingResult.SENT) {
-                header.incrementSequence();
+                sequence++;
                 return SendingResult.SENT;
             }
             return result;

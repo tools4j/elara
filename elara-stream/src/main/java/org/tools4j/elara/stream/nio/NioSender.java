@@ -29,6 +29,7 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.stream.BufferingSendingContext;
 import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.SendingResult;
+import org.tools4j.elara.stream.nio.NioHeader.MutableNioHeader;
 
 import java.net.ConnectException;
 import java.nio.channels.SelectionKey;
@@ -39,15 +40,13 @@ import static java.util.Objects.requireNonNull;
 public class NioSender implements MessageSender.Direct {
 
     private final Supplier<? extends NioEndpoint> endpointSupplier;
-    private final NioHeader header;
     private final NioFrame frame;
 
     private final NioSendingContext context;
 
-    public NioSender(final Supplier<? extends NioEndpoint> endpointSupplier, final NioHeader header) {
+    public NioSender(final Supplier<? extends NioEndpoint> endpointSupplier, final MutableNioHeader header) {
         this.endpointSupplier = requireNonNull(endpointSupplier);
-        this.header = requireNonNull(header);
-        this.frame = new NioFrame(header.headerLength(), 4096);//FIXME configure
+        this.frame = new NioFrameImpl(header, 4096);//FIXME configure
         this.context = new NioSendingContext(this, frame.payload());
     }
 
@@ -62,17 +61,21 @@ public class NioSender implements MessageSender.Direct {
         if (buffer != frame.payload()) {
             frame.payload().putBytes(0, buffer, offset, length);
         }
-        header.write(frame.header(), frame.payload(), length);
-        return send(length);
+        writeHeader(frame.header(), length);
+        return sendFrame(frame.header().headerLength() + length);
     }
 
-    private SendingResult send(final int payloadLength) {
+    protected void writeHeader(final MutableNioHeader header, final int payloadLength) {
+        header.payloadLength(payloadLength);
+    }
+
+    private SendingResult sendFrame(final int frameLength) {
         final NioEndpoint endpoint = endpointSupplier.get();
         if (endpoint == null) {
             return SendingResult.CLOSED;
         }
         try {
-            final int readyOps = endpoint.send(frame.frame(), 0, frame.headerLength() + payloadLength);
+            final int readyOps = endpoint.send(frame.frame(), 0, frameLength);
             if (readyOps > 0 && ((readyOps & SelectionKey.OP_WRITE) != 0)) {
                 return SendingResult.SENT;
             }
@@ -80,6 +83,9 @@ public class NioSender implements MessageSender.Direct {
                 if ((readyOps & SelectionHandler.MESSAGE_TOO_LARGE) != 0) {
                     //FIXME log
                     return SendingResult.FAILED;
+                }
+                if ((readyOps & SelectionHandler.DISCONNECTED) != 0) {
+                    return SendingResult.DISCONNECTED;
                 }
                 if ((readyOps & SelectionHandler.BACK_PRESSURE) != 0) {
                     return SendingResult.BACK_PRESSURED;

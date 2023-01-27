@@ -23,26 +23,33 @@
  */
 package org.tools4j.elara.stream.tcp.impl;
 
-import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.stream.nio.NioHeader;
+import org.agrona.concurrent.UnsafeBuffer;
+import org.tools4j.elara.stream.nio.NioHeader.MutableNioHeader;
 
-enum TcpHeader implements NioHeader {
-    INSTANCE;
-    final static int LENGTH = 4;
-    private final static int POS_PAYLOAD_LENGTH = 0;
+final class TcpHeader implements MutableNioHeader {
+    public final static int HEADER_LENGTH = 4;
+    private static final int POS_PAYLOAD_LENGTH = 0;
+
+    private final MutableDirectBuffer buffer = new UnsafeBuffer(0, 0);
+
     @Override
     public int headerLength() {
-        return LENGTH;
+        return HEADER_LENGTH;
     }
 
     @Override
-    public void write(final MutableDirectBuffer header, final DirectBuffer payload, final int payloadLength) {
-        header.putInt(POS_PAYLOAD_LENGTH, payloadLength);
+    public MutableDirectBuffer buffer() {
+        return buffer;
     }
 
     @Override
-    public int payloadLength(final DirectBuffer frame) {
-        return frame.getInt(POS_PAYLOAD_LENGTH);
+    public int payloadLength() {
+        return buffer.getInt(POS_PAYLOAD_LENGTH);
+    }
+
+    @Override
+    public void payloadLength(final int length) {
+        buffer.putInt(POS_PAYLOAD_LENGTH, length);
     }
 }

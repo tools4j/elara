@@ -31,6 +31,7 @@ public interface SelectionHandler {
     int OK = 0;
     int BACK_PRESSURE = Integer.MIN_VALUE >> 1;
     int MESSAGE_TOO_LARGE = Integer.MIN_VALUE >> 2;
+    int DISCONNECTED = Integer.MIN_VALUE >> 3;
     SelectionHandler NO_OP = key -> OK;
 
     int onSelectionKey(SelectionKey key) throws IOException;

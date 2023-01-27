@@ -27,9 +27,11 @@ import org.agrona.DirectBuffer;
 import org.agrona.LangUtil;
 import org.tools4j.elara.stream.MessageReceiver.Handler;
 import org.tools4j.elara.stream.nio.NioEndpoint;
+import org.tools4j.elara.stream.nio.NioHeader;
+import org.tools4j.elara.stream.nio.NioPoller;
+import org.tools4j.elara.stream.nio.ReadSelectionHandler;
 import org.tools4j.elara.stream.nio.RingBuffer;
-import org.tools4j.elara.stream.nio.SelectionHandler;
-import org.tools4j.elara.stream.nio.SenderPoller;
+import org.tools4j.elara.stream.nio.WriteSelectionHandler;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -41,15 +43,20 @@ import java.util.function.Supplier;
 final class UdpClientEndpoint implements NioEndpoint {
 
     private final DatagramChannel datagramChannel;
-    private final SenderPoller senderPoller;
+    private final ReadSelectionHandler readSelectionHandler;
+    private final WriteSelectionHandler writeSelectionHandler;
+    private final NioPoller receiverPoller = new NioPoller();
+    private final NioPoller senderPoller = new NioPoller();
 
     UdpClientEndpoint(final SocketAddress connectAddress,
                       final Supplier<? extends RingBuffer> ringBufferFactory) {
         try {
             this.datagramChannel = DatagramChannel.open()
                     .setOption(StandardSocketOptions.SO_REUSEADDR, true);
-            this.senderPoller = new SenderPoller(ringBufferFactory);
+            this.readSelectionHandler = new ReadSelectionHandler(ringBufferFactory);
+            this.writeSelectionHandler = new WriteSelectionHandler(ringBufferFactory);
             this.datagramChannel.configureBlocking(false);
+            this.datagramChannel.register(receiverPoller.selector(), SelectionKey.OP_READ);
             this.datagramChannel.register(senderPoller.selector(), SelectionKey.OP_WRITE);
             this.datagramChannel.connect(connectAddress);
         } catch (final IOException e) {
@@ -69,13 +76,13 @@ final class UdpClientEndpoint implements NioEndpoint {
     }
 
     @Override
-    public int receive(final Handler messageHandler) {
-        throw new UnsupportedOperationException();
+    public int receive(final NioHeader header, final Handler messageHandler) throws IOException {
+        return receiverPoller.selectNow(readSelectionHandler.init(header, messageHandler));
     }
 
     @Override
     public int send(final DirectBuffer buffer, final int offset, final int length) throws IOException {
-        return senderPoller.selectNow(SelectionHandler.NO_OP, buffer, offset, length);
+        return senderPoller.selectNow(writeSelectionHandler.init(buffer, offset, length));
     }
 
     public boolean isConnected() {

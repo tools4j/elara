@@ -34,9 +34,11 @@ import static java.util.Objects.requireNonNull;
 public class NioReceiver implements MessageReceiver {
 
     private final Supplier<? extends NioEndpoint> endpointSupplier;
+    private final NioHeader header;
 
-    public NioReceiver(final Supplier<? extends NioEndpoint> endpointSupplier) {
+    public NioReceiver(final Supplier<? extends NioEndpoint> endpointSupplier, final NioHeader header) {
         this.endpointSupplier = requireNonNull(endpointSupplier);
+        this.header = requireNonNull(header);
     }
 
     @Override
@@ -46,7 +48,7 @@ public class NioReceiver implements MessageReceiver {
             return 0;
         }
         try {
-            final int readyOps = endpoint.receive(handler);
+            final int readyOps = endpoint.receive(header, handler);
             if (readyOps >= 0) {
                 return (readyOps & SelectionKey.OP_READ) == 0 ? 0 : 1;
             }
