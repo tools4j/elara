@@ -29,12 +29,10 @@ import org.tools4j.elara.stream.MessageReceiver.Handler;
 import java.io.IOException;
 
 public interface NioEndpoint extends AutoCloseable {
-
-    @Override
-    void close();
     int receive(Handler messageHandler) throws IOException;
     int send(DirectBuffer buffer, int offset, int length) throws IOException;
     boolean isConnected();
     boolean isClosed();
-
+    @Override
+    void close();
 }

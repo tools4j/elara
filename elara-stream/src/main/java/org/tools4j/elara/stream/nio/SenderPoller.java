@@ -65,18 +65,17 @@ public final class SenderPoller extends NioPoller {
         }
         final ByteChannel channel = (ByteChannel) key.channel();
         final RingBuffer ringBuffer = SelectionKeyAttachments.fetchOrAttach(key, ringBufferFactory);
-        result = checkCacheMessageLengthAndPayload(ringBuffer);
-        if (result != SelectionHandler.OK) {
-            if (result != SelectionHandler.BACK_PRESSURE || !writeRemaining(channel, ringBuffer)) {
-                return result;
-            }
-        }
-        result = checkCacheMessageLengthAndPayload(ringBuffer);
+        final boolean tryDirect = writeRemaining(channel, ringBuffer);
+        result = checkCacheMessage(ringBuffer);
         if (result != SelectionHandler.OK) {
             return result;
         }
-        cacheMessageLengthAndPayload(ringBuffer);
-        writeRemaining(channel, ringBuffer);
+        if (tryDirect) {
+            writeOrCacheMessage(channel, ringBuffer);
+        } else {
+            cacheMessage(ringBuffer);
+            writeRemaining(channel, ringBuffer);
+        }
         return SelectionHandler.OK;
     }
 
@@ -96,28 +95,22 @@ public final class SenderPoller extends NioPoller {
         return ringBuffer.readLength() == 0;
     }
 
-    private int checkCacheMessageLengthAndPayload(final RingBuffer ringBuffer) {
-        final int payloadLength = readBuffer.capacity();
-        final int totalLength = Integer.BYTES + payloadLength;
-        if (totalLength <= ringBuffer.writeLength()) {
+    private int checkCacheMessage(final RingBuffer ringBuffer) {
+        final int messageLength = readBuffer.capacity();
+        if (messageLength <= ringBuffer.writeLength()) {
             return SelectionHandler.OK;
         }
-        return totalLength <= ringBuffer.capacity() ? SelectionHandler.BACK_PRESSURE : SelectionHandler.MESSAGE_TOO_LARGE;
+        return messageLength <= ringBuffer.capacity() ? SelectionHandler.BACK_PRESSURE : SelectionHandler.MESSAGE_TOO_LARGE;
     }
 
-    private boolean writeMessageLength(final ByteChannel channel, final RingBuffer ringBuffer) throws IOException {
-        cacheMessageLength(ringBuffer);
-        return writeRemaining(channel, ringBuffer);
-    }
-
-    private void writeOrCacheMessagePayload(final ByteChannel channel, final RingBuffer ringBuffer) throws IOException {
-        if (!writeMessagePayloadDirect(channel, ringBuffer)) {
-            cacheMessagePayload(ringBuffer);
+    private void writeOrCacheMessage(final ByteChannel channel, final RingBuffer ringBuffer) throws IOException {
+        if (!writeMessageDirect(channel, ringBuffer)) {
+            cacheMessage(ringBuffer);
             writeRemaining(channel, ringBuffer);
         }
     }
 
-    private boolean writeMessagePayloadDirect(final ByteChannel channel, final RingBuffer ringBuffer) throws IOException {
+    private boolean writeMessageDirect(final ByteChannel channel, final RingBuffer ringBuffer) throws IOException {
         final ByteBuffer buffer = readBuffer.byteBuffer();
         if (buffer == null) {
             return false;
@@ -128,36 +121,16 @@ public final class SenderPoller extends NioPoller {
         buffer.position(adjustment);
         final int written = channel.write(buffer);
         if (written < length) {
-            cacheMessagePayload(ringBuffer, written, length - written);
+            cacheMessage(ringBuffer, written, length - written);
         }
         return true;
     }
 
-    private void cacheMessageLength(final RingBuffer ringBuffer) throws IOException {
-        final int length = readBuffer.capacity();
-        if (ringBuffer.writeUnsignedInt(length)) {
-            return;
-        }
-        if (ringBuffer.writeUnsignedByte((byte)(length >>> 24)) &&
-                ringBuffer.writeUnsignedByte((byte)(length >>> 16)) &&
-                ringBuffer.writeUnsignedByte((byte)(length >>> 8)) &&
-                ringBuffer.writeUnsignedByte((byte)length)) {
-            return;
-        }
-        //should not get here since we checked buffer capacity before attempting to write to it
-        throw new IOException("Failed to write message length: " + length);
+    private void cacheMessage(final RingBuffer ringBuffer) throws IOException {
+        cacheMessage(ringBuffer, 0, readBuffer.capacity());
     }
 
-    private void cacheMessageLengthAndPayload(final RingBuffer ringBuffer) throws IOException {
-        cacheMessageLength(ringBuffer);
-        cacheMessagePayload(ringBuffer);
-    }
-
-    private void cacheMessagePayload(final RingBuffer ringBuffer) throws IOException {
-        cacheMessagePayload(ringBuffer, 0, readBuffer.capacity());
-    }
-
-    private void cacheMessagePayload(final RingBuffer ringBuffer, final int offset, final int length) throws IOException {
+    private void cacheMessage(final RingBuffer ringBuffer, final int offset, final int length) throws IOException {
         int readOffset = offset;
         int readRemaining = length;
         int writeLength = ringBuffer.writeLength();

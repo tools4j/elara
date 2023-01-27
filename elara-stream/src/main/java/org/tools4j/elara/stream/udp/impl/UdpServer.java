@@ -24,11 +24,14 @@
 package org.tools4j.elara.stream.udp.impl;
 
 import org.agrona.CloseHelper;
+import org.agrona.DirectBuffer;
 import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageSender;
+import org.tools4j.elara.stream.SendingResult;
 import org.tools4j.elara.stream.nio.BiDirectional;
 import org.tools4j.elara.stream.nio.NioReceiver;
 import org.tools4j.elara.stream.nio.NioSender;
+import org.tools4j.elara.stream.nio.ReceiverPoller;
 import org.tools4j.elara.stream.nio.RingBuffer;
 
 import java.net.SocketAddress;
@@ -41,13 +44,14 @@ import static java.util.Objects.requireNonNull;
 public class UdpServer implements BiDirectional {
 
     private final SocketAddress bindAddress;
-    private final UdpServerSender sender = new UdpServerSender();
-    private final UdpServerReceiver receiver = new UdpServerReceiver();;
+    private final UdpServerSender sender = new UdpServerSender(new UdpHeader());
+    private final UdpServerReceiver receiver = new UdpServerReceiver(new UdpHeader());
     private UdpServerEndpoint server;
 
     public UdpServer(final SocketAddress bindAddress, final int bufferCapacity) {
         this.bindAddress = requireNonNull(bindAddress);
-        this.server = new UdpServerEndpoint(bindAddress, RingBuffer.factory(bufferCapacity));
+        this.server = new UdpServerEndpoint(bindAddress,
+                new ReceiverPoller(RingBuffer.factory(bufferCapacity), receiver.header));
     }
 
     @Override
@@ -88,9 +92,20 @@ public class UdpServer implements BiDirectional {
     }
 
     private final class UdpServerReceiver extends NioReceiver {
+        final UdpHeader header;
         String name;
-        UdpServerReceiver() {
+        UdpServerReceiver(final UdpHeader header) {
             super(() -> server);
+            this.header = header;
+        }
+
+        @Override
+        public int poll(final Handler handler) {
+            final int result = super.poll(handler);
+            if (result >= 0) {
+//                header.incrementSequence();
+            }
+            return result;
         }
 
         @Override
@@ -100,9 +115,21 @@ public class UdpServer implements BiDirectional {
     }
 
     private final class UdpServerSender extends NioSender {
+        final UdpHeader header;
         String name;
-        UdpServerSender() {
-            super(() -> server);
+        UdpServerSender(final UdpHeader header) {
+            super(() -> server, header);
+            this.header = requireNonNull(header);
+        }
+
+        @Override
+        public SendingResult sendMessage(final DirectBuffer buffer, final int offset, final int length) {
+            final SendingResult result = super.sendMessage(buffer, offset, length);
+            if (result == SendingResult.SENT) {
+                header.incrementSequence();
+                return SendingResult.SENT;
+            }
+            return result;
         }
 
         @Override

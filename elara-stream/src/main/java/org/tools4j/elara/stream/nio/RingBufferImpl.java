@@ -49,32 +49,6 @@ final class RingBufferImpl implements RingBuffer {
         }
     }
 
-    @Override
-    public int readUnsignedByte(final boolean commit) {
-        final int readLength = readLength();
-        if (readLength >= Byte.BYTES) {
-            final int value = 0xff & buffer.getByte(readOffset);
-            if (commit) {
-                readCommit0(Byte.BYTES);
-            }
-            return value;
-        }
-        return -1;
-    }
-
-    @Override
-    public long readUnsignedInt(final boolean commit) {
-        final int readLength = readLength();
-        if (readLength >= Integer.BYTES) {
-            final long value = 0xffffffffL & buffer.getInt(readOffset);
-            if (commit) {
-                readCommit0(Integer.BYTES);
-            }
-            return value;
-        }
-        return -1L;
-    }
-
     public int read(final MutableDirectBuffer target, final int targetOffset, final int maxLength) {
         final int readLength = readLength();
         if (readLength > 0) {
@@ -100,16 +74,18 @@ final class RingBufferImpl implements RingBuffer {
 
     @Override
     public boolean readWrap(final DirectBuffer wrap) {
-        return readWrap0(wrap, readLength());
+        final int readLength = readLength();
+        if (readLength > 0) {
+            wrap.wrap(buffer, readOffset, readLength);
+            return true;
+        }
+        return false;
     }
 
     @Override
-    public boolean readWrap(final DirectBuffer wrap, final int maxLength) {
-        return readWrap0(wrap, Math.min(readLength(), maxLength));
-    }
-
-    private boolean readWrap0(final DirectBuffer wrap, final int length) {
-        if (length > 0) {
+    public boolean readWrap(final DirectBuffer wrap, final int length) {
+        final int readLength = readLength();
+        if (readLength > 0 && readLength >= length) {
             wrap.wrap(buffer, readOffset, length);
             return true;
         }
@@ -127,28 +103,6 @@ final class RingBufferImpl implements RingBuffer {
             return byteBuffer;
         }
         return null;
-    }
-
-    @Override
-    public boolean writeUnsignedByte(final byte value) {
-        final int writeLength = writeLength();
-        if (writeLength >= Byte.BYTES) {
-            buffer.putByte(writeOffset, value);
-            writeCommit0(Byte.BYTES);
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public boolean writeUnsignedInt(final int value) {
-        final int writeLength = writeLength();
-        if (writeLength >= Integer.BYTES) {
-            buffer.putInt(writeOffset, value);
-            writeCommit0(Integer.BYTES);
-            return true;
-        }
-        return false;
     }
 
     @Override
@@ -175,16 +129,18 @@ final class RingBufferImpl implements RingBuffer {
 
     @Override
     public boolean writeWrap(final MutableDirectBuffer wrap) {
-        return writeWrap0(wrap, writeLength());
+        final int writeLength = writeLength();
+        if (writeLength > 0) {
+            wrap.wrap(buffer, writeOffset, writeLength);
+            return true;
+        }
+        return false;
     }
 
     @Override
-    public boolean writeWrap(final MutableDirectBuffer wrap, final int maxLength) {
-        return writeWrap0(wrap, Math.min(writeLength(), maxLength));
-    }
-
-    private boolean writeWrap0(final MutableDirectBuffer wrap, final int length) {
-        if (length > 0) {
+    public boolean writeWrap(final MutableDirectBuffer wrap, final int length) {
+        final int writeLength = writeLength();
+        if (writeLength > 0 && writeLength >= length) {
             wrap.wrap(buffer, writeOffset, length);
             return true;
         }
@@ -225,18 +181,6 @@ final class RingBufferImpl implements RingBuffer {
         return false;
     }
 
-    @Override
-    public boolean readSkipEndGap(final int minBytes) {
-        final int bytesToEnd = capacity() - readOffset;
-        if (bytesToEnd < minBytes) {
-            if (readLength() == bytesToEnd) {
-                readCommit0(bytesToEnd);
-                return true;
-            }
-        }
-        return false;
-    }
-
     private void readCommit0(final int bytes) {
         readOffset += bytes;
         normaliseOffsets();
@@ -259,18 +203,6 @@ final class RingBufferImpl implements RingBuffer {
         if (bytes <= writeLength) {
             writeCommit0(bytes);
             return true;
-        }
-        return false;
-    }
-
-    @Override
-    public boolean writeSkipEndGap(final int minBytes) {
-        final int bytesToEnd = capacity() - writeOffset;
-        if (bytesToEnd < minBytes) {
-            if (writeLength() == bytesToEnd) {
-                writeCommit0(bytesToEnd);
-                return true;
-            }
         }
         return false;
     }

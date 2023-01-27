@@ -63,7 +63,7 @@ final class TcpServerEndpoint implements NioEndpoint {
             this.serverSocketChannel = ServerSocketChannel.open()
                     .setOption(StandardSocketOptions.SO_REUSEADDR, true);
             this.acceptListener = requireNonNull(acceptListener);
-            this.receiverPoller = new ReceiverPoller(ringBufferFactory);
+            this.receiverPoller = new ReceiverPoller(ringBufferFactory, TcpHeader.INSTANCE);
             this.senderPoller = new SenderPoller(ringBufferFactory);
             this.serverSocketChannel.configureBlocking(false);
             this.serverSocketChannel.register(senderPoller.selector(), SelectionKey.OP_ACCEPT);

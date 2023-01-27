@@ -59,10 +59,6 @@ class NioPoller extends TransportPoller {
         return result;
     }
 
-    boolean isClosed() {
-        return !selector.isOpen();
-    }
-
     private static <T extends Throwable> T exceptionOrSuppress(final T throwable, final T next) {
         if (throwable == null) {
             return next;

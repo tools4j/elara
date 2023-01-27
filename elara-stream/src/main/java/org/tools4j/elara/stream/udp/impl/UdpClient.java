@@ -39,11 +39,10 @@ import java.util.function.Supplier;
 import static java.util.Objects.requireNonNull;
 
 public class UdpClient implements BiDirectional {
-
     private final SocketAddress connectAddress;
     private final Supplier<? extends RingBuffer> ringBufferFactory;
     private final UcpClientReceiver receiver = new UcpClientReceiver();
-    private final UcpClientSender sender = new UcpClientSender();
+    private final UcpClientSender sender = new UcpClientSender(new UdpHeader());
     private UdpClientEndpoint client;
 
     public UdpClient(final SocketAddress connectAddress, final int bufferCapacity) {
@@ -93,6 +92,7 @@ public class UdpClient implements BiDirectional {
     }
 
     private final class UcpClientReceiver extends NioReceiver {
+        final UdpHeader header = new UdpHeader();
         String name;
         UcpClientReceiver() {
             super(() -> client);
@@ -115,18 +115,22 @@ public class UdpClient implements BiDirectional {
     }
 
     private final class UcpClientSender extends NioSender {
+        final UdpHeader header;
         String name;
-        UcpClientSender() {
-            super(() -> client);
+        UcpClientSender(final UdpHeader header) {
+            super(() -> client, header);
+            this.header = requireNonNull(header);
         }
 
         @Override
         public SendingResult sendMessage(final DirectBuffer buffer, final int offset, final int length) {
             final SendingResult result = super.sendMessage(buffer, offset, length);
-            if (result != SendingResult.SENT) {
-                if (client != null && client.isClosed()) {
-                    reconnect();
-                }
+            if (result == SendingResult.SENT) {
+                header.incrementSequence();
+                return SendingResult.SENT;
+            }
+            if (client != null && client.isClosed()) {
+                reconnect();
             }
             return result;
         }

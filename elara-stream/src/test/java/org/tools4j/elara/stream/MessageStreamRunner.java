@@ -25,7 +25,7 @@ package org.tools4j.elara.stream;
 
 import org.agrona.MutableDirectBuffer;
 import org.agrona.collections.LongArrayList;
-import org.agrona.concurrent.UnsafeBuffer;
+import org.tools4j.elara.stream.MessageSender.SendingContext;
 
 import static java.lang.Long.toHexString;
 import static java.util.Objects.requireNonNull;
@@ -35,10 +35,17 @@ public class MessageStreamRunner {
 
     private final long messageCount;
     private final int messageSizeInBytes;
+    private final int maxMessagesPerSecond;
 
     public MessageStreamRunner(final long messageCount, final int messageSizeInBytes) {
+        this(messageCount, messageSizeInBytes, 0);
+    }
+    public MessageStreamRunner(final long messageCount,
+                               final int messageSizeInBytes,
+                               final int maxMessagesPerSecond) {
         this.messageCount = messageCount;
         this.messageSizeInBytes = messageSizeInBytes;
+        this.maxMessagesPerSecond = maxMessagesPerSecond;
     }
 
     public long messageCount() {
@@ -87,25 +94,34 @@ public class MessageStreamRunner {
     private Runnable senderLoop(final MessageSender sender, final LongArrayList results) {
         requireNonNull(sender);
         return () -> {
-            final MutableDirectBuffer message = new UnsafeBuffer(new byte[messageSizeInBytes]);
+            final double minNanosPerMessage = maxMessagesPerSecond <= 0 ? 0 : 1e9/maxMessagesPerSecond;
             long hash = 0;
             int retries = 0;
             long timeStart = 0;
             for (int i = 0; i < messageCount; i++) {
-                long mhash = 0;
-                for (int j = 0; j < messageSizeInBytes; j++) {
-                    final byte val = (byte)(i + j);
-                    message.putByte(j, val);
-                    mhash = hash(mhash, val);
-                }
+                long mhash, time;
+                SendingResult result = null;
+                do {
+                    retries += (result == null ? 0 : 1);
+                    try (final SendingContext context = sender.sendingMessage()) {
+                        final MutableDirectBuffer buffer = context.buffer();
+                        mhash = 0;
+                        for (int j = 0; j < messageSizeInBytes; j++) {
+                            final byte val = (byte) (i + j);
+                            buffer.putByte(j, val);
+                            mhash = hash(mhash, val);
+                        }
+                        time = i == 0 ? System.nanoTime() : 0;
+                        result = context.send(messageSizeInBytes);
+                    }
+                } while (result != SendingResult.SENT);
                 hash = hash(hash, mhash);
-                long time = i == 0 ? System.nanoTime() : 0;
-                while (sender.sendMessage(message, 0, messageSizeInBytes) != SendingResult.SENT) {
-                    retries++;
-                    time = i == 0 ? System.nanoTime() : 0;
-                }
                 if (i == 0) {
                     timeStart = time;
+                }
+                if (minNanosPerMessage > 0) {
+                    final long nanos = (long)((i + 1.0) * minNanosPerMessage);
+                    while (System.nanoTime() - timeStart < nanos);
                 }
             }
             final long timeEnd = System.nanoTime();

@@ -38,20 +38,21 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.util.function.Supplier;
 
+import static java.util.Objects.requireNonNull;
+
 final class UdpServerEndpoint implements NioEndpoint {
 
     private final DatagramChannel datagramChannel;
     private final ReceiverPoller receiverPoller;
 
-    UdpServerEndpoint(final SocketAddress bindAddress,
-                      final Supplier<? extends RingBuffer> ringBufferFactory) {
+    UdpServerEndpoint(final SocketAddress bindAddress, final ReceiverPoller receiverPoller) {
         try {
             this.datagramChannel = DatagramChannel.open()
                     .setOption(StandardSocketOptions.SO_REUSEADDR, true);
-            this.receiverPoller = new ReceiverPoller(ringBufferFactory);
             this.datagramChannel.configureBlocking(false);
             this.datagramChannel.register(receiverPoller.selector(), SelectionKey.OP_READ);
             this.datagramChannel.bind(bindAddress);
+            this.receiverPoller = requireNonNull(receiverPoller);
         } catch (final IOException e) {
             LangUtil.rethrowUnchecked(e);
             throw new RuntimeException(e);//we never get here

@@ -56,56 +56,54 @@ public class RingBufferTest {
     void readAndWrite() {
         final String msg1 = "hello world";
         final String msg2 = "say hello to the world!";
-        final DirectBuffer bytes1 = new UnsafeBuffer(msg1.getBytes());
-        final DirectBuffer bytes2 = new UnsafeBuffer(msg2.getBytes());
+        final MutableDirectBuffer bytes1 = new UnsafeBuffer(new byte[msg1.length() + 4]);
+        final MutableDirectBuffer bytes2 = new UnsafeBuffer(new byte[msg2.length() + 4]);
         final DirectBuffer buffer = new UnsafeBuffer(0, 0);
+        final int len1 = bytes1.putStringAscii(0, msg1);
+        final int len2 = bytes2.putStringAscii(0, msg2);
         boolean success;
 
         //WHEN: write msg1
-        success = ringBuffer.writeUnsignedInt(bytes1.capacity())
-                && ringBuffer.write(bytes1, 0, bytes1.capacity());
+        success = ringBuffer.write(bytes1, 0, bytes1.capacity());
 
         //then
         assertTrue(success);
-        assertEquals(msg1.length() + 4, ringBuffer.readLength());
+        assertEquals(len1, ringBuffer.readLength());
 
         //WHEN: write msg2
-        success = ringBuffer.writeUnsignedInt(bytes2.capacity()) &&
-                ringBuffer.write(bytes2, 0, bytes2.capacity());
+        success = ringBuffer.write(bytes2, 0, bytes2.capacity());
 
         //then
         assertTrue(success);
-        assertEquals(msg1.length() + 4 + msg2.length() + 4, ringBuffer.readLength());
+        assertEquals(len1 + len2, ringBuffer.readLength());
 
         //WHEN: prepare reading msg1
-        final int len1 = (int)ringBuffer.readUnsignedInt(true);
-        success = ringBuffer.readWrap(buffer, len1);
+        success = ringBuffer.readWrap(buffer);
 
         //then
-        assertEquals(msg1.length(), len1);
         assertTrue(success);
-        assertEquals(msg1.length(), buffer.capacity());
+        assertEquals(msg1.length(), buffer.getInt(0));
+        assertTrue(buffer.capacity() >= len1);
 
         //WHEN: read msg1
-        final String read1 = buffer.getStringWithoutLengthAscii(0, buffer.capacity());
-        ringBuffer.readCommit(len1);
+        final String read1 = buffer.getStringAscii(0);
+        ringBuffer.readCommit(read1.length() + 4);
 
         //then
         assertEquals(msg1, read1);
         assertEquals(msg2.length() + 4, ringBuffer.readLength());
 
         //WHEN: prepare reading msg2
-        final int len2 = (int)ringBuffer.readUnsignedInt(true);
-        success = ringBuffer.readWrap(buffer, len2);
+        success = ringBuffer.readWrap(buffer);
 
         //then
-        assertEquals(msg2.length(), len2);
         assertTrue(success);
-        assertEquals(msg2.length(), buffer.capacity());
+        assertEquals(msg2.length(), buffer.getInt(0));
+        assertTrue(buffer.capacity() >= len2);
 
         //WHEN: read msg2
-        final String read2 = buffer.getStringWithoutLengthAscii(0, len2);
-        ringBuffer.readCommit(len2);
+        final String read2 = buffer.getStringAscii(0);
+        ringBuffer.readCommit(read2.length() + 4);
 
         //then
         assertEquals(msg2, read2);
@@ -116,14 +114,13 @@ public class RingBufferTest {
     @MethodSource("readWriteWrapAround_messages")
     void readWriteWrapAround(final String msg) {
         final int times = 13 * BUFFER_CAPACITY;
-        final DirectBuffer bytes = new UnsafeBuffer(msg.getBytes());
+        final MutableDirectBuffer bytes = new UnsafeBuffer(new byte[msg.length() + 4]);
         final MutableDirectBuffer buffer = new UnsafeBuffer(0, 0);
-        final int bytesPerMessage = bytes.capacity() + Integer.BYTES;
+        final int bytesPerMessage = bytes.putStringAscii(0, msg);
 
         //WHEN: fill buffer
         int written = 0;
         while (ringBuffer.writeLength() >= bytesPerMessage) {
-            assertTrue(ringBuffer.writeUnsignedInt(bytes.capacity()));
             assertTrue(ringBuffer.write(bytes, 0, bytes.capacity()));
             log("[W:%s]:\t%s\n", written, ringBuffer);
             written++;
@@ -136,19 +133,25 @@ public class RingBufferTest {
         int read = 0;
         for (int i = 0; i < times; i++) {
             //WHEN: read one
-            final int len = skipReadUnsignedInt();
-            assertTrue(skipReadWrap(buffer, len), "skipReadWrap[" + i + "]");
+            if (!ringBuffer.readWrap(buffer, bytesPerMessage)) {
+                assertTrue(ringBuffer.readSkip(ringBuffer.readLength()), "readSkip[" + i + "]");
+                assertTrue(ringBuffer.readWrap(buffer, bytesPerMessage), "readWrap[" + i + "]");
+            }
 
             //THEN
-            assertEquals(bytes.capacity(), len, "len[" + i + "]");
-            assertEquals(msg, buffer.getStringWithoutLengthAscii(0, len), "msg[" + i + "]");
-            ringBuffer.readCommit(len);
+            assertTrue(buffer.capacity() >= bytesPerMessage, "len[" + i + "]");
+            assertEquals(msg, buffer.getStringAscii(0), "msg[" + i + "]");
+            ringBuffer.readCommit(bytesPerMessage);
             log("[R:%s]:\t%s\n", read, ringBuffer);
             read++;
 
+            //WHEN
+            if (!ringBuffer.writeWrap(buffer, bytes.capacity())) {
+                assertTrue(ringBuffer.writeSkip(ringBuffer.writeLength()), "writeSkip[" + i + "]");
+                assertTrue(ringBuffer.writeWrap(buffer, ringBuffer.writeLength()), "writeWrap[" + i + "]");
+            }
+
             //WHEN + THEN: write one
-            assertTrue(skipWriteUnsignedInt(bytes.capacity()), "skipWriteUnsignedInt[" + i + "]");
-            assertTrue(skipWriteWrap(buffer, bytes.capacity()), "skipWriteWrap[" + i + "]");
             buffer.putBytes(0, bytes, 0, buffer.capacity());
             ringBuffer.writeCommit(buffer.capacity());
             log("[W:%s]:\t%s\n", written, ringBuffer);
@@ -158,13 +161,15 @@ public class RingBufferTest {
         //WHEN: read rest
         while (read < written) {
             //WHEN: read one
-            final int len = skipReadUnsignedInt();
-            skipReadWrap(buffer, len);
+            if (!ringBuffer.readWrap(buffer, bytesPerMessage)) {
+                assertTrue(ringBuffer.readSkip(ringBuffer.readLength()), "readSkip");
+                assertTrue(ringBuffer.readWrap(buffer, bytesPerMessage), "readWrap");
+            }
 
             //THEN
-            assertEquals(bytes.capacity(), len);
-            assertEquals(msg, buffer.getStringWithoutLengthAscii(0, len));
-            ringBuffer.readCommit(len);
+            assertTrue(bytes.capacity() >= bytesPerMessage);
+            assertEquals(msg, buffer.getStringAscii(0));
+            ringBuffer.readCommit(bytesPerMessage);
             read++;
         }
 
@@ -192,26 +197,6 @@ public class RingBufferTest {
             messages[i] = loremIpsum.substring(0, i) + "!";
         }
         return Arrays.stream(messages).map(Arguments::of);
-    }
-
-    private int skipReadUnsignedInt() {
-        ringBuffer.readSkipEndGap(Integer.BYTES);
-        return (int)ringBuffer.readUnsignedInt(true);
-    }
-
-    private boolean skipWriteUnsignedInt(final int value) {
-        ringBuffer.writeSkipEndGap(Integer.BYTES);
-        return ringBuffer.writeUnsignedInt(value);
-    }
-
-    private boolean skipReadWrap(final DirectBuffer buffer, final int length) {
-        ringBuffer.readSkipEndGap(length);
-        return ringBuffer.readWrap(buffer, length);
-    }
-
-    private boolean skipWriteWrap(final MutableDirectBuffer buffer, final int length) {
-        ringBuffer.writeSkipEndGap(length);
-        return ringBuffer.writeWrap(buffer, length);
     }
 
     private static void log(final String format, final Object... args) {

@@ -40,14 +40,17 @@ import static java.util.Objects.requireNonNull;
 public final class ReceiverPoller extends NioPoller {
 
     private final Supplier<? extends RingBuffer> ringBufferFactory;
+    private final NioHeader header;
+    private final DirectBuffer headerBuffer = new UnsafeBuffer(0, 0);
     private final DirectBuffer readBuffer = new UnsafeBuffer(0, 0);
     private final SelectionHandler chainedHandler = this::onSelectionKey;
 
     private SelectionHandler selectionHandler = SelectionHandler.NO_OP;
     private Handler messageHandler = message -> {};
 
-    public ReceiverPoller(final Supplier<? extends RingBuffer> ringBufferFactory) {
+    public ReceiverPoller(final Supplier<? extends RingBuffer> ringBufferFactory, final NioHeader header) {
         this.ringBufferFactory = requireNonNull(ringBufferFactory);
+        this.header = requireNonNull(header);
     }
 
     public int selectNow(final SelectionHandler selectionHandler, final Handler messageHandler) throws IOException {
@@ -90,17 +93,18 @@ public final class ReceiverPoller extends NioPoller {
 
     private int handleMessages(final RingBuffer ringBuffer) {
         int readLength = ringBuffer.readLength();
-        while (readLength >= Integer.BYTES) {
-            final int messageLength = (int)ringBuffer.readUnsignedInt(false);
-            readLength -= Integer.BYTES;
+        while (readLength >= header.headerLength()) {
+            ringBuffer.readWrap(headerBuffer, header.headerLength());
+            final int messageLength = header.payloadLength(headerBuffer);
+            readLength -= header.headerLength();
             if (readLength < messageLength) {
-                if (ringBuffer.capacity() < messageLength + Integer.BYTES) {
+                if (ringBuffer.capacity() < messageLength + header.headerLength()) {
                     ringBuffer.reset();
                     return SelectionHandler.MESSAGE_TOO_LARGE;
                 }
                 break;
             }
-            ringBuffer.readCommit(Integer.BYTES);
+            ringBuffer.readCommit(header.headerLength());
             handleMessage(ringBuffer, messageLength);
             readLength = ringBuffer.readLength();
         }

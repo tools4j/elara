@@ -109,7 +109,7 @@ public class TcpServer implements TcpConnection {
     private final class TcpMulticastSender extends NioSender {
         String name;
         TcpMulticastSender() {
-            super(() -> server);
+            super(() -> server, TcpHeader.INSTANCE);
         }
 
         @Override

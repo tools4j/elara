@@ -21,46 +21,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.nio;
+package org.tools4j.elara.stream.tcp.impl;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.stream.nio.NioHeader;
 
-import java.nio.ByteBuffer;
-import java.util.function.Supplier;
+enum TcpHeader implements NioHeader {
+    INSTANCE;
+    final static int LENGTH = 4;
+    private final static int POS_PAYLOAD_LENGTH = 0;
+    @Override
+    public int headerLength() {
+        return LENGTH;
+    }
 
-public interface RingBuffer {
+    @Override
+    public void write(final MutableDirectBuffer header, final DirectBuffer payload, final int payloadLength) {
+        header.putInt(POS_PAYLOAD_LENGTH, payloadLength);
+    }
 
-    int capacity();
-
-    int readOffset();
-    int writeOffset();
-    int readLength();
-    int writeLength();
-
-    void readOffset(int offset);
-    void writeOffset(int offset);
-    void reset();
-    void reset(int readOffset, int writeOffset);
-
-    int read(MutableDirectBuffer target, int targetOffset, int maxLength);
-    int read(ByteBuffer target, int targetOffset, int maxLength);
-    boolean readWrap(DirectBuffer wrap);
-    boolean readWrap(DirectBuffer wrap, int length);
-    ByteBuffer readOrNull();
-    void readCommit(int bytes);
-    boolean readSkip(int bytes);
-
-    boolean write(DirectBuffer source, int offset, int length);
-    boolean write(ByteBuffer source, int offset, int length);
-    boolean writeWrap(MutableDirectBuffer wrap);
-    boolean writeWrap(MutableDirectBuffer wrap, int length);
-    ByteBuffer writeOrNull();
-    void writeCommit(int bytes);
-    boolean writeSkip(int bytes);
-
-    static Supplier<RingBuffer> factory(final int bufferSize) {
-        RingBufferImpl.validateBufferSize(bufferSize);
-        return () -> new RingBufferImpl(bufferSize);
+    @Override
+    public int payloadLength(final DirectBuffer frame) {
+        return frame.getInt(POS_PAYLOAD_LENGTH);
     }
 }

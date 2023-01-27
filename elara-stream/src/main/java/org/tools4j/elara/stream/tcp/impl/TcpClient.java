@@ -40,7 +40,6 @@ import java.util.function.Supplier;
 import static java.util.Objects.requireNonNull;
 
 public class TcpClient implements TcpConnection {
-
     private final SocketAddress connectAddress;
     private final ConnectListener connectListener;
     private final Supplier<? extends RingBuffer> ringBufferFactory;
@@ -127,7 +126,7 @@ public class TcpClient implements TcpConnection {
     private final class TcpClientSender extends NioSender {
         String name;
         TcpClientSender() {
-            super(() -> client);
+            super(() -> client, TcpHeader.INSTANCE);
         }
 
         @Override

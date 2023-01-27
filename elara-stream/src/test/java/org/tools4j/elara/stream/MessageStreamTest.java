@@ -44,12 +44,14 @@ class MessageStreamTest {
 
     private static final long MESSAGE_COUNT = 1_000_000;
     private static final int MESSAGE_BYTES = 100;
-    private static final long MAX_WAIT_MILLIS = 60_000;
+    //private static final int MESSAGES_PER_SECOND = 200_000;
+    private static final int MESSAGES_PER_SECOND = 0;
+    private static final long MAX_WAIT_MILLIS = 10_000;
 
     @ParameterizedTest(name = "sendAndReceiveMessages: {0} --> {1}")
     @MethodSource("sendersAndReceivers")
     void sendAndReceiveMessages(final MessageSender sender, final MessageReceiver receiver) throws Exception {
-        new MessageStreamRunner(MESSAGE_COUNT, MESSAGE_BYTES)
+        new MessageStreamRunner(MESSAGE_COUNT, MESSAGE_BYTES, MESSAGES_PER_SECOND)
                 .sendAndReceiveMessages(sender, receiver, MAX_WAIT_MILLIS);
     }
 
@@ -58,7 +60,7 @@ class MessageStreamTest {
                 tcpServerSenderAndClientReceiver(),
                 tcpClientSenderAndServerReceiver(),
 //                udpServerSenderAndClientReceiver(),
-//                udpClientSenderAndServerReceiver(),
+                udpClientSenderAndServerReceiver(),
                 ipcBufferedSenderToReceiverFile(),
                 ipcBufferedSenderFileToReceiver(),
                 ipcDirectSenderToReceiverFile(),

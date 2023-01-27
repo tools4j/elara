@@ -59,7 +59,7 @@ final class TcpClientEndpoint implements NioEndpoint {
                     .setOption(StandardSocketOptions.SO_KEEPALIVE, true);
 //                    .setOption(StandardSocketOptions.TCP_NODELAY, true);
             this.connectListener = requireNonNull(connectListener);
-            this.receiverPoller = new ReceiverPoller(ringBufferFactory);
+            this.receiverPoller = new ReceiverPoller(ringBufferFactory, TcpHeader.INSTANCE);
             this.senderPoller = new SenderPoller(ringBufferFactory);
             this.socketChannel.configureBlocking(false);
             this.socketChannel.register(receiverPoller.selector(), SelectionKey.OP_CONNECT + SelectionKey.OP_READ);

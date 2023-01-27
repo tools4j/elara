@@ -25,6 +25,8 @@ package org.tools4j.elara.stream.nio;
 
 import org.agrona.DirectBuffer;
 import org.agrona.LangUtil;
+import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.stream.BufferingSendingContext;
 import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.SendingResult;
 
@@ -34,23 +36,43 @@ import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
-public class NioSender extends MessageSender.Buffered {
+public class NioSender implements MessageSender.Direct {
 
     private final Supplier<? extends NioEndpoint> endpointSupplier;
+    private final NioHeader header;
+    private final NioFrame frame;
 
-    public NioSender(final Supplier<? extends NioEndpoint> endpointSupplier) {
-        super(4096);//FIXME configure
+    private final NioSendingContext context;
+
+    public NioSender(final Supplier<? extends NioEndpoint> endpointSupplier, final NioHeader header) {
         this.endpointSupplier = requireNonNull(endpointSupplier);
+        this.header = requireNonNull(header);
+        this.frame = new NioFrame(header.headerLength(), 4096);//FIXME configure
+        this.context = new NioSendingContext(this, frame.payload());
+    }
+
+    @Override
+    public SendingContext sendingMessage() {
+        return context.init();
     }
 
     @Override
     public SendingResult sendMessage(final DirectBuffer buffer, final int offset, final int length) {
+        assert offset == 0;
+        if (buffer != frame.payload()) {
+            frame.payload().putBytes(0, buffer, offset, length);
+        }
+        header.write(frame.header(), frame.payload(), length);
+        return send(length);
+    }
+
+    private SendingResult send(final int payloadLength) {
         final NioEndpoint endpoint = endpointSupplier.get();
         if (endpoint == null) {
             return SendingResult.CLOSED;
         }
         try {
-            final int readyOps = endpoint.send(buffer, offset, length);
+            final int readyOps = endpoint.send(frame.frame(), 0, frame.headerLength() + payloadLength);
             if (readyOps > 0 && ((readyOps & SelectionKey.OP_WRITE) != 0)) {
                 return SendingResult.SENT;
             }
@@ -83,6 +105,17 @@ public class NioSender extends MessageSender.Buffered {
         final NioEndpoint endpoint = endpointSupplier.get();
         if (endpoint != null) {
             endpoint.close();
+        }
+    }
+
+    private static class NioSendingContext extends BufferingSendingContext {
+        public NioSendingContext(final MessageSender sender, final MutableDirectBuffer buffer) {
+            super(sender, buffer);
+        }
+
+        @Override
+        protected BufferingSendingContext init() {
+            return super.init();
         }
     }
 }
