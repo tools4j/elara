@@ -32,6 +32,7 @@ import org.tools4j.elara.stream.nio.NioPoller;
 import org.tools4j.elara.stream.nio.ReadSelectionHandler;
 import org.tools4j.elara.stream.nio.RingBuffer;
 import org.tools4j.elara.stream.nio.WriteSelectionHandler;
+import org.tools4j.elara.stream.udp.RemoteAddressListener;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -40,34 +41,47 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Supplier;
 
-import static org.tools4j.elara.stream.nio.SelectionHandler.DISCONNECTED;
+import static java.lang.Math.max;
+import static java.util.Objects.requireNonNull;
 
 final class UdpServerEndpoint implements NioEndpoint {
 
+    private final UdpServer server;
     private final DatagramChannel datagramChannel;
+    private final RemoteAddressListener remoteAddressListener;
     private final ReadSelectionHandler readSelectionHandler;
     private final WriteSelectionHandler writeSelectionHandler;
     private final NioPoller receiverPoller = new NioPoller();
     private final NioPoller senderPoller = new NioPoller();
-    private SocketAddress lastSourceAddress;
+    private final List<SocketAddress> remoteAddresses = new ArrayList<>();
 
-
-    UdpServerEndpoint(final SocketAddress bindAddress,
+    UdpServerEndpoint(final UdpServer server,
+                      final SocketAddress bindAddress,
+                      final RemoteAddressListener remoteAddressListener,
                       final Supplier<? extends RingBuffer> ringBufferFactory) {
         try {
+            this.server = requireNonNull(server);
             this.datagramChannel = DatagramChannel.open()
                     .setOption(StandardSocketOptions.SO_REUSEADDR, true);
+            this.remoteAddressListener = requireNonNull(remoteAddressListener);
             this.readSelectionHandler = new UdpReadHandler(ringBufferFactory);
             this.writeSelectionHandler = new UdpWriteHandler(ringBufferFactory);
             this.datagramChannel.configureBlocking(false);
             this.datagramChannel.register(receiverPoller.selector(), SelectionKey.OP_READ);
+            this.datagramChannel.register(senderPoller.selector(), SelectionKey.OP_WRITE);
             this.datagramChannel.bind(bindAddress);
         } catch (final IOException e) {
             LangUtil.rethrowUnchecked(e);
             throw new RuntimeException(e);//we never get here
         }
+    }
+
+    List<SocketAddress> remoteAddresses() {
+        return remoteAddresses;
     }
 
     @Override
@@ -116,7 +130,10 @@ final class UdpServerEndpoint implements NioEndpoint {
             final int pos = buffer.position();
             final SocketAddress sourceAddress = datagramChannel.receive(buffer);
             if (sourceAddress != null) {
-                lastSourceAddress = sourceAddress;
+                if (!remoteAddresses.contains(sourceAddress)) {
+                    remoteAddresses.add(sourceAddress);
+                    remoteAddressListener.onRemoteAddressAdded(server, datagramChannel, sourceAddress);
+                }
                 return buffer.position() - pos;
             }
             return 0;
@@ -130,11 +147,18 @@ final class UdpServerEndpoint implements NioEndpoint {
 
         @Override
         protected int writeToChannel(final Channel channel, final ByteBuffer buffer) throws IOException {
-            if (lastSourceAddress != null) {
-                return DISCONNECTED;
+            final int remotes = remoteAddresses.size();
+            if (remotes == 0) {
+                return 0;
             }
             final DatagramChannel datagramChannel = (DatagramChannel) channel;
-            return datagramChannel.send(buffer, lastSourceAddress);
+            int sent = 0;
+            //noinspection ForLoopReplaceableByForEach
+            for (int i = 0; i < remotes; i++) {
+                final SocketAddress remoteAddress = remoteAddresses.get(i);
+                sent = max(sent, datagramChannel.send(buffer, remoteAddress));
+            }
+            return sent;
         }
     }
 }

@@ -25,50 +25,60 @@ package org.tools4j.elara.stream.udp.impl;
 
 import org.agrona.CloseHelper;
 import org.agrona.DirectBuffer;
-import org.tools4j.elara.stream.MessageReceiver;
-import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.SendingResult;
-import org.tools4j.elara.stream.nio.BiDirectional;
 import org.tools4j.elara.stream.nio.NioHeader.MutableNioHeader;
 import org.tools4j.elara.stream.nio.NioReceiver;
 import org.tools4j.elara.stream.nio.NioSender;
 import org.tools4j.elara.stream.nio.RingBuffer;
+import org.tools4j.elara.stream.udp.RemoteAddressListener;
+import org.tools4j.elara.stream.udp.UdpEndpoint;
+import org.tools4j.elara.stream.udp.UdpHeader;
+import org.tools4j.elara.stream.udp.UdpReceiver;
+import org.tools4j.elara.stream.udp.UdpSender;
 
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.util.Objects.requireNonNull;
 
-public class UdpServer implements BiDirectional {
+public class UdpServer implements UdpEndpoint {
 
     private final SocketAddress bindAddress;
-    private final UdpServerSender sender = new UdpServerSender(new UdpHeader());
-    private final UdpServerReceiver receiver = new UdpServerReceiver(new UdpHeader());
+    private final UdpServerSender sender = new UdpServerSender(new MutableUdpHeader());
+    private final UdpServerReceiver receiver = new UdpServerReceiver(new MutableUdpHeader());
+
+    private final Set<SocketChannel> accepted = new CopyOnWriteArraySet<>();
     private UdpServerEndpoint server;
 
-    public UdpServer(final SocketAddress bindAddress, final int bufferCapacity) {
+    public UdpServer(final SocketAddress bindAddress,
+                     final RemoteAddressListener remoteAddressListener,
+                     final int bufferCapacity) {
         this.bindAddress = requireNonNull(bindAddress);
-        this.server = new UdpServerEndpoint(bindAddress, RingBuffer.factory(bufferCapacity));
+        this.server = new UdpServerEndpoint(this, bindAddress, remoteAddressListener, RingBuffer.factory(bufferCapacity));
+    }
+
+    public List<SocketAddress> remoteAddresses() {
+        return server == null ? Collections.emptyList() : server.remoteAddresses();
     }
 
     @Override
     public int poll() {
-        return 0;
+        return receiver.poll(message -> {});//need to poll to receive hello messages from clients
     }
 
     @Override
-    public MessageSender sender() {
+    public UdpSender sender() {
         return sender;
     }
 
     @Override
-    public MessageReceiver receiver() {
+    public UdpReceiver receiver() {
         return receiver;
     }
-
-    private final List<SocketChannel> accepted = new ArrayList<>();
 
     @Override
     public boolean isClosed() {
@@ -90,9 +100,8 @@ public class UdpServer implements BiDirectional {
         return "UdpServer{" + bindAddress + '}';
     }
 
-    private final class UdpServerReceiver extends NioReceiver {
+    private final class UdpServerReceiver extends NioReceiver implements UdpReceiver {
         final UdpHeader header;
-        long sequence;
         String name;
         UdpServerReceiver(final UdpHeader header) {
             super(() -> server, header);
@@ -100,12 +109,8 @@ public class UdpServer implements BiDirectional {
         }
 
         @Override
-        public int poll(final Handler handler) {
-            final int result = super.poll(handler);
-            if (result >= 0) {
-//                header.incrementSequence();
-            }
-            return result;
+        public UdpHeader header() {
+            return header.buffer().capacity() > 0 ? header : null;
         }
 
         @Override
@@ -114,27 +119,42 @@ public class UdpServer implements BiDirectional {
         }
     }
 
-    private final class UdpServerSender extends NioSender {
-        final UdpHeader header;
-        long sequence;
+    private final class UdpServerSender extends NioSender implements UdpSender {
+        final MutableUdpHeader header;
+        final Sequence sequence = new Sequence();
         String name;
-        UdpServerSender(final UdpHeader header) {
+        UdpServerSender(final MutableUdpHeader header) {
             super(() -> server, header);
             this.header = requireNonNull(header);
+        }
+
+        @Override
+        public long sequence() {
+            return sequence.get();
         }
 
         @Override
         protected void writeHeader(final MutableNioHeader header, final int payloadLength) {
             assert this.header == header;
             super.writeHeader(header, payloadLength);
-            this.header.sequence(sequence);
+            this.header.sequence(sequence.get());
         }
 
         @Override
         public SendingResult sendMessage(final DirectBuffer buffer, final int offset, final int length) {
+            if (server == null) {
+                return SendingResult.CLOSED;
+            }
+            final List<?> remotes = server.remoteAddresses();
+            if (remotes.isEmpty() || 0 == (sequence.get() & 0xf)) {//FIXME make frequency configurable
+                poll();//allow clients to knock on the door
+                if (remotes.isEmpty()) {
+                    return SendingResult.DISCONNECTED;
+                }
+            }
             final SendingResult result = super.sendMessage(buffer, offset, length);
             if (result == SendingResult.SENT) {
-                sequence++;
+                sequence.increment();
                 return SendingResult.SENT;
             }
             return result;

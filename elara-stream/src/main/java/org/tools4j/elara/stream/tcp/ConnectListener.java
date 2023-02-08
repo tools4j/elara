@@ -23,10 +23,12 @@
  */
 package org.tools4j.elara.stream.tcp;
 
+import org.tools4j.elara.stream.tcp.impl.TcpClient;
+
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
 @FunctionalInterface
 public interface ConnectListener {
-    void onConnect(SocketChannel channel, SelectionKey key);
+    void onConnect(TcpClient client, SocketChannel channel, SelectionKey key);
 }

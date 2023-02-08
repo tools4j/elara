@@ -50,6 +50,7 @@ import static java.util.Objects.requireNonNull;
 
 final class TcpServerEndpoint implements NioEndpoint {
 
+    private final TcpServer server;
     private final ServerSocketChannel serverSocketChannel;
     private final AcceptListener acceptListener;
     private final ReadSelectionHandler readSelectionHandler;
@@ -60,10 +61,12 @@ final class TcpServerEndpoint implements NioEndpoint {
     private final NioPoller senderPoller = new NioPoller();
     private final List<SocketChannel> accepted = new ArrayList<>();
 
-    TcpServerEndpoint(final SocketAddress bindAddress,
+    TcpServerEndpoint(final TcpServer server,
+                      final SocketAddress bindAddress,
                       final AcceptListener acceptListener,
                       final Supplier<? extends RingBuffer> ringBufferFactory) {
         try {
+            this.server = requireNonNull(server);
             this.serverSocketChannel = ServerSocketChannel.open()
                     .setOption(StandardSocketOptions.SO_REUSEADDR, true);
             this.acceptListener = requireNonNull(acceptListener);
@@ -79,13 +82,17 @@ final class TcpServerEndpoint implements NioEndpoint {
         }
     }
 
+    List<SocketChannel> acceptedClientChannels() {
+        return accepted;
+    }
+
     private void onAccept(final ServerSocketChannel serverChannel,
                           final SocketChannel clientChannel,
                           final SelectionKey key) {
         if (!accepted.contains(clientChannel)) {
             accepted.add(clientChannel);
         }
-        acceptListener.onAccept(serverChannel, clientChannel, key);
+        acceptListener.onAccept(server, serverChannel, clientChannel, key);
     }
 
     @Override

@@ -31,6 +31,8 @@ import org.tools4j.elara.stream.ipc.Ipc;
 import org.tools4j.elara.stream.ipc.IpcConfiguration;
 import org.tools4j.elara.stream.tcp.Tcp;
 import org.tools4j.elara.stream.udp.Udp;
+import org.tools4j.elara.stream.udp.impl.UdpClient;
+import org.tools4j.elara.stream.udp.impl.UdpServer;
 
 import java.io.File;
 import java.net.InetSocketAddress;
@@ -59,7 +61,7 @@ class MessageStreamTest {
         return new Arguments[]{
                 tcpServerSenderAndClientReceiver(),
                 tcpClientSenderAndServerReceiver(),
-//                udpServerSenderAndClientReceiver(),
+                udpServerSenderAndClientReceiver(),
 //                udpClientSenderAndServerReceiver(),
                 ipcBufferedSenderToReceiverFile(),
                 ipcBufferedSenderFileToReceiver(),
@@ -144,11 +146,13 @@ class MessageStreamTest {
 
     private static Arguments udpServerSenderAndClientReceiver() {
         final SocketAddress address = new InetSocketAddress(hostAddress(), nextFreePort());
+        final UdpServer server = Udp.bind(address);
+        final UdpClient client = Udp.connect(address);
+
         return Arguments.of(
-                Udp.bind(address).sender(),
-                Udp.connect(address).receiver()
+                server.sender(),
+                client.receiver()
         );
     }
-
 
 }

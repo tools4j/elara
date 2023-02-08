@@ -25,6 +25,9 @@ package org.tools4j.elara.stream.tcp.config;
 
 import org.tools4j.elara.stream.tcp.AcceptListener;
 import org.tools4j.elara.stream.tcp.ConnectListener;
+import org.tools4j.elara.stream.tcp.impl.MulticastSendingStrategy;
+
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -36,10 +39,8 @@ class TcpContextImpl implements TcpContext {
     private int bufferCapacity = DEFAULT_BUFFER_CAPACITY;
     private long reconnectTimeoutMillis = 10_000;
     private ConnectListener connectListener = null;
-    private int acceptConnectionsMax = -1;
-    private DisconnectPolicy disconnectPolicy = DisconnectPolicy.DISCONNECT_OLDEST;
-    private SendingStrategy sendingStrategy = SendingStrategy.MULTICAST;
     private AcceptListener acceptListener = null;
+    private Supplier<? extends SendingStrategy> sendingStrategyFactory = MulticastSendingStrategy.FACTORY;
 
     @Override
     public int bufferCapacity() {
@@ -79,35 +80,13 @@ class TcpContextImpl implements TcpContext {
     }
 
     @Override
-    public int acceptConnectionsMax() {
-        return acceptConnectionsMax;
+    public Supplier<? extends SendingStrategy> sendingStrategyFactory() {
+        return sendingStrategyFactory;
     }
 
     @Override
-    public TcpContext acceptConnectionsMax(final int acceptConnectionsMax) {
-        this.acceptConnectionsMax = acceptConnectionsMax;
-        return this;
-    }
-
-    @Override
-    public DisconnectPolicy disconnectPolicy() {
-        return disconnectPolicy;
-    }
-
-    @Override
-    public TcpContext disconnectPolicy(final DisconnectPolicy policy) {
-        this.disconnectPolicy = requireNonNull(policy);
-        return this;
-    }
-
-    @Override
-    public SendingStrategy sendingStrategy() {
-        return sendingStrategy;
-    }
-
-    @Override
-    public TcpContext sendingStrategy(final SendingStrategy strategy) {
-        this.sendingStrategy = requireNonNull(strategy);
+    public TcpContext sendingStrategyFactory(final Supplier<? extends SendingStrategy> factory) {
+        this.sendingStrategyFactory = requireNonNull(factory);
         return this;
     }
 
@@ -178,12 +157,12 @@ class TcpContextImpl implements TcpContext {
     }
 
     private ConnectListener defaultConnectListener() {
-        return (channel, key) ->
-                System.out.printf("Connected: %s\n", channel.socket().getRemoteSocketAddress());
+        return (client, channel, key) ->
+                System.out.printf("%s: connected to %s\n", client, channel.socket().getRemoteSocketAddress());
     }
 
     private AcceptListener defaultAcceptListener() {
-        return (serverChannel, clientChannel, key) ->
-                System.out.printf("Accepted: %s\n", clientChannel.socket().getRemoteSocketAddress());
+        return (server, serverChannel, clientChannel, key) ->
+                System.out.printf("%s: accepted from %s\n", server, clientChannel.socket().getRemoteSocketAddress());
     }
 }

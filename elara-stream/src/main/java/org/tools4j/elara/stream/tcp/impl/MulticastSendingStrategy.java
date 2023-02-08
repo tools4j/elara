@@ -21,19 +21,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.config;
+package org.tools4j.elara.stream.tcp.impl;
 
-import org.tools4j.elara.stream.tcp.AcceptListener;
+import org.tools4j.elara.stream.tcp.config.TcpServerConfiguration.SendingStrategy;
 
+import java.nio.channels.SocketChannel;
+import java.util.List;
 import java.util.function.Supplier;
 
-public interface TcpServerContext extends TcpServerConfiguration {
-    TcpServerContext bufferCapacity(int capacity);
-    TcpServerContext sendingStrategyFactory(Supplier<? extends SendingStrategy> factory);
-    TcpServerContext acceptListener(AcceptListener listener);
-    TcpServerContext populateDefaults();
+public class MulticastSendingStrategy implements SendingStrategy {
+    public static final MulticastSendingStrategy INSTANCE = new MulticastSendingStrategy();
+    public static final Supplier<MulticastSendingStrategy> FACTORY = () -> INSTANCE;
 
-    static TcpServerContext create() {
-        return new TcpContextImpl();
+    @Override
+    public SocketChannel nextRecipient(final TcpServer server, final int recipientIndex) {
+        final List<SocketChannel> channels = server.acceptedClientChannels();
+        return recipientIndex < channels.size() ? channels.get(recipientIndex) : null;
     }
 }

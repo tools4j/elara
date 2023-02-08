@@ -23,11 +23,13 @@
  */
 package org.tools4j.elara.stream.tcp;
 
+import org.tools4j.elara.stream.tcp.impl.TcpServer;
+
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
 @FunctionalInterface
 public interface AcceptListener {
-    void onAccept(ServerSocketChannel serverChannel, SocketChannel clientChannel, SelectionKey key);
+    void onAccept(TcpServer server, ServerSocketChannel serverChannel, SocketChannel clientChannel, SelectionKey key);
 }

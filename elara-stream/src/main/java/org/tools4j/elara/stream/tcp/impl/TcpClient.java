@@ -53,7 +53,7 @@ public class TcpClient implements TcpConnection {
         this.connectAddress = requireNonNull(connectAddress);
         this.connectListener = requireNonNull(connectListener);
         this.ringBufferFactory = RingBuffer.factory(bufferCapacity);
-        this.client = new TcpClientEndpoint(connectAddress, connectListener, ringBufferFactory);
+        this.client = new TcpClientEndpoint(this, connectAddress, connectListener, ringBufferFactory);
     }
 
     @Override
@@ -92,7 +92,7 @@ public class TcpClient implements TcpConnection {
     public void reconnect() {
         if (client != null) {
             CloseHelper.quietClose(client);
-            client = new TcpClientEndpoint(connectAddress, connectListener, ringBufferFactory);
+            client = new TcpClientEndpoint(this, connectAddress, connectListener, ringBufferFactory);
         }
     }
 

@@ -26,6 +26,8 @@ package org.tools4j.elara.stream.tcp.config;
 import org.tools4j.elara.stream.tcp.AcceptListener;
 import org.tools4j.elara.stream.tcp.ConnectListener;
 
+import java.util.function.Supplier;
+
 public interface TcpContext extends TcpClientContext, TcpServerContext {
     @Override
     TcpContext bufferCapacity(int capacity);
@@ -36,11 +38,7 @@ public interface TcpContext extends TcpClientContext, TcpServerContext {
     TcpContext connectListener(ConnectListener listener);
 
     @Override
-    TcpContext acceptConnectionsMax(int acceptConnectionsMax);
-    @Override
-    TcpContext disconnectPolicy(DisconnectPolicy policy);
-    @Override
-    TcpContext sendingStrategy(SendingStrategy strategy);
+    TcpContext sendingStrategyFactory(Supplier<? extends SendingStrategy> factory);
     @Override
     TcpContext acceptListener(AcceptListener listener);
 

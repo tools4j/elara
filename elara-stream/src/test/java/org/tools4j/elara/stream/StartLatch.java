@@ -21,19 +21,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.config;
+package org.tools4j.elara.stream;
 
-import org.tools4j.elara.stream.tcp.AcceptListener;
+import java.util.concurrent.CountDownLatch;
 
-import java.util.function.Supplier;
+final class StartLatch {
+    private final CountDownLatch latch;
 
-public interface TcpServerContext extends TcpServerConfiguration {
-    TcpServerContext bufferCapacity(int capacity);
-    TcpServerContext sendingStrategyFactory(Supplier<? extends SendingStrategy> factory);
-    TcpServerContext acceptListener(AcceptListener listener);
-    TcpServerContext populateDefaults();
+    StartLatch(final int count) {
+        this.latch = new CountDownLatch(count);
+    }
 
-    static TcpServerContext create() {
-        return new TcpContextImpl();
+    void markReadyAndAwaitStartSignal() {
+        latch.countDown();
+        try {
+            latch.await();
+        } catch (final InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

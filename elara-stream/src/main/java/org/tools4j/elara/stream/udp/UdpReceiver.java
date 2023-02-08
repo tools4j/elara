@@ -21,19 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.config;
+package org.tools4j.elara.stream.udp;
 
-import org.tools4j.elara.stream.tcp.AcceptListener;
+import org.tools4j.elara.stream.MessageReceiver;
 
-import java.util.function.Supplier;
-
-public interface TcpServerContext extends TcpServerConfiguration {
-    TcpServerContext bufferCapacity(int capacity);
-    TcpServerContext sendingStrategyFactory(Supplier<? extends SendingStrategy> factory);
-    TcpServerContext acceptListener(AcceptListener listener);
-    TcpServerContext populateDefaults();
-
-    static TcpServerContext create() {
-        return new TcpContextImpl();
-    }
+public interface UdpReceiver extends MessageReceiver {
+    /**
+     * Header information of the UDP package received.  The method only returns a non-null value during a
+     * {@link #poll(Handler) poll(..)} invocation.
+     * @return the UDP header, or null if not currently polling
+     */
+    UdpHeader header();
 }

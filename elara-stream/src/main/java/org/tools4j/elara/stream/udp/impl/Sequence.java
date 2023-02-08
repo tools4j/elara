@@ -21,19 +21,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.config;
+package org.tools4j.elara.stream.udp.impl;
 
-import org.tools4j.elara.stream.tcp.AcceptListener;
+abstract class AbstractSequencePaddingLeft {
+    long l00, l01, l02, l03, l04, l05, l06, l07;
+}
 
-import java.util.function.Supplier;
+abstract class AbstractSequence extends AbstractSequencePaddingLeft {
+    long sequence;
+}
 
-public interface TcpServerContext extends TcpServerConfiguration {
-    TcpServerContext bufferCapacity(int capacity);
-    TcpServerContext sendingStrategyFactory(Supplier<? extends SendingStrategy> factory);
-    TcpServerContext acceptListener(AcceptListener listener);
-    TcpServerContext populateDefaults();
+abstract class AbstractSequencePaddingRight extends AbstractSequence {
+    long l08, l09, l10, l11, l12, l13, l14, l15;
+}
 
-    static TcpServerContext create() {
-        return new TcpContextImpl();
+final class Sequence extends AbstractSequencePaddingRight {
+    long get() {
+        return sequence;
+    }
+    void increment() {
+        sequence++;
     }
 }
+

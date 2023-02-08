@@ -21,19 +21,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.config;
+package org.tools4j.elara.stream.udp;
 
-import org.tools4j.elara.stream.tcp.AcceptListener;
+import org.tools4j.elara.stream.udp.impl.UdpServer;
 
-import java.util.function.Supplier;
+import java.net.SocketAddress;
+import java.nio.channels.DatagramChannel;
 
-public interface TcpServerContext extends TcpServerConfiguration {
-    TcpServerContext bufferCapacity(int capacity);
-    TcpServerContext sendingStrategyFactory(Supplier<? extends SendingStrategy> factory);
-    TcpServerContext acceptListener(AcceptListener listener);
-    TcpServerContext populateDefaults();
-
-    static TcpServerContext create() {
-        return new TcpContextImpl();
-    }
+public interface RemoteAddressListener {
+    void onRemoteAddressAdded(UdpServer server, DatagramChannel serverChannel, SocketAddress remoteAddress);
 }

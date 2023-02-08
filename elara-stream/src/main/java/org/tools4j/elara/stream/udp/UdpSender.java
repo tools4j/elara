@@ -21,44 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.udp.impl;
+package org.tools4j.elara.stream.udp;
 
-import org.agrona.MutableDirectBuffer;
-import org.agrona.concurrent.UnsafeBuffer;
-import org.tools4j.elara.stream.nio.NioHeader.MutableNioHeader;
+import org.tools4j.elara.stream.MessageSender;
 
-final class UdpHeader implements MutableNioHeader {
-    public final static int HEADER_LENGTH = 16;
-    private static final int POS_PAYLOAD_LENGTH = 0;
-    private static final int POS_SEQUENCE = 8;
-
-    private final MutableDirectBuffer buffer = new UnsafeBuffer(0, 0);
-
-    @Override
-    public int headerLength() {
-        return HEADER_LENGTH;
-    }
-
-    @Override
-    public MutableDirectBuffer buffer() {
-        return buffer;
-    }
-
-    @Override
-    public int payloadLength() {
-        return buffer.getInt(POS_PAYLOAD_LENGTH);
-    }
-
-    public long sequence() {
-        return buffer.getLong(POS_SEQUENCE);
-    }
-
-    @Override
-    public void payloadLength(final int length) {
-        buffer.putInt(POS_PAYLOAD_LENGTH, length);
-    }
-
-    public void sequence(final long sequence) {
-        buffer.putLong(POS_SEQUENCE, sequence);
-    }
+public interface UdpSender extends MessageSender {
+    /**
+     * Returns the sequence number of the next message to be sent.
+     * @return the sequence of the next message to send
+     */
+    long sequence();
 }

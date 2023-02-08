@@ -34,7 +34,7 @@ import org.tools4j.elara.stream.tcp.TcpConnection;
 
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
@@ -42,7 +42,7 @@ import static java.util.Objects.requireNonNull;
 public class TcpServer implements TcpConnection {
 
     private final SocketAddress bindAddress;
-    private final TcpMulticastSender sender = new TcpMulticastSender();
+    private final TcpServerSender sender = new TcpServerSender();
     private final TcpServerReceiver receiver = new TcpServerReceiver();;
     private TcpServerEndpoint server;
 
@@ -50,13 +50,18 @@ public class TcpServer implements TcpConnection {
                      final AcceptListener acceptListener,
                      final int bufferCapacity) {
         this.bindAddress = requireNonNull(bindAddress);
-        this.server = new TcpServerEndpoint(bindAddress, acceptListener, RingBuffer.factory(bufferCapacity));
+        this.server = new TcpServerEndpoint(this, bindAddress, acceptListener, RingBuffer.factory(bufferCapacity));
     }
 
     @Override
     public int poll() {
         return server != null ? server.poll() : 0;
     }
+
+    public List<SocketChannel> acceptedClientChannels() {
+        return server == null ? Collections.emptyList() : server.acceptedClientChannels();
+    }
+
     @Override
     public MessageSender sender() {
         return sender;
@@ -66,8 +71,6 @@ public class TcpServer implements TcpConnection {
     public MessageReceiver receiver() {
         return receiver;
     }
-
-    private final List<SocketChannel> accepted = new ArrayList<>();
 
     @Override
     public boolean isConnected() {
@@ -82,8 +85,6 @@ public class TcpServer implements TcpConnection {
     @Override
     public void close() {
         if (server != null) {
-            CloseHelper.quietCloseAll(accepted);
-            accepted.clear();
             CloseHelper.quietClose(server);
             server = null;
         }
@@ -106,15 +107,15 @@ public class TcpServer implements TcpConnection {
         }
     }
 
-    private final class TcpMulticastSender extends NioSender {
+    private final class TcpServerSender extends NioSender {
         String name;
-        TcpMulticastSender() {
+        TcpServerSender() {
             super(() -> server, new TcpHeader());
         }
 
         @Override
         public String toString() {
-            return name != null ? name : (name = "TcpMulticastSender{" + bindAddress + '}');
+            return name != null ? name : (name = "TcpServerSender{" + bindAddress + '}');
         }
     }
 }

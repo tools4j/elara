@@ -21,19 +21,46 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.config;
+package org.tools4j.elara.stream.udp.impl;
 
-import org.tools4j.elara.stream.tcp.AcceptListener;
+import org.agrona.MutableDirectBuffer;
+import org.agrona.concurrent.UnsafeBuffer;
+import org.tools4j.elara.stream.nio.NioHeader.MutableNioHeader;
+import org.tools4j.elara.stream.udp.UdpHeader;
 
-import java.util.function.Supplier;
+final class MutableUdpHeader implements UdpHeader, MutableNioHeader {
+    public final static int HEADER_LENGTH = 16;
+    private static final int POS_PAYLOAD_LENGTH = 0;
+    private static final int POS_SEQUENCE = 8;
 
-public interface TcpServerContext extends TcpServerConfiguration {
-    TcpServerContext bufferCapacity(int capacity);
-    TcpServerContext sendingStrategyFactory(Supplier<? extends SendingStrategy> factory);
-    TcpServerContext acceptListener(AcceptListener listener);
-    TcpServerContext populateDefaults();
+    private final MutableDirectBuffer buffer = new UnsafeBuffer(0, 0);
 
-    static TcpServerContext create() {
-        return new TcpContextImpl();
+    @Override
+    public int headerLength() {
+        return HEADER_LENGTH;
+    }
+
+    @Override
+    public MutableDirectBuffer buffer() {
+        return buffer;
+    }
+
+    @Override
+    public int payloadLength() {
+        return buffer.getInt(POS_PAYLOAD_LENGTH);
+    }
+
+    @Override
+    public long sequence() {
+        return buffer.getLong(POS_SEQUENCE);
+    }
+
+    @Override
+    public void payloadLength(final int length) {
+        buffer.putInt(POS_PAYLOAD_LENGTH, length);
+    }
+
+    public void sequence(final long sequence) {
+        buffer.putLong(POS_SEQUENCE, sequence);
     }
 }

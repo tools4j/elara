@@ -24,25 +24,19 @@
 package org.tools4j.elara.stream.tcp.config;
 
 import org.tools4j.elara.stream.tcp.AcceptListener;
+import org.tools4j.elara.stream.tcp.impl.TcpServer;
+
+import java.nio.channels.SocketChannel;
+import java.util.function.Supplier;
 
 public interface TcpServerConfiguration extends TcpConfiguration {
-    int acceptConnectionsMax();
-
-    DisconnectPolicy disconnectPolicy();
-
-    SendingStrategy sendingStrategy();
+    Supplier<? extends SendingStrategy> sendingStrategyFactory();
 
     AcceptListener acceptListener();
 
-    enum DisconnectPolicy {
-        DISCONNECT_NEWEST,
-        DISCONNECT_OLDEST
-    }
-
-    enum SendingStrategy {
-        MULTICAST,
-        SINGLE_NEWEST,
-        SINGLE_ROUND_ROBIN
+    @FunctionalInterface
+    interface SendingStrategy {
+        SocketChannel nextRecipient(TcpServer server, int recipientIndex);
     }
 
     static TcpServerContext configure() {

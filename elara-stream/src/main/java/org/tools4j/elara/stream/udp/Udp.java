@@ -23,7 +23,6 @@
  */
 package org.tools4j.elara.stream.udp;
 
-import org.tools4j.elara.stream.nio.BiDirectional;
 import org.tools4j.elara.stream.tcp.config.TcpClientConfiguration;
 import org.tools4j.elara.stream.tcp.config.TcpConfiguration;
 import org.tools4j.elara.stream.tcp.config.TcpServerConfiguration;
@@ -35,27 +34,32 @@ import java.net.SocketAddress;
 
 public enum Udp {
     ;
-    public static BiDirectional bind(final String address, final int port) {
+
+    //FIXME move listener to server config
+    private static final RemoteAddressListener REMOTE_ADDRESS_LISTENER = (server, serverChannel, remoteAddress) ->
+            System.out.printf("%s: added remote address %s\n", server, remoteAddress);
+
+    public static UdpServer bind(final String address, final int port) {
         return bind(new InetSocketAddress(address, port));
     }
 
-    public static BiDirectional bind(final SocketAddress address) {
+    public static UdpServer bind(final SocketAddress address) {
         return bind(address, TcpConfiguration.configureServer().populateDefaults());
     }
 
-    public static BiDirectional bind(final SocketAddress address, final TcpServerConfiguration configuration) {
-        return new UdpServer(address, configuration.bufferCapacity());
+    public static UdpServer bind(final SocketAddress address, final TcpServerConfiguration configuration) {
+        return new UdpServer(address, REMOTE_ADDRESS_LISTENER, configuration.bufferCapacity());
     }
 
-    public static BiDirectional connect(final String address, final int port) {
+    public static UdpClient connect(final String address, final int port) {
         return connect(new InetSocketAddress(address, port));
     }
 
-    public static BiDirectional connect(final SocketAddress address) {
+    public static UdpClient connect(final SocketAddress address) {
         return connect(address, TcpConfiguration.configureClient().populateDefaults());
     }
 
-    public static BiDirectional connect(final SocketAddress address, final TcpClientConfiguration configuration) {
+    public static UdpClient connect(final SocketAddress address, final TcpClientConfiguration configuration) {
         return new UdpClient(address, configuration.bufferCapacity());
     }
 

@@ -60,10 +60,11 @@ public class MessageStreamRunner {
                                        final MessageReceiver receiver,
                                        final long maxWaitMillis) throws InterruptedException {
         //given
+        final StartLatch startLatch = new StartLatch(2);
         final LongArrayList senderResults = new LongArrayList();
         final LongArrayList receiverResults = new LongArrayList();
-        final Thread senderThread = new Thread(null, senderLoop(sender, senderResults), "sender");
-        final Thread receiverThread = new Thread(null, receiverLoop(receiver, receiverResults), "receiver");
+        final Thread senderThread = new Thread(null, senderLoop(sender, startLatch, senderResults), "sender");
+        final Thread receiverThread = new Thread(null, receiverLoop(receiver, startLatch, receiverResults), "receiver");
         final Timer timer = maxWaitMillis <= 0 ? null : Timer.start(maxWaitMillis);
 
         //when
@@ -91,13 +92,16 @@ public class MessageStreamRunner {
         return 31 * hash + extra;
     }
 
-    private Runnable senderLoop(final MessageSender sender, final LongArrayList results) {
+    private Runnable senderLoop(final MessageSender sender, final StartLatch startLatch, final LongArrayList results) {
         requireNonNull(sender);
         return () -> {
             final double minNanosPerMessage = maxMessagesPerSecond <= 0 ? 0 : 1e9/maxMessagesPerSecond;
             long hash = 0;
             int retries = 0;
             long timeStart = 0;
+
+            startLatch.markReadyAndAwaitStartSignal();
+
             for (int i = 0; i < messageCount; i++) {
                 long mhash, time;
                 SendingResult result = null;
@@ -133,7 +137,7 @@ public class MessageStreamRunner {
         };
     }
 
-    private Runnable receiverLoop(final MessageReceiver receiver, final LongArrayList results) {
+    private Runnable receiverLoop(final MessageReceiver receiver, final StartLatch startLatch, final LongArrayList results) {
         requireNonNull(receiver);
         return () -> {
             final long[] bytesPtr = {0};
@@ -151,6 +155,9 @@ public class MessageStreamRunner {
 //                System.out.println(receiver + " received: " + receivedPtr[0] + " [" + (bytesPtr[0] / receivedPtr[0]) + " bytes each, " + bytesPtr[0] + " bytes total]");
             };
             int count = 0;
+
+            startLatch.markReadyAndAwaitStartSignal();
+
             while (bytesPtr[0] < messageCount * messageSizeInBytes) {
                 final long time = count == 0 ? System.nanoTime() : 0;
                 final int polled = receiver.poll(handler);

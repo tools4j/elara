@@ -25,25 +25,29 @@ package org.tools4j.elara.stream.udp.impl;
 
 import org.agrona.CloseHelper;
 import org.agrona.DirectBuffer;
-import org.tools4j.elara.stream.MessageReceiver;
-import org.tools4j.elara.stream.MessageSender;
+import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.stream.SendingResult;
-import org.tools4j.elara.stream.nio.BiDirectional;
 import org.tools4j.elara.stream.nio.NioHeader.MutableNioHeader;
 import org.tools4j.elara.stream.nio.NioReceiver;
 import org.tools4j.elara.stream.nio.NioSender;
 import org.tools4j.elara.stream.nio.RingBuffer;
+import org.tools4j.elara.stream.udp.UdpEndpoint;
+import org.tools4j.elara.stream.udp.UdpHeader;
+import org.tools4j.elara.stream.udp.UdpReceiver;
+import org.tools4j.elara.stream.udp.UdpSender;
 
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
-public class UdpClient implements BiDirectional {
+public class UdpClient implements UdpEndpoint {
+    private static final UnsafeBuffer HELLO = new UnsafeBuffer(ByteBuffer.allocate(0));
     private final SocketAddress connectAddress;
     private final Supplier<? extends RingBuffer> ringBufferFactory;
-    private final UcpClientReceiver receiver = new UcpClientReceiver(new UdpHeader());
-    private final UcpClientSender sender = new UcpClientSender(new UdpHeader());
+    private final UcpClientReceiver receiver = new UcpClientReceiver(new MutableUdpHeader());
+    private final UcpClientSender sender = new UcpClientSender(new MutableUdpHeader());
     private UdpClientEndpoint client;
 
     public UdpClient(final SocketAddress connectAddress, final int bufferCapacity) {
@@ -53,12 +57,12 @@ public class UdpClient implements BiDirectional {
     }
 
     @Override
-    public MessageSender sender() {
+    public UdpSender sender() {
         return sender;
     }
 
     @Override
-    public MessageReceiver receiver() {
+    public UdpReceiver receiver() {
         return receiver;
     }
 
@@ -92,7 +96,7 @@ public class UdpClient implements BiDirectional {
         return "UdpClient{" + connectAddress + '}';
     }
 
-    private final class UcpClientReceiver extends NioReceiver {
+    private final class UcpClientReceiver extends NioReceiver implements UdpReceiver {
         final UdpHeader header;
         String name;
         UcpClientReceiver(final UdpHeader header) {
@@ -101,7 +105,15 @@ public class UdpClient implements BiDirectional {
         }
 
         @Override
+        public UdpHeader header() {
+            return header.buffer().capacity() > 0 ? header : null;
+        }
+
+        @Override
         public int poll(final Handler handler) {
+            if (sender.sequence() == 0) {
+                sender.sendHello();
+            }
             try {
                 return super.poll(handler);
             } catch (final Exception e) {
@@ -116,33 +128,43 @@ public class UdpClient implements BiDirectional {
         }
     }
 
-    private final class UcpClientSender extends NioSender {
-        final UdpHeader header;
+    private final class UcpClientSender extends NioSender implements UdpSender {
+        final MutableUdpHeader header;
+        final Sequence sequence = new Sequence();
+
         String name;
-        long sequence;
-        UcpClientSender(final UdpHeader header) {
+        UcpClientSender(final MutableUdpHeader header) {
             super(() -> client, header);
             this.header = requireNonNull(header);
+        }
+
+        @Override
+        public long sequence() {
+            return sequence.get();
         }
 
         @Override
         protected void writeHeader(final MutableNioHeader header, final int payloadLength) {
             assert this.header == header;
             super.writeHeader(header, payloadLength);
-            this.header.sequence(sequence);
+            this.header.sequence(sequence.get());
         }
 
         @Override
         public SendingResult sendMessage(final DirectBuffer buffer, final int offset, final int length) {
             final SendingResult result = super.sendMessage(buffer, offset, length);
             if (result == SendingResult.SENT) {
-                sequence++;
+                sequence.increment();
                 return SendingResult.SENT;
             }
             if (client != null && client.isClosed()) {
                 reconnect();
             }
             return result;
+        }
+
+        boolean sendHello() {
+            return sendMessage(HELLO, 0, 0) == SendingResult.SENT;
         }
 
         @Override

@@ -51,7 +51,8 @@ public class AeronReceiver implements MessageReceiver {
     }
 
     /**
-     * Header passed to {@link FragmentHandler}, only non-null during {@link #poll(Handler) poll(..)} invocation.
+     * Header received alongside message when polling the aeron subscription with a {@link FragmentHandler}.  The method
+     * only returns a non-null value during a {@link #poll(Handler) poll(..)} invocation.
      * @return the fragment header (of last fragment for assembled messages), or null if not currently polling
      */
     public Header header() {

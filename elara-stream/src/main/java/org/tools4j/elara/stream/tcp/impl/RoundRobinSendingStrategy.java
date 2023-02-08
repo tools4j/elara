@@ -21,19 +21,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.config;
+package org.tools4j.elara.stream.tcp.impl;
 
-import org.tools4j.elara.stream.tcp.AcceptListener;
+import org.tools4j.elara.stream.tcp.config.TcpServerConfiguration.SendingStrategy;
 
-import java.util.function.Supplier;
+import java.nio.channels.SocketChannel;
+import java.util.List;
 
-public interface TcpServerContext extends TcpServerConfiguration {
-    TcpServerContext bufferCapacity(int capacity);
-    TcpServerContext sendingStrategyFactory(Supplier<? extends SendingStrategy> factory);
-    TcpServerContext acceptListener(AcceptListener listener);
-    TcpServerContext populateDefaults();
+public class RoundRobinSendingStrategy implements SendingStrategy {
+    private int index = -1;
 
-    static TcpServerContext create() {
-        return new TcpContextImpl();
+    @Override
+    public SocketChannel nextRecipient(final TcpServer server, final int recipientIndex) {
+        if (recipientIndex != 0) {
+            return null;
+        }
+        final List<SocketChannel> channels = server.acceptedClientChannels();
+        final int size = channels.size();
+        if (size > 0) {
+            index++;
+            if (index >= size) {
+                index = 0;
+            }
+            return channels.get(index);
+        }
+        return null;
     }
 }
