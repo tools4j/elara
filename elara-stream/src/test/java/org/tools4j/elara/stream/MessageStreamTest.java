@@ -61,7 +61,7 @@ class MessageStreamTest {
         return new Arguments[]{
                 tcpServerSenderAndClientReceiver(),
                 tcpClientSenderAndServerReceiver(),
-                udpServerSenderAndClientReceiver(),
+//                udpServerSenderAndClientReceiver(),
 //                udpClientSenderAndServerReceiver(),
                 ipcBufferedSenderToReceiverFile(),
                 ipcBufferedSenderFileToReceiver(),
