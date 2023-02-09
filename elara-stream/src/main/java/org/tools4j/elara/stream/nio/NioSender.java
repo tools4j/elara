@@ -44,9 +44,11 @@ public class NioSender implements MessageSender.Direct {
 
     private final NioSendingContext context;
 
-    public NioSender(final Supplier<? extends NioEndpoint> endpointSupplier, final MutableNioHeader header) {
+    public NioSender(final Supplier<? extends NioEndpoint> endpointSupplier,
+                     final int bufferSize,
+                     final MutableNioHeader header) {
         this.endpointSupplier = requireNonNull(endpointSupplier);
-        this.frame = new NioFrameImpl(header, 4096);//FIXME configure
+        this.frame = new NioFrameImpl(header, bufferSize);
         this.context = new NioSendingContext(this, frame.payload());
     }
 

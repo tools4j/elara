@@ -118,7 +118,7 @@ public class WriteSelectionHandler {
         final int adjustment = frame.wrapAdjustment();
         buffer.limit(adjustment + length);
         buffer.position(adjustment);
-        final int written = writeToChannel(channel, buffer);
+        int written = writeToChannel(channel, buffer);
         if (written == 0) {
             //nothing was sent, let's report backpressure
             return false;

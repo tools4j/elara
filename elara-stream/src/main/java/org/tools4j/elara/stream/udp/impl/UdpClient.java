@@ -35,6 +35,7 @@ import org.tools4j.elara.stream.udp.UdpEndpoint;
 import org.tools4j.elara.stream.udp.UdpHeader;
 import org.tools4j.elara.stream.udp.UdpReceiver;
 import org.tools4j.elara.stream.udp.UdpSender;
+import org.tools4j.elara.stream.udp.config.UdpClientConfiguration;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -45,15 +46,20 @@ import static java.util.Objects.requireNonNull;
 public class UdpClient implements UdpEndpoint {
     private static final UnsafeBuffer HELLO = new UnsafeBuffer(ByteBuffer.allocate(0));
     private final SocketAddress connectAddress;
+    private final UdpClientConfiguration configuration;
     private final Supplier<? extends RingBuffer> ringBufferFactory;
-    private final UcpClientReceiver receiver = new UcpClientReceiver(new MutableUdpHeader());
-    private final UcpClientSender sender = new UcpClientSender(new MutableUdpHeader());
+    private final UcpClientReceiver receiver;
+    private final UcpClientSender sender;
     private UdpClientEndpoint client;
 
-    public UdpClient(final SocketAddress connectAddress, final int bufferCapacity) {
+    public UdpClient(final SocketAddress connectAddress, final UdpClientConfiguration configuration) {
+        configuration.validate();
         this.connectAddress = requireNonNull(connectAddress);
-        this.ringBufferFactory = RingBuffer.factory(bufferCapacity);
-        this.client = new UdpClientEndpoint(connectAddress, ringBufferFactory);
+        this.configuration = requireNonNull(configuration);
+        this.ringBufferFactory = RingBuffer.factory(configuration.bufferCapacity());
+        this.receiver = new UcpClientReceiver(new MutableUdpHeader());
+        this.sender = new UcpClientSender(new MutableUdpHeader());
+        this.client = new UdpClientEndpoint(connectAddress, configuration.mtuLength(), ringBufferFactory);
     }
 
     @Override
@@ -87,7 +93,7 @@ public class UdpClient implements UdpEndpoint {
     public void reconnect() {
         if (client != null) {
             CloseHelper.quietClose(client);
-            client = new UdpClientEndpoint(connectAddress, ringBufferFactory);
+            client = new UdpClientEndpoint(connectAddress, configuration.mtuLength(), ringBufferFactory);
         }
     }
 
@@ -134,7 +140,7 @@ public class UdpClient implements UdpEndpoint {
 
         String name;
         UcpClientSender(final MutableUdpHeader header) {
-            super(() -> client, header);
+            super(() -> client, configuration.bufferCapacity(), header);
             this.header = requireNonNull(header);
         }
 
@@ -163,8 +169,8 @@ public class UdpClient implements UdpEndpoint {
             return result;
         }
 
-        boolean sendHello() {
-            return sendMessage(HELLO, 0, 0) == SendingResult.SENT;
+        void sendHello() {
+            sendMessage(HELLO, 0, 0);
         }
 
         @Override

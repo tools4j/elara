@@ -30,9 +30,11 @@ import org.tools4j.elara.stream.ipc.AllocationStrategy;
 import org.tools4j.elara.stream.ipc.Ipc;
 import org.tools4j.elara.stream.ipc.IpcConfiguration;
 import org.tools4j.elara.stream.tcp.Tcp;
+import org.tools4j.elara.stream.tcp.config.TcpConfiguration;
+import org.tools4j.elara.stream.tcp.config.TcpContext;
 import org.tools4j.elara.stream.udp.Udp;
-import org.tools4j.elara.stream.udp.impl.UdpClient;
-import org.tools4j.elara.stream.udp.impl.UdpServer;
+import org.tools4j.elara.stream.udp.config.UdpConfiguration;
+import org.tools4j.elara.stream.udp.config.UdpContext;
 
 import java.io.File;
 import java.net.InetSocketAddress;
@@ -48,7 +50,7 @@ class MessageStreamTest {
     private static final int MESSAGE_BYTES = 100;
     //private static final int MESSAGES_PER_SECOND = 100_000;
     private static final int MESSAGES_PER_SECOND = 0;
-    private static final long MAX_WAIT_MILLIS = 60_000;
+    private static final long MAX_WAIT_MILLIS = 10_000;
 
     @ParameterizedTest(name = "sendAndReceiveMessages: {0} --> {1}")
     @MethodSource("sendersAndReceivers")
@@ -121,38 +123,46 @@ class MessageStreamTest {
     private static Arguments tcpClientSenderAndServerReceiver() {
         //final SocketAddress address = new InetSocketAddress("localhost", nextFreePort());
         final SocketAddress address = new InetSocketAddress(hostAddress(), nextFreePort());
+        final TcpContext config = TcpConfiguration.configure()
+                .bufferCapacity(Math.max(1<<14, MESSAGE_BYTES << 1))
+                .populateDefaults();
         return Arguments.of(
-                Tcp.connect(address).sender(),
-                Tcp.bind(address).receiver()
+                Tcp.connect(address, config).sender(),
+                Tcp.bind(address, config).receiver()
         );
     }
 
     private static Arguments tcpServerSenderAndClientReceiver() {
         final SocketAddress address = new InetSocketAddress("localhost", nextFreePort());
 //        final SocketAddress address = new InetSocketAddress(hostAddress(), nextFreePort());
+        final TcpContext config = TcpConfiguration.configure()
+                .bufferCapacity(Math.max(1<<14, MESSAGE_BYTES << 1))
+                .populateDefaults();
         return Arguments.of(
-                Tcp.bind(address).sender(),
-                Tcp.connect(address).receiver()
+                Tcp.bind(address, config).sender(),
+                Tcp.connect(address, config).receiver()
         );
     }
 
     private static Arguments udpClientSenderAndServerReceiver() {
         final SocketAddress address = new InetSocketAddress(hostAddress(), nextFreePort());
+        final UdpContext config = UdpConfiguration.configure()
+                .bufferCapacity(Math.max(1<<14, MESSAGE_BYTES << 1))
+                .populateDefaults();
         return Arguments.of(
-                Udp.connect(address).sender(),
-                Udp.bind(address).receiver()
+                Udp.connect(address, config).sender(),
+                Udp.bind(address, config).receiver()
         );
     }
 
     private static Arguments udpServerSenderAndClientReceiver() {
         final SocketAddress address = new InetSocketAddress(hostAddress(), nextFreePort());
-        final UdpServer server = Udp.bind(address);
-        final UdpClient client = Udp.connect(address);
-
+        final UdpContext config = UdpConfiguration.configure()
+                .bufferCapacity(Math.max(1<<14, MESSAGE_BYTES << 1))
+                .populateDefaults();
         return Arguments.of(
-                server.sender(),
-                client.receiver()
+                Udp.bind(address, config).sender(),
+                Udp.connect(address, config).receiver()
         );
     }
-
 }

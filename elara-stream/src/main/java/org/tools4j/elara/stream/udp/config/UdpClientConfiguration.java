@@ -23,24 +23,8 @@
  */
 package org.tools4j.elara.stream.udp.config;
 
-import org.tools4j.elara.stream.udp.RemoteAddressListener;
-import org.tools4j.elara.stream.udp.UdpSendingStrategy;
-
-public interface UdpContext extends UdpServerContext, UdpClientContext {
-    @Override
-    UdpContext bufferCapacity(int capacity);
-    @Override
-    UdpContext mtuLength(int mtuLength);
-
-    @Override
-    UdpContext sendingStrategyFactory(UdpSendingStrategy.Factory factory);
-    @Override
-    UdpContext remoteAddressListener(RemoteAddressListener listener);
-
-    @Override
-    UdpContext populateDefaults();
-
-    static UdpContext create() {
-        return new UdpContextImpl();
+public interface UdpClientConfiguration extends UdpConfiguration {
+    static UdpClientContext configure() {
+        return UdpClientContext.create();
     }
 }

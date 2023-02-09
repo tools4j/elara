@@ -49,12 +49,13 @@ final class UdpClientEndpoint implements NioEndpoint {
     private final NioPoller senderPoller = new NioPoller();
 
     UdpClientEndpoint(final SocketAddress connectAddress,
+                      final int mtuLength,
                       final Supplier<? extends RingBuffer> ringBufferFactory) {
         try {
             this.datagramChannel = DatagramChannel.open()
                     .setOption(StandardSocketOptions.SO_REUSEADDR, true);
             this.readSelectionHandler = new ReadSelectionHandler(ringBufferFactory);
-            this.writeSelectionHandler = new WriteSelectionHandler(ringBufferFactory);
+            this.writeSelectionHandler = new UdpWriteSelectionHandler(ringBufferFactory, mtuLength);
             this.datagramChannel.configureBlocking(false);
             this.datagramChannel.register(receiverPoller.selector(), SelectionKey.OP_READ);
             this.datagramChannel.register(senderPoller.selector(), SelectionKey.OP_WRITE);

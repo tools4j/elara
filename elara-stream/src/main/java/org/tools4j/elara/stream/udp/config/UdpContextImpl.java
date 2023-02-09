@@ -32,8 +32,13 @@ class UdpContextImpl implements UdpContext {
 
     private static final int MIN_BUFFER_CAPACITY = 64;
     private static final int DEFAULT_BUFFER_CAPACITY = 1 << 14;
+    private static final int MIN_MTU_LENGTH = 64;
+    private static final int DEFAULT_MTU_LENGTH = 1400;
 
     private int bufferCapacity = DEFAULT_BUFFER_CAPACITY;
+    private RemoteAddressListener remoteAddressListener = null;
+    private UdpSendingStrategy.Factory sendingStrategyFactory = UdpSendingStrategy.MULTICAST;
+    private int mtuLength = DEFAULT_MTU_LENGTH;
 
     @Override
     public int bufferCapacity() {
@@ -51,64 +56,75 @@ class UdpContextImpl implements UdpContext {
     }
 
     @Override
+    public UdpSendingStrategy.Factory sendingStrategyFactory() {
+        return sendingStrategyFactory;
+    }
+
+    @Override
+    public UdpContext sendingStrategyFactory(final UdpSendingStrategy.Factory factory) {
+        this.sendingStrategyFactory = requireNonNull(factory);
+        return this;
+    }
+
+    @Override
+    public RemoteAddressListener remoteAddressListener() {
+        return remoteAddressListener;
+    }
+
+    @Override
+    public UdpContext remoteAddressListener(final RemoteAddressListener listener) {
+        this.remoteAddressListener = listener;
+        return this;
+    }
+
+    @Override
+    public int mtuLength() {
+        return mtuLength;
+    }
+
+    @Override
+    public UdpContext mtuLength(final int mtuLength) {
+        if (mtuLength < MIN_MTU_LENGTH) {
+            throw new IllegalArgumentException("MTU length must be at least " + MIN_MTU_LENGTH +
+                    " but was " + mtuLength);
+        }
+        this.mtuLength = mtuLength;
+        return this;
+    }
+
+    @Override
     public void validate() {
-        //nothing to do
+        if (remoteAddressListener == null) {
+            throw new IllegalArgumentException("Remote address listener must be set (hint: use populateDefaults())");
+        }
     }
 
     @Override
     public UdpContext populateDefaults() {
+        if (remoteAddressListener == null) {
+            remoteAddressListener = defaultRemoteAddressListener();
+        }
         return this;
     }
 
-    static final class UdpServerContextImpl extends UdpContextImpl implements UdpServerContext {
-        private RemoteAddressListener remoteAddressListener = null;
-        private UdpSendingStrategy.Factory sendingStrategyFactory = UdpSendingStrategy.MULTICAST;
-
-        @Override
-        public UdpServerContext bufferCapacity(final int capacity) {
-            super.bufferCapacity(capacity);
-            return this;
-        }
-
-        @Override
-        public UdpSendingStrategy.Factory sendingStrategyFactory() {
-            return sendingStrategyFactory;
-        }
-
-        @Override
-        public UdpServerContext sendingStrategyFactory(final UdpSendingStrategy.Factory factory) {
-            this.sendingStrategyFactory = requireNonNull(factory);
-            return this;
-        }
-
-        @Override
-        public RemoteAddressListener remoteAddressListener() {
-            return remoteAddressListener;
-        }
-
-        @Override
-        public UdpServerContext remoteAddressListener(final RemoteAddressListener listener) {
-            this.remoteAddressListener = listener;
-            return this;
-        }
-
+    static final class UdpClientContextImpl extends UdpContextImpl implements UdpClientContext {
         @Override
         public void validate() {
-            if (remoteAddressListener == null) {
-                throw new IllegalArgumentException("Remote address listener must be set (hint: use populateDefaults())");
-            }
+            //nothing to validate
         }
 
         @Override
-        public UdpServerContext populateDefaults() {
-           if (remoteAddressListener == null) {
-                remoteAddressListener = defaultRemoteAddressListener();
-            }
+        public UdpContext populateDefaults() {
+            //nothing to populate
             return this;
         }
     }
 
-   private static RemoteAddressListener defaultRemoteAddressListener() {
+    static final class UdpServerContextImpl extends UdpContextImpl implements UdpServerContext {
+        //nothing to add
+    }
+
+    private static RemoteAddressListener defaultRemoteAddressListener() {
         return (server, serverChannel, remoteAddress) ->
                 System.out.printf("%s: added remote address %s\n", server, remoteAddress);
     }

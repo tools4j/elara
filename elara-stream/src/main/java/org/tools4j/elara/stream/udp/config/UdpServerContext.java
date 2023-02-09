@@ -27,13 +27,12 @@ import org.tools4j.elara.stream.udp.RemoteAddressListener;
 import org.tools4j.elara.stream.udp.UdpSendingStrategy;
 import org.tools4j.elara.stream.udp.config.UdpContextImpl.UdpServerContextImpl;
 
-public interface UdpServerContext extends UdpContext, UdpServerConfiguration {
-    @Override
+public interface UdpServerContext extends UdpServerConfiguration {
     UdpServerContext bufferCapacity(int capacity);
+    UdpServerContext mtuLength(int mtuLength);
     UdpServerContext sendingStrategyFactory(UdpSendingStrategy.Factory factory);
     UdpServerContext remoteAddressListener(RemoteAddressListener listener);
 
-    @Override
     UdpServerContext populateDefaults();
 
     static UdpServerContext create() {

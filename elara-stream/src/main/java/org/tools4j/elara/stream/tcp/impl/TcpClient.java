@@ -33,6 +33,7 @@ import org.tools4j.elara.stream.nio.NioSender;
 import org.tools4j.elara.stream.nio.RingBuffer;
 import org.tools4j.elara.stream.tcp.ConnectListener;
 import org.tools4j.elara.stream.tcp.TcpConnection;
+import org.tools4j.elara.stream.tcp.config.TcpClientConfiguration;
 
 import java.net.SocketAddress;
 import java.util.function.Supplier;
@@ -41,18 +42,23 @@ import static java.util.Objects.requireNonNull;
 
 public class TcpClient implements TcpConnection {
     private final SocketAddress connectAddress;
+    private final TcpClientConfiguration configuration;
     private final ConnectListener connectListener;
     private final Supplier<? extends RingBuffer> ringBufferFactory;
-    private final TcpClientReceiver receiver = new TcpClientReceiver();
-    private final TcpClientSender sender = new TcpClientSender();
+    private final TcpClientReceiver receiver;
+    private final TcpClientSender sender;
     private TcpClientEndpoint client;
 
     public TcpClient(final SocketAddress connectAddress,
-                     final ConnectListener connectListener,
+                     final TcpClientConfiguration configuration,
                      final int bufferCapacity) {
+        configuration.validate();
         this.connectAddress = requireNonNull(connectAddress);
-        this.connectListener = requireNonNull(connectListener);
+        this.configuration = requireNonNull(configuration);
+        this.connectListener = configuration.connectListener();
         this.ringBufferFactory = RingBuffer.factory(bufferCapacity);
+        this.receiver = new TcpClientReceiver();
+        this.sender = new TcpClientSender();
         this.client = new TcpClientEndpoint(this, connectAddress, connectListener, ringBufferFactory);
     }
 
@@ -126,7 +132,7 @@ public class TcpClient implements TcpConnection {
     private final class TcpClientSender extends NioSender {
         String name;
         TcpClientSender() {
-            super(() -> client, new TcpHeader());
+            super(() -> client, configuration.bufferCapacity(), new TcpHeader());
         }
 
         @Override

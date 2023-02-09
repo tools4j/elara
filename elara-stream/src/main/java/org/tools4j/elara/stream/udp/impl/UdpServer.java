@@ -30,11 +30,11 @@ import org.tools4j.elara.stream.nio.NioHeader.MutableNioHeader;
 import org.tools4j.elara.stream.nio.NioReceiver;
 import org.tools4j.elara.stream.nio.NioSender;
 import org.tools4j.elara.stream.nio.RingBuffer;
-import org.tools4j.elara.stream.udp.RemoteAddressListener;
 import org.tools4j.elara.stream.udp.UdpEndpoint;
 import org.tools4j.elara.stream.udp.UdpHeader;
 import org.tools4j.elara.stream.udp.UdpReceiver;
 import org.tools4j.elara.stream.udp.UdpSender;
+import org.tools4j.elara.stream.udp.config.UdpServerConfiguration;
 
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
@@ -48,17 +48,24 @@ import static java.util.Objects.requireNonNull;
 public class UdpServer implements UdpEndpoint {
 
     private final SocketAddress bindAddress;
-    private final UdpServerSender sender = new UdpServerSender(new MutableUdpHeader());
-    private final UdpServerReceiver receiver = new UdpServerReceiver(new MutableUdpHeader());
+    private final UdpServerConfiguration configuration;
+    private final UdpServerReceiver receiver;
+    private final UdpServerSender sender;
 
     private final Set<SocketChannel> accepted = new CopyOnWriteArraySet<>();
     private UdpServerEndpoint server;
 
-    public UdpServer(final SocketAddress bindAddress,
-                     final RemoteAddressListener remoteAddressListener,
-                     final int bufferCapacity) {
+    public UdpServer(final SocketAddress bindAddress, final UdpServerConfiguration configuration) {
+        configuration.validate();
         this.bindAddress = requireNonNull(bindAddress);
-        this.server = new UdpServerEndpoint(this, bindAddress, remoteAddressListener, RingBuffer.factory(bufferCapacity));
+        this.configuration = requireNonNull(configuration);
+        this.receiver = new UdpServerReceiver(new MutableUdpHeader());
+        this.sender = new UdpServerSender(new MutableUdpHeader());
+        this.server = new UdpServerEndpoint(this, bindAddress,
+                configuration.remoteAddressListener(),
+                configuration.sendingStrategyFactory().create(),
+                configuration.mtuLength(),
+                RingBuffer.factory(configuration.bufferCapacity()));
     }
 
     public List<SocketAddress> remoteAddresses() {
@@ -124,7 +131,7 @@ public class UdpServer implements UdpEndpoint {
         final Sequence sequence = new Sequence();
         String name;
         UdpServerSender(final MutableUdpHeader header) {
-            super(() -> server, header);
+            super(() -> server, configuration.bufferCapacity(), header);
             this.header = requireNonNull(header);
         }
 

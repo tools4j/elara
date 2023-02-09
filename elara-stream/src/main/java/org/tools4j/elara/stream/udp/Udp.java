@@ -23,6 +23,7 @@
  */
 package org.tools4j.elara.stream.udp;
 
+import org.tools4j.elara.stream.udp.config.UdpClientConfiguration;
 import org.tools4j.elara.stream.udp.config.UdpConfiguration;
 import org.tools4j.elara.stream.udp.config.UdpServerConfiguration;
 import org.tools4j.elara.stream.udp.impl.UdpClient;
@@ -43,7 +44,7 @@ public enum Udp {
     }
 
     public static UdpServer bind(final SocketAddress address, final UdpServerConfiguration configuration) {
-        return new UdpServer(address, configuration.remoteAddressListener(), configuration.bufferCapacity());
+        return new UdpServer(address, configuration);
     }
 
     public static UdpClient connect(final String address, final int port) {
@@ -51,11 +52,11 @@ public enum Udp {
     }
 
     public static UdpClient connect(final SocketAddress address) {
-        return connect(address, UdpConfiguration.configure().populateDefaults());
+        return connect(address, UdpConfiguration.configureClient().populateDefaults());
     }
 
-    public static UdpClient connect(final SocketAddress address, final UdpConfiguration configuration) {
-        return new UdpClient(address, configuration.bufferCapacity());
+    public static UdpClient connect(final SocketAddress address, final UdpClientConfiguration configuration) {
+        return new UdpClient(address, configuration);
     }
 
 }

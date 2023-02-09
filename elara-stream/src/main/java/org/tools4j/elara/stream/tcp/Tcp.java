@@ -43,7 +43,7 @@ public enum Tcp {
     }
 
     public static TcpConnection bind(final SocketAddress address, final TcpServerConfiguration configuration) {
-        return new TcpServer(address, configuration.acceptListener(), configuration.bufferCapacity());
+        return new TcpServer(address, configuration);
     }
 
     public static TcpConnection connect(final String address, final int port) {
@@ -55,7 +55,7 @@ public enum Tcp {
     }
 
     public static TcpConnection connect(final SocketAddress address, final TcpClientConfiguration configuration) {
-        return new TcpClient(address, configuration.connectListener(), configuration.bufferCapacity());
+        return new TcpClient(address, configuration, configuration.bufferCapacity());
     }
 
 }
