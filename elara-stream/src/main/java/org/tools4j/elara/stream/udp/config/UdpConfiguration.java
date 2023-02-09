@@ -21,21 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.impl;
+package org.tools4j.elara.stream.udp.config;
 
-import org.tools4j.elara.stream.tcp.config.TcpServerConfiguration.SendingStrategy;
+public interface UdpConfiguration {
+    int bufferCapacity();
 
-import java.nio.channels.SocketChannel;
-import java.util.List;
-import java.util.function.Supplier;
+    void validate();
 
-public class MulticastSendingStrategy implements SendingStrategy {
-    public static final MulticastSendingStrategy INSTANCE = new MulticastSendingStrategy();
-    public static final Supplier<MulticastSendingStrategy> FACTORY = () -> INSTANCE;
+    static UdpContext configure() {
+        return UdpContext.create();
+    }
 
-    @Override
-    public SocketChannel nextRecipient(final TcpServer server, final int recipientIndex) {
-        final List<SocketChannel> channels = server.acceptedClientChannels();
-        return recipientIndex < channels.size() ? channels.get(recipientIndex) : null;
+    static UdpServerContext configureServer() {
+        return UdpServerConfiguration.configure();
     }
 }

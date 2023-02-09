@@ -21,17 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.config;
+package org.tools4j.elara.stream.tcp.impl;
 
-import org.tools4j.elara.stream.tcp.AcceptListener;
 import org.tools4j.elara.stream.tcp.TcpSendingStrategy;
 
-public interface TcpServerConfiguration extends TcpConfiguration {
-    TcpSendingStrategy.Factory sendingStrategyFactory();
+import java.nio.channels.SocketChannel;
+import java.util.List;
 
-    AcceptListener acceptListener();
+public class MulticastTcpSendingStrategy implements TcpSendingStrategy {
+    public static final MulticastTcpSendingStrategy INSTANCE = new MulticastTcpSendingStrategy();
 
-    static TcpServerContext configure() {
-        return TcpServerContext.create();
+    @Override
+    public SocketChannel nextRecipient(final TcpServer server, final int recipientIndex) {
+        final List<SocketChannel> channels = server.acceptedClientChannels();
+        return recipientIndex < channels.size() ? channels.get(recipientIndex) : null;
     }
 }

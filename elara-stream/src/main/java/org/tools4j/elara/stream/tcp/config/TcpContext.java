@@ -25,8 +25,7 @@ package org.tools4j.elara.stream.tcp.config;
 
 import org.tools4j.elara.stream.tcp.AcceptListener;
 import org.tools4j.elara.stream.tcp.ConnectListener;
-
-import java.util.function.Supplier;
+import org.tools4j.elara.stream.tcp.TcpSendingStrategy;
 
 public interface TcpContext extends TcpClientContext, TcpServerContext {
     @Override
@@ -38,7 +37,7 @@ public interface TcpContext extends TcpClientContext, TcpServerContext {
     TcpContext connectListener(ConnectListener listener);
 
     @Override
-    TcpContext sendingStrategyFactory(Supplier<? extends SendingStrategy> factory);
+    TcpContext sendingStrategyFactory(TcpSendingStrategy.Factory factory);
     @Override
     TcpContext acceptListener(AcceptListener listener);
 

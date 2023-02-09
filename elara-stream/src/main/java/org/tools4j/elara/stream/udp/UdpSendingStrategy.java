@@ -23,39 +23,21 @@
  */
 package org.tools4j.elara.stream.udp;
 
-import org.tools4j.elara.stream.udp.config.UdpConfiguration;
-import org.tools4j.elara.stream.udp.config.UdpServerConfiguration;
-import org.tools4j.elara.stream.udp.impl.UdpClient;
+import org.tools4j.elara.stream.udp.impl.MulticastUdpSendingStrategy;
+import org.tools4j.elara.stream.udp.impl.RoundRobinUdpSendingStrategy;
 import org.tools4j.elara.stream.udp.impl.UdpServer;
 
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-public enum Udp {
-    ;
+@FunctionalInterface
+public interface UdpSendingStrategy {
+    SocketAddress nextRecipient(UdpServer server, int recipientIndex);
 
-    public static UdpServer bind(final String address, final int port) {
-        return bind(new InetSocketAddress(address, port));
+    @FunctionalInterface
+    interface Factory {
+        UdpSendingStrategy create();
     }
 
-    public static UdpServer bind(final SocketAddress address) {
-        return bind(address, UdpConfiguration.configureServer().populateDefaults());
-    }
-
-    public static UdpServer bind(final SocketAddress address, final UdpServerConfiguration configuration) {
-        return new UdpServer(address, configuration.remoteAddressListener(), configuration.bufferCapacity());
-    }
-
-    public static UdpClient connect(final String address, final int port) {
-        return connect(new InetSocketAddress(address, port));
-    }
-
-    public static UdpClient connect(final SocketAddress address) {
-        return connect(address, UdpConfiguration.configure().populateDefaults());
-    }
-
-    public static UdpClient connect(final SocketAddress address, final UdpConfiguration configuration) {
-        return new UdpClient(address, configuration.bufferCapacity());
-    }
-
+    Factory MULTICAST = () -> MulticastUdpSendingStrategy.INSTANCE;
+    Factory ROUND_ROBIN = RoundRobinUdpSendingStrategy::new;
 }

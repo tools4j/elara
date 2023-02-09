@@ -24,12 +24,11 @@
 package org.tools4j.elara.stream.tcp.config;
 
 import org.tools4j.elara.stream.tcp.AcceptListener;
-
-import java.util.function.Supplier;
+import org.tools4j.elara.stream.tcp.TcpSendingStrategy;
 
 public interface TcpServerContext extends TcpServerConfiguration {
     TcpServerContext bufferCapacity(int capacity);
-    TcpServerContext sendingStrategyFactory(Supplier<? extends SendingStrategy> factory);
+    TcpServerContext sendingStrategyFactory(TcpSendingStrategy.Factory factory);
     TcpServerContext acceptListener(AcceptListener listener);
     TcpServerContext populateDefaults();
 

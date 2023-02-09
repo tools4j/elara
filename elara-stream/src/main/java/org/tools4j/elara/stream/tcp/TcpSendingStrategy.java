@@ -21,30 +21,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.impl;
+package org.tools4j.elara.stream.tcp;
 
-import org.tools4j.elara.stream.tcp.config.TcpServerConfiguration.SendingStrategy;
+import org.tools4j.elara.stream.tcp.impl.MulticastTcpSendingStrategy;
+import org.tools4j.elara.stream.tcp.impl.RoundRobinTcpSendingStrategy;
+import org.tools4j.elara.stream.tcp.impl.TcpServer;
 
 import java.nio.channels.SocketChannel;
-import java.util.List;
 
-public class RoundRobinSendingStrategy implements SendingStrategy {
-    private int index = -1;
+@FunctionalInterface
+public interface TcpSendingStrategy {
+    SocketChannel nextRecipient(TcpServer server, int recipientIndex);
 
-    @Override
-    public SocketChannel nextRecipient(final TcpServer server, final int recipientIndex) {
-        if (recipientIndex != 0) {
-            return null;
-        }
-        final List<SocketChannel> channels = server.acceptedClientChannels();
-        final int size = channels.size();
-        if (size > 0) {
-            index++;
-            if (index >= size) {
-                index = 0;
-            }
-            return channels.get(index);
-        }
-        return null;
+    @FunctionalInterface
+    interface Factory {
+        TcpSendingStrategy create();
     }
+
+    Factory MULTICAST = () -> MulticastTcpSendingStrategy.INSTANCE;
+    Factory ROUND_ROBIN = RoundRobinTcpSendingStrategy::new;
 }

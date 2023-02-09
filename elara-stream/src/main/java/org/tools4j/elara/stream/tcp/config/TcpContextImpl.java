@@ -25,9 +25,7 @@ package org.tools4j.elara.stream.tcp.config;
 
 import org.tools4j.elara.stream.tcp.AcceptListener;
 import org.tools4j.elara.stream.tcp.ConnectListener;
-import org.tools4j.elara.stream.tcp.impl.MulticastSendingStrategy;
-
-import java.util.function.Supplier;
+import org.tools4j.elara.stream.tcp.TcpSendingStrategy;
 
 import static java.util.Objects.requireNonNull;
 
@@ -38,9 +36,9 @@ class TcpContextImpl implements TcpContext {
 
     private int bufferCapacity = DEFAULT_BUFFER_CAPACITY;
     private long reconnectTimeoutMillis = 10_000;
-    private ConnectListener connectListener = null;
-    private AcceptListener acceptListener = null;
-    private Supplier<? extends SendingStrategy> sendingStrategyFactory = MulticastSendingStrategy.FACTORY;
+    protected ConnectListener connectListener = null;
+    protected AcceptListener acceptListener = null;
+    private TcpSendingStrategy.Factory sendingStrategyFactory = TcpSendingStrategy.MULTICAST;
 
     @Override
     public int bufferCapacity() {
@@ -80,12 +78,12 @@ class TcpContextImpl implements TcpContext {
     }
 
     @Override
-    public Supplier<? extends SendingStrategy> sendingStrategyFactory() {
+    public TcpSendingStrategy.Factory sendingStrategyFactory() {
         return sendingStrategyFactory;
     }
 
     @Override
-    public TcpContext sendingStrategyFactory(final Supplier<? extends SendingStrategy> factory) {
+    public TcpContext sendingStrategyFactory(final TcpSendingStrategy.Factory factory) {
         this.sendingStrategyFactory = requireNonNull(factory);
         return this;
     }
@@ -122,7 +120,7 @@ class TcpContextImpl implements TcpContext {
         return this;
     }
 
-    final class TcpClientContextImpl extends TcpContextImpl {
+    static final class TcpClientContextImpl extends TcpContextImpl {
         @Override
         public void validate() {
             if (connectListener == null) {
@@ -139,7 +137,7 @@ class TcpContextImpl implements TcpContext {
         }
     }
 
-    final class TcpServerContextImpl extends TcpContextImpl {
+    static final class TcpServerContextImpl extends TcpContextImpl {
         @Override
         public void validate() {
             if (acceptListener == null) {
@@ -156,12 +154,12 @@ class TcpContextImpl implements TcpContext {
         }
     }
 
-    private ConnectListener defaultConnectListener() {
+    private static ConnectListener defaultConnectListener() {
         return (client, channel, key) ->
                 System.out.printf("%s: connected to %s\n", client, channel.socket().getRemoteSocketAddress());
     }
 
-    private AcceptListener defaultAcceptListener() {
+    private static AcceptListener defaultAcceptListener() {
         return (server, serverChannel, clientChannel, key) ->
                 System.out.printf("%s: accepted from %s\n", server, clientChannel.socket().getRemoteSocketAddress());
     }

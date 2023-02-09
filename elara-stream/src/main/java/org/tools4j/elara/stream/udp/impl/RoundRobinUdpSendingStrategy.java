@@ -21,17 +21,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.config;
+package org.tools4j.elara.stream.udp.impl;
 
-import org.tools4j.elara.stream.tcp.AcceptListener;
-import org.tools4j.elara.stream.tcp.TcpSendingStrategy;
+import org.tools4j.elara.stream.udp.UdpSendingStrategy;
 
-public interface TcpServerConfiguration extends TcpConfiguration {
-    TcpSendingStrategy.Factory sendingStrategyFactory();
+import java.net.SocketAddress;
+import java.util.List;
 
-    AcceptListener acceptListener();
+public class RoundRobinUdpSendingStrategy implements UdpSendingStrategy {
+    private int index = -1;
 
-    static TcpServerContext configure() {
-        return TcpServerContext.create();
+    @Override
+    public SocketAddress nextRecipient(final UdpServer server, final int recipientIndex) {
+        if (recipientIndex != 0) {
+            return null;
+        }
+        final List<SocketAddress> addresses = server.remoteAddresses();
+        final int size = addresses.size();
+        if (size > 0) {
+            index++;
+            if (index >= size) {
+                index = 0;
+            }
+            return addresses.get(index);
+        }
+        return null;
     }
 }

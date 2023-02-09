@@ -28,6 +28,7 @@ import org.tools4j.elara.stream.udp.impl.UdpServer;
 import java.net.SocketAddress;
 import java.nio.channels.DatagramChannel;
 
+@FunctionalInterface
 public interface RemoteAddressListener {
     void onRemoteAddressAdded(UdpServer server, DatagramChannel serverChannel, SocketAddress remoteAddress);
 }
