@@ -162,7 +162,7 @@ subprojects {
             exceptionFormat = 'full'
         }
 
-        reports.html.enabled = false // Disable individual test reports
+        reports.html.required = false // Disable individual test reports
     }
 
     task perfTest(type: Test) {
@@ -520,10 +520,10 @@ project(':elara-samples') {
     }
 }
 
-task testReport(type: TestReport) {
-    destinationDir = file("$buildDir/reports/allTests")
+tasks.register('testReport', TestReport) {
+    destinationDirectory = file("${buildDir}/reports/allTests")
     // Include the results from the `test` task in all sub-projects
-    reportOn subprojects*.test
+    testResults.setFrom(subprojects*.test)
 }
 
 task copyCrashLogs(type: Copy) {
