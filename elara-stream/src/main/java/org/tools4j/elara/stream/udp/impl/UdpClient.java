@@ -30,7 +30,6 @@ import org.tools4j.elara.stream.SendingResult;
 import org.tools4j.elara.stream.nio.NioHeader.MutableNioHeader;
 import org.tools4j.elara.stream.nio.NioReceiver;
 import org.tools4j.elara.stream.nio.NioSender;
-import org.tools4j.elara.stream.nio.RingBuffer;
 import org.tools4j.elara.stream.udp.UdpEndpoint;
 import org.tools4j.elara.stream.udp.UdpHeader;
 import org.tools4j.elara.stream.udp.UdpReceiver;
@@ -47,7 +46,7 @@ public class UdpClient implements UdpEndpoint {
     private static final UnsafeBuffer HELLO = new UnsafeBuffer(ByteBuffer.allocate(0));
     private final SocketAddress connectAddress;
     private final UdpClientConfiguration configuration;
-    private final Supplier<? extends RingBuffer> ringBufferFactory;
+    private final Supplier<? extends ByteBuffer> bufferFactory;
     private final UcpClientReceiver receiver;
     private final UcpClientSender sender;
     private UdpClientEndpoint client;
@@ -56,10 +55,10 @@ public class UdpClient implements UdpEndpoint {
         configuration.validate();
         this.connectAddress = requireNonNull(connectAddress);
         this.configuration = requireNonNull(configuration);
-        this.ringBufferFactory = RingBuffer.factory(configuration.bufferCapacity());
+        this.bufferFactory = () -> ByteBuffer.allocateDirect(configuration.bufferCapacity());
         this.receiver = new UcpClientReceiver(new MutableUdpHeader());
         this.sender = new UcpClientSender(new MutableUdpHeader());
-        this.client = new UdpClientEndpoint(connectAddress, configuration.mtuLength(), ringBufferFactory);
+        this.client = new UdpClientEndpoint(connectAddress, configuration.mtuLength(), bufferFactory);
     }
 
     @Override
@@ -93,7 +92,7 @@ public class UdpClient implements UdpEndpoint {
     public void reconnect() {
         if (client != null) {
             CloseHelper.quietClose(client);
-            client = new UdpClientEndpoint(connectAddress, configuration.mtuLength(), ringBufferFactory);
+            client = new UdpClientEndpoint(connectAddress, configuration.mtuLength(), bufferFactory);
         }
     }
 
@@ -112,7 +111,7 @@ public class UdpClient implements UdpEndpoint {
 
         @Override
         public UdpHeader header() {
-            return header.buffer().capacity() > 0 ? header : null;
+            return header.valid() ? header : null;
         }
 
         @Override

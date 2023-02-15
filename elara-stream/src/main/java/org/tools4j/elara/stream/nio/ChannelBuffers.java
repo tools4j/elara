@@ -23,44 +23,44 @@
  */
 package org.tools4j.elara.stream.nio;
 
-import org.agrona.DirectBuffer;
-import org.agrona.MutableDirectBuffer;
+import org.agrona.collections.Object2ObjectHashMap;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.Channel;
+import java.util.Map;
 import java.util.function.Supplier;
 
-public interface RingBuffer {
+import static java.util.Objects.requireNonNull;
+import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
 
-    int capacity();
+public class ChannelBuffers implements ChannelBufferSupplier {
 
-    int readOffset();
-    int writeOffset();
-    int readLength();
-    int writeLength();
+    private final Supplier<? extends ByteBuffer> bufferFactory;
+    private final Map<Channel, ByteBuffer> buffers;
 
-    void readOffset(int offset);
-    void writeOffset(int offset);
-    void reset();
-    void reset(int readOffset, int writeOffset);
+    public ChannelBuffers(final int channels, final int bufferCapacity) {
+        this(channels, () -> ByteBuffer.allocateDirect(bufferCapacity));
+    }
 
-    int read(MutableDirectBuffer target, int targetOffset, int maxLength);
-    int read(ByteBuffer target, int targetOffset, int maxLength);
-    boolean readWrap(DirectBuffer wrap);
-    boolean readWrap(DirectBuffer wrap, int length);
-    ByteBuffer readOrNull();
-    void readCommit(int bytes);
-    boolean readSkip(int bytes);
+    public ChannelBuffers(final int channels, final Supplier<? extends ByteBuffer> bufferFactory) {
+        this.bufferFactory = requireNonNull(bufferFactory);
+        this.buffers = new Object2ObjectHashMap<>(channels, DEFAULT_LOAD_FACTOR);
+    }
 
-    boolean write(DirectBuffer source, int offset, int length);
-    boolean write(ByteBuffer source, int offset, int length);
-    boolean writeWrap(MutableDirectBuffer wrap);
-    boolean writeWrap(MutableDirectBuffer wrap, int length);
-    ByteBuffer writeOrNull();
-    void writeCommit(int bytes);
-    boolean writeSkip(int bytes);
+    @Override
+    public ByteBuffer bufferFor(final Channel channel) {
+        ByteBuffer buffer = buffers.get(channel);
+        if (buffer == null) {
+            buffers.put(channel, buffer = bufferFactory.get());
+        }
+        return buffer;
+    }
 
-    static Supplier<RingBuffer> factory(final int bufferSize) {
-        RingBufferImpl.validateBufferSize(bufferSize);
-        return () -> new RingBufferImpl(bufferSize);
+    public void remove(final Channel channel) {
+        buffers.remove(channel);
+    }
+
+    public void clear() {
+        buffers.clear();
     }
 }

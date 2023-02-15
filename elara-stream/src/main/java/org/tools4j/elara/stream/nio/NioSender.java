@@ -40,7 +40,7 @@ import static java.util.Objects.requireNonNull;
 public class NioSender implements MessageSender.Direct {
 
     private final Supplier<? extends NioEndpoint> endpointSupplier;
-    private final NioFrame frame;
+    private final NioFrameImpl frame;
 
     private final NioSendingContext context;
 
@@ -64,20 +64,19 @@ public class NioSender implements MessageSender.Direct {
             frame.payload().putBytes(0, buffer, offset, length);
         }
         writeHeader(frame.header(), length);
-        return sendFrame(frame.header().headerLength() + length);
+        return sendFrame(endpointSupplier.get(), frame);
     }
 
     protected void writeHeader(final MutableNioHeader header, final int payloadLength) {
         header.payloadLength(payloadLength);
     }
 
-    private SendingResult sendFrame(final int frameLength) {
-        final NioEndpoint endpoint = endpointSupplier.get();
+    private static SendingResult sendFrame(final NioEndpoint endpoint, final NioFrame frame) {
         if (endpoint == null) {
             return SendingResult.CLOSED;
         }
         try {
-            final int readyOps = endpoint.send(frame.frame(), 0, frameLength);
+            final int readyOps = endpoint.send(frame);
             if (readyOps > 0 && ((readyOps & SelectionKey.OP_WRITE) != 0)) {
                 return SendingResult.SENT;
             }

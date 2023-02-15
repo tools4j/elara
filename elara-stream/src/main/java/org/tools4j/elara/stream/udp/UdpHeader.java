@@ -26,5 +26,9 @@ package org.tools4j.elara.stream.udp;
 import org.tools4j.elara.stream.nio.NioHeader;
 
 public interface UdpHeader extends NioHeader {
+    int HEADER_LENGTH = 16;
+    int PAYLOAD_LENGTH_OFFSET = 0;
+    int SEQUENCE_OFFSET = 8;
+
     long sequence();
 }

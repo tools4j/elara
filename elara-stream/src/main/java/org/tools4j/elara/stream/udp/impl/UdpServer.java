@@ -29,7 +29,6 @@ import org.tools4j.elara.stream.SendingResult;
 import org.tools4j.elara.stream.nio.NioHeader.MutableNioHeader;
 import org.tools4j.elara.stream.nio.NioReceiver;
 import org.tools4j.elara.stream.nio.NioSender;
-import org.tools4j.elara.stream.nio.RingBuffer;
 import org.tools4j.elara.stream.udp.UdpEndpoint;
 import org.tools4j.elara.stream.udp.UdpHeader;
 import org.tools4j.elara.stream.udp.UdpReceiver;
@@ -37,6 +36,7 @@ import org.tools4j.elara.stream.udp.UdpSender;
 import org.tools4j.elara.stream.udp.config.UdpServerConfiguration;
 
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Collections;
 import java.util.List;
@@ -65,7 +65,7 @@ public class UdpServer implements UdpEndpoint {
                 configuration.remoteAddressListener(),
                 configuration.sendingStrategyFactory().create(),
                 configuration.mtuLength(),
-                RingBuffer.factory(configuration.bufferCapacity()));
+                () -> ByteBuffer.allocateDirect(configuration.bufferCapacity()));
     }
 
     public List<SocketAddress> remoteAddresses() {
@@ -117,7 +117,7 @@ public class UdpServer implements UdpEndpoint {
 
         @Override
         public UdpHeader header() {
-            return header.buffer().capacity() > 0 ? header : null;
+            return header.valid() ? header : null;
         }
 
         @Override

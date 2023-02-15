@@ -23,20 +23,10 @@
  */
 package org.tools4j.elara.stream.nio;
 
-import org.agrona.DirectBuffer;
-
 import java.nio.ByteBuffer;
+import java.nio.channels.Channel;
 
-public interface NioHeader {
-    int headerLength();
-    int payloadLength();
-
-    boolean valid();
-    void wrap(ByteBuffer buffer, int offset);
-    void wrap(DirectBuffer buffer, int offset);
-    void unwrap();
-
-    interface MutableNioHeader extends NioHeader {
-        void payloadLength(int length);
-    }
+@FunctionalInterface
+public interface ChannelBufferSupplier {
+    ByteBuffer bufferFor(Channel channel);
 }

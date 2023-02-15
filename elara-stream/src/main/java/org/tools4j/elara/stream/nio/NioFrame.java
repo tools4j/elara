@@ -23,11 +23,9 @@
  */
 package org.tools4j.elara.stream.nio;
 
-import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.stream.nio.NioHeader.MutableNioHeader;
+import org.agrona.DirectBuffer;
 
-interface NioFrame {
-    MutableNioHeader header();
-    MutableDirectBuffer frame();
-    MutableDirectBuffer payload();
+public interface NioFrame {
+    NioHeader header();
+    DirectBuffer frame();
 }

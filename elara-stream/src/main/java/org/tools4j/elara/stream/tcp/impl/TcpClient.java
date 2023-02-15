@@ -30,12 +30,12 @@ import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.SendingResult;
 import org.tools4j.elara.stream.nio.NioReceiver;
 import org.tools4j.elara.stream.nio.NioSender;
-import org.tools4j.elara.stream.nio.RingBuffer;
 import org.tools4j.elara.stream.tcp.ConnectListener;
 import org.tools4j.elara.stream.tcp.TcpConnection;
 import org.tools4j.elara.stream.tcp.config.TcpClientConfiguration;
 
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
@@ -44,7 +44,7 @@ public class TcpClient implements TcpConnection {
     private final SocketAddress connectAddress;
     private final TcpClientConfiguration configuration;
     private final ConnectListener connectListener;
-    private final Supplier<? extends RingBuffer> ringBufferFactory;
+    private final Supplier<? extends ByteBuffer> bufferFactory;
     private final TcpClientReceiver receiver;
     private final TcpClientSender sender;
     private TcpClientEndpoint client;
@@ -56,10 +56,10 @@ public class TcpClient implements TcpConnection {
         this.connectAddress = requireNonNull(connectAddress);
         this.configuration = requireNonNull(configuration);
         this.connectListener = configuration.connectListener();
-        this.ringBufferFactory = RingBuffer.factory(bufferCapacity);
+        this.bufferFactory = () -> ByteBuffer.allocateDirect(bufferCapacity);
         this.receiver = new TcpClientReceiver();
         this.sender = new TcpClientSender();
-        this.client = new TcpClientEndpoint(this, connectAddress, connectListener, ringBufferFactory);
+        this.client = new TcpClientEndpoint(this, connectAddress, connectListener, bufferFactory);
     }
 
     @Override
@@ -98,7 +98,7 @@ public class TcpClient implements TcpConnection {
     public void reconnect() {
         if (client != null) {
             CloseHelper.quietClose(client);
-            client = new TcpClientEndpoint(this, connectAddress, connectListener, ringBufferFactory);
+            client = new TcpClientEndpoint(this, connectAddress, connectListener, bufferFactory);
         }
     }
 

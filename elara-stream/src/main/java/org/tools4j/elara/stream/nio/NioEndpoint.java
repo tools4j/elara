@@ -23,14 +23,13 @@
  */
 package org.tools4j.elara.stream.nio;
 
-import org.agrona.DirectBuffer;
 import org.tools4j.elara.stream.MessageReceiver.Handler;
 
 import java.io.IOException;
 
 public interface NioEndpoint extends AutoCloseable {
     int receive(NioHeader header, Handler messageHandler) throws IOException;
-    int send(DirectBuffer buffer, int offset, int length) throws IOException;
+    int send(NioFrame frame) throws IOException;
     boolean isConnected();
     boolean isClosed();
     @Override

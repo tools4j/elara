@@ -23,14 +23,17 @@
  */
 package org.tools4j.elara.stream.tcp.impl;
 
+import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
+import org.tools4j.elara.stream.nio.NioHeader;
 import org.tools4j.elara.stream.nio.NioHeader.MutableNioHeader;
 
-final class TcpHeader implements MutableNioHeader {
-    public final static int HEADER_LENGTH = 4;
-    private static final int POS_PAYLOAD_LENGTH = 0;
+import java.nio.ByteBuffer;
 
+final class TcpHeader implements MutableNioHeader, NioHeader {
+    public static final int HEADER_LENGTH = 4;
+    public static final int PAYLOAD_LENGTH_OFFSET = 0;
     private final MutableDirectBuffer buffer = new UnsafeBuffer(0, 0);
 
     @Override
@@ -39,17 +42,32 @@ final class TcpHeader implements MutableNioHeader {
     }
 
     @Override
-    public MutableDirectBuffer buffer() {
-        return buffer;
-    }
-
-    @Override
     public int payloadLength() {
-        return buffer.getInt(POS_PAYLOAD_LENGTH);
+        return buffer.getInt(PAYLOAD_LENGTH_OFFSET);
     }
 
     @Override
     public void payloadLength(final int length) {
-        buffer.putInt(POS_PAYLOAD_LENGTH, length);
+        buffer.putInt(PAYLOAD_LENGTH_OFFSET, length);
+    }
+
+    @Override
+    public boolean valid() {
+        return buffer.capacity() > 0;
+    }
+
+    @Override
+    public void wrap(final ByteBuffer source, final int offset) {
+        buffer.wrap(source, offset, HEADER_LENGTH);
+    }
+
+    @Override
+    public void wrap(final DirectBuffer source, final int offset) {
+        buffer.wrap(source, offset, HEADER_LENGTH);
+    }
+
+    @Override
+    public void unwrap() {
+        buffer.wrap(0, 0);
     }
 }

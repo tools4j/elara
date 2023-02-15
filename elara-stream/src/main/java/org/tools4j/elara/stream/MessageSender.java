@@ -55,10 +55,10 @@ public interface MessageSender extends MessageStream {
     SendingResult sendMessage(DirectBuffer buffer, int offset, int length);
 
     /**
-     * Starts sending of a message and returns the sending context with the buffer for to encode the message directly
-     * into the transport buffer.  Encoding and sending is completed with {@link SendingContext#send(int) send(..)}
-     * and is recommended to be performed inside a try-resource block; see {@link MessageSender class documentation} for
-     * an example.
+     * Starts sending of a message and returns the sending context with the buffer to encode the message directly into
+     * the transport buffer.  Encoding and sending is completed with {@link SendingContext#send(int) send(..)} and it is
+     * recommended to be performed inside a try-resource block; see {@link MessageSender class documentation} for an
+     * example.
      *
      * @return the context for message encoding and sending
      */

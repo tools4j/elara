@@ -24,6 +24,7 @@
 package org.tools4j.elara.stream.nio;
 
 import org.agrona.DirectBuffer;
+import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 
 import java.io.IOException;
@@ -31,33 +32,43 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.Channel;
 import java.nio.channels.SelectionKey;
-import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.stream.nio.SelectionHandler.BACK_PRESSURE;
-import static org.tools4j.elara.stream.nio.SelectionHandler.MESSAGE_TOO_LARGE;
 import static org.tools4j.elara.stream.nio.SelectionHandler.OK;
 
-public class WriteSelectionHandler {
+public class WriteHandler {
 
-    private final Supplier<? extends RingBuffer> ringBufferFactory;
+    private final ChannelBufferSupplier channelBufferSupplier;
     private final SelectionHandler baseHandler;
     private final SelectionHandler writeHandler = this::onSelectionKey;
-    private final DirectBuffer frame = new UnsafeBuffer(0, 0);
+    private final MutableDirectBuffer writeBuffer = new UnsafeBuffer(0, 0);
+    private DirectBuffer frame;
 
-    public WriteSelectionHandler(final Supplier<? extends RingBuffer> ringBufferFactory) {
-        this(ringBufferFactory, SelectionHandler.NO_OP);
+    public WriteHandler(final ChannelBufferSupplier channelBufferSupplier) {
+        this(channelBufferSupplier, SelectionHandler.NO_OP);
     }
 
-    public WriteSelectionHandler(final Supplier<? extends RingBuffer> ringBufferFactory,
-                                 final SelectionHandler baseHandler) {
-        this.ringBufferFactory = requireNonNull(ringBufferFactory);
+    public WriteHandler(final ChannelBufferSupplier channelBufferSupplier,
+                        final SelectionHandler baseHandler) {
+        this.channelBufferSupplier = requireNonNull(channelBufferSupplier);
         this.baseHandler = requireNonNull(baseHandler);
     }
 
-    public SelectionHandler init(final DirectBuffer buffer, final int offset, final int length) {
-        frame.wrap(buffer, offset, length);
+    private void init(final NioFrame frame) {
+        final DirectBuffer frameBuffer = frame.frame();
+        if (this.frame != frameBuffer) {
+            this.frame = requireNonNull(frameBuffer);
+        }
+    }
+    public SelectionHandler initForSelection(final NioFrame frame) {
+        init(frame);
         return writeHandler;
+    }
+
+    public int send(final Channel channel, final NioFrame frame) throws IOException{
+        init(frame);
+        return sendToChannel(channel);
     }
 
     private int onSelectionKey(final SelectionKey key) throws IOException {
@@ -68,63 +79,71 @@ public class WriteSelectionHandler {
         if (!key.isWritable()) {
             return BACK_PRESSURE;
         }
-        final RingBuffer ringBuffer = SelectionKeyAttachments.fetchOrAttach(key, ringBufferFactory);
-        if (frame.capacity() > ringBuffer.capacity()) {
-            return MESSAGE_TOO_LARGE;
-        }
-        if (!writeRemaining(key.channel(), ringBuffer)) {
+        return sendToChannel(key.channel());
+    }
+
+    private int sendToChannel(final Channel channel) throws IOException{
+        final ByteBuffer byteBuffer = channelBufferSupplier.bufferFor(channel);
+        if (!writeRemaining(channel, byteBuffer)) {
             return BACK_PRESSURE;
         }
-        writeMessage(key.channel(), ringBuffer);
+        writeMessage(channel, byteBuffer);
         return OK;
     }
 
-    private boolean writeRemaining(final Channel channel, final RingBuffer ringBuffer) throws IOException {
-        ByteBuffer buffer = ringBuffer.readOrNull();
-        if (buffer == null) {
+    private boolean writeRemaining(final Channel channel, final ByteBuffer buffer) throws IOException {
+        final int available = buffer.position();
+        if (available == 0) {
             //no remaining
             return true;
         }
+        buffer.flip();
+        writeToChannel(channel, buffer);
         final int remaining = buffer.remaining();
-        final int written = writeToChannel(channel, buffer);
-        ringBuffer.readCommit(written);
-        //if we have written all, check if we have more to write due to wrap at the end of the ring buffer
-        if (written == remaining && (buffer = ringBuffer.readOrNull()) != null) {
-            ringBuffer.readCommit(writeToChannel(channel, buffer));
+        if (remaining == 0) {
+            buffer.clear();
+            return true;
         }
-        return ringBuffer.readLength() == 0;
+        if (buffer.position() > 0) {
+            writeBuffer.wrap(buffer, 0, buffer.capacity());
+            writeBuffer.putBytes(0, buffer, buffer.position(), remaining);
+        }
+        buffer.limit(buffer.capacity());
+        buffer.position(remaining);
+        return false;
     }
 
-    private int writeMessage(final Channel channel, final RingBuffer ringBuffer) throws IOException {
+    private int writeMessage(final Channel channel, final ByteBuffer buffer) throws IOException {
+        buffer.clear();
         if (frame.byteBuffer() != null) {
-            return writeMessageDirect(channel, ringBuffer) ? OK : BACK_PRESSURE;
+            return writeMessageDirect(channel, buffer) ? OK : BACK_PRESSURE;
         }
-        ringBuffer.write(frame, 0, frame.capacity());
-        if (writeRemaining(channel, ringBuffer)) {
+        frame.getBytes(0, buffer, frame.capacity());
+        if (writeRemaining(channel, buffer)) {
             return OK;
         }
-        if (ringBuffer.readLength() == frame.capacity()) {
+        if (buffer.remaining() == frame.capacity()) {
             //nothing was sent, let's clear the ring buffer and report backpressure
-            ringBuffer.reset();
+            buffer.clear();
             return BACK_PRESSURE;
         }
         return OK;
     }
 
     //PRECONDITION: frame.frame().byteBuffer() != null
-    private boolean writeMessageDirect(final Channel channel, final RingBuffer ringBuffer) throws IOException {
-        final ByteBuffer buffer = frame.byteBuffer();
+    private boolean writeMessageDirect(final Channel channel, final ByteBuffer buffer) throws IOException {
+        final ByteBuffer frameBuffer = frame.byteBuffer();
         final int length = frame.capacity();
         final int adjustment = frame.wrapAdjustment();
-        buffer.limit(adjustment + length);
-        buffer.position(adjustment);
-        int written = writeToChannel(channel, buffer);
+        frameBuffer.limit(adjustment + length);
+        frameBuffer.position(adjustment);
+        int written = writeToChannel(channel, frameBuffer);
         if (written == 0) {
             //nothing was sent, let's report backpressure
             return false;
         }
         if (written < length) {
-            assert ringBuffer.write(frame, written, length - written);
+            frame.getBytes(written, buffer, length - written);
         }
         return true;
     }

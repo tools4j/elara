@@ -23,16 +23,15 @@
  */
 package org.tools4j.elara.stream.udp.impl;
 
+import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.stream.nio.NioHeader.MutableNioHeader;
 import org.tools4j.elara.stream.udp.UdpHeader;
 
-final class MutableUdpHeader implements UdpHeader, MutableNioHeader {
-    public final static int HEADER_LENGTH = 16;
-    private static final int POS_PAYLOAD_LENGTH = 0;
-    private static final int POS_SEQUENCE = 8;
+import java.nio.ByteBuffer;
 
+final class MutableUdpHeader implements UdpHeader, MutableNioHeader {
     private final MutableDirectBuffer buffer = new UnsafeBuffer(0, 0);
 
     @Override
@@ -41,26 +40,39 @@ final class MutableUdpHeader implements UdpHeader, MutableNioHeader {
     }
 
     @Override
-    public MutableDirectBuffer buffer() {
-        return buffer;
-    }
-
-    @Override
     public int payloadLength() {
-        return buffer.getInt(POS_PAYLOAD_LENGTH);
+        return buffer.getInt(PAYLOAD_LENGTH_OFFSET);
     }
 
     @Override
     public long sequence() {
-        return buffer.getLong(POS_SEQUENCE);
+        return buffer.getLong(SEQUENCE_OFFSET);
     }
 
     @Override
     public void payloadLength(final int length) {
-        buffer.putInt(POS_PAYLOAD_LENGTH, length);
+        buffer.putInt(PAYLOAD_LENGTH_OFFSET, length);
     }
 
     public void sequence(final long sequence) {
-        buffer.putLong(POS_SEQUENCE, sequence);
+        buffer.putLong(SEQUENCE_OFFSET, sequence);
+    }
+
+    @Override
+    public boolean valid() {
+        return buffer.capacity() > 0;
+    }
+    @Override
+    public void wrap(final ByteBuffer source, final int offset) {
+        buffer.wrap(source, offset, HEADER_LENGTH);
+    }
+
+    public void wrap(final DirectBuffer source, final int offset) {
+        buffer.wrap(source, offset, HEADER_LENGTH);
+    }
+
+    @Override
+    public void unwrap() {
+        buffer.wrap(0, 0);
     }
 }

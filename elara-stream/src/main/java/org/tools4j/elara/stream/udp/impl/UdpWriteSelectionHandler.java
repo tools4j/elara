@@ -23,22 +23,21 @@
  */
 package org.tools4j.elara.stream.udp.impl;
 
-import org.tools4j.elara.stream.nio.RingBuffer;
-import org.tools4j.elara.stream.nio.WriteSelectionHandler;
+import org.tools4j.elara.stream.nio.ChannelBufferSupplier;
+import org.tools4j.elara.stream.nio.WriteHandler;
 
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
-import java.util.function.Supplier;
 
-class UdpWriteSelectionHandler extends WriteSelectionHandler {
+class UdpWriteSelectionHandler extends WriteHandler {
 
     private final int mtuLength;
 
-    UdpWriteSelectionHandler(final Supplier<? extends RingBuffer> ringBufferFactory, final int mtuLength) {
-        super(ringBufferFactory);
+    UdpWriteSelectionHandler(final ChannelBufferSupplier channelBufferSupplier, final int mtuLength) {
+        super(channelBufferSupplier);
         this.mtuLength = mtuLength;
     }
 

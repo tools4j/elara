@@ -24,6 +24,7 @@
 package org.tools4j.elara.stream.nio;
 
 import org.agrona.DirectBuffer;
+import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.stream.MessageReceiver.Handler;
 
@@ -32,40 +33,46 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.Channel;
 import java.nio.channels.SelectionKey;
-import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.stream.nio.SelectionHandler.MESSAGE_TOO_LARGE;
 import static org.tools4j.elara.stream.nio.SelectionHandler.OK;
 
-public class ReadSelectionHandler {
+public class ReadHandler {
 
-    private final Supplier<? extends RingBuffer> ringBufferFactory;
+    private final ChannelBufferSupplier channelBufferSupplier;
     private final SelectionHandler baseHandler;
     private final SelectionHandler readHandler = this::onSelectionKey;
-    private final DirectBuffer readBuffer = new UnsafeBuffer(0, 0);
+    private final ChannelPoller channelPoller = this::pollChannel;
+    private final MutableDirectBuffer payload = new UnsafeBuffer(0, 0);
 
     private NioHeader header;
     private Handler messageHandler = message -> {};
 
-    public ReadSelectionHandler(final Supplier<? extends RingBuffer> ringBufferFactory) {
-        this(ringBufferFactory, SelectionHandler.NO_OP);
+    public ReadHandler(final ChannelBufferSupplier channelBufferSupplier) {
+        this(channelBufferSupplier, SelectionHandler.NO_OP);
     }
 
-    public ReadSelectionHandler(final Supplier<? extends RingBuffer> ringBufferFactory,
-                                final SelectionHandler baseHandler) {
-        this.ringBufferFactory = requireNonNull(ringBufferFactory);
+    public ReadHandler(final ChannelBufferSupplier channelBufferSupplier, final SelectionHandler baseHandler) {
+        this.channelBufferSupplier = requireNonNull(channelBufferSupplier);
         this.baseHandler = requireNonNull(baseHandler);
     }
 
-    public SelectionHandler init(final NioHeader header, final Handler messageHandler) {
+    private void init(final NioHeader header, final Handler messageHandler) {
         if (this.header != header) {
             this.header = requireNonNull(header);
         }
         if (this.messageHandler != messageHandler) {
             this.messageHandler = requireNonNull(messageHandler);
         }
+    }
+    public SelectionHandler initForSelection(final NioHeader header, final Handler messageHandler) {
+        init(header, messageHandler);
         return readHandler;
+    }
+
+    public ChannelPoller initForPolling(final NioHeader header, final Handler messageHandler) {
+        init(header, messageHandler);
+        return channelPoller;
     }
 
     private int onSelectionKey(final SelectionKey key) throws IOException {
@@ -76,63 +83,60 @@ public class ReadSelectionHandler {
         if (!key.isReadable()) {
             return OK;
         }
-        final RingBuffer ringBuffer = SelectionKeyAttachments.fetchOrAttach(key, ringBufferFactory);
-        readFromChannel(key, ringBuffer);
-        return handleMessages(ringBuffer);
+        return pollChannel(key.channel());
     }
 
-    private void readFromChannel(final SelectionKey key, final RingBuffer ringBuffer) throws IOException {
-        final ByteBuffer buffer = ringBuffer.writeOrNull();
-        if (buffer != null) {
-            ringBuffer.writeCommit(readFromChannel(key.channel(), buffer));
-        }
+    private int pollChannel(final Channel channel) throws IOException {
+        final ByteBuffer buffer = channelBufferSupplier.bufferFor(channel);
+        readFromChannel(channel, buffer);
+        return handleMessages(buffer);
     }
 
     protected int readFromChannel(final Channel channel, final ByteBuffer buffer) throws IOException {
         return ((ByteChannel)channel).read(buffer);
     }
 
-    private int handleMessages(final RingBuffer ringBuffer) {
-        while (ringBuffer.readWrap(header.buffer(), header.headerLength())) {
+    private int handleMessages(final ByteBuffer buffer) {
+        final int headerLength = header.headerLength();
+        final int available = buffer.position();
+        int offset = 0;
+        while (available - offset >= headerLength) {
+            header.wrap(buffer, offset);
             final int payloadLength = header.payloadLength();
-            final int remaining = ringBuffer.readLength() - header.headerLength();
-            if (remaining < payloadLength) {
-                if (ringBuffer.capacity() < payloadLength + header.headerLength()) {
-                    ringBuffer.reset();
-                    return MESSAGE_TOO_LARGE;
-                }
+            if (available - headerLength - offset < payloadLength) {
                 break;
             }
-            handleMessage(header, ringBuffer, payloadLength);
+            offset += headerLength;
+            handleMessage(header, buffer, offset, payloadLength);
+            offset += payloadLength;
         }
-        movePartialMessagesToStart(ringBuffer);
+        final int remaining = available - offset;
+        if (remaining > 0) {
+            if (offset > 0) {
+                payload.wrap(buffer, 0, buffer.capacity());
+                payload.putBytes(0, buffer, offset, remaining);
+                payload.wrap(0, 0);
+            }
+        }
+        buffer.limit(buffer.capacity());
+        buffer.position(remaining);
         return OK;
     }
 
     //PRECONDITION: header is wrapped
-    private void handleMessage(final NioHeader header, final RingBuffer ringBuffer, final int payloadLength) {
-        ringBuffer.readCommit(header.headerLength());
-        ringBuffer.readWrap(readBuffer, payloadLength);
+    private void handleMessage(final NioHeader header, final ByteBuffer buffer, final int offset, final int payloadLength) {
+        payload.wrap(buffer, offset, payloadLength);
         try {
-            handleMessage(header, readBuffer);
+            handleMessage(header, payload);
+        } catch (final Exception e) {
+            //FIXME handle exception
         } finally {
-            ringBuffer.readCommit(payloadLength);
-            readBuffer.wrap(0, 0);
-            header.buffer().wrap(0, 0);
+            payload.wrap(0, 0);
+            header.unwrap();
         }
     }
 
     protected void handleMessage(final NioHeader header, final DirectBuffer payload) {
         messageHandler.onMessage(payload);
     }
-
-    private void movePartialMessagesToStart(final RingBuffer ringBuffer) {
-        if (ringBuffer.writeOffset() < ringBuffer.readOffset() && ringBuffer.readWrap(readBuffer)) {
-            final int readLength = readBuffer.capacity();
-            ringBuffer.readCommit(readLength);
-            ringBuffer.write(readBuffer, 0, readLength);
-            readBuffer.wrap(0, 0);
-        }
-    }
-
 }

@@ -23,17 +23,10 @@
  */
 package org.tools4j.elara.stream.nio;
 
-import java.nio.channels.SelectionKey;
-import java.util.function.Supplier;
+import java.io.IOException;
+import java.nio.channels.Channel;
 
-enum SelectionKeyAttachments {
-    ;
-    static RingBuffer fetchOrAttach(final SelectionKey key, final Supplier<? extends RingBuffer> ringBufferFactory) {
-        RingBuffer ringBuffer = (RingBuffer)key.attachment();
-        if (ringBuffer == null) {
-            ringBuffer = ringBufferFactory.get();
-            key.attach(ringBuffer);
-        }
-        return ringBuffer;
-    }
+@FunctionalInterface
+public interface ChannelPoller {
+    int poll(Channel channel) throws IOException;
 }

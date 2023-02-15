@@ -23,21 +23,22 @@
  */
 package org.tools4j.elara.stream.tcp.impl;
 
-import org.agrona.DirectBuffer;
 import org.agrona.LangUtil;
 import org.tools4j.elara.stream.MessageReceiver.Handler;
+import org.tools4j.elara.stream.nio.ChannelBuffers;
 import org.tools4j.elara.stream.nio.NioEndpoint;
+import org.tools4j.elara.stream.nio.NioFrame;
 import org.tools4j.elara.stream.nio.NioHeader;
 import org.tools4j.elara.stream.nio.NioPoller;
-import org.tools4j.elara.stream.nio.ReadSelectionHandler;
-import org.tools4j.elara.stream.nio.RingBuffer;
+import org.tools4j.elara.stream.nio.ReadHandler;
 import org.tools4j.elara.stream.nio.SelectionHandler;
-import org.tools4j.elara.stream.nio.WriteSelectionHandler;
+import org.tools4j.elara.stream.nio.WriteHandler;
 import org.tools4j.elara.stream.tcp.ConnectListener;
 
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.StandardSocketOptions;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.function.Supplier;
@@ -49,8 +50,8 @@ final class TcpClientEndpoint implements NioEndpoint {
     private final TcpClient client;
     private final SocketChannel socketChannel;
     private final ConnectListener connectListener;
-    private final ReadSelectionHandler readSelectionHandler;
-    private final WriteSelectionHandler writeSelectionHandler;
+    private final ReadHandler readHandler;
+    private final WriteHandler writeHandler;
     private final SelectionHandler connectHandler = this::onSelectionKey;
     private final NioPoller receiverPoller = new NioPoller();
     private final NioPoller senderPoller = new NioPoller();
@@ -58,16 +59,16 @@ final class TcpClientEndpoint implements NioEndpoint {
     TcpClientEndpoint(final TcpClient client,
                       final SocketAddress connectAddress,
                       final ConnectListener connectListener,
-                      final Supplier<? extends RingBuffer> ringBufferFactory) {
+                      final Supplier<? extends ByteBuffer> bufferFactory) {
         try {
             this.client = requireNonNull(client);
             this.socketChannel = SocketChannel.open()
                     .setOption(StandardSocketOptions.SO_REUSEADDR, true)
-                    .setOption(StandardSocketOptions.SO_KEEPALIVE, true);
-//                    .setOption(StandardSocketOptions.TCP_NODELAY, true);
+                    .setOption(StandardSocketOptions.SO_KEEPALIVE, true)
+                    .setOption(StandardSocketOptions.TCP_NODELAY, true);
             this.connectListener = requireNonNull(connectListener);
-            this.readSelectionHandler = new ReadSelectionHandler(ringBufferFactory, connectHandler);
-            this.writeSelectionHandler = new WriteSelectionHandler(ringBufferFactory, connectHandler);
+            this.readHandler = new ReadHandler(new ChannelBuffers(1, bufferFactory), connectHandler);
+            this.writeHandler = new WriteHandler(new ChannelBuffers(1, bufferFactory), connectHandler);
             this.socketChannel.configureBlocking(false);
             this.socketChannel.register(receiverPoller.selector(), SelectionKey.OP_CONNECT + SelectionKey.OP_READ);
             this.socketChannel.register(senderPoller.selector(), SelectionKey.OP_CONNECT + SelectionKey.OP_WRITE);
@@ -101,12 +102,12 @@ final class TcpClientEndpoint implements NioEndpoint {
 
     @Override
     public int receive(final NioHeader header, final Handler messageHandler) throws IOException {
-        return receiverPoller.selectNow(readSelectionHandler.init(header, messageHandler));
+        return receiverPoller.selectNow(readHandler.initForSelection(header, messageHandler));
     }
 
     @Override
-    public int send(final DirectBuffer buffer, final int offset, final int length) throws IOException {
-        return senderPoller.selectNow(writeSelectionHandler.init(buffer, offset, length));
+    public int send(final NioFrame frame) throws IOException {
+        return senderPoller.selectNow(writeHandler.initForSelection(frame));
     }
 
     private int onSelectionKey(final SelectionKey key) throws IOException {

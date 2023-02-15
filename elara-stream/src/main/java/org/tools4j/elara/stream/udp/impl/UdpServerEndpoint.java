@@ -23,15 +23,15 @@
  */
 package org.tools4j.elara.stream.udp.impl;
 
-import org.agrona.DirectBuffer;
 import org.agrona.LangUtil;
 import org.tools4j.elara.stream.MessageReceiver.Handler;
+import org.tools4j.elara.stream.nio.ChannelBuffers;
 import org.tools4j.elara.stream.nio.NioEndpoint;
+import org.tools4j.elara.stream.nio.NioFrame;
 import org.tools4j.elara.stream.nio.NioHeader;
 import org.tools4j.elara.stream.nio.NioPoller;
-import org.tools4j.elara.stream.nio.ReadSelectionHandler;
-import org.tools4j.elara.stream.nio.RingBuffer;
-import org.tools4j.elara.stream.nio.WriteSelectionHandler;
+import org.tools4j.elara.stream.nio.ReadHandler;
+import org.tools4j.elara.stream.nio.WriteHandler;
 import org.tools4j.elara.stream.udp.RemoteAddressListener;
 import org.tools4j.elara.stream.udp.UdpSendingStrategy;
 
@@ -51,12 +51,13 @@ import static java.util.Objects.requireNonNull;
 
 final class UdpServerEndpoint implements NioEndpoint {
 
+    private final int CHANNEL_CAPACITY = 8;
     private final UdpServer server;
     private final DatagramChannel datagramChannel;
     private final RemoteAddressListener remoteAddressListener;
     private final UdpSendingStrategy sendingStrategy;
-    private final ReadSelectionHandler readSelectionHandler;
-    private final WriteSelectionHandler writeSelectionHandler;
+    private final ReadHandler readSelectionHandler;
+    private final WriteHandler writeSelectionHandler;
     private final NioPoller receiverPoller = new NioPoller();
     private final NioPoller senderPoller = new NioPoller();
     private final List<SocketAddress> remoteAddresses = new ArrayList<>();
@@ -66,15 +67,15 @@ final class UdpServerEndpoint implements NioEndpoint {
                       final RemoteAddressListener remoteAddressListener,
                       final UdpSendingStrategy sendingStrategy,
                       final int mtuLength,
-                      final Supplier<? extends RingBuffer> ringBufferFactory) {
+                      final Supplier<? extends ByteBuffer> bufferFactory) {
         try {
             this.server = requireNonNull(server);
             this.datagramChannel = DatagramChannel.open()
                     .setOption(StandardSocketOptions.SO_REUSEADDR, true);
             this.remoteAddressListener = requireNonNull(remoteAddressListener);
             this.sendingStrategy = requireNonNull(sendingStrategy);
-            this.readSelectionHandler = new UdpReadHandler(ringBufferFactory);
-            this.writeSelectionHandler = new UdpWriteHandler(ringBufferFactory, mtuLength);
+            this.readSelectionHandler = new UdpReadHandler(bufferFactory);
+            this.writeSelectionHandler = new UdpWriteHandler(bufferFactory, mtuLength);
             this.datagramChannel.configureBlocking(false);
             this.datagramChannel.register(receiverPoller.selector(), SelectionKey.OP_READ);
             this.datagramChannel.register(senderPoller.selector(), SelectionKey.OP_WRITE);
@@ -101,12 +102,12 @@ final class UdpServerEndpoint implements NioEndpoint {
 
     @Override
     public int receive(final NioHeader header, final Handler messageHandler) throws IOException {
-        return receiverPoller.selectNow(readSelectionHandler.init(header, messageHandler));
+        return receiverPoller.selectNow(readSelectionHandler.initForSelection(header, messageHandler));
     }
 
     @Override
-    public int send(final DirectBuffer buffer, final int offset, final int length) throws IOException {
-        return senderPoller.selectNow(writeSelectionHandler.init(buffer, offset, length));
+    public int send(final NioFrame frame) throws IOException {
+        return senderPoller.selectNow(writeSelectionHandler.initForSelection(frame));
     }
 
     @Override
@@ -124,9 +125,9 @@ final class UdpServerEndpoint implements NioEndpoint {
         return "TcpServer{" + datagramChannel.socket().getLocalSocketAddress() + '}';
     }
 
-    private class UdpReadHandler extends ReadSelectionHandler {
-        public UdpReadHandler(final Supplier<? extends RingBuffer> ringBufferFactory) {
-            super(ringBufferFactory);
+    private class UdpReadHandler extends ReadHandler {
+        public UdpReadHandler(final Supplier<? extends ByteBuffer> bufferFactory) {
+            super(new ChannelBuffers(CHANNEL_CAPACITY, bufferFactory));
         }
 
         @Override
@@ -146,8 +147,8 @@ final class UdpServerEndpoint implements NioEndpoint {
     }
 
     private class UdpWriteHandler extends UdpWriteSelectionHandler {
-        public UdpWriteHandler(final Supplier<? extends RingBuffer> ringBufferFactory, final int mtuLength) {
-            super(ringBufferFactory, mtuLength);
+        public UdpWriteHandler(final Supplier<? extends ByteBuffer> bufferFactory, final int mtuLength) {
+            super(new ChannelBuffers(CHANNEL_CAPACITY, bufferFactory), mtuLength);
         }
 
         @Override

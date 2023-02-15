@@ -28,11 +28,11 @@ import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.nio.NioReceiver;
 import org.tools4j.elara.stream.nio.NioSender;
-import org.tools4j.elara.stream.nio.RingBuffer;
 import org.tools4j.elara.stream.tcp.TcpConnection;
 import org.tools4j.elara.stream.tcp.config.TcpServerConfiguration;
 
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Collections;
 import java.util.List;
@@ -54,7 +54,7 @@ public class TcpServer implements TcpConnection {
         this.receiver = new TcpServerReceiver();
         this.sender = new TcpServerSender();
         this.server = new TcpServerEndpoint(this, bindAddress, configuration.acceptListener(),
-                RingBuffer.factory(configuration.bufferCapacity()));
+                () -> ByteBuffer.allocateDirect(configuration.bufferCapacity()));
     }
 
     @Override

@@ -23,6 +23,7 @@
  */
 package org.tools4j.elara.stream.nio;
 
+import org.agrona.DirectBuffer;
 import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
@@ -31,19 +32,21 @@ import org.tools4j.elara.stream.nio.NioHeader.MutableNioHeader;
 import static java.util.Objects.requireNonNull;
 
 final class NioFrameImpl implements NioFrame {
+    private final MutableDirectBuffer buffer;
     private final MutableNioHeader header;
-    private final MutableDirectBuffer frame;
     private final MutableDirectBuffer payload;
+    private final DirectBuffer frame;
 
     NioFrameImpl(final MutableNioHeader header, final int initialCapacity) {
         this(header, new ExpandableDirectByteBuffer(initialCapacity));
     }
 
-    NioFrameImpl(final MutableNioHeader header, final MutableDirectBuffer frame) {
-        this.frame = requireNonNull(frame);
+    NioFrameImpl(final MutableNioHeader header, final MutableDirectBuffer buffer) {
+        this.buffer = requireNonNull(buffer);
         this.header = requireNonNull(header);
-        this.payload = new UnsafeBuffer(frame, header.headerLength(), frame.capacity() - header.headerLength());
-        header.buffer().wrap(frame, 0, header.headerLength());
+        this.payload = new UnsafeBuffer(buffer, header.headerLength(), buffer.capacity() - header.headerLength());
+        this.frame = new UnsafeBuffer(buffer);
+        header.wrap(buffer, 0);
     }
 
     @Override
@@ -51,13 +54,13 @@ final class NioFrameImpl implements NioFrame {
         return header;
     }
 
-    @Override
-    public MutableDirectBuffer frame() {
-        return frame;
+    MutableDirectBuffer payload() {
+        return payload;
     }
 
     @Override
-    public MutableDirectBuffer payload() {
-        return payload;
+    public DirectBuffer frame() {
+        frame.wrap(buffer, 0, header.headerLength() + header.payloadLength());
+        return frame;
     }
 }

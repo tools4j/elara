@@ -23,19 +23,20 @@
  */
 package org.tools4j.elara.stream.udp.impl;
 
-import org.agrona.DirectBuffer;
 import org.agrona.LangUtil;
 import org.tools4j.elara.stream.MessageReceiver.Handler;
+import org.tools4j.elara.stream.nio.ChannelBuffers;
 import org.tools4j.elara.stream.nio.NioEndpoint;
+import org.tools4j.elara.stream.nio.NioFrame;
 import org.tools4j.elara.stream.nio.NioHeader;
 import org.tools4j.elara.stream.nio.NioPoller;
-import org.tools4j.elara.stream.nio.ReadSelectionHandler;
-import org.tools4j.elara.stream.nio.RingBuffer;
-import org.tools4j.elara.stream.nio.WriteSelectionHandler;
+import org.tools4j.elara.stream.nio.ReadHandler;
+import org.tools4j.elara.stream.nio.WriteHandler;
 
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.StandardSocketOptions;
+import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.util.function.Supplier;
@@ -43,19 +44,19 @@ import java.util.function.Supplier;
 final class UdpClientEndpoint implements NioEndpoint {
 
     private final DatagramChannel datagramChannel;
-    private final ReadSelectionHandler readSelectionHandler;
-    private final WriteSelectionHandler writeSelectionHandler;
+    private final ReadHandler readSelectionHandler;
+    private final WriteHandler writeSelectionHandler;
     private final NioPoller receiverPoller = new NioPoller();
     private final NioPoller senderPoller = new NioPoller();
 
     UdpClientEndpoint(final SocketAddress connectAddress,
                       final int mtuLength,
-                      final Supplier<? extends RingBuffer> ringBufferFactory) {
+                      final Supplier<? extends ByteBuffer> bufferFactory) {
         try {
             this.datagramChannel = DatagramChannel.open()
                     .setOption(StandardSocketOptions.SO_REUSEADDR, true);
-            this.readSelectionHandler = new ReadSelectionHandler(ringBufferFactory);
-            this.writeSelectionHandler = new UdpWriteSelectionHandler(ringBufferFactory, mtuLength);
+            this.readSelectionHandler = new ReadHandler(new ChannelBuffers(1, bufferFactory));
+            this.writeSelectionHandler = new UdpWriteSelectionHandler(new ChannelBuffers(1, bufferFactory), mtuLength);
             this.datagramChannel.configureBlocking(false);
             this.datagramChannel.register(receiverPoller.selector(), SelectionKey.OP_READ);
             this.datagramChannel.register(senderPoller.selector(), SelectionKey.OP_WRITE);
@@ -78,12 +79,12 @@ final class UdpClientEndpoint implements NioEndpoint {
 
     @Override
     public int receive(final NioHeader header, final Handler messageHandler) throws IOException {
-        return receiverPoller.selectNow(readSelectionHandler.init(header, messageHandler));
+        return receiverPoller.selectNow(readSelectionHandler.initForSelection(header, messageHandler));
     }
 
     @Override
-    public int send(final DirectBuffer buffer, final int offset, final int length) throws IOException {
-        return senderPoller.selectNow(writeSelectionHandler.init(buffer, offset, length));
+    public int send(final NioFrame frame) throws IOException {
+        return senderPoller.selectNow(writeSelectionHandler.initForSelection(frame));
     }
 
     public boolean isConnected() {
