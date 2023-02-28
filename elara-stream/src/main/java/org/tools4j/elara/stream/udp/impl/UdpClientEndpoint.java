@@ -79,12 +79,15 @@ final class UdpClientEndpoint implements NioEndpoint {
 
     @Override
     public int receive(final NioHeader header, final Handler messageHandler) throws IOException {
-        return receiverPoller.selectNow(readSelectionHandler.initForSelection(header, messageHandler));
+        return readSelectionHandler.initForPolling(header, messageHandler).poll(datagramChannel);
+//        return receiverPoller.selectNow(readSelectionHandler.initForSelection(header, messageHandler));
     }
 
     @Override
     public int send(final NioFrame frame) throws IOException {
-        return senderPoller.selectNow(writeSelectionHandler.initForSelection(frame));
+        final int result = writeSelectionHandler.send(datagramChannel, frame);
+        return result == 0 ? SelectionKey.OP_WRITE : result;
+//        return senderPoller.selectNow(writeSelectionHandler.initForSelection(frame));
     }
 
     public boolean isConnected() {

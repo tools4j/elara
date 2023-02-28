@@ -87,8 +87,7 @@ public class WriteHandler {
         if (!writeRemaining(channel, byteBuffer)) {
             return BACK_PRESSURE;
         }
-        writeMessage(channel, byteBuffer);
-        return OK;
+        return writeMessage(channel, byteBuffer);
     }
 
     private boolean writeRemaining(final Channel channel, final ByteBuffer buffer) throws IOException {

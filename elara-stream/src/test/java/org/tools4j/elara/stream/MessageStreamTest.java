@@ -48,9 +48,9 @@ class MessageStreamTest {
 
     private static final long MESSAGE_COUNT = 1_000_000;
     private static final int MESSAGE_BYTES = 100;
-    //private static final int MESSAGES_PER_SECOND = 100_000;
+    //private static final int MESSAGES_PER_SECOND = 200_000;
     private static final int MESSAGES_PER_SECOND = 0;
-    private static final long MAX_WAIT_MILLIS = 60_000;
+    private static final long MAX_WAIT_MILLIS = 10_000;
 
     @ParameterizedTest(name = "sendAndReceiveMessages: {0} --> {1}")
     @MethodSource("sendersAndReceivers")
@@ -63,8 +63,8 @@ class MessageStreamTest {
         return new Arguments[]{
                 tcpServerSenderAndClientReceiver(),
                 tcpClientSenderAndServerReceiver(),
-//                udpServerSenderAndClientReceiver(),
-//                udpClientSenderAndServerReceiver(),
+                udpServerSenderAndClientReceiver(),
+                udpClientSenderAndServerReceiver(),
                 ipcBufferedSenderToReceiverFile(),
                 ipcBufferedSenderFileToReceiver(),
                 ipcDirectSenderToReceiverFile(),

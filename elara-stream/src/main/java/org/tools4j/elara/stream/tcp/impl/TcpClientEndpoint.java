@@ -56,6 +56,8 @@ final class TcpClientEndpoint implements NioEndpoint {
     private final NioPoller receiverPoller = new NioPoller();
     private final NioPoller senderPoller = new NioPoller();
 
+    private boolean connected;
+
     TcpClientEndpoint(final TcpClient client,
                       final SocketAddress connectAddress,
                       final ConnectListener connectListener,
@@ -102,17 +104,27 @@ final class TcpClientEndpoint implements NioEndpoint {
 
     @Override
     public int receive(final NioHeader header, final Handler messageHandler) throws IOException {
-        return receiverPoller.selectNow(readHandler.initForSelection(header, messageHandler));
+        if (connected) {
+            return readHandler.initForPolling(header, messageHandler).poll(socketChannel);
+        } else {
+            return receiverPoller.selectNow(readHandler.initForSelection(header, messageHandler));
+        }
     }
 
     @Override
     public int send(final NioFrame frame) throws IOException {
-        return senderPoller.selectNow(writeHandler.initForSelection(frame));
+        if (connected) {
+            final int result = writeHandler.send(socketChannel, frame);
+            return result < 0 ? result : SelectionKey.OP_WRITE;
+        } else {
+            return senderPoller.selectNow(writeHandler.initForSelection(frame));
+        }
     }
 
     private int onSelectionKey(final SelectionKey key) throws IOException {
         if (key.isConnectable() && socketChannel.finishConnect()) {
             connectListener.onConnect(client, socketChannel, key);
+            connected = true;
         }
         return SelectionHandler.OK;
     }
