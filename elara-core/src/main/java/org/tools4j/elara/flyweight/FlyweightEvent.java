@@ -26,6 +26,7 @@ package org.tools4j.elara.flyweight;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
+import org.tools4j.elara.command.SourceIds;
 import org.tools4j.elara.event.Event;
 
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
@@ -198,7 +199,7 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFr
             dst.append("version=").append(header.version());
             dst.append("|type=").append(type());
             dst.append("|frame-size=").append(frameSize());
-            dst.append("|source-id=").append(sourceId());
+            dst.append("|source-id=").append(SourceIds.appending(sourceId(), dst));
             dst.append("|source-seq=").append(sourceSequence());
             dst.append("|event-index=").append(eventIndex());
             dst.append("|event-seq=").append(eventSequence());

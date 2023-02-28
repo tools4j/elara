@@ -23,6 +23,7 @@
  */
 package org.tools4j.elara.format;
 
+import org.tools4j.elara.command.SourceIds;
 import org.tools4j.elara.flyweight.TimeMetricsFrame;
 
 import static java.util.Objects.requireNonNull;
@@ -63,7 +64,7 @@ public interface TimeMetricsFormatter extends MetricsFormatter<TimeMetricsFrame>
         return timeFormatter().formatDateTime(frame.metricTime());
     }
     default Object sourceId(long line, long entryId, TimeMetricsFrame frame) {
-        return frame.sourceId();
+        return SourceIds.toString(frame.sourceId());
     }
     default Object sourceSequence(long line, long entryId, TimeMetricsFrame frame) {
         return frame.sourceSequence();

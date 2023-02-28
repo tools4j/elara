@@ -21,15 +21,42 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.send;
+package org.tools4j.elara.codec;
 
-/**
- * Provides a {@link CommandSender} for a given input source. A sender supplier is passed to the poll method of an
- * {@link org.tools4j.elara.input.Input Input}.
- */
-public interface SenderSupplier {
-    CommandSender senderFor(int sourceId);
-    CommandSender senderFor(int sourceId, long sourceSeq);
-    CommandSender senderFor(CharSequence sourceId);
-    CommandSender senderFor(CharSequence sourceId, long sourceSeq);
+enum Chars {
+    ;
+    static void setChar(final char ch, final StringBuilder dst, final int dstIndex) {
+        if (dstIndex < dst.length()) {
+            dst.setCharAt(dstIndex, ch);
+        } else {
+            while (dstIndex > dst.length()) {
+                dst.append('0');
+            }
+            dst.append(ch);
+        }
+    }
+
+    /**
+     * Note: a shorter string is always considered before a longer string.
+     * @param a sequence a
+     * @param b sequence b
+     * @return true if a {@code a <= b}
+     */
+    static boolean leq(final CharSequence a, final CharSequence b) {
+        final int len = a.length();
+        if (len < b.length()) {
+            return true;
+        }
+        if (len > b.length()) {
+            return false;
+        }
+        for (int i = 0; i < len; i++) {
+            final int cmp;
+            if ((cmp = Character.compare(a.charAt(i), b.charAt(i))) != 0) {
+                return cmp < 0;
+            }
+        }
+        //equal
+        return true;
+    }
 }

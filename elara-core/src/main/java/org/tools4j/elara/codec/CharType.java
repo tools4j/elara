@@ -21,15 +21,29 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.send;
+package org.tools4j.elara.codec;
 
-/**
- * Provides a {@link CommandSender} for a given input source. A sender supplier is passed to the poll method of an
- * {@link org.tools4j.elara.input.Input Input}.
- */
-public interface SenderSupplier {
-    CommandSender senderFor(int sourceId);
-    CommandSender senderFor(int sourceId, long sourceSeq);
-    CommandSender senderFor(CharSequence sourceId);
-    CommandSender senderFor(CharSequence sourceId, long sourceSeq);
+enum CharType {
+    ALPHA,
+    ZERO_DIGIT,
+    NON_ZERO_DIGIT,
+    ALPHANUMERIC_SIGN,
+    NUMERIC_SIGN,
+    OTHER;
+
+    static CharType forChar(final char ch) {
+        if ('A' <= ch && ch <= 'Z') {
+            return ALPHA;
+        }
+        if ('0' <= ch && ch <= '9') {
+            return ch == '0' ? ZERO_DIGIT : NON_ZERO_DIGIT;
+        }
+        if (ch == '.') {
+            return ALPHANUMERIC_SIGN;
+        }
+        if (ch == '-') {
+            return NUMERIC_SIGN;
+        }
+        return OTHER;
+    }
 }

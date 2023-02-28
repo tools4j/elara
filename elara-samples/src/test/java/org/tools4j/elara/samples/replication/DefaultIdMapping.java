@@ -24,6 +24,7 @@
 package org.tools4j.elara.samples.replication;
 
 import java.util.Arrays;
+import java.util.function.IntUnaryOperator;
 import java.util.stream.IntStream;
 
 import static java.util.Objects.requireNonNull;
@@ -53,6 +54,10 @@ public class DefaultIdMapping implements IdMapping {
 
     public static DefaultIdMapping of(final int... ids) {
         return new DefaultIdMapping(ids);
+    }
+
+    public DefaultIdMapping map(final IntUnaryOperator mapping) {
+        return new DefaultIdMapping(Arrays.stream(ids).map(mapping).toArray());
     }
 
     @Override

@@ -21,15 +21,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.send;
+package org.tools4j.elara.codec;
 
-/**
- * Provides a {@link CommandSender} for a given input source. A sender supplier is passed to the poll method of an
- * {@link org.tools4j.elara.input.Input Input}.
- */
-public interface SenderSupplier {
-    CommandSender senderFor(int sourceId);
-    CommandSender senderFor(int sourceId, long sourceSeq);
-    CommandSender senderFor(CharSequence sourceId);
-    CommandSender senderFor(CharSequence sourceId, long sourceSeq);
+enum Ints {
+    ;
+    /**
+     * Returns the length of the string representation of the provided value x;  returns 0 for all negative
+     * values.
+     */
+    private final static int[] MAX_INTS = { 9, 99, 999, 9_999, 99_999, 999_999, 9_999_999, 99_999_999, 999_999_999, Integer.MAX_VALUE };
+
+    static int stringLength(final int x) {
+        assert x >= 0;
+        for (int i = 0; ; i++) {
+            if (x <= MAX_INTS[i]) {
+                return i + 1;
+            }
+        }
+    }
 }

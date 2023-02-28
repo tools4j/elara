@@ -62,7 +62,7 @@ import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_START_TIME;
 import static org.tools4j.elara.samples.hash.HashApplication.isEven;
 
 public class HashPassthroughApplication implements PassthroughApp {
-    public static final int SOURCE_ID = 44;
+    public static final String SOURCE_ID = "HASHPT";
 
     public static class PublisherWithState implements PublisherApp {
         final ModifiableState state;

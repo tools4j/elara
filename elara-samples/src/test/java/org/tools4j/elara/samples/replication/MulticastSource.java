@@ -28,6 +28,7 @@ import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.AgentRunner;
 import org.agrona.concurrent.BackoffIdleStrategy;
 import org.agrona.concurrent.UnsafeBuffer;
+import org.tools4j.elara.command.SourceIds;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.samples.network.ServerTopology;
 
@@ -73,7 +74,7 @@ public class MulticastSource {
                     topology.senders());
         }
         final MulticastSource ms = new MulticastSource(sourceIds.indexById(sourceId), valueSource, topology);
-        final AgentRunner agentRunner = ms.agentRunner("source-" + sourceId, nValues);
+        final AgentRunner agentRunner = ms.agentRunner(SourceIds.toString(sourceId), nValues);
         return ElaraRunner.startOnThread(agentRunner);
     }
 

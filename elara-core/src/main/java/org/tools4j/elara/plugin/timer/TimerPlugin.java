@@ -26,6 +26,7 @@ package org.tools4j.elara.plugin.timer;
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.command.SourceIds;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.plugin.api.ReservedPayloadType;
 import org.tools4j.elara.plugin.api.SystemPlugin;
@@ -43,10 +44,14 @@ import static java.util.Objects.requireNonNull;
  */
 public class TimerPlugin implements SystemPlugin<TimerState.Mutable> {
 
-    public static final int DEFAULT_SOURCE_ID = -10;
+    public static final int DEFAULT_SOURCE_ID = SourceIds.toInt(".TIMER", -10);
     public static final TimerPlugin DEFAULT = new TimerPlugin(DEFAULT_SOURCE_ID);
 
     private final int sourceId;
+
+    public TimerPlugin(final CharSequence sourceId) {
+        this(SourceIds.toInt(sourceId));
+    }
 
     public TimerPlugin(final int sourceId) {
         this.sourceId = sourceId;

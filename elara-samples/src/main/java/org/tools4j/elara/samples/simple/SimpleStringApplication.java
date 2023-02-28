@@ -42,7 +42,7 @@ import static java.util.Objects.requireNonNull;
 
 public class SimpleStringApplication implements AllInOneApp, Output {
 
-    private static final int SOURCE_ID = 999;
+    private static final String SOURCE_ID = "STRING";
     private static final int TYPE_STRING = 1;
 
     public ElaraRunner launch(final Queue<String> inputQueue) {

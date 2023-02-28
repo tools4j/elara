@@ -27,6 +27,7 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.command.Command;
+import org.tools4j.elara.command.SourceIds;
 
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static org.tools4j.elara.flyweight.CommandDescriptor.COMMAND_TIME_OFFSET;
@@ -194,7 +195,7 @@ public final class FlyweightCommand implements Flyweight<FlyweightCommand>, Comm
             dst.append("|type=").append(type());
             dst.append("|reserved=").append(header.reserved());
             dst.append("|frame-size=").append(frameSize());
-            dst.append("|source-id=").append(sourceId());
+            dst.append("|source-id=").append(SourceIds.appending(sourceId(), dst));
             dst.append("|source-seq=").append(sourceSequence());
             dst.append("|command-time=").append(commandTime());
             dst.append("|payload-type=").append(payloadType());

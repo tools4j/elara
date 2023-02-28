@@ -31,6 +31,7 @@ import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.app.type.AllInOneAppConfig;
 import org.tools4j.elara.chronicle.ChronicleMessageStore;
+import org.tools4j.elara.command.SourceIds;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.logging.Logger.Level;
@@ -58,6 +59,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.function.IntUnaryOperator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -69,8 +71,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 //@Disabled
 public class ReplicatedHashApplicationTest {
 
-    private static final int SOURCE_OFFSET = 1000000000;
-    private static final int ENFORCE_LEADER_SOURCE = 2 * SOURCE_OFFSET - 1;
+    private static final int ENFORCE_LEADER_SOURCE = SourceIds.toInt("LEADER");
+    private static final IntUnaryOperator SOURCE_MAPPING = i -> SourceIds.toInt("SRC" + (i < 9 ? "00" : "0") + (i + 1));
 
     //private final NetworkConfig networkConfig = NetworkConfig.RELIABLE;
     private final NetworkConfig networkConfig = NetworkConfig.UNRELIABLE;
@@ -83,7 +85,7 @@ public class ReplicatedHashApplicationTest {
         final int nThreads = 5;
         final int commandsPerSource = 200;
         final IdMapping serverIds = DefaultIdMapping.enumerate(servers);
-        final IdMapping sourceIds = DefaultIdMapping.enumerate(SOURCE_OFFSET, sources);
+        final IdMapping sourceIds = DefaultIdMapping.enumerate(0, sources).map(SOURCE_MAPPING);
         final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(nThreads);
         final Transmitter appendTransmitter = transmitter(networkConfig.appendLink(), scheduledExecutorService);
         final Transmitter commandTransmitter = transmitter(networkConfig.commandLink(), scheduledExecutorService);
@@ -156,7 +158,7 @@ public class ReplicatedHashApplicationTest {
         final int sources = sourceTopology.senders();
         final ElaraRunner[] publishers = new ElaraRunner[sources];
         for (int i = 0; i < sources; i++) {
-            final int sourceId = SOURCE_OFFSET + i;
+            final int sourceId = SOURCE_MAPPING.applyAsInt(i);
             publishers[i] = MulticastSource.startRandom(sourceId, sourceIds, commandsPerSource, sourceTopology);
         }
         return publishers;

@@ -25,6 +25,7 @@ package org.tools4j.elara.plugin.boot;
 
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.handler.CommandProcessor;
+import org.tools4j.elara.command.SourceIds;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.plugin.api.Plugin.NullState;
 import org.tools4j.elara.plugin.api.ReservedPayloadType;
@@ -39,10 +40,14 @@ import static java.util.Objects.requireNonNull;
  */
 public class BootPlugin implements SystemPlugin<NullState> {
 
-    public static final int DEFAULT_SOURCE_ID = -20;
+    public static final int DEFAULT_SOURCE_ID = SourceIds.toInt(".BOOT", -20);
     public static final BootPlugin DEFAULT = new BootPlugin(DEFAULT_SOURCE_ID);
 
     private final int sourceId;
+
+    public BootPlugin(final CharSequence sourceId) {
+        this(SourceIds.toInt(sourceId));
+    }
 
     public BootPlugin(final int sourceId) {
         this.sourceId = sourceId;

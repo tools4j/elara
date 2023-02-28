@@ -23,6 +23,7 @@
  */
 package org.tools4j.elara.format;
 
+import org.tools4j.elara.command.SourceIds;
 import org.tools4j.elara.flyweight.DataFrame;
 
 import static org.tools4j.elara.flyweight.FrameType.AUTO_COMMIT_EVENT_TYPE;
@@ -54,7 +55,9 @@ public interface DataFrameFormatter<F extends DataFrame> extends FrameFormatter<
 
     default Object line(long line, long entryId, F frame) {return line;}
     default Object entryId(long line, long entryId, F frame) {return entryId;}
-    default Object sourceId(long line, long entryId, F frame) {return frame.sourceId();}
+    default Object sourceId(long line, long entryId, F frame) {
+        return SourceIds.toString(frame.sourceId());
+    }
     default Object frameType(long line, long entryId, F frame) {
         final int type = frame.type();
         switch (type) {

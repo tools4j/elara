@@ -566,7 +566,17 @@ public class MetricsCapturingInterceptor implements Interceptor {
             }
 
             @Override
+            public CommandSender senderFor(final CharSequence sourceId) {
+                return timedCommandSender.init(senderSupplier.senderFor(sourceId));
+            }
+
+            @Override
             public CommandSender senderFor(final int sourceId, final long sourceSeq) {
+                return timedCommandSender.init(senderSupplier.senderFor(sourceId, sourceSeq));
+            }
+
+            @Override
+            public CommandSender senderFor(final CharSequence sourceId, final long sourceSeq) {
                 return timedCommandSender.init(senderSupplier.senderFor(sourceId, sourceSeq));
             }
         };

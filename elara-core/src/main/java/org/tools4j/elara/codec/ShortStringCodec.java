@@ -21,15 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.send;
+package org.tools4j.elara.codec;
 
 /**
- * Provides a {@link CommandSender} for a given input source. A sender supplier is passed to the poll method of an
- * {@link org.tools4j.elara.input.Input Input}.
+ * Codec to translate between the string and integer representation of short character sequences.  Codecs may restrict
+ * valid character sequences, but must support the full integer range.
  */
-public interface SenderSupplier {
-    CommandSender senderFor(int sourceId);
-    CommandSender senderFor(int sourceId, long sourceSeq);
-    CommandSender senderFor(CharSequence sourceId);
-    CommandSender senderFor(CharSequence sourceId, long sourceSeq);
+public interface ShortStringCodec {
+    int toInt(CharSequence source);
+    StringBuilder toString(int source, StringBuilder dst);
+    boolean isValid(CharSequence source);
+    boolean isNegative(CharSequence source);
+
+    default String toString(final int source) {
+        return toString(source, new StringBuilder()).toString();
+    }
 }

@@ -49,7 +49,7 @@ import static java.util.Objects.requireNonNull;
 
 public class BankApplication implements AllInOneApp, Output {
 
-    private static final int SOURCE_ID = 666;
+    private static final String SOURCE_ID = "BANK";
     private final Bank.Mutable bank = new Bank.Default();
     private final Teller teller = new Teller(bank);
     private final Accountant accountant = new Accountant(bank);

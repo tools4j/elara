@@ -58,7 +58,7 @@ import static java.util.Objects.requireNonNull;
 
 public class TimerApplication {
 
-    private static final int SOURCE_ID = 777;
+    private static final String SOURCE_ID = "TIMERS";
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss:SSS");
     public static final int TIMER_TYPE_SINGLE = 1;
     public static final int TIMER_TYPE_PERIODIC = 2;

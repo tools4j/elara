@@ -39,6 +39,9 @@ public enum Plugins {
     public static TimerPlugin timerPlugin() {
         return TimerPlugin.DEFAULT;
     }
+    public static TimerPlugin timerPlugin(final CharSequence sourceId) {
+        return new TimerPlugin(sourceId);
+    }
     public static TimerPlugin timerPlugin(final int sourceId) {
         return new TimerPlugin(sourceId);
     }
@@ -46,8 +49,11 @@ public enum Plugins {
     public static BootPlugin bootPlugin() {
         return BootPlugin.DEFAULT;
     }
-    public static BootPlugin bootPlugin(final int commandSource) {
-        return new BootPlugin(commandSource);
+    public static BootPlugin bootPlugin(final CharSequence sourceId) {
+        return new BootPlugin(sourceId);
+    }
+    public static BootPlugin bootPlugin(final int sourceId) {
+        return new BootPlugin(sourceId);
     }
 
     public static MetricsPlugin metricsPlugin(final MetricsConfig configuration) {

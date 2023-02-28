@@ -31,6 +31,7 @@ import org.tools4j.elara.app.config.CommandPollingMode;
 import org.tools4j.elara.app.type.AllInOneApp;
 import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.command.Command;
+import org.tools4j.elara.command.SourceIds;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output.Ack;
@@ -79,7 +80,7 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
 
     public static final int MESSAGE_LENGTH = 5 * Long.BYTES;
     public static final long NULL_VALUE = Long.MIN_VALUE;
-    public static final int DEFAULT_SOURCE_ID = 42;
+    public static final String DEFAULT_SOURCE_ID = "HASH";
 
     public interface State {
         long hash();
@@ -149,6 +150,10 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
     public Ack publish(final Event event, final boolean replay, final int retry) {
         /* trigger capturing of output metrics approximately every second time */
         return (event.payload().getLong(0) & 0x1) == 0 ? Ack.COMMIT : Ack.IGNORED;
+    }
+
+    public static Input input(final CharSequence sourceId, final AtomicLong input) {
+        return input(SourceIds.toInt(sourceId), input);
     }
 
     public static Input input(final int sourceId, final AtomicLong input) {

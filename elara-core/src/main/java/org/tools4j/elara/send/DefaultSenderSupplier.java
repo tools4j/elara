@@ -24,6 +24,7 @@
 package org.tools4j.elara.send;
 
 import org.agrona.collections.Long2LongCounterMap;
+import org.tools4j.elara.command.SourceIds;
 
 import static java.util.Objects.requireNonNull;
 
@@ -47,8 +48,18 @@ public class DefaultSenderSupplier implements SenderSupplier {
     }
 
     @Override
+    public CommandSender senderFor(final CharSequence sourceId) {
+        return senderFor(SourceIds.toInt(sourceId));
+    }
+
+    @Override
     public CommandSender senderFor(final int sourceId) {
         return senderFor(sourceId, sequenceBySource.getAndIncrement(sourceId));
+    }
+
+    @Override
+    public CommandSender senderFor(final CharSequence sourceId, final long sourceSeq) {
+        return senderFor(SourceIds.toInt(sourceId), sourceSeq);
     }
 
     @Override
