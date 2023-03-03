@@ -52,7 +52,7 @@ public class FlyweightEventTest {
         assertFalse(event.valid(), "event.valid");
 
         try {
-            event.source();
+            event.sourceId();
         } catch (final IndexOutOfBoundsException e) {
             //expected
         }
@@ -73,11 +73,11 @@ public class FlyweightEventTest {
         final FlyweightEvent event = new FlyweightEvent().init(buffer, 0);
 
         //when + then
-        assertEquals(0, event.id().source(), "id.source");
-        assertEquals(0, event.id().sequence(), "id,sequence");
-        assertEquals(0, event.id().index(), "id.index");
-        assertEquals(0, event.type(), "id.type");
-        assertEquals(0, event.time(), "id.time");
+        assertEquals(0, event.sourceId(), "sourceId");
+        assertEquals(0, event.sourceSequence(), "sourceSequence");
+        assertEquals(0, event.index(), "index");
+        assertEquals(0, event.type(), "type");
+        assertEquals(0, event.time(), "time");
         assertNotNull(event.payload(), "payload");
         assertEquals(0, event.payload().capacity(), "payload.capacity");
         assertTrue(event.valid(), "event.valid");
@@ -92,7 +92,7 @@ public class FlyweightEventTest {
         final FlyweightEvent event = new FlyweightEvent();
 
         //when
-        event.init(new ExpandableArrayBuffer(), headerOffset, values.source, values.seq, values.index,
+        event.init(new ExpandableArrayBuffer(), headerOffset, values.sourceId, values.sourceSeq, values.index,
                 values.type, values.time, values.flags, values.payload, payloadOffset, values.payloadLength()
         );
 
@@ -119,7 +119,7 @@ public class FlyweightEventTest {
         //given
         final Values values = new Values(0, "Hello world");
         final FlyweightEvent event = new FlyweightEvent().init(
-                new ExpandableArrayBuffer(), 0, values.source, values.seq, values.index,
+                new ExpandableArrayBuffer(), 0, values.sourceId, values.sourceSeq, values.index,
                 values.type, values.time, values.flags, values.payload, 0, values.payloadLength()
         );
 
@@ -143,7 +143,7 @@ public class FlyweightEventTest {
         //given
         final Values values = new Values(0, "Hello world");
         final FlyweightEvent event = new FlyweightEvent().init(
-                new ExpandableArrayBuffer(), 0, values.source, values.seq, values.index,
+                new ExpandableArrayBuffer(), 0, values.sourceId, values.sourceSeq, values.index,
                 values.type, values.time, values.flags, values.payload, 0, values.payloadLength()
         );
 
@@ -171,7 +171,7 @@ public class FlyweightEventTest {
         final int payloadOffset = 13;
         final Values values = new Values(payloadOffset, "Hello world");
         final FlyweightEvent event = new FlyweightEvent();
-        event.init(new ExpandableArrayBuffer(), headerOffset, values.source, values.seq, values.index,
+        event.init(new ExpandableArrayBuffer(), headerOffset, values.sourceId, values.sourceSeq, values.index,
                 values.type, values.time, values.flags, values.payload, payloadOffset, values.payloadLength()
         );
 
@@ -187,8 +187,8 @@ public class FlyweightEventTest {
     }
 
     private static class Values {
-        final int source = 77;
-        final long seq = 998877;
+        final int sourceId = 77;
+        final long sourceSeq = 998877;
         final short index = 7;
         final int type = 123;
         final long time = 998877665544L;
@@ -206,9 +206,9 @@ public class FlyweightEventTest {
         }
 
         void assertEvent(final Event event) {
-            assertEquals(source, event.id().source(), "id.source");
-            assertEquals(seq, event.id().sequence(), "id.sequence");
-            assertEquals(index, event.id().index(), "id.index");
+            assertEquals(sourceId, event.sourceId(), "sourceId");
+            assertEquals(sourceSeq, event.sourceSequence(), "sourceSequence");
+            assertEquals(index, event.index(), "index");
             assertEquals(type, event.type(), "type");
             assertEquals(time, event.time(), "time");
             assertEquals(Flags.COMMIT_STRING, event.flags().toString(), "flags");

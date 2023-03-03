@@ -76,7 +76,7 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
 
     default Object line(long line, long entryId, DataFrame frame) {return line;}
     default Object entryId(long line, long entryId, DataFrame frame) {return entryId;}
-    default Object source(long line, long entryId, DataFrame frame) {return frame.header().source();}
+    default Object source(long line, long entryId, DataFrame frame) {return frame.header().sourceId();}
     default Object type(long line, long entryId, DataFrame frame) {
         final Header header = frame.header();
         final int type = header.type();
@@ -99,7 +99,7 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
         }
         return type;
     }
-    default Object sequence(long line, long entryId, DataFrame frame) {return frame.header().sequence();}
+    default Object sequence(long line, long entryId, DataFrame frame) {return frame.header().sourceSequence();}
     default Object time(long line, long entryId, DataFrame frame) {return timeFormatter().formatDateTime(frame.header().time());}
     default Object version(long line,long entryId,  DataFrame frame) {return frame.header().version();}
     default Object flags(long line,long entryId,  DataFrame frame) {return Flags.toString(frame.header().flags());}

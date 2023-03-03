@@ -38,8 +38,8 @@ import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.SEQUENCE_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_OFFSET;
+import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_SEQUENCE_OFFSET;
 
 /**
  * A command sender that directly invokes the command handler without persisting the command.
@@ -64,7 +64,7 @@ public final class CommandHandlingSender extends FlyweightCommandSender {
 
     @Override
     public CommandSender.SendingContext sendingCommand(final int type) {
-        return commandContext.init(source(), nextCommandSequence(), type);
+        return commandContext.init(sourceId(), nextCommandSequence(), type);
     }
 
     @Override
@@ -74,15 +74,15 @@ public final class CommandHandlingSender extends FlyweightCommandSender {
 
     @Override
     public SendingResult sendCommand(final int type, final DirectBuffer buffer, final int offset, final int length) {
-        initHeader(source(), nextCommandSequence(), type, length);
+        initHeader(sourceId(), nextCommandSequence(), type, length);
         invokeCommandHandler(buffer, offset, length);//TODO handle result value here
         incrementCommandSequence();
         return SendingResult.SENT;
     }
 
-    private void initHeader(final int source, final long sequence, final int type, final int payloadSize) {
+    private void initHeader(final int sourceId, final long sourceSeq, final int type, final int payloadSize) {
         FlyweightHeader.writeTo(
-                source, type, sequence, timeSource.currentTime(), Flags.NONE, FlyweightCommand.INDEX, payloadSize,
+                sourceId, type, sourceSeq, timeSource.currentTime(), Flags.NONE, FlyweightCommand.INDEX, payloadSize,
                 header, HEADER_OFFSET
         );
     }
@@ -105,12 +105,12 @@ public final class CommandHandlingSender extends FlyweightCommandSender {
             this.payload = new ExpandableDirectByteBuffer(initialBufferCapacity);
         }
 
-        SendingContext init(final int source, final long sequence, final int type) {
+        SendingContext init(final int sourceId, final long sourceSeq, final int type) {
             if (!closed) {
                 abort();
                 throw new IllegalStateException("Sending context not closed");
             }
-            initHeader(source, sequence, type, 0);
+            initHeader(sourceId, sourceSeq, type, 0);
             closed = false;
             return this;
         }
@@ -122,15 +122,15 @@ public final class CommandHandlingSender extends FlyweightCommandSender {
         }
 
         @Override
-        public int source() {
+        public int sourceId() {
             ensureNotClosed();
             return header.getInt(SOURCE_OFFSET);
         }
 
         @Override
-        public long sequence() {
+        public long sourceSequence() {
             ensureNotClosed();
-            return header.getLong(SEQUENCE_OFFSET);
+            return header.getLong(SOURCE_SEQUENCE_OFFSET);
         }
 
         @Override

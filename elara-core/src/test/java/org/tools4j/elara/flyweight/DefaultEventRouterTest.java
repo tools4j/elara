@@ -72,14 +72,14 @@ public class DefaultEventRouterTest {
     @Test
     public void noEvents() {
         //given
-        final int source = 11;
-        final long sequence = 22;
+        final int sourceIdId = 11;
+        final long sourceIdSeq = 22;
         final int type = 33;
         final long time = 44;
         eventTime = time + 1;
 
         //when
-        startWithCommand(source, sequence, type, time);
+        startWithCommand(sourceIdId, sourceIdSeq, type, time);
 
         //then
         assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[0]");
@@ -96,8 +96,8 @@ public class DefaultEventRouterTest {
     @Test
     public void someEvents() {
         //given
-        final int source = 11;
-        final long sequence = 22;
+        final int sourceIdId = 11;
+        final long sourceIdSeq = 22;
         final int type = 33;
         final long time = 44;
         final int eventType = 55;
@@ -105,7 +105,7 @@ public class DefaultEventRouterTest {
         final String msg = "Hello world";
         eventTime = time + 1;
 
-        startWithCommand(source, sequence, type, time);
+        startWithCommand(sourceIdId, sourceIdSeq, type, time);
 
         //when
         routeEmptyApplicationEvent();
@@ -133,13 +133,13 @@ public class DefaultEventRouterTest {
     @Test
     public void skipCommand() {
         //given
-        final int source = 11;
-        final long sequence = 22;
+        final int sourceId = 11;
+        final long sourceSeq = 22;
         final int type = 33;
         final long time = 44;
         eventTime = time + 1;
 
-        startWithCommand(source, sequence, type, time);
+        startWithCommand(sourceId, sourceSeq, type, time);
 
         //when
         final boolean skipped = eventRouter.skipCommand();
@@ -154,13 +154,13 @@ public class DefaultEventRouterTest {
     @Test
     public void skipCommandDuringEventRouting() {
         //given
-        final int source = 11;
-        final long sequence = 22;
+        final int sourceId = 11;
+        final long sourceSeq = 22;
         final int type = 33;
         final long time = 44;
         eventTime = time + 1;
 
-        startWithCommand(source, sequence, type, time);
+        startWithCommand(sourceId, sourceSeq, type, time);
 
         //when
         final boolean skipped;
@@ -179,8 +179,8 @@ public class DefaultEventRouterTest {
     @Test
     public void skipCommandNotPossible() {
         //given
-        final int source = 11;
-        final long sequence = 22;
+        final int sourceId = 11;
+        final long sourceSeq = 22;
         final int type = 33;
         final long time = 44;
         final int eventType = 55;
@@ -188,7 +188,7 @@ public class DefaultEventRouterTest {
         final String msg = "Hello world";
         eventTime = time + 1;
 
-        startWithCommand(source, sequence, type, time);
+        startWithCommand(sourceId, sourceSeq, type, time);
         routeEmptyApplicationEvent();
         final int payloadSize = routeEvent(eventType, msgOffset, msg);
 
@@ -207,12 +207,12 @@ public class DefaultEventRouterTest {
     @Test
     public void skipCommandPreventsEventRouting() {
         //given
-        final int source = 11;
-        final long sequence = 22;
+        final int sourceId = 11;
+        final long sourceSeq = 22;
         final int type = 33;
         final long time = 44;
 
-        startWithCommand(source, sequence, type, time);
+        startWithCommand(sourceId, sourceSeq, type, time);
         final boolean skipped = eventRouter.skipCommand();
         assertTrue(skipped, "skipped");
         eventTime = time + 1;
@@ -221,11 +221,11 @@ public class DefaultEventRouterTest {
         assertThrows(IllegalStateException.class, this::routeEmptyApplicationEvent);
     }
 
-    private void startWithCommand(final int source,
-                                  final long sequence,
+    private void startWithCommand(final int sourceId,
+                                  final long sourceSeq,
                                   final int type,
                                   final long time) {
-        command.init(new ExpandableArrayBuffer(), 0, source, sequence, type, time,
+        command.init(new ExpandableArrayBuffer(), 0, sourceId, sourceSeq, type, time,
                 new ExpandableArrayBuffer(12), 2, 10);
         eventRouter.start(command);
     }
@@ -246,13 +246,13 @@ public class DefaultEventRouterTest {
     @Test
     public void commitEventNotAllowed() {
         //given
-        final int source = 11;
-        final long sequence = 22;
+        final int sourceId = 11;
+        final long sourceSeq = 22;
         final int type = 33;
         final long time = 44;
         eventTime = time + 1;
         final DirectBuffer zeroPayload = new ExpandableArrayBuffer(0);
-        startWithCommand(source, sequence, type, time);
+        startWithCommand(sourceId, sourceSeq, type, time);
 
         //when + then
         assertThrows(IllegalArgumentException.class,
@@ -263,13 +263,13 @@ public class DefaultEventRouterTest {
     @Test
     public void rollbackEventNotAllowed() {
         //given
-        final int source = 11;
-        final long sequence = 22;
+        final int sourceId = 11;
+        final long sourceSeq = 22;
         final int type = 33;
         final long time = 44;
         eventTime = time + 1;
         final DirectBuffer zeroPayload = new ExpandableArrayBuffer(0);
-        startWithCommand(source, sequence, type, time);
+        startWithCommand(sourceId, sourceSeq, type, time);
 
         //when + then
         assertThrows(IllegalArgumentException.class,
@@ -280,9 +280,9 @@ public class DefaultEventRouterTest {
     private void assertEvent(final Command command, final Event event,
                              final int type, final int index, final byte flags, final int payloadSize,
                              final String evtName) {
-        assertEquals(command.id().source(), event.id().source(), evtName + ".id.source");
-        assertEquals(command.id().sequence(), event.id().sequence(), evtName + ".id.sequence");
-        assertEquals(index, event.id().index(), evtName + ".id.index");
+        assertEquals(command.sourceId(), event.sourceId(), evtName + ".sourceId");
+        assertEquals(command.sourceSequence(), event.sourceSequence(), evtName + ".sourceSequence");
+        assertEquals(index, event.index(), evtName + ".index");
         assertEquals(type, event.type(), evtName + ".type");
         assertEquals(Flags.NONE, event.flags().value(), evtName + ".flags");
         assertEquals(eventTime, event.time(), evtName + ".time");

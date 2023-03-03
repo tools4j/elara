@@ -129,8 +129,14 @@ public interface EventRouter {
      * Skip the current command if possible.  Skipping is only possible when no events have been routed yet.  Routing
      * events after the command was skipped will result in an exception.  Calling skip repeatedly has no further effect
      * and returns the same result as for the first invocation.
+     * <p>
+     * Skipping a command results in no events and will therefore leave the application state in exactly the same as
+     * before the command.  Note that if a command is not skipped, an event will be applied implicitly even if the
+     * application itself did not route an event. This means that all non-skipped commands will be marked as
+     * 'processed'.
      *
      * @return true if the command was skipped, and false if events have been routed already
+     * @see #isSkipped()
      */
     boolean skipCommand();
 
@@ -139,12 +145,13 @@ public interface EventRouter {
      * will result in an exception.
      * <p>
      * The application state after processing the current command will be exactly the same as before the command. Note
-     * that the command will not be be marked as processed and is normally also not replayed.  Replaying of the command
-     * may occur however if the application is restarted or leadership is passed to another node and commands are
-     * replayed from the command store.  However replaying occurs only if no subsequent command from the same source has
-     * yet been marked as processed.
+     * that the command will not be marked as processed and is normally also not replayed.  Replaying of the command may
+     * occur however if the application is restarted or leadership is passed to another node and commands are replayed
+     * from the command store.  However, replaying occurs only if no subsequent command from the same source has been
+     * processed and not skipped.
      *
      * @return true if this command is skipped
+     * @see #skipCommand()
      */
     boolean isSkipped();
 

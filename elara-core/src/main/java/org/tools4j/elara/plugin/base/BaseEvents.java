@@ -39,35 +39,35 @@ public enum BaseEvents {
     public static FlyweightEvent commit(final FlyweightEvent flyweightEvent,
                                         final MutableDirectBuffer headerBuffer,
                                         final int offset,
-                                        final int source,
-                                        final long sequence,
+                                        final int sourceId,
+                                        final long sourceSeq,
                                         final short index,
                                         final long time) {
-        return empty(flyweightEvent, headerBuffer, offset, source, sequence, index, EventType.COMMIT, time,
+        return empty(flyweightEvent, headerBuffer, offset, sourceId, sourceSeq, index, EventType.COMMIT, time,
                 Flags.COMMIT);
     }
 
     public static FlyweightEvent rollback(final FlyweightEvent flyweightEvent,
                                           final MutableDirectBuffer headerBuffer,
                                           final int offset,
-                                          final int source,
-                                          final long sequence,
+                                          final int sourceId,
+                                          final long sourceSeq,
                                           final short index,
                                           final long time) {
-        return empty(flyweightEvent, headerBuffer, offset, source, sequence, index, EventType.ROLLBACK, time,
+        return empty(flyweightEvent, headerBuffer, offset, sourceId, sourceSeq, index, EventType.ROLLBACK, time,
                 Flags.ROLLBACK);
     }
 
     public static FlyweightEvent empty(final FlyweightEvent flyweightEvent,
                                         final MutableDirectBuffer headerBuffer,
                                         final int offset,
-                                        final int source,
-                                        final long sequence,
+                                        final int sourceId,
+                                        final long sourceSeq,
                                         final short index,
                                         final int type,
                                         final long time,
                                         final byte flags) {
-        return flyweightEvent.init(headerBuffer, offset, source, sequence, index, type, time, flags,
+        return flyweightEvent.init(headerBuffer, offset, sourceId, sourceSeq, index, type, time, flags,
                 EMPTY_BUFFER, 0, 0);
     }
 

@@ -29,34 +29,33 @@ import org.tools4j.elara.event.Event;
 /**
  * Single event base state allows only one event per command.
  */
-public class SingleEventBaseState implements BaseState.Default, BaseState.Mutable {
+public class SingleEventBaseState implements BaseState.Mutable {
 
     private static final long MISSING_SEQUENCE = Long.MIN_VALUE;
     private final Long2LongHashMap sourceToSequence = new Long2LongHashMap(MISSING_SEQUENCE);
 
     @Override
-    public boolean allEventsAppliedFor(final int source, final long sequence) {
-        final long appliedSequence = sourceToSequence.get(source);
-        return sequence <= appliedSequence && appliedSequence != MISSING_SEQUENCE;
+    public boolean allEventsAppliedFor(final int sourceId, final long sourceSeq) {
+        final long appliedSequence = sourceToSequence.get(sourceId);
+        return sourceSeq <= appliedSequence && appliedSequence != MISSING_SEQUENCE;
     }
 
     @Override
-    public boolean eventApplied(final int source, final long sequence, final int index) {
-        return allEventsAppliedFor(source, sequence);
-    }
-
-    @Override
-    public Mutable applyEvent(final int source, final long sequence, final int index) {
-        if (index != 0) {
-            throw new IllegalArgumentException("Only event with index 0 is allowed");
-        }
-        sourceToSequence.put(source, sequence);
-        return this;
+    public boolean eventApplied(final int sourceId, final long sourceSeq, final int index) {
+        return allEventsAppliedFor(sourceId, sourceSeq);
     }
 
     @Override
     public Mutable applyEvent(final Event event) {
-        final Event.Id id = event.id();
-        return applyEvent(id.source(), id.sequence(), id.index());
+        return applyEvent(event.sourceId(), event.sourceSequence(), event.index());
+    }
+
+    @Override
+    public Mutable applyEvent(final int sourceId, final long sourceSeq, final int index) {
+        if (index != 0) {
+            throw new IllegalArgumentException("Only event with index 0 is allowed");
+        }
+        sourceToSequence.put(sourceId, sourceSeq);
+        return this;
     }
 }

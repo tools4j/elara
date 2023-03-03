@@ -38,8 +38,8 @@ import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.HEADER_OFFSET;
 import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.INDEX_OFFSET;
 import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.INTERVAL_OFFSET;
 import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.REPETITION_OFFSET;
-import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.SEQUENCE_OFFSET;
-import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.SOURCE_OFFSET;
+import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.SOURCE_ID_OFFSET;
+import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.SOURCE_SEQUENCE_OFFSET;
 import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.TIME_OFFSET;
 import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.VERSION;
 import static org.tools4j.elara.plugin.metrics.MetricsDescriptor.VERSION_OFFSET;
@@ -86,13 +86,13 @@ public class FlyweightMetricsStoreEntry implements MetricsStoreEntry, Flyweight<
     }
 
     @Override
-    public int source() {
-        return MetricsDescriptor.source(buffer);
+    public int sourceId() {
+        return MetricsDescriptor.sourceId(buffer);
     }
 
     @Override
-    public long sequence() {
-        return MetricsDescriptor.sequence(buffer);
+    public long sourceSequence() {
+        return MetricsDescriptor.sourceSequence(buffer);
     }
 
     @Override
@@ -142,16 +142,16 @@ public class FlyweightMetricsStoreEntry implements MetricsStoreEntry, Flyweight<
 
     public static int writeTimeMetricsHeader(final byte flags,
                                              final short index,
-                                             final int source,
-                                             final long sequence,
+                                             final int sourceId,
+                                             final long sourceSeq,
                                              final long time,
                                              final MutableDirectBuffer dst,
                                              final int dstOffset) {
         dst.putByte(dstOffset + VERSION_OFFSET, VERSION);
         dst.putByte(dstOffset + FLAGS_OFFSET, flags);
         dst.putShort(dstOffset + INDEX_OFFSET, index);
-        dst.putInt(dstOffset + SOURCE_OFFSET, source);
-        dst.putLong(dstOffset + SEQUENCE_OFFSET, sequence);
+        dst.putInt(dstOffset + SOURCE_ID_OFFSET, sourceId);
+        dst.putLong(dstOffset + SOURCE_SEQUENCE_OFFSET, sourceSeq);
         dst.putLong(dstOffset + TIME_OFFSET, time);
         return HEADER_LENGTH;
     }
@@ -200,22 +200,22 @@ public class FlyweightMetricsStoreEntry implements MetricsStoreEntry, Flyweight<
         return type() == Type.TIME ?
                 "FlyweightMetricsStoreEntry{" +
                         "version=" + version() +
-                        ", type=" + type() +
-                        ", flags=" + toBinaryString(flags()) +
-                        ", index=" + index() +
-                        ", source=" + source() +
-                        ", sequence=" + sequence() +
-                        ", time=" + time() +
-                        ", count=" + count() +
+                        "|type=" + type() +
+                        "|flags=" + toBinaryString(flags()) +
+                        "|index=" + index() +
+                        "|source-id=" + sourceId() +
+                        "|source-seq=" + sourceSequence() +
+                        "|time=" + time() +
+                        "|count=" + count() +
                         '}' :
                 "FlyweightMetricsStoreEntry{" +
                         "version=" + version() +
-                        ", type=" + type() +
-                        ", choice=" + toBinaryString(choice()) +
-                        ", repetition=" + repetition() +
-                        ", interval=" + interval() +
-                        ", time=" + time() +
-                        ", count=" + count() +
+                        "|type=" + type() +
+                        "|choice=" + toBinaryString(choice()) +
+                        "|repetition=" + repetition() +
+                        "|interval=" + interval() +
+                        "|time=" + time() +
+                        "|count=" + count() +
                         '}'
                 ;
 

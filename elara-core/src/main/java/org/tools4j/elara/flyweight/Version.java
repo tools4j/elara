@@ -29,7 +29,7 @@ package org.tools4j.elara.flyweight;
 public enum Version {
     ;
     /** Current flyweight version */
-    public static final byte CURRENT = 2;
+    public static final byte CURRENT = 3;
 
     public static void validate(final short version) {
         if (version != CURRENT) {

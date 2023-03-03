@@ -62,7 +62,8 @@ public interface EventContext {
 
     /**
      * True if the {@link #processedEvent() processed} event is an event from a command that we sent ourselves.
-     * @return true if the event's source is equal to the {@link CommandSender#source() source} of commands sent by us
+     * @return true if the event's source ID is equal to the {@link CommandSender#sourceId() source ID} of commands sent
+     * by us
      */
     boolean isOwnEvent();
 
@@ -82,10 +83,8 @@ public interface EventContext {
             if (processed == recent) {
                 return false;
             }
-            final Event.Id processedId = processed.id();
-            final Event.Id recentId = recent.id();
-            return processedId.source() != recentId.source() ||
-                    processedId.sequence() != recentId.sequence();
+            return processed.sourceId() != recent.sourceId() ||
+                    processed.sourceSequence() != recent.sourceSequence();
         }
     }
 }

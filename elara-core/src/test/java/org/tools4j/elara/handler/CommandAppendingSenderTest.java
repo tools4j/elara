@@ -112,8 +112,8 @@ public class CommandAppendingSenderTest {
     public void shouldAppendDefaultTypeCommand() {
         //given
         final long commandTime = 9988776600001L;
-        final int source = 1;
-        final long seq = 22;
+        final int sourceIdId = 1;
+        final long sourceIdSeq = 22;
         final String text = "Hello world!!!";
         final int offset = 77;
         final DirectBuffer message = message(text, offset);
@@ -121,18 +121,18 @@ public class CommandAppendingSenderTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        senderSupplier.senderFor(source, seq).sendCommand(message, offset, length);
+        senderSupplier.senderFor(sourceIdId, sourceIdSeq).sendCommand(message, offset, length);
 
         //then
         assertEquals(1, commandStore.size(), "commandStore.size");
-        assertCommand(source, seq, commandTime, EventType.APPLICATION, text, commandStore.get(0));
+        assertCommand(sourceIdId, sourceIdSeq, commandTime, EventType.APPLICATION, text, commandStore.get(0));
     }
 
     @Test
     public void shouldAppendCommandWithType() {
         //given
         final long commandTime = 9988776600001L;
-        final int source = 1;
+        final int sourceId = 1;
         final long seq = 22;
         final int type = 12345;
         final String text = "Hello world!!!";
@@ -142,21 +142,21 @@ public class CommandAppendingSenderTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        senderSupplier.senderFor(source, seq).sendCommand(type, message, offset, length);
+        senderSupplier.senderFor(sourceId, seq).sendCommand(type, message, offset, length);
 
         //then
-        assertCommand(source, seq, commandTime, type, text, commandStore.get(0));
+        assertCommand(sourceId, seq, commandTime, type, text, commandStore.get(0));
     }
 
-    private void assertCommand(final int source,
+    private void assertCommand(final int sourceId,
                                final long seq,
                                final long commandTime,
                                final int type,
                                final String text,
                                final Command command) {
         final int payloadSize = Integer.BYTES + text.length();
-        assertEquals(source, command.id().source(), "command.id.source");
-        assertEquals(seq, command.id().sequence(), "command.id.sequence");
+        assertEquals(sourceId, command.sourceId(), "command.source-id");
+        assertEquals(seq, command.sourceSequence(), "command.source-sequence");
         assertEquals(commandTime, command.time(), "command.time");
         assertFalse(command.isAdmin(), "command.isAdmin");
         assertTrue(command.isApplication(), "command.isApplication");

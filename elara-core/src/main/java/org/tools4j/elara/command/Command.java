@@ -29,12 +29,8 @@ import org.tools4j.elara.flyweight.Writable;
 import org.tools4j.elara.logging.Printable;
 
 public interface Command extends Writable, Printable {
-    interface Id {
-        int source();
-        long sequence();
-    }
-
-    Id id();
+    int sourceId();
+    long sourceSequence();
 
     int type();
 

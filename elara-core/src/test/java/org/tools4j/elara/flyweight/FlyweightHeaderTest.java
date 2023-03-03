@@ -45,7 +45,7 @@ public class FlyweightHeaderTest {
         //when + then
         assertFalse(header.valid(), "header.valid");
         try {
-            header.source();
+            header.sourceId();
         } catch (final IndexOutOfBoundsException e) {
             //expected
         }
@@ -66,9 +66,9 @@ public class FlyweightHeaderTest {
         final FlyweightHeader header = new FlyweightHeader().init(buffer, 0);
 
         //when + then
-        assertEquals(0, header.source(), "header.source");
+        assertEquals(0, header.sourceId(), "header.source-id");
         assertEquals(0, header.type(), "header.type");
-        assertEquals(0, header.sequence(), "header.sequence");
+        assertEquals(0, header.sourceSequence(), "header.source-sequence");
         assertEquals(0, header.time(), "header.time");
         assertEquals(Version.CURRENT, header.version(), "header.version");
         assertEquals(0, header.flags(), "header.flags");
@@ -84,7 +84,7 @@ public class FlyweightHeaderTest {
         final FlyweightHeader header = new FlyweightHeader();
 
         //when
-        header.init(values.source, values.type, values.seq, values.time, values.flags, values.index,
+        header.init(values.sourceId, values.type, values.sourceSeq, values.time, values.flags, values.index,
                 values.payloadSize, new ExpandableArrayBuffer(), headerOffset);
 
         //then
@@ -116,7 +116,7 @@ public class FlyweightHeaderTest {
         final int headerOffset = 23;
         final Values values = new Values();
         final FlyweightHeader header = new FlyweightHeader();
-        header.init(values.source, values.type, values.seq, values.time, values.flags, values.index,
+        header.init(values.sourceId, values.type, values.sourceSeq, values.time, values.flags, values.index,
                 values.payloadSize, new ExpandableArrayBuffer(), headerOffset);
 
         //when
@@ -131,18 +131,18 @@ public class FlyweightHeaderTest {
     }
 
     private static class Values {
-        final int source = 77;
+        final int sourceId = 77;
         final int type = 123;
-        final long seq = 998877;
+        final long sourceSeq = 998877;
         final long time = 998877665544L;
         final byte flags = Flags.COMMIT;
         final short index = 7;
         final int payloadSize = 22;
 
         void assertHeader(final Header header) {
-            assertEquals(source, header.source(), "header.source");
+            assertEquals(sourceId, header.sourceId(), "header.source-id");
             assertEquals(type, header.type(), "header.type");
-            assertEquals(seq, header.sequence(), "header.sequence");
+            assertEquals(sourceSeq, header.sourceSequence(), "header.source-sequence");
             assertEquals(time, header.time(), "header.time");
             assertEquals(flags, header.flags(), "header.flags");
             assertEquals(index, header.index(), "header.index");

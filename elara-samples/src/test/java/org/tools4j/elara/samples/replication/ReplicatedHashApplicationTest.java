@@ -156,8 +156,8 @@ public class ReplicatedHashApplicationTest {
         final int sources = sourceTopology.senders();
         final ElaraRunner[] publishers = new ElaraRunner[sources];
         for (int i = 0; i < sources; i++) {
-            final int source = SOURCE_OFFSET + i;
-            publishers[i] = MulticastSource.startRandom(source, sourceIds, commandsPerSource, sourceTopology);
+            final int sourceId = SOURCE_OFFSET + i;
+            publishers[i] = MulticastSource.startRandom(sourceId, sourceIds, commandsPerSource, sourceTopology);
         }
         return publishers;
     }

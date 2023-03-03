@@ -42,7 +42,7 @@ import static java.util.Objects.requireNonNull;
 
 public class SimpleStringApplication implements AllInOneApp, Output {
 
-    private static final int SOURCE = 999;
+    private static final int SOURCE_ID = 999;
     private static final int TYPE_STRING = 1;
 
     public ElaraRunner launch(final Queue<String> inputQueue) {
@@ -90,7 +90,7 @@ public class SimpleStringApplication implements AllInOneApp, Output {
             if (msg != null) {
                 final MutableDirectBuffer buffer = new ExpandableArrayBuffer(msg.length() + 4);
                 final int length = buffer.putStringAscii(0, msg);
-                senderSupplier.senderFor(SOURCE).sendCommand(TYPE_STRING, buffer, 0, length);
+                senderSupplier.senderFor(SOURCE_ID).sendCommand(TYPE_STRING, buffer, 0, length);
                 return 1;
             }
             return 0;

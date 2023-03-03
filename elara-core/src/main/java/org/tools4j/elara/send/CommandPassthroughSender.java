@@ -47,8 +47,8 @@ import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.INDEX_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.SEQUENCE_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_OFFSET;
+import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_SEQUENCE_OFFSET;
 
 /**
  * A command sender that directly invokes the passthrough command handler without persisting the command, instead
@@ -84,7 +84,7 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
 
     @Override
     public CommandSender.SendingContext sendingCommand(final int type) {
-        return sendingContext.init(source(), nextCommandSequence(), type, eventStoreAppender.appending());
+        return sendingContext.init(sourceId(), nextCommandSequence(), type, eventStoreAppender.appending());
     }
 
     private final class SendingContext implements CommandSender.SendingContext {
@@ -93,7 +93,7 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
         final ExpandableDirectBuffer buffer = new ExpandableDirectBuffer();
         AppendingContext context;
 
-        SendingContext init(final int source, final long sequence, final int type, final AppendingContext context) {
+        SendingContext init(final int sourceId, final long sourceSeq, final int type, final AppendingContext context) {
             if (this.context != null) {
                 abort();
                 throw new IllegalStateException("Sending context not closed");
@@ -101,7 +101,7 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
             this.context = requireNonNull(context);
             this.buffer.wrap(context.buffer(), PAYLOAD_OFFSET);
             FlyweightHeader.writeTo(
-                    source, type, sequence, timeSource.currentTime(), Flags.NONE, INDEX, 0,
+                    sourceId, type, sourceSeq, timeSource.currentTime(), Flags.NONE, INDEX, 0,
                     context.buffer(), HEADER_OFFSET
             );
             return this;
@@ -115,13 +115,13 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
         }
 
         @Override
-        public int source() {
+        public int sourceId() {
             return unclosedContext().buffer().getInt(SOURCE_OFFSET);
         }
 
         @Override
-        public long sequence() {
-            return unclosedContext().buffer().getLong(SEQUENCE_OFFSET);
+        public long sourceSequence() {
+            return unclosedContext().buffer().getLong(SOURCE_SEQUENCE_OFFSET);
         }
 
         @Override
@@ -141,7 +141,7 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
                 if (length > 0) {
                     ac.buffer().putInt(PAYLOAD_SIZE_OFFSET, length);
                 }
-                if (baseState.allEventsAppliedFor(source(), sequence())) {
+                if (baseState.allEventsAppliedFor(sourceId(), sourceSequence())) {
                     skipCommand(ac.buffer(), length);
                 } else {
                     applyEvent(ac.buffer(), length);
@@ -169,7 +169,7 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
 
         private void applyEvent(final DirectBuffer buffer, final int length) {
             if (eventIdApplierOrNull != null) {
-                eventIdApplierOrNull.onEventId(source(), sequence(), INDEX);
+                eventIdApplierOrNull.onEventId(sourceId(), sourceSequence(), INDEX);
                 return;
             }
             appliedEvent.initSilent(buffer, HEADER_OFFSET, buffer, PAYLOAD_OFFSET, length);

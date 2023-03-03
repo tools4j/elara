@@ -27,21 +27,21 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 
-public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, Command.Id, DataFrame {
+public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, DataFrame {
 
     public static final short INDEX = Short.MIN_VALUE;
     private final FlyweightDataFrame frame = new FlyweightDataFrame();
 
     public FlyweightCommand init(final MutableDirectBuffer header,
                                  final int headerOffset,
-                                 final int source,
-                                 final long sequence,
+                                 final int sourceId,
+                                 final long sourceSeq,
                                  final int type,
                                  final long time,
                                  final DirectBuffer payload,
                                  final int payloadOffset,
                                  final int payloadSize) {
-        frame.init(header, headerOffset, source, type, sequence, time, Flags.NONE, INDEX, payload, payloadOffset, payloadSize);
+        frame.init(header, headerOffset, sourceId, type, sourceSeq, time, Flags.NONE, INDEX, payload, payloadOffset, payloadSize);
         return this;
     }
 
@@ -84,18 +84,13 @@ public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, C
     }
 
     @Override
-    public Id id() {
-        return this;
+    public int sourceId() {
+        return header().sourceId();
     }
 
     @Override
-    public int source() {
-        return header().source();
-    }
-
-    @Override
-    public long sequence() {
-        return header().sequence();
+    public long sourceSequence() {
+        return header().sourceSequence();
     }
 
     @Override
@@ -124,8 +119,8 @@ public class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, C
         if (valid()) {
             final Header header = header();
             dst.append("version=").append(header.version());
-            dst.append("|source=").append(header.source());
-            dst.append("|sequence=").append(header.sequence());
+            dst.append("|source-id=").append(header.sourceId());
+            dst.append("|source-seq=").append(header.sourceSequence());
             dst.append("|type=").append(header.type());
             dst.append("|time=").append(header.time());
             dst.append("|payload-size=").append(header.payloadSize());

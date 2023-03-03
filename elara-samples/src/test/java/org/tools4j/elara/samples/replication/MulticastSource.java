@@ -56,14 +56,14 @@ public class MulticastSource {
         this.topology = requireNonNull(topology);
     }
 
-    public static ElaraRunner startRandom(final int source,
+    public static ElaraRunner startRandom(final int sourceId,
                                           final IdMapping sourceIds,
                                           final int nValues,
                                           final ServerTopology topology) {
-        return start(source, sourceIds, randomValueSupplier(), nValues, topology);
+        return start(sourceId, sourceIds, randomValueSupplier(), nValues, topology);
     }
 
-    public static ElaraRunner start(final int source,
+    public static ElaraRunner start(final int sourceId,
                                     final IdMapping sourceIds,
                                     final LongSupplier valueSource,
                                     final int nValues,
@@ -72,8 +72,8 @@ public class MulticastSource {
             throw new IllegalArgumentException("Sources are senders, but " + sourceIds.count() + " is not equal to " +
                     topology.senders());
         }
-        final MulticastSource ms = new MulticastSource(sourceIds.indexById(source), valueSource, topology);
-        final AgentRunner agentRunner = ms.agentRunner("source-" + source, nValues);
+        final MulticastSource ms = new MulticastSource(sourceIds.indexById(sourceId), valueSource, topology);
+        final AgentRunner agentRunner = ms.agentRunner("source-" + sourceId, nValues);
         return ElaraRunner.startOnThread(agentRunner);
     }
 

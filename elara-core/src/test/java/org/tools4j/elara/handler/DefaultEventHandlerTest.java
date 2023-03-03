@@ -73,14 +73,14 @@ public class DefaultEventHandlerTest {
     @Test
     public void eventSkippedIfCommandEventsApplied() {
         //given
-        final int source = 1;
-        final long seq = 22;
+        final int sourceId = 1;
+        final long sourceSeq = 22;
         final short index = 2;
-        final Event event = event(source, seq, index);
+        final Event event = event(sourceId, sourceSeq, index);
         final InOrder inOrder = inOrder(eventApplier, baseState, duplicateHandler);
 
         //when
-        when(baseState.eventApplied(event.id())).thenReturn(true);
+        when(baseState.eventApplied(sourceId, sourceSeq, index)).thenReturn(true);
         eventHandler.onEvent(event);
 
         //then
@@ -92,14 +92,14 @@ public class DefaultEventHandlerTest {
     @Test
     public void eventAppliedIfCommandEventsNotYetApplied() {
         //given
-        final int source = 1;
-        final long seq = 22;
+        final int sourceId = 1;
+        final long sourceSeq = 22;
         final short index = 2;
-        final Event event = event(source, seq, index);
+        final Event event = event(sourceId, sourceSeq, index);
         final InOrder inOrder = inOrder(eventApplier, baseState);
 
         //when
-        when(baseState.eventApplied(event.id())).thenReturn(false);
+        when(baseState.eventApplied(sourceId, sourceSeq, index)).thenReturn(false);
         eventHandler.onEvent(event);
 
         //then
@@ -111,15 +111,15 @@ public class DefaultEventHandlerTest {
     @Test
     public void eventApplierExceptionInvokesErrorHandler() {
         //given
-        final int source = 1;
-        final long seq = 22;
+        final int sourceId = 1;
+        final long sourceSeq = 22;
         final short index = 2;
-        final Event event = event(source, seq, index);
+        final Event event = event(sourceId, sourceSeq, index);
         final RuntimeException testException = new RuntimeException("test event applier exception");
         final InOrder inOrder = inOrder(eventApplier, exceptionHandler);
 
         //when
-        when(baseState.eventApplied(event.id())).thenReturn(false);
+        when(baseState.eventApplied(sourceId, sourceSeq, index)).thenReturn(false);
         doThrow(testException).when(eventApplier).onEvent(any());
         eventHandler.onEvent(event);
 
@@ -132,15 +132,15 @@ public class DefaultEventHandlerTest {
     @Test
     public void eventSkipExceptionInvokesErrorHandler() {
         //given
-        final int source = 1;
-        final long seq = 22;
+        final int sourceId = 1;
+        final long sourceSeq = 22;
         final short index = 2;
-        final Event event = event(source, seq, index);
+        final Event event = event(sourceId, sourceSeq, index);
         final RuntimeException testException = new RuntimeException("test skip event exception");
         final InOrder inOrder = inOrder(eventApplier, duplicateHandler, exceptionHandler);
 
         //when
-        when(baseState.eventApplied(event.id())).thenReturn(true);
+        when(baseState.eventApplied(sourceId, sourceSeq, index)).thenReturn(true);
         doThrow(testException).when(duplicateHandler).skipEventApplying(any());
         eventHandler.onEvent(event);
 
@@ -151,12 +151,12 @@ public class DefaultEventHandlerTest {
         inOrder.verifyNoMoreInteractions();
     }
 
-    private static Event event(final int source, final long seq, final short index) {
-        return event(source, seq, index, EventType.APPLICATION);
+    private static Event event(final int sourceId, final long sourceSeq, final short index) {
+        return event(sourceId, sourceSeq, index, EventType.APPLICATION);
     }
-    private static Event event(final int source, final long seq, final short index, final int type) {
+    private static Event event(final int sourceId, final long sourceSeq, final short index, final int type) {
         return new FlyweightEvent()
-                .init(new ExpandableArrayBuffer(), 0, source, seq, index, type, 123L,
+                .init(new ExpandableArrayBuffer(), 0, sourceId, sourceSeq, index, type, 123L,
                         Flags.NONE, new UnsafeBuffer(0, 0), 0, 0
                 );
     }

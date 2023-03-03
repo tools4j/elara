@@ -34,14 +34,14 @@ import static org.tools4j.elara.plugin.timer.TimerCommands.triggerTimer;
 
 public final class TimerTriggerInput implements Input {
 
-    private final int source;
+    private final int sourceId;
     private final TimeSource timeSource;
     private final TimerState timerState;
 
     private boolean timerTriggerPending;
 
-    public TimerTriggerInput(final int source, final TimeSource timeSource, final TimerState timerState) {
-        this.source = source;
+    public TimerTriggerInput(final int sourceId, final TimeSource timeSource, final TimerState timerState) {
+        this.sourceId = sourceId;
         this.timeSource = requireNonNull(timeSource);
         this.timerState = requireNonNull(timerState);
     }
@@ -57,7 +57,7 @@ public final class TimerTriggerInput implements Input {
         }
         final int next = timerState.indexOfNextDeadline();
         if (next >= 0 && timerState.deadline(next) <= timeSource.currentTime()) {
-            try (final SendingContext context = senderSupplier.senderFor(source).sendingCommand(TRIGGER_TIMER)) {
+            try (final SendingContext context = senderSupplier.senderFor(sourceId).sendingCommand(TRIGGER_TIMER)) {
                 final int length = triggerTimer(context.buffer(), 0, timerState.id(next),
                         timerState.type(next), timerState.repetition(next), timerState.timeout(next));
                 context.send(length);

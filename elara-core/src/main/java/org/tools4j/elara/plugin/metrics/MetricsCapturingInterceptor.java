@@ -121,10 +121,10 @@ public class MetricsCapturingInterceptor implements Interceptor {
         return target.anyOf(configuration.timeMetrics());
     }
 
-    private void captureInputSendingTime(final int source, final long sequence, final int type,
+    private void captureInputSendingTime(final int sourceId, final long sourceSeq, final int type,
                                          final DirectBuffer buffer, final int offset, final int length) {
         if (shouldCapture(INPUT_SENDING_TIME)) {
-            final long sendingTime = configuration.inputSendingTimeExtractor().sendingTime(source, sequence, type,
+            final long sendingTime = configuration.inputSendingTimeExtractor().sendingTime(sourceId, sourceSeq, type,
                     buffer, offset, length);
             state.time(INPUT_SENDING_TIME, sendingTime);
         }
@@ -365,13 +365,13 @@ public class MetricsCapturingInterceptor implements Interceptor {
                     if (shouldCapture(EVENT_APPLIED_FREQUENCY) || shouldCaptureAnyOf(EVENT)) {//includes APPLYING_START_TIME and APPLYING_END_TIME
                         if (eventApplier instanceof EventIdApplier) {
                             final EventIdApplier eventIdApplier = (EventIdApplier)eventApplier;
-                            return (EventIdApplier)(source, sequence, index) -> {
+                            return (EventIdApplier)(sourceId, sourceSeq, index) -> {
                                 captureTime(APPLYING_START_TIME);
-                                eventIdApplier.onEventId(source, sequence, index);
+                                eventIdApplier.onEventId(sourceId, sourceSeq, index);
                                 captureTime(APPLYING_END_TIME);
                                 captureCount(EVENT_APPLIED_FREQUENCY);
                                 if (timeMetricsWriter != null) {
-                                    timeMetricsWriter.writeMetrics(EVENT, source, sequence, (short)index);
+                                    timeMetricsWriter.writeMetrics(EVENT, sourceId, sourceSeq, (short)index);
                                 }
                             };
                         }
@@ -561,13 +561,13 @@ public class MetricsCapturingInterceptor implements Interceptor {
         return new SenderSupplier() {
             final TimedCommandSender timedCommandSender = new TimedCommandSender();
             @Override
-            public CommandSender senderFor(final int source) {
-                return timedCommandSender.init(senderSupplier.senderFor(source));
+            public CommandSender senderFor(final int sourceId) {
+                return timedCommandSender.init(senderSupplier.senderFor(sourceId));
             }
 
             @Override
-            public CommandSender senderFor(final int source, final long sequence) {
-                return timedCommandSender.init(senderSupplier.senderFor(source, sequence));
+            public CommandSender senderFor(final int sourceId, final long sourceSeq) {
+                return timedCommandSender.init(senderSupplier.senderFor(sourceId, sourceSeq));
             }
         };
     }
@@ -589,8 +589,8 @@ public class MetricsCapturingInterceptor implements Interceptor {
         }
 
         @Override
-        public int source() {
-            return sender.source();
+        public int sourceId() {
+            return sender.sourceId();
         }
 
         @Override
@@ -613,7 +613,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
         @Override
         public SendingResult sendCommand(final DirectBuffer buffer, final int offset, final int length) {
             captureTime(INPUT_POLLING_TIME);
-            captureInputSendingTime(sender.source(), sender.nextCommandSequence(), CommandType.APPLICATION, buffer, offset, length);
+            captureInputSendingTime(sender.sourceId(), sender.nextCommandSequence(), CommandType.APPLICATION, buffer, offset, length);
             final SendingResult result = sender.sendCommand(buffer, offset, length);
             captureTime(COMMAND_APPENDING_TIME);
             return result;
@@ -622,7 +622,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
         @Override
         public SendingResult sendCommand(final int type, final DirectBuffer buffer, final int offset, final int length) {
             captureTime(INPUT_POLLING_TIME);
-            captureInputSendingTime(sender.source(), sender.nextCommandSequence(), type, buffer, offset, length);
+            captureInputSendingTime(sender.sourceId(), sender.nextCommandSequence(), type, buffer, offset, length);
             final SendingResult result = sender.sendCommand(type, buffer, offset, length);
             captureTime(COMMAND_APPENDING_TIME);
             return result;
@@ -631,7 +631,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
         @Override
         public SendingResult sendCommandWithoutPayload(final int type) {
             captureTime(INPUT_POLLING_TIME);
-            captureInputSendingTime(sender.source(), sender.nextCommandSequence(), type, unwrap(empty), 0, 0);
+            captureInputSendingTime(sender.sourceId(), sender.nextCommandSequence(), type, unwrap(empty), 0, 0);
             unwrap(empty);//just in case somebody wraps our buffer
             final SendingResult result = sender.sendCommandWithoutPayload(type);
             captureTime(COMMAND_APPENDING_TIME);
@@ -661,13 +661,13 @@ public class MetricsCapturingInterceptor implements Interceptor {
         }
 
         @Override
-        public int source() {
-            return unclosedContext().source();
+        public int sourceId() {
+            return unclosedContext().sourceId();
         }
 
         @Override
-        public long sequence() {
-            return unclosedContext().sequence();
+        public long sourceSequence() {
+            return unclosedContext().sourceSequence();
         }
 
         @Override
@@ -705,7 +705,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
                 throw new IllegalArgumentException("Length cannot be negative: " + length);
             }
             final SendingContext sc = unclosedContext();
-            MetricsCapturingInterceptor.this.captureInputSendingTime(sc.source(), sc.sequence(), type, sc.buffer(), 0, length);
+            MetricsCapturingInterceptor.this.captureInputSendingTime(sc.sourceId(), sc.sourceSequence(), type, sc.buffer(), 0, length);
             return sc;
         }
     }

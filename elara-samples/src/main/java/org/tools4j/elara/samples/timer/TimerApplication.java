@@ -58,7 +58,7 @@ import static java.util.Objects.requireNonNull;
 
 public class TimerApplication {
 
-    private static final int SOURCE = 777;
+    private static final int SOURCE_ID = 777;
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss:SSS");
     public static final int TIMER_TYPE_SINGLE = 1;
     public static final int TIMER_TYPE_PERIODIC = 2;
@@ -206,7 +206,7 @@ public class TimerApplication {
         public int poll(final SenderSupplier senderSupplier) {
             final DirectBuffer command = commands.poll();
             if (command != null) {
-                senderSupplier.senderFor(SOURCE).sendCommand(command, 0, command.capacity());
+                senderSupplier.senderFor(SOURCE_ID).sendCommand(command, 0, command.capacity());
                 return 1;
             }
             return 0;

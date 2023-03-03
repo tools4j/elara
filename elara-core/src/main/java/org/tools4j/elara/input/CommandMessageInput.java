@@ -59,7 +59,7 @@ public class CommandMessageInput implements Input {
     private void onMessage(final DirectBuffer message) {
         try {
             command.init(message, 0);
-            final CommandSender commandSender = senderSupplier.senderFor(command.source(), command.sequence());
+            final CommandSender commandSender = senderSupplier.senderFor(command.sourceId(), command.sourceSequence());
             commandSender.sendCommand(command.type(), command.payload(), 0, command.payload().capacity());
         } catch (final Exception e) {
             exceptionHandler.handleException("Unhandled exception when receiving command input message", null, e);

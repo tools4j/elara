@@ -105,8 +105,8 @@ public interface MetricsFormatter extends ValueFormatter<MetricsStoreEntry> {
         return timeFormatter().formatDateTime(entry.time());
     }
     //time metrics
-    default Object source(long line, long entryId, MetricsStoreEntry entry) {return entry.source();}
-    default Object sequence(long line, long entryId, MetricsStoreEntry entry) {return entry.sequence();}
+    default Object source(long line, long entryId, MetricsStoreEntry entry) {return entry.sourceId();}
+    default Object sequence(long line, long entryId, MetricsStoreEntry entry) {return entry.sourceSequence();}
     default Object index(long line, long entryId, MetricsStoreEntry entry) {return entry.index();}
     //frequency metrics
     default Object choice(long line, long entryId, MetricsStoreEntry entry) {return entry.choice();}

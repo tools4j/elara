@@ -39,16 +39,16 @@ public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFr
 
     public FlyweightDataFrame init(final MutableDirectBuffer header,
                                    final int headerOffset,
-                                   final int source,
+                                   final int sourceId,
                                    final int type,
-                                   final long sequence,
+                                   final long sourceSeq,
                                    final long time,
                                    final byte flags,
                                    final short index,
                                    final DirectBuffer payload,
                                    final int payloadOffset,
                                    final int payloadSize) {
-        this.header.init(source, type, sequence, time, flags, index, payloadSize, header, headerOffset);
+        this.header.init(sourceId, type, sourceSeq, time, flags, index, payloadSize, header, headerOffset);
         return initPayload(payload, payloadOffset, payloadSize);
     }
 
@@ -123,8 +123,8 @@ public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFr
         dst.append("FlyweightDataFrame{");
         if (valid()) {
             dst.append("version=").append(header.version());
-            dst.append("|source=").append(header.source());
-            dst.append("|sequence=").append(header.sequence());
+            dst.append("|source-id=").append(header.sourceId());
+            dst.append("|source-seq=").append(header.sourceSequence());
             dst.append("|index=").append(header.index());
             dst.append("|flags=").append(Flags.toString(header().flags()));
             dst.append("|type=").append(header.type());

@@ -25,27 +25,27 @@ package org.tools4j.elara.send;
 
 abstract class FlyweightCommandSender implements CommandSender.Default {
 
-    private int source;
-    private long sequence;
+    private int sourceId;
+    private long sourceSeq;
 
-    FlyweightCommandSender init(final int source, final long sequence) {
-        this.source = source;
-        this.sequence = sequence;
+    FlyweightCommandSender init(final int sourceId, final long sourceSeq) {
+        this.sourceId = sourceId;
+        this.sourceSeq = sourceSeq;
         return this;
     }
 
     void incrementCommandSequence() {
-        sequence++;
+        sourceSeq++;
     }
 
     @Override
-    public int source() {
-        return source;
+    public int sourceId() {
+        return sourceId;
     }
 
     @Override
     public long nextCommandSequence() {
-        return sequence;
+        return sourceSeq;
     }
 
 }

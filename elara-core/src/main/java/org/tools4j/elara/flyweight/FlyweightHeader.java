@@ -32,8 +32,8 @@ import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.INDEX_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.SEQUENCE_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_OFFSET;
+import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_SEQUENCE_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.TIME_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.TYPE_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.VERSION_OFFSET;
@@ -42,21 +42,21 @@ public class FlyweightHeader implements Flyweight<FlyweightHeader>, Header, Fram
 
     private final MutableDirectBuffer header = new UnsafeBuffer(0, 0);
 
-    public FlyweightHeader init(final int source,
+    public FlyweightHeader init(final int sourceId,
                                 final int type,
-                                final long sequence,
+                                final long sourceSeq,
                                 final long time,
                                 final byte flags,
                                 final short index,
                                 final int payloadLSize,
                                 final MutableDirectBuffer dst,
                                 final int dstOffset) {
-        writeTo(source, type, sequence, time, flags, index, payloadLSize, dst, dstOffset);
+        writeTo(sourceId, type, sourceSeq, time, flags, index, payloadLSize, dst, dstOffset);
         return initSilent(dst, dstOffset);
     }
 
     public FlyweightHeader init(final Header header, final MutableDirectBuffer dst, final int dstOffset) {
-        return init(header.source(), header.type(), header.sequence(), header.time(), header.flags(), header.index(),
+        return init(header.sourceId(), header.type(), header.sourceSequence(), header.time(), header.flags(), header.index(),
                 header.payloadSize(), dst, dstOffset);
     }
 
@@ -90,7 +90,7 @@ public class FlyweightHeader implements Flyweight<FlyweightHeader>, Header, Fram
     }
 
     @Override
-    public int source() {
+    public int sourceId() {
         return header.getInt(SOURCE_OFFSET);
     }
 
@@ -100,8 +100,8 @@ public class FlyweightHeader implements Flyweight<FlyweightHeader>, Header, Fram
     }
 
     @Override
-    public long sequence() {
-        return header.getLong(SEQUENCE_OFFSET);
+    public long sourceSequence() {
+        return header.getLong(SOURCE_SEQUENCE_OFFSET);
     }
 
     @Override
@@ -135,18 +135,18 @@ public class FlyweightHeader implements Flyweight<FlyweightHeader>, Header, Fram
         return HEADER_LENGTH;
     }
 
-    public static int writeTo(final int source,
+    public static int writeTo(final int sourceId,
                               final int type,
-                              final long sequence,
+                              final long sourceSeq,
                               final long time,
                               final byte flags,
                               final short index,
                               final int payloadLSize,
                               final MutableDirectBuffer dst,
                               final int dstOffset) {
-        dst.putInt(dstOffset + SOURCE_OFFSET, source);
+        dst.putInt(dstOffset + SOURCE_OFFSET, sourceId);
         dst.putInt(dstOffset + TYPE_OFFSET, type);
-        dst.putLong(dstOffset + SEQUENCE_OFFSET, sequence);
+        dst.putLong(dstOffset + SOURCE_SEQUENCE_OFFSET, sourceSeq);
         dst.putLong(dstOffset + TIME_OFFSET, time);
         dst.putByte(dstOffset + VERSION_OFFSET, Version.CURRENT);
         dst.putByte(dstOffset + FLAGS_OFFSET, flags);
@@ -160,8 +160,8 @@ public class FlyweightHeader implements Flyweight<FlyweightHeader>, Header, Fram
         dst.append("FlyweightHeader{");
         if (valid()) {
             dst.append("version=").append(version());
-            dst.append("|source=").append(source());
-            dst.append("|sequence=").append(sequence());
+            dst.append("|source-id=").append(sourceId());
+            dst.append("|source-seq=").append(sourceSequence());
             dst.append("|index=").append(index());
             dst.append("|flags=").append(Flags.toString(header().flags()));
             dst.append("|type=").append(type());

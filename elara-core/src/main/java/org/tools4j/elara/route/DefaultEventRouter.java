@@ -171,7 +171,7 @@ public class DefaultEventRouter implements EventRouter.Default {
             this.context = requireNonNull(context);
             this.buffer.wrap(context.buffer(), PAYLOAD_OFFSET);
             FlyweightHeader.writeTo(
-                    command.id().source(), type, command.id().sequence(), timeSource.currentTime(),
+                    command.sourceId(), type, command.sourceSequence(), timeSource.currentTime(),
                     Flags.NONE, nextIndex, 0,
                     context.buffer(), HEADER_OFFSET
             );

@@ -31,15 +31,15 @@ package org.tools4j.elara.flyweight;
      0         1         2         3         4         5         6
      0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-     |            Source             |             Type              |
+     |          Source ID            |             Type              |
      +-------+-------+-------+-------+-------+-------+-------+-------+
-     |                           Sequence                            |
+     |                        Source Sequence                        |
      +-------+-------+-------+-------+-------+-------+-------+-------+
      |                             Time                              |
      +-------+-------+-------+-------+-------+-------+-------+-------+
      |Version| Flags |     Index     |         Payload Size          |
      +-------+-------+-------+-------+-------+-------+-------+-------+
-     |                           Payload                             |
+     |                            Payload                            |
      |                             ...                               |
 
  * </pre>
@@ -48,12 +48,12 @@ public enum FrameDescriptor {
     ;
 
     public static final int SOURCE_OFFSET = 0;
-    public static final int SOURCE_LENGTH = Integer.BYTES;
-    public static final int TYPE_OFFSET = SOURCE_OFFSET + SOURCE_LENGTH;
+    public static final int SOURCE_ID_LENGTH = Integer.BYTES;
+    public static final int TYPE_OFFSET = SOURCE_OFFSET + SOURCE_ID_LENGTH;
     public static final int TYPE_LENGTH = Integer.BYTES;
-    public static final int SEQUENCE_OFFSET = TYPE_OFFSET + TYPE_LENGTH;
+    public static final int SOURCE_SEQUENCE_OFFSET = TYPE_OFFSET + TYPE_LENGTH;
     public static final int SEQUENCE_LENGTH = Long.BYTES;
-    public static final int TIME_OFFSET = SEQUENCE_OFFSET + SEQUENCE_LENGTH;
+    public static final int TIME_OFFSET = SOURCE_SEQUENCE_OFFSET + SEQUENCE_LENGTH;
     public static final int TIME_LENGTH = Long.BYTES;
     public static final int VERSION_OFFSET = TIME_OFFSET + TIME_LENGTH;
     public static final int VERSION_LENGTH = Byte.BYTES;

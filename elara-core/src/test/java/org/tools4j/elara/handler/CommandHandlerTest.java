@@ -43,6 +43,8 @@ import org.tools4j.elara.store.MessageStore.Handler.Result;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.doThrow;
@@ -79,14 +81,14 @@ public class CommandHandlerTest {
     @Test
     public void commandSkippedIfAllEventsApplied() {
         //given
-        final int source = 1;
-        final long seq = 22;
-        final Command command = command(source, seq);
+        final int sourceId = 1;
+        final long sourceSeq = 22;
+        final Command command = command(sourceId, sourceSeq);
         final InOrder inOrder = inOrder(commandProcessor, duplicateHandler);
         Result result;
 
         //when
-        when(baseState.allEventsAppliedFor(notNull())).thenReturn(true);
+        when(baseState.allEventsAppliedFor(anyInt(), anyLong())).thenReturn(true);
         result = commandHandler.onCommand(command);
 
         //then
@@ -99,14 +101,14 @@ public class CommandHandlerTest {
     @Test
     public void commandProcessedIfNotAllEventsApplied() {
         //given
-        final int source = 1;
-        final long seq = 22;
-        final Command command = command(source, seq);
+        final int sourceId = 1;
+        final long sourceSeq = 22;
+        final Command command = command(sourceId, sourceSeq);
         final InOrder inOrder = inOrder(commandProcessor, duplicateHandler);
         Result result;
 
         //when
-        when(baseState.allEventsAppliedFor(notNull())).thenReturn(false);
+        when(baseState.allEventsAppliedFor(anyInt(), anyLong())).thenReturn(false);
         result = commandHandler.onCommand(command);
 
         //then
@@ -119,15 +121,15 @@ public class CommandHandlerTest {
     @Test
     public void commandProcessorExceptionInvokesErrorHandler() {
         //given
-        final int source = 1;
-        final long seq = 22;
-        final Command command = command(source, seq);
+        final int sourceId = 1;
+        final long sourceSeq = 22;
+        final Command command = command(sourceId, sourceSeq);
         final RuntimeException testException = new RuntimeException("test command processor exception");
         final InOrder inOrder = inOrder(commandProcessor, exceptionHandler);
         Result result;
 
         //when
-        when(baseState.allEventsAppliedFor(notNull())).thenReturn(false);
+        when(baseState.allEventsAppliedFor(anyInt(), anyLong())).thenReturn(false);
         doThrow(testException).when(commandProcessor).onCommand(any(), any());
         result = commandHandler.onCommand(command);
 
@@ -141,15 +143,15 @@ public class CommandHandlerTest {
     @Test
     public void commandSkipExceptionInvokesErrorHandler() {
         //given
-        final int source = 1;
-        final long seq = 22;
-        final Command command = command(source, seq);
+        final int sourceId = 1;
+        final long sourceSeq = 22;
+        final Command command = command(sourceId, sourceSeq);
         final RuntimeException testException = new RuntimeException("test skip command exception");
         final InOrder inOrder = inOrder(commandProcessor, duplicateHandler, exceptionHandler);
         Result result;
 
         //when
-        when(baseState.allEventsAppliedFor(notNull())).thenReturn(true);
+        when(baseState.allEventsAppliedFor(anyInt(), anyLong())).thenReturn(true);
         doThrow(testException).when(duplicateHandler).skipCommandProcessing(any());
         result = commandHandler.onCommand(command);
 
@@ -161,9 +163,9 @@ public class CommandHandlerTest {
         inOrder.verifyNoMoreInteractions();
     }
 
-    private static Command command(final int source, final long seq) {
+    private static Command command(final int sourceId, final long sourceSeq) {
         return new FlyweightCommand()
-                .init(new ExpandableArrayBuffer(), 0, source, seq, EventType.APPLICATION, 123L,
+                .init(new ExpandableArrayBuffer(), 0, sourceId, sourceSeq, EventType.APPLICATION, 123L,
                         new UnsafeBuffer(0, 0), 0, 0
                 );
     }

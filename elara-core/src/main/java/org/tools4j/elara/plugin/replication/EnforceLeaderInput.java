@@ -32,6 +32,6 @@ public interface EnforceLeaderInput {
         int leaderId();
         int term();
 
-        void enforceLeader(int source, long sequence, int leaderId);
+        void enforceLeader(int sourceId, long sourceSeq, int leaderId);
     }
 }

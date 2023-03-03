@@ -78,7 +78,7 @@ public class CommandHandlingSenderTest {
     public void shouldAppendDefaultTypeCommand() {
         //given
         final long commandTime = 9988776600001L;
-        final int source = 1;
+        final int sourceId = 1;
         final long seq = 22;
         final String text = "Hello world!!!";
         final int offset = 77;
@@ -87,18 +87,18 @@ public class CommandHandlingSenderTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        senderSupplier.senderFor(source, seq).sendCommand(message, offset, length);
+        senderSupplier.senderFor(sourceId, seq).sendCommand(message, offset, length);
 
         //then
         assertEquals(1, commandStore.size(), "commandStore.size");
-        assertCommand(source, seq, commandTime, EventType.APPLICATION, text, commandStore.get(0));
+        assertCommand(sourceId, seq, commandTime, EventType.APPLICATION, text, commandStore.get(0));
     }
 
     @Test
     public void shouldAppendCommandWithType() {
         //given
         final long commandTime = 9988776600001L;
-        final int source = 1;
+        final int sourceId = 1;
         final long seq = 22;
         final int type = 12345;
         final String text = "Hello world!!!";
@@ -108,17 +108,17 @@ public class CommandHandlingSenderTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        senderSupplier.senderFor(source, seq).sendCommand(type, message, offset, length);
+        senderSupplier.senderFor(sourceId, seq).sendCommand(type, message, offset, length);
 
         //then
-        assertCommand(source, seq, commandTime, type, text, commandStore.get(0));
+        assertCommand(sourceId, seq, commandTime, type, text, commandStore.get(0));
     }
 
     @Test
     public void shouldAppendCommandWithAppendingContext() {
         //given
         final long commandTime = 9988776600001L;
-        final int source = 1;
+        final int sourceId = 1;
         final long seq = 22;
         final int type = 12345;
         final String text = "Hello world!!!";
@@ -128,37 +128,37 @@ public class CommandHandlingSenderTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        senderSupplier.senderFor(source, seq).sendCommand(type, message, offset, length);
+        senderSupplier.senderFor(sourceId, seq).sendCommand(type, message, offset, length);
 
         //then
-        assertCommand(source, seq, commandTime, type, text, commandStore.get(0));
+        assertCommand(sourceId, seq, commandTime, type, text, commandStore.get(0));
     }
 
     @Test
     public void shouldAppendCommandWithoutPayload() {
         //given
         final long commandTime = 9988776600001L;
-        final int source = 1;
+        final int sourceId = 1;
         final long seq = 22;
         final int type = 12345;
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        senderSupplier.senderFor(source, seq).sendCommandWithoutPayload(type);
+        senderSupplier.senderFor(sourceId, seq).sendCommandWithoutPayload(type);
 
         //then
-        assertCommand(source, seq, commandTime, type, null, commandStore.get(0));
+        assertCommand(sourceId, seq, commandTime, type, null, commandStore.get(0));
     }
 
-    private void assertCommand(final int source,
+    private void assertCommand(final int sourceId,
                                final long seq,
                                final long commandTime,
                                final int type,
                                final String text,
                                final Command command) {
         final int payloadSize = text == null ? 0 : Integer.BYTES + text.length();
-        assertEquals(source, command.id().source(), "command.id.source");
-        assertEquals(seq, command.id().sequence(), "command.id.sequence");
+        assertEquals(sourceId, command.sourceId(), "command.source-id");
+        assertEquals(seq, command.sourceSequence(), "command.source-sequence");
         assertEquals(commandTime, command.time(), "command.time");
         assertFalse(command.isAdmin(), "command.isAdmin");
         assertTrue(command.isApplication(), "command.isApplication");

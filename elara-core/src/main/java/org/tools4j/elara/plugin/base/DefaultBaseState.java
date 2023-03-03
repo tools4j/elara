@@ -26,48 +26,47 @@ package org.tools4j.elara.plugin.base;
 import org.agrona.collections.Int2ObjectHashMap;
 import org.tools4j.elara.event.Event;
 
-public class DefaultBaseState implements BaseState.Default, BaseState.Mutable {
+public class DefaultBaseState implements BaseState.Mutable {
 
     private final Int2ObjectHashMap<AppliedEventState> sourceToAppliedEventState = new Int2ObjectHashMap<>();
 
     private static final class AppliedEventState {
-        long sequence;
+        long sourceSeq;
         int index;
-        void update(final long sequence, final int index) {
-            this.sequence = sequence;
+        void update(final long sourceSeq, final int index) {
+            this.sourceSeq = sourceSeq;
             this.index = index;
         }
     }
 
     @Override
-    public boolean allEventsAppliedFor(final int source, final long sequence) {
-        final AppliedEventState appliedEventState = sourceToAppliedEventState.get(source);
+    public boolean allEventsAppliedFor(final int sourceId, final long sourceSeq) {
+        final AppliedEventState appliedEventState = sourceToAppliedEventState.get(sourceId);
         if (appliedEventState != null) {
-            return sequence < appliedEventState.sequence;
+            return sourceSeq < appliedEventState.sourceSeq;
         }
         return false;
     }
 
     @Override
-    public boolean eventApplied(final int source, final long sequence, final int index) {
-        final AppliedEventState appliedEventState = sourceToAppliedEventState.get(source);
+    public boolean eventApplied(final int sourceId, final long sourceSeq, final int index) {
+        final AppliedEventState appliedEventState = sourceToAppliedEventState.get(sourceId);
         if (appliedEventState != null) {
-            return sequence < appliedEventState.sequence ||
-                    sequence == appliedEventState.sequence && index <= appliedEventState.index;
+            return sourceSeq < appliedEventState.sourceSeq ||
+                    sourceSeq == appliedEventState.sourceSeq && index <= appliedEventState.index;
         }
         return false;
-    }
-
-    @Override
-    public Mutable applyEvent(final int source, final long sequence, final int index) {
-        sourceToAppliedEventState.computeIfAbsent(source, k -> new AppliedEventState())
-                .update(sequence, index);
-        return this;
     }
 
     @Override
     public Mutable applyEvent(final Event event) {
-        final Event.Id id = event.id();
-        return applyEvent(id.source(), id.sequence(), id.index());
+        return applyEvent(event.sourceId(), event.sourceSequence(), event.index());
+    }
+
+    @Override
+    public Mutable applyEvent(final int sourceId, final long sourceSeq, final int index) {
+        sourceToAppliedEventState.computeIfAbsent(sourceId, k -> new AppliedEventState())
+                .update(sourceSeq, index);
+        return this;
     }
 }

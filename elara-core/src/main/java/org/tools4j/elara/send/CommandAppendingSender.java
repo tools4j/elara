@@ -38,8 +38,8 @@ import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.SEQUENCE_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_OFFSET;
+import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_SEQUENCE_OFFSET;
 
 /**
  * A command sender that appends the command to a command store.
@@ -57,7 +57,7 @@ public final class CommandAppendingSender extends FlyweightCommandSender {
 
     @Override
     public CommandSender.SendingContext sendingCommand(final int type) {
-        return sendingContext.init(source(), nextCommandSequence(), type, commandStoreAppender.appending());
+        return sendingContext.init(sourceId(), nextCommandSequence(), type, commandStoreAppender.appending());
     }
 
     private final class SendingContext implements CommandSender.SendingContext {
@@ -65,7 +65,7 @@ public final class CommandAppendingSender extends FlyweightCommandSender {
         final ExpandableDirectBuffer buffer = new ExpandableDirectBuffer();
         AppendingContext context;
 
-        SendingContext init(final int source, final long sequence, final int type, final AppendingContext context) {
+        SendingContext init(final int sourceId, final long sequence, final int type, final AppendingContext context) {
             if (this.context != null) {
                 abort();
                 throw new IllegalStateException("Sending context not closed");
@@ -73,7 +73,7 @@ public final class CommandAppendingSender extends FlyweightCommandSender {
             this.context = requireNonNull(context);
             this.buffer.wrap(context.buffer(), PAYLOAD_OFFSET);
             FlyweightHeader.writeTo(
-                    source, type, sequence, timeSource.currentTime(), Flags.NONE, FlyweightCommand.INDEX, 0,
+                    sourceId, type, sequence, timeSource.currentTime(), Flags.NONE, FlyweightCommand.INDEX, 0,
                     context.buffer(), HEADER_OFFSET
             );
             return this;
@@ -87,13 +87,13 @@ public final class CommandAppendingSender extends FlyweightCommandSender {
         }
 
         @Override
-        public int source() {
+        public int sourceId() {
             return unclosedContext().buffer().getInt(SOURCE_OFFSET);
         }
 
         @Override
-        public long sequence() {
-            return unclosedContext().buffer().getLong(SEQUENCE_OFFSET);
+        public long sourceSequence() {
+            return unclosedContext().buffer().getLong(SOURCE_SEQUENCE_OFFSET);
         }
 
         @Override

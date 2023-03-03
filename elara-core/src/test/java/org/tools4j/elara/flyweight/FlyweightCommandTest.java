@@ -52,7 +52,7 @@ public class FlyweightCommandTest {
         assertFalse(command.valid(), "command.valid");
 
         try {
-            command.source();
+            command.sourceId();
         } catch (final IndexOutOfBoundsException e) {
             //expected
         }
@@ -73,10 +73,10 @@ public class FlyweightCommandTest {
         final FlyweightCommand command = new FlyweightCommand().init(buffer, 0);
 
         //when + then
-        assertEquals(0, command.id().source(), "id.source");
-        assertEquals(0, command.id().sequence(), "id.sequence");
-        assertEquals(0, command.type(), "id.type");
-        assertEquals(0, command.time(), "id.time");
+        assertEquals(0, command.sourceId(), "sourceId");
+        assertEquals(0, command.sourceSequence(), "sourceSequence");
+        assertEquals(0, command.type(), "type");
+        assertEquals(0, command.time(), "time");
         assertNotNull(command.payload(), "payload");
         assertEquals(0, command.payload().capacity(), "payload.capacity");
         assertTrue(command.valid(), "command.valid");
@@ -92,7 +92,7 @@ public class FlyweightCommandTest {
 
         //when
         command.init(new ExpandableArrayBuffer(), headerOffset,
-                values.source, values.seq, values.type, values.time, values.payload, payloadOffset, values.payloadLength()
+                values.sourceId, values.sourceSeq, values.type, values.time, values.payload, payloadOffset, values.payloadLength()
         );
 
         //then
@@ -118,7 +118,7 @@ public class FlyweightCommandTest {
         //given
         final Values values = new Values(0, "Hello world");
         final FlyweightCommand command = new FlyweightCommand().init(
-                new ExpandableArrayBuffer(), 0, values.source, values.seq,
+                new ExpandableArrayBuffer(), 0, values.sourceId, values.sourceSeq,
                 values.type, values.time, values.payload, 0, values.payloadLength()
         );
 
@@ -142,7 +142,7 @@ public class FlyweightCommandTest {
         //given
         final Values values = new Values(0, "Hello world");
         final FlyweightCommand command = new FlyweightCommand().init(
-                new ExpandableArrayBuffer(), 0, values.source, values.seq,
+                new ExpandableArrayBuffer(), 0, values.sourceId, values.sourceSeq,
                 values.type, values.time, values.payload, 0, values.payloadLength()
         );
 
@@ -171,7 +171,7 @@ public class FlyweightCommandTest {
         final Values values = new Values(payloadOffset, "Hello world");
         final FlyweightCommand command = new FlyweightCommand();
         command.init(new ExpandableArrayBuffer(), headerOffset,
-                values.source, values.seq, values.type, values.time, values.payload, payloadOffset, values.payloadLength()
+                values.sourceId, values.sourceSeq, values.type, values.time, values.payload, payloadOffset, values.payloadLength()
         );
 
         //when
@@ -186,8 +186,8 @@ public class FlyweightCommandTest {
     }
 
     private static class Values {
-        final int source = 77;
-        final long seq = 998877;
+        final int sourceId = 77;
+        final long sourceSeq = 998877;
         final int type = 123;
         final long time = 998877665544L;
         final String msg;
@@ -203,8 +203,8 @@ public class FlyweightCommandTest {
         }
 
         void assertCommand(final Command command) {
-            assertEquals(source, command.id().source(), "id.source");
-            assertEquals(seq, command.id().sequence(), "id.sequence");
+            assertEquals(sourceId, command.sourceId(), "sourceId");
+            assertEquals(sourceSeq, command.sourceSequence(), "sourceSequence");
             assertEquals(type, command.type(), "type");
             assertEquals(time, command.time(), "time");
             assertNotNull(command.payload(), "payload");

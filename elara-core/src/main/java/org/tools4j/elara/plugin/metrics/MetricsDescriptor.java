@@ -34,9 +34,9 @@ import org.agrona.DirectBuffer;
      0         1         2         3         4         5         6
      0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-     |Version| Flags |     Index     |            Source             |
+     |Version| Flags |     Index     |           Source ID           |
      +-------+-------+-------+-------+-------+-------+-------+-------+
-     |                           Sequence                            |
+     |                       Source Sequence                         |
      +-------+-------+-------+-------+-------+-------+-------+-------+
      |                             Time                              |
      +-------+-------+-------+-------+-------+-------+-------+-------+
@@ -75,11 +75,11 @@ public enum MetricsDescriptor {
     public static final int FLAGS_LENGTH = Byte.BYTES;
     public static final int INDEX_OFFSET = FLAGS_OFFSET + FLAGS_LENGTH;
     public static final int INDEX_LENGTH = Short.BYTES;
-    public static final int SOURCE_OFFSET = INDEX_OFFSET + INDEX_LENGTH;
+    public static final int SOURCE_ID_OFFSET = INDEX_OFFSET + INDEX_LENGTH;
     public static final int SOURCE_LENGTH = Integer.BYTES;
-    public static final int SEQUENCE_OFFSET = SOURCE_OFFSET + SOURCE_LENGTH;
+    public static final int SOURCE_SEQUENCE_OFFSET = SOURCE_ID_OFFSET + SOURCE_LENGTH;
     public static final int SEQUENCE_LENGTH = Long.BYTES;
-    public static final int TIME_OFFSET = SEQUENCE_OFFSET + SEQUENCE_LENGTH;
+    public static final int TIME_OFFSET = SOURCE_SEQUENCE_OFFSET + SEQUENCE_LENGTH;
     public static final int TIME_LENGTH = Long.BYTES;
 
     public static final int CHOICE_OFFSET = FLAGS_OFFSET + FLAGS_LENGTH;
@@ -114,12 +114,12 @@ public enum MetricsDescriptor {
         return buffer.getShort(INDEX_OFFSET);
     }
 
-    public static int source(final DirectBuffer buffer) {
-        return buffer.getInt(SOURCE_OFFSET);
+    public static int sourceId(final DirectBuffer buffer) {
+        return buffer.getInt(SOURCE_ID_OFFSET);
     }
 
-    public static long sequence(final DirectBuffer buffer) {
-        return buffer.getLong(SEQUENCE_OFFSET);
+    public static long sourceSequence(final DirectBuffer buffer) {
+        return buffer.getLong(SOURCE_SEQUENCE_OFFSET);
     }
 
     public static long time(final DirectBuffer buffer) {

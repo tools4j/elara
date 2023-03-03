@@ -49,7 +49,7 @@ import static java.util.Objects.requireNonNull;
 
 public class BankApplication implements AllInOneApp, Output {
 
-    private static final int SOURCE = 666;
+    private static final int SOURCE_ID = 666;
     private final Bank.Mutable bank = new Bank.Default();
     private final Teller teller = new Teller(bank);
     private final Accountant accountant = new Accountant(bank);
@@ -143,7 +143,7 @@ public class BankApplication implements AllInOneApp, Output {
             if (cmd != null) {
                 final int type = cmd.type().value;
                 final DirectBuffer encoded = cmd.encode();
-                senderSupplier.senderFor(SOURCE).sendCommand(type, encoded, 0, encoded.capacity());
+                senderSupplier.senderFor(SOURCE_ID).sendCommand(type, encoded, 0, encoded.capacity());
                 return 1;
             }
             return 0;

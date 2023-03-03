@@ -47,12 +47,12 @@ public class DefaultSenderSupplier implements SenderSupplier {
     }
 
     @Override
-    public CommandSender senderFor(final int source) {
-        return senderFor(source, sequenceBySource.getAndIncrement(source));
+    public CommandSender senderFor(final int sourceId) {
+        return senderFor(sourceId, sequenceBySource.getAndIncrement(sourceId));
     }
 
     @Override
-    public CommandSender senderFor(final int source, final long sequence) {
-        return commandSender.init(source, sequence);
+    public CommandSender senderFor(final int sourceId, final long sourceSeq) {
+        return commandSender.init(sourceId, sourceSeq);
     }
 }

@@ -64,7 +64,7 @@ public class DefaultCommandHandler implements CommandHandler {
     }
 
     protected boolean allEventsAppliedFor(final Command command) {
-        return baseState.allEventsAppliedFor(command.id());
+        return baseState.allEventsAppliedFor(command.sourceId(), command.sourceSequence());
     }
 
     protected Result processCommand(final Command command) {

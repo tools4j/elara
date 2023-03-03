@@ -113,7 +113,7 @@ public class HashPassthroughApplication implements PassthroughApp {
                 .frequencyMetricsStore(new ChronicleMessageStore(fq));
         if (timeMetrics) metricsConfig
                 .timeMetrics(INPUT_SENDING_TIME, INPUT_POLLING_TIME, PROCESSING_START_TIME, PROCESSING_END_TIME, ROUTING_START_TIME, APPLYING_START_TIME, APPLYING_END_TIME, ROUTING_END_TIME, OUTPUT_START_TIME, OUTPUT_END_TIME)
-                .inputSendingTimeExtractor((source, sequence, type, buffer, offset, length) -> pseudoNanoClock.currentTime() - 100_000)//for testing only
+                .inputSendingTimeExtractor((sourceId, sequence, type, buffer, offset, length) -> pseudoNanoClock.currentTime() - 100_000)//for testing only
                 .timeMetricsStore(new ChronicleMessageStore(tq));
         return new HashPassthroughApplication().launch(context -> context
                 .input(HashApplication.input(input))

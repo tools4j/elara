@@ -27,5 +27,5 @@ import org.agrona.DirectBuffer;
 
 @FunctionalInterface
 public interface InputSendingTimeExtractor {
-    long sendingTime(int source, long sequence, int type, DirectBuffer buffer, int offset, int length);
+    long sendingTime(int sourceId, long sourceSeq, int type, DirectBuffer buffer, int offset, int length);
 }

@@ -31,11 +31,11 @@ import org.tools4j.elara.logging.Printable;
  */
 public interface Header extends Writable, Printable {
 
-    int source();
+    int sourceId();
 
     int type();
 
-    long sequence();
+    long sourceSequence();
 
     long time();
 

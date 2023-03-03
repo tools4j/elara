@@ -24,6 +24,6 @@
 package org.tools4j.elara.send;
 
 public interface SenderSupplier {
-    CommandSender senderFor(int source);
-    CommandSender senderFor(int source, long sequence);
+    CommandSender senderFor(int sourceId);
+    CommandSender senderFor(int sourceId, long sourceSeq);
 }

@@ -51,9 +51,9 @@ public interface MetricsStoreEntry {
 
     short index();
 
-    int source();
+    int sourceId();
 
-    long sequence();
+    long sourceSequence();
 
     long time(int index);
 

@@ -32,16 +32,16 @@ import static org.tools4j.elara.samples.network.Buffer.CONSUMED_NOTHING;
 
 public class BufferInput implements Input {
 
-    private final int source;
+    private final int sourceId;
     private final Buffer buffer;
 
-    public BufferInput(final int source, final Buffer buffer) {
-        this.source = source;
+    public BufferInput(final int sourceId, final Buffer buffer) {
+        this.sourceId = sourceId;
         this.buffer = requireNonNull(buffer);
     }
 
-    public int source() {
-        return source;
+    public int sourceId() {
+        return sourceId;
     }
 
     public Buffer buffer() {
@@ -50,7 +50,7 @@ public class BufferInput implements Input {
 
     @Override
     public int poll(final SenderSupplier senderSupplier) {
-        try (final SendingContext context = senderSupplier.senderFor(source).sendingCommand()) {
+        try (final SendingContext context = senderSupplier.senderFor(sourceId).sendingCommand()) {
             final int consumed = buffer.consume(context.buffer(), 0);
             if (consumed == CONSUMED_NOTHING) {
                 context.abort();

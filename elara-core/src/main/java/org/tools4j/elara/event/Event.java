@@ -25,17 +25,14 @@ package org.tools4j.elara.event;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.Writable;
 import org.tools4j.elara.logging.Printable;
 
 public interface Event extends Writable, Printable {
-    interface Id {
-        Command.Id commandId();
-        int source();
-        long sequence();
-        int index();
-    }
+    int sourceId();
+    long sourceSequence();
+    long eventSequence();
+    int index();
 
     interface Flags {
         /** @return true if this is the last event of the command and all events are hereby committed */
@@ -49,8 +46,6 @@ public interface Event extends Writable, Printable {
         /** @return flags as raw bits value */
         byte value();
     }
-
-    Id id();
 
     int type();
 

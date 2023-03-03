@@ -25,18 +25,17 @@ package org.tools4j.elara.flyweight;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 
-public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.Id, Command.Id, DataFrame {
+public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, DataFrame {
 
     private final FlyweightDataFrame frame = new FlyweightDataFrame();
     private final Flags flags = new FlyweightFlags();
 
     public FlyweightEvent init(final MutableDirectBuffer header,
                                final int headerOffset,
-                               final int source,
-                               final long sequence,
+                               final int sourceId,
+                               final long sourceSeq,
                                final short index,
                                final int type,
                                final long time,
@@ -44,7 +43,7 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.I
                                final DirectBuffer payload,
                                final int payloadOffset,
                                final int payloadSize) {
-        frame.init(header, headerOffset, source, type, sequence, time, flags, index, payload, payloadOffset, payloadSize);
+        frame.init(header, headerOffset, sourceId, type, sourceSeq, time, flags, index, payload, payloadOffset, payloadSize);
         return this;
     }
 
@@ -87,28 +86,23 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.I
     }
 
     @Override
-    public Id id() {
-        return this;
-    }
-
-    @Override
-    public Command.Id commandId() {
-        return this;
-    }
-
-    @Override
     public Flags flags() {
         return flags;
     }
 
     @Override
-    public int source() {
-        return header().source();
+    public int sourceId() {
+        return header().sourceId();
     }
 
     @Override
-    public long sequence() {
-        return header().sequence();
+    public long sourceSequence() {
+        return header().sourceSequence();
+    }
+
+    @Override
+    public long eventSequence() {
+        return 0;//FIXME
     }
 
     @Override
@@ -142,8 +136,8 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, Event.I
         if (valid()) {
             final Header header = header();
             dst.append("version=").append(header.version());
-            dst.append("|source=").append(header.source());
-            dst.append("|sequence=").append(header.sequence());
+            dst.append("|source-id=").append(header.sourceId());
+            dst.append("|source-seq=").append(header.sourceSequence());
             dst.append("|index=").append(header.index());
             dst.append("|flags=").append(org.tools4j.elara.flyweight.Flags.toString(header().flags()));
             dst.append("|type=").append(header.type());

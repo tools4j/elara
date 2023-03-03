@@ -156,14 +156,14 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
         return input(DEFAULT_SOURCE, input);
     }
 
-    public static Input input(final int source, final AtomicLong input) {
+    public static Input input(final int sourceId, final AtomicLong input) {
         requireNonNull(input);
         final AtomicLong seqNo = new AtomicLong();
         return senderSupplier -> {
             final long value = input.getAndSet(NULL_VALUE);
             if (value != NULL_VALUE) {
                 final long seq = seqNo.incrementAndGet();
-                try (final SendingContext context = senderSupplier.senderFor(source, seq).sendingCommand()) {
+                try (final SendingContext context = senderSupplier.senderFor(sourceId, seq).sendingCommand()) {
                     for (int pos = 0; pos < MESSAGE_LENGTH; pos += Long.BYTES) {
                         context.buffer().putLong(pos, value);
                     }
@@ -235,7 +235,7 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
                                         .timeMetrics(INPUT_SENDING_TIME, INPUT_POLLING_TIME, PROCESSING_START_TIME, PROCESSING_END_TIME, ROUTING_START_TIME, APPLYING_START_TIME, APPLYING_END_TIME, ROUTING_END_TIME, OUTPUT_START_TIME, OUTPUT_END_TIME)
                                         .frequencyMetrics(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, EVENT_APPLIED_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY)
                                         .frequencyMetricInterval(100_000)//micros
-                                        .inputSendingTimeExtractor((source, sequence, type, buffer, offset, length) -> pseudoNanoClock.currentTime() - 100_000)//for testing only
+                                        .inputSendingTimeExtractor((sourceId, sequence, type, buffer, offset, length) -> pseudoNanoClock.currentTime() - 100_000)//for testing only
 //                    .metricsStore(new ChronicleMessageStore(mq))
                                         .timeMetricsStore(new ChronicleMessageStore(tq))
                                         .frequencyMetricsStore(new ChronicleMessageStore(fq))

@@ -78,7 +78,7 @@ public class EventStoreRepairer {
                 throw new RuntimeException("Event index " + nextIndex + " exceeds max allowed " + MAX_EVENT_INDEX);
             }
             try (final AppendingContext context = eventStore.appender().appending()) {
-                BaseEvents.rollback(event, context.buffer(), 0, event.source(), event.sequence(),
+                BaseEvents.rollback(event, context.buffer(), 0, event.sourceId(), event.sourceSequence(),
                         (short)nextIndex, event.time());
                 context.commit(HEADER_LENGTH);
             }

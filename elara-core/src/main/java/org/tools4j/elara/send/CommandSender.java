@@ -98,10 +98,10 @@ public interface CommandSender {
     SendingResult sendCommandWithoutPayload(int type);
 
     /**
-     * Returns the source associated with the node sending commands with this command sender.
-     * @return the source used for commands sent by this command sender
+     * Returns the source ID associated with the node sending commands with this command sender.
+     * @return the source ID used for commands sent by this command sender
      */
-    int source();
+    int sourceId();
 
     /**
      * Returns the sequence of the next command to be sent.  If sending has started via {@link #sendingCommand()}
@@ -117,10 +117,10 @@ public interface CommandSender {
      * {@code CommandSender} {@link CommandSender documentation} for usage example.
      */
     interface SendingContext extends AutoCloseable {
-        /** @return source of the command currently being encoded and about to be sent */
-        int source();
+        /** @return source ID of the command currently being encoded and about to be sent */
+        int sourceId();
         /** @return sequence of the command currently being encoded and about to be sent */
-        long sequence();
+        long sourceSequence();
 
         /**
          * Returns the buffer to encode the command directly into the sending transport buffer.
