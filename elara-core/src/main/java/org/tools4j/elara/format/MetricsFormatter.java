@@ -199,11 +199,11 @@ public interface MetricsFormatter extends ValueFormatter<MetricsStoreEntry> {
     }
 
     default ItemFormatter<MetricValue> metricNameFormatter() {
-        return MetricValueFormatter.DEFAULT;
+        return MetricValueFormatter.DEFAULT.withTimeFormatter(timeFormatter());
     }
 
     default ItemFormatter<MetricValue> metricValueFormatter() {
-        return MetricValueFormatter.DEFAULT;
+        return MetricValueFormatter.DEFAULT.withTimeFormatter(timeFormatter());
     }
 
     default Iterable<MetricValue> metricValues(final long line, final long entryId, final MetricsStoreEntry entry) {

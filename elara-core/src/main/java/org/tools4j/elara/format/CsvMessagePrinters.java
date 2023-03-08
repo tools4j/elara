@@ -24,9 +24,7 @@
 package org.tools4j.elara.format;
 
 import org.tools4j.elara.flyweight.DataFrame;
-import org.tools4j.elara.format.HistogramFormatter.BucketValueFormatter;
 import org.tools4j.elara.format.HistogramFormatter.HistogramValues;
-import org.tools4j.elara.format.HistogramFormatter.HistogramValuesFormatter;
 import org.tools4j.elara.plugin.metrics.MetricsStoreEntry;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 
@@ -85,23 +83,21 @@ public class CsvMessagePrinters implements MessagePrinters {
     protected ValueFormatter<MetricsStoreEntry> metricsFormatter(final MetricsFormatter baseFormatter) {
         return baseFormatter
                 .then(iterationToken("{metrics-names}", METRICS_NAME_FORMAT, DELIMITER,
-                        baseFormatter.metricNameFormatter(), baseFormatter::metricValues))
+                        baseFormatter.metricNameFormatter(), baseFormatter::metricValues, baseFormatter))
                 .then(iterationToken("{metrics-values}", METRICS_VALUE_FORMAT, DELIMITER,
-                        baseFormatter.metricValueFormatter(), baseFormatter::metricValues));
+                        baseFormatter.metricValueFormatter(), baseFormatter::metricValues, baseFormatter));
     }
 
     protected ValueFormatter<MetricsStoreEntry> histogramFormatter(final HistogramFormatter baseFormatter) {
-        final HistogramValuesFormatter histogramValuesFormatter = baseFormatter.histogramValuesFormatter();
-        final BucketValueFormatter bucketValueFormatter = histogramValuesFormatter.bucketValueFormatter();
         return metricsFormatter(baseFormatter)
-                .then(iterationToken("{bucket-names}", HISTOGRAM_BUCKET_NAME, DELIMITER, bucketValueFormatter,
+                .then(iterationToken("{bucket-names}", HISTOGRAM_BUCKET_NAME, DELIMITER, baseFormatter.bucketValueFormatter(),
                         (line, entryId, metric) -> {
                             final HistogramValues histogram = baseFormatter.histogramValues(line, entryId, metric).iterator().next();
-                            return histogramValuesFormatter.bucketValues(line, entryId, histogram);
-                        }))
+                            return baseFormatter.bucketValues(line, entryId, histogram);
+                        }, baseFormatter))
                 .then(iterationToken("{histogram-values}", HISTOGRAM_VALUE_FORMAT, "",
                         baseFormatter.histogramValuesFormatter(HISTOGRAM_BUCKET_VALUE, DELIMITER),
-                        baseFormatter::histogramValues));
+                        baseFormatter::histogramValues, baseFormatter));
 
     }
 

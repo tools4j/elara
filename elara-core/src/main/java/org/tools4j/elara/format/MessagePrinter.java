@@ -73,25 +73,21 @@ public interface MessagePrinter<M> {
         return new CompositeMessagePrinter<>(printerSelector, printers);
     }
 
-    static <T> IteratorMessagePrinter<T> iterate(final String iteratedPattern,
-                                                 final String itemSeparator,
-                                                 final ItemFormatter<T> itemFormatter) {
-        return new IteratorMessagePrinter<>(iteratedPattern, itemSeparator, itemFormatter);
-    }
-
     static <M, T> MessagePrinter<M> iterate(final String iteratedPattern,
                                             final String itemSeparator,
                                             final ItemFormatter<? super T> itemFormatter,
-                                            final ValueProvider<? super M, ? extends T> valueProvider) {
-        return iterate(iteratedPattern, itemSeparator, itemFormatter).map(valueProvider);
+                                            final ValueProvider<? super M, ? extends T> valueProvider,
+                                            final ValueFormatter<? super M> baseFormatter) {
+        return new IteratorMessagePrinter<>(iteratedPattern, itemSeparator, itemFormatter, valueProvider, baseFormatter);
     }
 
     static <M, T> ValueFormatter<M> iterationToken(final String placeholderToken,
                                                    final String iteratedPattern,
                                                    final String itemSeparator,
                                                    final ItemFormatter<? super T> itemFormatter,
-                                                   final ValueProvider<? super M, ? extends T> valueProvider) {
-        final MessagePrinter<M> printer = iterate(iteratedPattern, itemSeparator, itemFormatter, valueProvider);
+                                                   final ValueProvider<? super M, ? extends T> valueProvider,
+                                                   final ValueFormatter<? super M> baseFormatter) {
+        final MessagePrinter<M> printer = iterate(iteratedPattern, itemSeparator, itemFormatter, valueProvider, baseFormatter);
         return printer.asValueFormatterFor(placeholderToken);
     }
 }

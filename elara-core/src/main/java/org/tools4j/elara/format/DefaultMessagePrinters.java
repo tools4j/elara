@@ -109,18 +109,18 @@ public class DefaultMessagePrinters implements MessagePrinters {
                                                                  final String metricsValueFormat) {
         return baseFormatter
                 .then(iterationToken("{metrics-names}", METRICS_NAME_FORMAT, ITEM_SEPARATOR,
-                        baseFormatter.metricNameFormatter(), baseFormatter::metricValues))
+                        baseFormatter.metricNameFormatter(), baseFormatter::metricValues, baseFormatter))
                 .then(iterationToken("{metrics-values}", metricsValueFormat, ITEM_SEPARATOR,
-                        baseFormatter.metricValueFormatter(), baseFormatter::metricValues));
+                        baseFormatter.metricValueFormatter(), baseFormatter::metricValues, baseFormatter));
     }
 
     protected ValueFormatter<MetricsStoreEntry> histogramFormatter(final HistogramFormatter baseFormatter) {
         return metricsFormatter(baseFormatter, LATENCY_VALUE_FORMAT)
                 .then(iterationToken("{metrics-names}", METRICS_NAME_FORMAT, ITEM_SEPARATOR,
-                        baseFormatter.metricNameFormatter(), baseFormatter::metricValues))
+                        baseFormatter.metricNameFormatter(), baseFormatter::metricValues, baseFormatter))
                 .then(iterationToken("{histogram-values}", HISTOGRAM_VALUE_FORMAT, "",
                         baseFormatter.histogramValuesFormatter(HISTOGRAM_BUCKET_VALUE, ITEM_SEPARATOR),
-                        baseFormatter::histogramValues));
+                        baseFormatter::histogramValues, baseFormatter));
 
     }
 

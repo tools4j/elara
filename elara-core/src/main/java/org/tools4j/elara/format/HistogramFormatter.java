@@ -127,16 +127,22 @@ public interface HistogramFormatter extends LatencyFormatter {
     }
 
     default HistogramValuesFormatter histogramValuesFormatter() {
-        return HistogramValuesFormatter.DEFAULT;
+        return HistogramValuesFormatter.DEFAULT.withParentFormatter(this);
     }
+
     default ItemFormatter<HistogramValues> histogramValuesFormatter(final String bucketValuesPattern,
                                                                     final String bucketValueSeparator) {
         final HistogramValuesFormatter formatter = histogramValuesFormatter();
         return formatter
                 .withParentFormatter(this)
                 .then(iterationToken(HistogramValuesFormatter.BUCKET_VALUES, bucketValuesPattern, bucketValueSeparator,
-                        formatter.bucketValueFormatter(), formatter::bucketValues));
+                        bucketValueFormatter(), this::bucketValues, formatter));
     }
+
+    default BucketValueFormatter bucketValueFormatter() {
+        return BucketValueFormatter.DEFAULT.withRootFormatter(this);
+    }
+
 
     default Iterable<HistogramValues> histogramValues(long line, long entryId, MetricsStoreEntry entry) {
         final EnumSet<LatencyMetric> set = metricsSet(line, entryId, entry);
@@ -152,6 +158,26 @@ public interface HistogramFormatter extends LatencyFormatter {
         return histogram;
     }
 
+    default Iterable<BucketValue> bucketValues(final long line, final long entryId, final Item<? extends HistogramValues> histogramItem) {
+        final HistogramValues histogram = histogramItem.itemValue();
+        final Iterable<BucketValue> bucketValues = bucketValues(line, entryId, histogram);
+        //NOTE: we reset the histograms after accessing the bucket values via item, which is not the case when we print only names
+        //TODO: find a cleaner way to reset histograms
+        histogram.reset(histogram.entry().time());
+        return bucketValues;
+    }
+
+    default Iterable<BucketValue> bucketValues(final long line, final long entryId, final HistogramValues histogram) {
+        final BucketDescriptor[] bucketDescriptors = bucketDescriptors(line, entryId, histogram);
+        return Arrays.stream(bucketDescriptors).map(bucketDesc ->
+                new DefaultBucketValue(histogram, bucketDesc, histogram.valueAtPercentile(bucketDesc.percentile()))
+        ).collect(Collectors.toList());
+    }
+
+    default BucketDescriptor[] bucketDescriptors(long line, long entryId, HistogramValues histogram) {
+        return DefaultHistogramBucket.values();
+    }
+
     interface HistogramValuesFormatter extends ItemFormatter<HistogramValues> {
         HistogramValuesFormatter DEFAULT = new HistogramValuesFormatter() {};
 
@@ -162,34 +188,10 @@ public interface HistogramFormatter extends LatencyFormatter {
         /** Placeholder in metrics-values string for the histogram bucket values */
         String BUCKET_VALUES = "{bucket-values}";
 
-        default BucketDescriptor[] bucketDescriptors(long line, long entryId, HistogramValues histogram) {
-            return DefaultHistogramBucket.values();
-        }
-
         default Object metricName(long line, long entryId, HistogramValues histogram) {return histogram.metric().displayName();}
         default Object repetition(long line, long entryId, HistogramValues histogram) {return histogram.resetCount();}
 
         default Object valueCount(long line, long entryId, HistogramValues histogram) {return histogram.count();}
-
-        default BucketValueFormatter bucketValueFormatter() {
-            return BucketValueFormatter.DEFAULT;
-        }
-
-        default Iterable<BucketValue> bucketValues(final long line, final long entryId, final Item<? extends HistogramValues> histogramItem) {
-            final HistogramValues histogram = histogramItem.itemValue();
-            final Iterable<BucketValue> bucketValues = bucketValues(line, entryId, histogram);
-            //NOTE: we reset the histograms after accessing the bucket values via item, which is not the case when we print only names
-            //TODO: find a cleaner way to reset histograms
-            histogram.reset(histogram.entry().time());
-            return bucketValues;
-        }
-
-        default Iterable<BucketValue> bucketValues(final long line, final long entryId, final HistogramValues histogram) {
-            final BucketDescriptor[] bucketDescriptors = bucketDescriptors(line, entryId, histogram);
-            return Arrays.stream(bucketDescriptors).map(bucketDesc ->
-                    new DefaultBucketValue(histogram, bucketDesc, histogram.valueAtPercentile(bucketDesc.percentile()))
-            ).collect(Collectors.toList());
-        }
 
         @Override
         default Object value(final String placeholder, final long line, final long entryId, final Item<? extends HistogramValues> item) {
@@ -235,6 +237,17 @@ public interface HistogramFormatter extends LatencyFormatter {
                 case BUCKET_VALUE: return bucketValue(line, entryId, bucketItem.itemValue());
                 default: return ItemFormatter.super.value(placeholder, line, entryId, bucketItem);
             }
+        }
+
+        default BucketValueFormatter withRootFormatter(final HistogramFormatter rootFormatter) {
+            requireNonNull(rootFormatter);
+            return new BucketValueFormatter() {
+                @Override
+                public Object value(final String placeholder, final long line, final long entryId, final Item<? extends BucketValue> item) {
+                    final Object resolved = BucketValueFormatter.this.value(placeholder, line, entryId, item);
+                    return resolved != placeholder ? resolved : rootFormatter.value(placeholder, line, entryId, item.itemValue().histogram().entry());
+                }
+            };
         }
     }
 }

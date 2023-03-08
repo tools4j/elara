@@ -24,12 +24,14 @@
 package org.tools4j.elara.format;
 
 import java.io.PrintWriter;
+import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
-public class IteratorMessagePrinter<T> implements MessagePrinter<Iterable<? extends T>> {
+public class IteratorMessagePrinter<M, T> implements MessagePrinter<M> {
 
     interface Item<T> {
+        Function<String, Object> baseValueSupplier();
         String itemSeparator();
         int itemIndex();
         T itemValue();
@@ -67,7 +69,7 @@ public class IteratorMessagePrinter<T> implements MessagePrinter<Iterable<? exte
                 case ITEM_VALUE: return itemValue(line, entryId, item);
                 case ITEM_SEPARATOR: return itemSeparator(line, entryId, item);
                 case ITEM_INDEX: return itemIndex(line, entryId, item);
-                default: return placeholder;
+                default: return item.baseValueSupplier().apply(placeholder);
             }
         }
 
@@ -105,38 +107,44 @@ public class IteratorMessagePrinter<T> implements MessagePrinter<Iterable<? exte
 
     private final String iteratedPattern;
     private final String itemSeparator;
+    private final ValueProvider<? super M, ? extends T> valueProvider;
+    private final ValueFormatter<? super M> baseFormatter;
     private final MessagePrinter<Item<T>> itemPrinter;
 
     public IteratorMessagePrinter(final String iteratedPattern,
                                   final String itemSeparator,
-                                  final ItemFormatter<? super T> itemFormatter) {
+                                  final ItemFormatter<? super T> itemFormatter,
+                                  final ValueProvider<? super M, ? extends T> valueProvider,
+                                  final ValueFormatter<? super M> baseFormatter) {
         this.iteratedPattern = requireNonNull(iteratedPattern);
         this.itemSeparator = requireNonNull(itemSeparator);
+        this.valueProvider = requireNonNull(valueProvider);
+        this.baseFormatter = requireNonNull(baseFormatter);
         this.itemPrinter = MessagePrinter.parameterized(iteratedPattern, itemFormatter);
     }
 
     @Override
-    public void print(final long line, final long entryId, final Iterable<? extends T> iterable, final PrintWriter writer) {
+    public void print(final long line, final long entryId, final M message, final PrintWriter writer) {
+        final Function<String, Object> baseValueSupplier = placeholder -> baseFormatter.value(placeholder, line, entryId, message);
+        final Iterable<? extends T> iterable = valueProvider.values(line, entryId, message);
         int index = 0;
         for (final T itemValue : iterable) {
-            final Item<T> item = item(index, index == 0 ? "" : itemSeparator, itemValue);
+            final Item<T> item = item(baseValueSupplier, index, index == 0 ? "" : itemSeparator, itemValue);
             itemPrinter.print(line, entryId, item, writer);
             index++;
         }
     }
 
-    public <M> MessagePrinter<M> map(final ValueProvider<? super M, ? extends T> valueProvider) {
-        requireNonNull(valueProvider);
-        return (line, entryId, message, writer) -> {
-            final Iterable<? extends T> values = valueProvider.values(line, entryId, message);
-            print(line, entryId, values, writer);
-        };
-    }
-
-    private static <T> Item<T> item(final int index, final String separator, final T value) {
+    private static <T> Item<T> item(final Function<String, Object> baseValueSupplier, final int index, final String separator, final T value) {
+        requireNonNull(baseValueSupplier);
         requireNonNull(separator);
         //nullable: value
         return new Item<T>() {
+            @Override
+            public Function<String, Object> baseValueSupplier() {
+                return baseValueSupplier;
+            }
+
             @Override
             public String itemSeparator() {
                 return separator;
