@@ -38,16 +38,15 @@ import static org.tools4j.elara.format.MessagePrinter.parameterized;
 public class CsvMessagePrinters implements MessagePrinters {
 
     public static final String DELIMITER                = ",";
-    public static final String HEADER_LINE              = "Time,Seq,Type,Source-ID,Source-Seq,Index,Type,Payload-Type,Payload-Size,Payload{nl}";
+    public static final String HEADER_LINE              = "Time,Seq,Type,Source-ID,Source-Seq,Index,Payload-Type,Payload-Size,Payload{nl}";
     public static final String COMMAND_FORMAT           = "{time},{line},CMD,{source},{sequence},,{type},{payload-size},{payload}{nl}";
     public static final String EVENT_FORMAT             = "{time},{line},EVT,{source},{sequence},{index},{type},{payload-size},{payload}{nl}";
 
     public static final String METRICS_HEADER           = "Time,Seq,Type,Source-ID,Source-Seq,Index,Interval,Unit,{metrics-names}{nl}";
-    public static final String METRICS_COMMAND_FORMAT   = "{time},{line},{type},{source},{sequence},,,,,{metrics-values}{nl}";
-    public static final String METRICS_EVENT_FORMAT     = "{time},{line},{type},{source},{sequence},{index},,,,{metrics-values}{nl}";
+    public static final String METRICS_COMMAND_FORMAT   = "{time},{line},{type},{source},{sequence},,,,{time-unit},{metrics-values}{nl}";
+    public static final String METRICS_EVENT_FORMAT     = "{time},{line},{type},{source},{sequence},{index},,,{time-unit},{metrics-values}{nl}";
     public static final String METRICS_OUTPUT_FORMAT    = METRICS_EVENT_FORMAT;
     public static final String METRICS_FREQUENCY_FORMAT = "{time},{line},{type},,,{repetition},{interval},{time-unit},{metrics-values}{nl}";
-    public static final String METRICS_TIME_FORMAT      = "{time},{line},{type},,,{repetition},{interval},{time-unit},{metrics-values}{nl}";
     public static final String METRICS_NAME_FORMAT      = "{sep}{metric-name}";
     public static final String METRICS_VALUE_FORMAT     = "{sep}{metric-value}";
     public static final String HISTOGRAM_HEADER         = "Time,Seq,Type,Source-ID,Source-Seq,Index,Interval,Unit,Metric,Count,{bucket-names}{nl}";
