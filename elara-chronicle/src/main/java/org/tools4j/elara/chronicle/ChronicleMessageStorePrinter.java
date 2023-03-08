@@ -29,8 +29,10 @@ import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.AgentRunner;
 import org.tools4j.elara.flyweight.Flyweight;
 import org.tools4j.elara.flyweight.FlyweightDataFrame;
+import org.tools4j.elara.format.CsvMessagePrinters;
 import org.tools4j.elara.format.MessagePrinter;
 import org.tools4j.elara.format.MessagePrinters;
+import org.tools4j.elara.format.TimeFormatter;
 import org.tools4j.elara.plugin.metrics.FlyweightMetricsStoreEntry;
 import org.tools4j.elara.store.MessageStorePrinter;
 
@@ -123,6 +125,43 @@ public class ChronicleMessageStorePrinter implements AutoCloseable {
         return null;
     }
 
+    private static Class<? extends MessagePrinters> format(final int index, final String... args) {
+        try {
+            switch (args[index]) {
+                case "default": return MessagePrinters.class;
+                case "csv": return CsvMessagePrinters.class;
+                default: return Class.forName(args[index]).asSubclass(MessagePrinters.class);
+            }
+        } catch (final Exception e) {
+            return null;
+        }
+    }
+
+    private static MessagePrinters messagePrinters(final Class<? extends MessagePrinters> type) {
+        try {
+            if (type != null) {
+                return type.newInstance();
+            }
+        } catch (final Exception e) {
+            System.err.println("WARN: could not instantiate formatter " + type.getName() + " [error=" + e + "], using default");
+        }
+        return MessagePrinters.defaults();
+    }
+
+    private static MessagePrinters messagePrinters(final Class<? extends MessagePrinters> type,
+                                                   final TimeUnit unit,
+                                                   final long interval) {
+        try {
+            if (type != null) {
+                final TimeFormatter formatter = TimeFormatter.formatterFor(unit);
+                return type.getConstructor(TimeFormatter.class, long.class).newInstance(formatter, interval);
+            }
+        } catch (final Exception e) {
+            System.err.println("WARN: could not instantiate formatter " + type.getName() + " [error=" + e + "], using default");
+        }
+        return MessagePrinters.defaults(unit, interval);
+    }
+
     private static long interval(final int index, final String... args) {
         try {
             return Long.parseLong(args[index]);
@@ -132,12 +171,14 @@ public class ChronicleMessageStorePrinter implements AutoCloseable {
     }
 
     private static final int ERR_SYNTAX = 1;
-    private static final int ERR_TIME_UNIT = 2;
-    private static final int ERR_INTERVAL = 3;
-    private static final int ERR_EXTRA_ARGS = 4;
+    private static final int ERR_FORMAT = 2;
+    private static final int ERR_TIME_UNIT = 3;
+    private static final int ERR_INTERVAL = 4;
+    private static final int ERR_EXTRA_ARGS = 5;
 
     public static void main(final String... args) {
         final int n = args.length;
+        Class<? extends MessagePrinters> format = null;
         TimeUnit timeUnit = null;
         long interval = -1;
         boolean metrics = false;
@@ -152,6 +193,13 @@ public class ChronicleMessageStorePrinter implements AutoCloseable {
             }
             final String arg = args[index++];
             switch (arg) {
+                case "-f":
+                case "--format":
+                    if (format != null || (format = format(index++, args)) == null) {
+                        printHelp();
+                        System.exit(ERR_FORMAT);
+                    }
+                    break;
                 case "-t":
                 case "--time":
                     if (timeUnit != null || (timeUnit = timeUnit(index++, args)) == null) {
@@ -196,22 +244,25 @@ public class ChronicleMessageStorePrinter implements AutoCloseable {
                 .wireType(WireType.BINARY_LIGHT)
                 .readOnly(true)
                 .build();
-        final ChronicleMessageStorePrinter storePrinter = new ChronicleMessageStorePrinter();
-        final MessagePrinters msgPrinters = timeUnit == null ? MessagePrinters.defaults() :
-                MessagePrinters.defaults(timeUnit, timeUnit.convert(interval >= 0 ? interval : 1000, MILLISECONDS));
-        if (metrics) {
-            storePrinter.print(queue, new FlyweightMetricsStoreEntry(), msgPrinters.metrics());
-        } else if (latencies) {
-            storePrinter.print(queue, new FlyweightMetricsStoreEntry(), msgPrinters.metricsWithLatencies());
-        } else if (histograms) {
-            storePrinter.print(queue, new FlyweightMetricsStoreEntry(), msgPrinters.metricsWithLatencyHistogram());
-        } else {
-            storePrinter.print(queue, new FlyweightDataFrame(), msgPrinters.frame());
+        try (final ChronicleMessageStorePrinter storePrinter = new ChronicleMessageStorePrinter()) {
+            final MessagePrinters msgPrinters = timeUnit == null ? messagePrinters(format) :
+                    messagePrinters(format, timeUnit, timeUnit.convert(interval >= 0 ? interval : 1000, MILLISECONDS));
+            if (metrics) {
+                storePrinter.print(queue, new FlyweightMetricsStoreEntry(), msgPrinters.metrics());
+            } else if (latencies) {
+                storePrinter.print(queue, new FlyweightMetricsStoreEntry(), msgPrinters.metricsWithLatencies());
+            } else if (histograms) {
+                storePrinter.print(queue, new FlyweightMetricsStoreEntry(), msgPrinters.metricsWithLatencyHistogram());
+            } else {
+                storePrinter.print(queue, new FlyweightDataFrame(), msgPrinters.frame());
+            }
         }
     }
 
     private static void printHelp() {
-        System.err.println("usage: " + ChronicleMessageStorePrinter.class.getSimpleName() + "[-t|--time <unit>] [-i|--interval <duration>] [-m|--metrics|-l|--latencies|-h|--histograms] <file>");
+        System.err.println("usage: " + ChronicleMessageStorePrinter.class.getSimpleName() + "[-f|--format <format>] [-t|--time <unit>] [-i|--interval <duration>] [-m|--metrics|-l|--latencies|-h|--histograms] <file>");
+        System.err.println("    -f|--format <format>       <format> defines the output format");
+        System.err.println("                               Valid <format> values are 'default', 'csv' or a class name of a MessagePrinters implementation");
         System.err.println("    -t|--time <unit>           Defines the unit of the time source that was used when running Elara.");
         System.err.println("                               Valid <unit> values are 'ms', 'us', 'ns' for milliseconds, microseconds and nanoseconds, respectively");
         System.err.println("    -i|--interval <duration>   Specifies the interval in milliseconds after which a histogram is printed and reset.");

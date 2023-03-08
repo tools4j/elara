@@ -39,15 +39,7 @@ public interface MessagePrinters {
     }
 
     static MessagePrinters defaults(final TimeUnit timeUnit, final long interval) {
-        switch (timeUnit) {
-            case MILLISECONDS:
-                return defaults(TimeFormatter.MILLIS, interval);
-            case MICROSECONDS:
-                return defaults(TimeFormatter.MICROS, interval);
-            case NANOSECONDS:
-                return defaults(TimeFormatter.NANOS, interval);
-        }
-        throw new IllegalArgumentException("Unsupported time unit: " + timeUnit);
+        return defaults(TimeFormatter.formatterFor(timeUnit), interval);
     }
 
     static MessagePrinters defaults(final TimeFormatter timeFormatter, final long interval) {

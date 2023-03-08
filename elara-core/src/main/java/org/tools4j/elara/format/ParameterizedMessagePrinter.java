@@ -32,13 +32,11 @@ import static java.util.Objects.requireNonNull;
 public class ParameterizedMessagePrinter<M> implements MessagePrinter<M> {
 
     private final String pattern;
-    private final ValueFormatter<? super M> formatter;
     private final MessagePrinter<? super M>[] printers;
 
     public ParameterizedMessagePrinter(final String pattern, final ValueFormatter<? super M> formatter) {
         this.pattern = requireNonNull(pattern);
-        this.formatter = requireNonNull(formatter);
-        this.printers = parse(pattern);
+        this.printers = parse(pattern, formatter);
     }
 
     @Override
@@ -53,8 +51,9 @@ public class ParameterizedMessagePrinter<M> implements MessagePrinter<M> {
         return pattern;
     }
 
-    private MessagePrinter<? super M>[] parse(final String pattern) {
-        final List<MessagePrinter<? super M>> printers = new ArrayList<>();
+    private static <T> MessagePrinter<? super T>[] parse(final String pattern,
+                                                         final ValueFormatter<? super T> formatter) {
+        final List<MessagePrinter<? super T>> printers = new ArrayList<>();
         int end = -1;
         int start = pattern.indexOf('{', end + 1);
         while (start >= 0) {
@@ -67,15 +66,15 @@ public class ParameterizedMessagePrinter<M> implements MessagePrinter<M> {
             if (pre < start) {
                 printers.add(stringPrinter(pattern.substring(pre, start)));
             }
-            printers.add(placeHolderPrinter(pattern.substring(start, end + 1)));
+            printers.add(placeHolderPrinter(pattern.substring(start, end + 1), formatter));
             start = pattern.indexOf('{', end + 1);
         }
         if (end + 1 < pattern.length()) {
             printers.add(stringPrinter(pattern.substring(end + 1)));
         }
         @SuppressWarnings("unchecked")
-        final MessagePrinter<? super M>[] arr = printers.toArray(
-                (MessagePrinter<? super M>[])new MessagePrinter[0]
+        final MessagePrinter<? super T>[] arr = printers.toArray(
+                (MessagePrinter<? super T>[])new MessagePrinter[0]
         );
         return arr;
     }
@@ -92,10 +91,14 @@ public class ParameterizedMessagePrinter<M> implements MessagePrinter<M> {
     }
 
     private static MessagePrinter<Object> stringPrinter(final String s) {
+        requireNonNull(s);
         return (line, entryId, message, writer) -> writer.write(s);
     }
 
-    private MessagePrinter<M> placeHolderPrinter(final String placeHolder) {
+    private static <T> MessagePrinter<T> placeHolderPrinter(final String placeHolder,
+                                                            final ValueFormatter<? super T> formatter) {
+        requireNonNull(placeHolder);
+        requireNonNull(formatter);
         return (line, entryId, message, writer) -> writer.write(
                 String.valueOf(formatter.value(placeHolder, line, entryId, message))
         );

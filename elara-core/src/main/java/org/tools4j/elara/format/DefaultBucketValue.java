@@ -32,13 +32,11 @@ import static java.util.Objects.requireNonNull;
 final class DefaultBucketValue implements BucketValue {
     private final HistogramValues histogram;
     private final BucketDescriptor bucketDescriptor;
-    private final int index;
     private final long value;
 
-    DefaultBucketValue(final HistogramValues histogram, final BucketDescriptor bucketDescriptor, final int index, final long value) {
+    DefaultBucketValue(final HistogramValues histogram, final BucketDescriptor bucketDescriptor, final long value) {
         this.histogram = requireNonNull(histogram);
         this.bucketDescriptor = requireNonNull(bucketDescriptor);
-        this.index = index;
         this.value = value;
     }
 
@@ -53,17 +51,12 @@ final class DefaultBucketValue implements BucketValue {
     }
 
     @Override
-    public int bucketIndex() {
-        return index;
-    }
-
-    @Override
     public long bucketValue() {
         return value;
     }
 
     @Override
     public String toString() {
-        return "BucketValue{metric=" + histogram.metric().displayName() + ", desc=" + bucketDescriptor + ", index=" + index + ", value=" + value + "}";
+        return "BucketValue{metric=" + histogram.metric().displayName() + ", desc=" + bucketDescriptor + ", value=" + value + "}";
     }
 }

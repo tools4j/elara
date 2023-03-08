@@ -31,12 +31,10 @@ import static java.util.Objects.requireNonNull;
 final class DefaultMetricValue implements MetricValue {
     private final Metric metric;
     private final long value;
-    private final int index;
 
-    DefaultMetricValue(final Metric metric, final long value, final int index) {
+    DefaultMetricValue(final Metric metric, final long value) {
         this.metric = requireNonNull(metric);
         this.value = value;
-        this.index = index;
     }
 
     @Override
@@ -50,12 +48,7 @@ final class DefaultMetricValue implements MetricValue {
     }
 
     @Override
-    public int index() {
-        return index;
-    }
-
-    @Override
     public String toString() {
-        return "MetricValue{metric=" + metric.displayName() + ", value=" + value + ", index=" + index + "}";
+        return "MetricValue{metric=" + metric.displayName() + ", value=" + value + "}";
     }
 }

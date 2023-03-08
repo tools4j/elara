@@ -29,8 +29,6 @@ import org.tools4j.elara.plugin.metrics.MetricsStoreEntry.Type;
 import org.tools4j.elara.plugin.metrics.TimeMetric;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -38,6 +36,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.ToLongFunction;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -137,24 +136,17 @@ public interface LatencyFormatter extends MetricsFormatter {
                 //nothing to cache
         }
     }
+
     @Override
-    default Object metricsValues(long line, long entryId, MetricsStoreEntry entry) {
+    default Iterable<MetricValue> metricValues(final long line, final long entryId, final MetricsStoreEntry entry) {
         if (entry.type() != Type.TIME) {
-            return MetricsFormatter.super.metricsValues(line, entryId, entry);
+            return MetricsFormatter.super.metricValues(line, entryId, entry);
         }
         cacheTimeValues(line, entryId, entry);
-        final EnumSet<LatencyMetric> set = metricsSet(line, entryId, entry);
-        final StringWriter sw = new StringWriter(set.size() * 16);
-        final PrintWriter pw = new PrintWriter(sw);
-        int index = 0;
-        for (final LatencyMetric metric : set) {
-            final MessagePrinter<MetricValue> valuePrinter = metricValuePrinter(line, entryId, entry, index);
-            final MetricValue value = metricValue(line, entryId, entry, metric, index);
-            valuePrinter.print(line, entryId, value, pw);
-            index++;
-        }
-        pw.flush();
-        return sw.toString();
+        return metricsSet(line, entryId, entry)
+                .stream()
+                .map(latencyMetric -> metricValue(line, entryId, entry, latencyMetric))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -164,10 +156,10 @@ public interface LatencyFormatter extends MetricsFormatter {
         }
         final List<LatencyMetric> list = new ArrayList<>(metricsSet(line, entryId, entry));
         final LatencyMetric metric = index >= 0 && index < list.size() ? list.get(index) : null;
-        return metricValue(line, entryId, entry, metric, index);
+        return metricValue(line, entryId, entry, metric);
     }
 
-    default MetricValue metricValue(final long line, final long entryId, final MetricsStoreEntry entry, final LatencyMetric metric, final int index) {
+    default MetricValue metricValue(final long line, final long entryId, final MetricsStoreEntry entry, final LatencyMetric metric) {
         final Target target = entry.target();
         final ToLongFunction<TimeMetric> timeLookup = timeMetric -> {
             final long commandTime = commandTimes.get()[timeMetric.ordinal()];
@@ -190,7 +182,6 @@ public interface LatencyFormatter extends MetricsFormatter {
         final long start = timeLookup.applyAsLong(metric.start());
         final long end = timeLookup.applyAsLong(metric.end());
         final long value = start != 0 && end != 0 ? end - start : 0;
-        return new DefaultMetricValue(metric, value, index);
+        return new DefaultMetricValue(metric, value);
     }
-
 }

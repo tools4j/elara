@@ -28,12 +28,14 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
 import static java.time.temporal.ChronoField.NANO_OF_SECOND;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -46,6 +48,21 @@ public interface TimeFormatter {
     Object formatDateTime(long epochTime);
     Object formatTime(long epochTime);
     Object formatDuration(long duration);
+    /** @return time unit, or null if not defined */
+    TimeUnit timeUnit();
+
+    static TimeFormatter formatterFor(final TimeUnit timeUnit) {
+        switch (timeUnit) {
+            case MILLISECONDS:
+                return TimeFormatter.MILLIS;
+            case MICROSECONDS:
+                return TimeFormatter.MICROS;
+            case NANOSECONDS:
+                return TimeFormatter.NANOS;
+            default:
+                throw new IllegalArgumentException("Unsupported time unit: " + timeUnit);
+        }
+    }
 
     interface Default extends TimeFormatter {
         @Override
@@ -59,6 +76,11 @@ public interface TimeFormatter {
         @Override
         default Object formatDuration(final long duration) {
             return duration;
+        }
+
+        @Override
+        default TimeUnit timeUnit() {
+            return null;
         }
     }
 
@@ -125,8 +147,8 @@ public interface TimeFormatter {
         }
 
         @Override
-        default Object formatDuration(final long nanos) {
-            return nanos + "ms";
+        default TimeUnit timeUnit() {
+            return MILLISECONDS;
         }
     }
 
@@ -169,8 +191,8 @@ public interface TimeFormatter {
         }
 
         @Override
-        default Object formatDuration(final long nanos) {
-            return nanos + "us";
+        default TimeUnit timeUnit() {
+            return MICROSECONDS;
         }
     }
 
@@ -213,8 +235,8 @@ public interface TimeFormatter {
         }
 
         @Override
-        default Object formatDuration(final long nanos) {
-            return nanos + "ns";
+        default TimeUnit timeUnit() {
+            return NANOSECONDS;
         }
     }
 }

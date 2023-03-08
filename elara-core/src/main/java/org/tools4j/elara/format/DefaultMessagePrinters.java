@@ -33,10 +33,12 @@ import static org.tools4j.elara.format.DataFrameFormatter.SOURCE;
 import static org.tools4j.elara.format.HistogramFormatter.CaptureResult.PRINT;
 import static org.tools4j.elara.format.MessagePrinter.NOOP;
 import static org.tools4j.elara.format.MessagePrinter.composite;
+import static org.tools4j.elara.format.MessagePrinter.iterationToken;
 import static org.tools4j.elara.format.MessagePrinter.parameterized;
 
 public class DefaultMessagePrinters implements MessagePrinters {
 
+    public static final String ITEM_SEPARATOR           = ", ";
     public static final String VERSION_LINE             = "(elara message store format V{version}){nl}";
     public static final String COMMAND_FORMAT           = "{time} | {line} - cmd={source}:{sequence} | type={type}, payload({payload-size})={payload}{nl}";
     public static final String EVENT_FORMAT_0           = "{time} | {line} - evt={source}:{sequence}.{index} | type={type}, payload({payload-size})={payload}{nl}";
@@ -48,18 +50,17 @@ public class DefaultMessagePrinters implements MessagePrinters {
     public static final String METRICS_EVENT_FORMAT_N   = "{time} | {line} - {type} evt={source}.{sequence}.{index} | {metrics-values}{nl}";
     public static final String METRICS_OUTPUT_FORMAT_0  = METRICS_EVENT_FORMAT_0;
     public static final String METRICS_OUTPUT_FORMAT_N  = METRICS_EVENT_FORMAT_N;
-    public static final String METRICS_FREQUENCY_FORMAT = "{time} | {line} - {type} rep={repetition}, intvl={interval} | {metrics-values}{nl}";
-    public static final String METRICS_VALUE_FORMAT_0   = "{metric-name}={metric-value}";
-    public static final String METRICS_VALUE_FORMAT_N   = ", {metric-name}={metric-value}";
-    public static final String HISTOGRAM_FORMAT         = "{metrics-values}";
-    public static final String HISTOGRAM_VALUES_FORMAT  = "{time} | {line} - {type} rep={repetition}, intvl={interval} | {metric-name} - n={value-count}, {bucket-values}{nl}";
-    public static final String HISTOGRAM_BUCKET_VALUE_0 = "{bucket-name}={bucket-value}";
-    public static final String HISTOGRAM_BUCKET_VALUE_N = ", {bucket-name}={bucket-value}";
-
+    public static final String METRICS_FREQUENCY_FORMAT = "{time} | {line} - {type} rep={repetition}, intvl={interval}{time-unit} | {metrics-values}{nl}";
+    public static final String METRICS_NAME_FORMAT      = "{sep}{metric-name}";
+    public static final String METRICS_VALUE_FORMAT     = "{sep}{metric-name}={metric-value}";
+    public static final String LATENCY_VALUE_FORMAT     = "{sep}{metric-name}={metric-value}{time-unit}";
+    public static final String HISTOGRAM_FORMAT         = "{histogram-values}";
+    public static final String HISTOGRAM_VALUE_FORMAT   = "{time} | {line} - {type} rep={repetition}, intvl={interval} | {metric-name} - n={value-count}, {bucket-values}{nl}";
+    public static final String HISTOGRAM_BUCKET_VALUE   = "{sep}{bucket-name}={bucket-value}";
     private final DataFrameFormatter dataFrameFormatter;
-    private final MetricsFormatter metricsFormatter;
-    private final LatencyFormatter latencyFormatter;
-    private final HistogramFormatter histogramFormatter;
+    private final MetricsFormatter baseMetricsFormatter;
+    private final LatencyFormatter baseLatencyFormatter;
+    private final HistogramFormatter baseHistogramFormatter;
 
     public DefaultMessagePrinters() {
         this(DataFrameFormatter.DEFAULT, MetricsFormatter.DEFAULT, LatencyFormatter.DEFAULT, HistogramFormatter.DEFAULT);
@@ -75,9 +76,9 @@ public class DefaultMessagePrinters implements MessagePrinters {
                                   final LatencyFormatter latencyFormatter,
                                   final HistogramFormatter histogramFormatter) {
         this.dataFrameFormatter = requireNonNull(dataFrameFormatter);
-        this.metricsFormatter = requireNonNull(metricsFormatter);
-        this.latencyFormatter = requireNonNull(latencyFormatter);
-        this.histogramFormatter = requireNonNull(histogramFormatter);
+        this.baseMetricsFormatter = requireNonNull(metricsFormatter);
+        this.baseLatencyFormatter = requireNonNull(latencyFormatter);
+        this.baseHistogramFormatter = requireNonNull(histogramFormatter);
     }
 
     @Override
@@ -104,16 +105,26 @@ public class DefaultMessagePrinters implements MessagePrinters {
         );
     }
 
-    @Override
-    public MessagePrinter<MetricsStoreEntry> frequencyMetrics() {
-        return composite(
-                (line, entryId, entry) -> line == 0 ? 0 : 1,
-                parameterized(METRICS_VERSION_LINE + METRICS_FREQUENCY_FORMAT, metricsFormatter),
-                parameterized(METRICS_FREQUENCY_FORMAT, metricsFormatter)
-        );
+    protected ValueFormatter<MetricsStoreEntry> metricsFormatter(final MetricsFormatter baseFormatter,
+                                                                 final String metricsValueFormat) {
+        return baseFormatter
+                .then(iterationToken("{metrics-names}", METRICS_NAME_FORMAT, ITEM_SEPARATOR,
+                        baseFormatter.metricNameFormatter(), baseFormatter::metricValues))
+                .then(iterationToken("{metrics-values}", metricsValueFormat, ITEM_SEPARATOR,
+                        baseFormatter.metricValueFormatter(), baseFormatter::metricValues));
     }
 
-    protected MessagePrinter<MetricsStoreEntry> timeMetrics(final MetricsFormatter formatter) {
+    protected ValueFormatter<MetricsStoreEntry> histogramFormatter(final HistogramFormatter baseFormatter) {
+        return metricsFormatter(baseFormatter, LATENCY_VALUE_FORMAT)
+                .then(iterationToken("{metrics-names}", METRICS_NAME_FORMAT, ITEM_SEPARATOR,
+                        baseFormatter.metricNameFormatter(), baseFormatter::metricValues))
+                .then(iterationToken("{histogram-values}", HISTOGRAM_VALUE_FORMAT, "",
+                        baseFormatter.histogramValuesFormatter(HISTOGRAM_BUCKET_VALUE, ITEM_SEPARATOR),
+                        baseFormatter::histogramValues));
+
+    }
+
+    protected MessagePrinter<MetricsStoreEntry> timeMetrics(final ValueFormatter<MetricsStoreEntry> formatter) {
         final ValueFormatter<MetricsStoreEntry> formatter0 = requireNonNull(formatter);
         final ValueFormatter<MetricsStoreEntry> formatterN = Spacer.spacer(formatter0, '.', SOURCE, SEQUENCE);
         return composite((line, entryId, entry) -> {
@@ -141,29 +152,40 @@ public class DefaultMessagePrinters implements MessagePrinters {
     }
 
     @Override
+    public MessagePrinter<MetricsStoreEntry> frequencyMetrics() {
+        final ValueFormatter<MetricsStoreEntry> formatter = metricsFormatter(baseMetricsFormatter, METRICS_VALUE_FORMAT);
+        return composite(
+                (line, entryId, entry) -> line == 0 ? 0 : 1,
+                parameterized(METRICS_VERSION_LINE + METRICS_FREQUENCY_FORMAT, formatter),
+                parameterized(METRICS_FREQUENCY_FORMAT, formatter)
+        );
+    }
+
+    @Override
     public MessagePrinter<MetricsStoreEntry> timeMetrics() {
-        return timeMetrics(metricsFormatter);
+        return timeMetrics(metricsFormatter(baseMetricsFormatter, METRICS_VALUE_FORMAT));
     }
 
     @Override
     public MessagePrinter<MetricsStoreEntry> latencyMetrics() {
-        return timeMetrics(latencyFormatter);
+        return timeMetrics(metricsFormatter(baseLatencyFormatter, LATENCY_VALUE_FORMAT));
     }
 
     @Override
     public MessagePrinter<MetricsStoreEntry> latencyHistogram() {
+        final ValueFormatter<MetricsStoreEntry> formatter = histogramFormatter(baseHistogramFormatter);
         return composite(
                 (line, entryId, entry) -> {
                     if (line == 0) {
-                        histogramFormatter.latencyHistograms.remove();
+                        baseHistogramFormatter.latencyHistograms.remove();
                     }
-                    final boolean print = histogramFormatter.capture(line, entryId, entry) == PRINT;
+                    final boolean print = baseHistogramFormatter.capture(line, entryId, entry) == PRINT;
                     return line == 0 ? (print ? 1 : 0) : (print ? 3 : 2);
                 },
-                parameterized(METRICS_VERSION_LINE, histogramFormatter),
-                parameterized(METRICS_VERSION_LINE + HISTOGRAM_FORMAT, histogramFormatter),
+                parameterized(METRICS_VERSION_LINE, formatter),
+                parameterized(METRICS_VERSION_LINE + HISTOGRAM_FORMAT, formatter),
                 NOOP,
-                parameterized(HISTOGRAM_FORMAT, histogramFormatter)
+                parameterized(HISTOGRAM_FORMAT, formatter)
         );
     }
 

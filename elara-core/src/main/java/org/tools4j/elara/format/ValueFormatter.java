@@ -23,11 +23,12 @@
  */
 package org.tools4j.elara.format;
 
+import static java.util.Objects.requireNonNull;
+
 @FunctionalInterface
 public interface ValueFormatter<M> {
     /** Placeholder in format string for line separator */
     String LINE_SEPARATOR = "{nl}";
-
     /** Placeholder in format string for store line no */
     String LINE = "{line}";
     /** Placeholder in format string for store entry ID */
@@ -35,15 +36,30 @@ public interface ValueFormatter<M> {
     /** Placeholder in format string for message itself */
     String MESSAGE = "{message}";
 
-    ValueFormatter<Object> DEFAULT = (placeholder, line, entryId, message) -> {
-        switch (placeholder) {
-            case LINE_SEPARATOR: return System.lineSeparator();
-            case LINE: return line;
-            case ENTRY_ID: return entryId;
-            case MESSAGE: return message;
-            default: return placeholder;
-        }
-    };
+    ValueFormatter<Object> DEFAULT = defaultThen(null);
 
     Object value(String placeholder, long line, long entryId, M message);
+
+    static <M> ValueFormatter<M> defaultThen(final ValueFormatter<? super M> next) {
+        return (placeholder, line, entryId, message) -> {
+            switch (placeholder) {
+                case LINE_SEPARATOR: return System.lineSeparator();
+                case LINE: return line;
+                case ENTRY_ID: return entryId;
+                case MESSAGE: return message;
+            }
+            return next == null ? placeholder : next.value(placeholder, line, entryId, message);
+        };
+    }
+
+    default ValueFormatter<M> then(final ValueFormatter<? super M> next) {
+        requireNonNull(next);
+        return (placeholder, line, entryId, message) -> {
+            final Object replaced = ValueFormatter.this.value(placeholder, line, entryId, message);
+            if (replaced == placeholder) {
+                return next.value(placeholder, line, entryId, message);
+            }
+            return replaced;
+        };
+    }
 }

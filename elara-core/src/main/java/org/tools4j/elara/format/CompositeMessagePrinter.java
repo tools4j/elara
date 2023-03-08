@@ -45,6 +45,7 @@ public class CompositeMessagePrinter<M> implements MessagePrinter<M> {
         this.printerProvider = requireNonNull(printerProvider);
     }
 
+    @SafeVarargs
     public CompositeMessagePrinter(final PrinterSelector<M> printerSelector,
                                    final MessagePrinter<? super M>... printers) {
         this((line, entryId, message) -> printers[printerSelector.select(line, entryId, message)]);

@@ -25,8 +25,13 @@ package org.tools4j.elara.format;
 
 import org.tools4j.elara.format.CompositeMessagePrinter.PrinterProvider;
 import org.tools4j.elara.format.CompositeMessagePrinter.PrinterSelector;
+import org.tools4j.elara.format.IteratorMessagePrinter.ItemFormatter;
+import org.tools4j.elara.format.IteratorMessagePrinter.ValueProvider;
 
 import java.io.PrintWriter;
+import java.io.StringWriter;
+
+import static java.util.Objects.requireNonNull;
 
 @FunctionalInterface
 public interface MessagePrinter<M> {
@@ -36,6 +41,24 @@ public interface MessagePrinter<M> {
 
     void print(long line, long entryId, M message, PrintWriter writer);
 
+    default String printToString(final long line, final long entryId, final M message) {
+        final StringWriter sw = new StringWriter();
+        final PrintWriter pw = new PrintWriter(sw);
+        print(line, entryId, message, pw);
+        pw.flush();
+        return sw.toString();
+    }
+
+    default ValueFormatter<M> asValueFormatterFor(final String placeholderToken) {
+        requireNonNull(placeholderToken);
+        return (placeholder, line, entryId, message) -> {
+            if (placeholderToken.equals(placeholder)) {
+                return printToString(line, entryId, message);
+            }
+            return placeholder;
+        };
+    }
+
     static <M> MessagePrinter<M> parameterized(final String pattern, final ValueFormatter<? super M> formatter) {
         return new ParameterizedMessagePrinter<>(pattern, formatter);
     }
@@ -44,8 +67,31 @@ public interface MessagePrinter<M> {
         return new CompositeMessagePrinter<>(printerProvider);
     }
 
+    @SafeVarargs
     static <M> MessagePrinter<M> composite(final PrinterSelector<M> printerSelector,
                                            final MessagePrinter<? super M>... printers) {
         return new CompositeMessagePrinter<>(printerSelector, printers);
+    }
+
+    static <T> IteratorMessagePrinter<T> iterate(final String iteratedPattern,
+                                                 final String itemSeparator,
+                                                 final ItemFormatter<T> itemFormatter) {
+        return new IteratorMessagePrinter<>(iteratedPattern, itemSeparator, itemFormatter);
+    }
+
+    static <M, T> MessagePrinter<M> iterate(final String iteratedPattern,
+                                            final String itemSeparator,
+                                            final ItemFormatter<? super T> itemFormatter,
+                                            final ValueProvider<? super M, ? extends T> valueProvider) {
+        return iterate(iteratedPattern, itemSeparator, itemFormatter).map(valueProvider);
+    }
+
+    static <M, T> ValueFormatter<M> iterationToken(final String placeholderToken,
+                                                   final String iteratedPattern,
+                                                   final String itemSeparator,
+                                                   final ItemFormatter<? super T> itemFormatter,
+                                                   final ValueProvider<? super M, ? extends T> valueProvider) {
+        final MessagePrinter<M> printer = iterate(iteratedPattern, itemSeparator, itemFormatter, valueProvider);
+        return printer.asValueFormatterFor(placeholderToken);
     }
 }
