@@ -78,12 +78,13 @@ import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_START_TIME;
  */
 public class HashApplication implements AllInOneApp /*, Output*/ {
 
-    public static final int MESSAGE_LENGTH = 6 * Long.BYTES;
+    public static final int MESSAGE_LENGTH = 5 * Long.BYTES;
     public static final long NULL_VALUE = Long.MIN_VALUE;
     public static final int DEFAULT_SOURCE = 42;
 
     public interface State {
         long hash();
+
         long count();
     }
 
@@ -114,7 +115,7 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
 
     private final ModifiableState modifiableState;
     private final State state;
-    
+
     public HashApplication() {
         this(new DefaultState());
     }
@@ -123,7 +124,7 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
         this.modifiableState = requireNonNull(modifiableState);
         this.state = this.modifiableState;
     }
-    
+
     @Override
     public void onCommand(final Command command, final EventRouter router) {
         if (command.isApplication()) {
@@ -261,17 +262,17 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         return new HashApplication(state).launch(config -> config
-                        .commandPollingMode(commandPollingMode)
-                        .input(input(input))
-                        .commandStore(commandPollingMode == NO_STORE ? null : new ChronicleMessageStore(cq))
-                        .eventStore(new ChronicleMessageStore(eq))
-                        .timeSource(pseudoNanoClock)
-                        .idleStrategy(BusySpinIdleStrategy.INSTANCE)
-                        .plugin(Plugins.metricsPlugin(MetricsConfig.configure()
-                                        .frequencyMetrics(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, EVENT_APPLIED_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY)
-                                        .frequencyMetricInterval(100_000)//micros
-                                        .frequencyMetricsStore(new ChronicleMessageStore(fq))
-                        ))
+                .commandPollingMode(commandPollingMode)
+                .input(input(input))
+                .commandStore(commandPollingMode == NO_STORE ? null : new ChronicleMessageStore(cq))
+                .eventStore(new ChronicleMessageStore(eq))
+                .timeSource(pseudoNanoClock)
+                .idleStrategy(BusySpinIdleStrategy.INSTANCE)
+                .plugin(Plugins.metricsPlugin(MetricsConfig.configure()
+                        .frequencyMetrics(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, EVENT_APPLIED_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY)
+                        .frequencyMetricInterval(100_000)//micros
+                        .frequencyMetricsStore(new ChronicleMessageStore(fq))
+                ))
         );
     }
 
