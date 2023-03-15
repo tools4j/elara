@@ -24,7 +24,7 @@
 package org.tools4j.elara.handler;
 
 import org.agrona.ExpandableArrayBuffer;
-import org.agrona.concurrent.UnsafeBuffer;
+import org.agrona.MutableDirectBuffer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -164,9 +164,8 @@ public class CommandHandlerTest {
     }
 
     private static Command command(final int sourceId, final long sourceSeq) {
-        return new FlyweightCommand()
-                .init(new ExpandableArrayBuffer(), 0, sourceId, sourceSeq, EventType.APPLICATION, 123L,
-                        new UnsafeBuffer(0, 0), 0, 0
-                );
+        final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
+        FlyweightCommand.writeHeader(sourceId, sourceSeq, 123L, 0, EventType.APPLICATION, buffer, 0);
+        return new FlyweightCommand().wrap(buffer, 0);
     }
 }

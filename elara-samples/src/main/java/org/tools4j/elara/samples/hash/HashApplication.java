@@ -78,7 +78,7 @@ import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_START_TIME;
  */
 public class HashApplication implements AllInOneApp /*, Output*/ {
 
-    public static final int MESSAGE_LENGTH = 5 * Long.BYTES;
+    public static final int MESSAGE_LENGTH = 6 * Long.BYTES;
     public static final long NULL_VALUE = Long.MIN_VALUE;
     public static final int DEFAULT_SOURCE = 42;
 

@@ -135,7 +135,7 @@ public class TimerApplication {
         System.out.println("-----------------------------------------------------------");
 //        System.out.println("processing: " + command + ", payload=" + payloadFor(command.type(), command.payload()));
         if (command.isApplication()) {
-            System.out.println("...COMMAND: new timer: " + command + ", payload=" + payloadFor(command.type(), command.payload()) + ", time=" + formatTime(command.time()));
+            System.out.println("...COMMAND: new timer: " + command + ", payload=" + payloadFor(command.payloadType(), command.payload()) + ", time=" + formatTime(command.commandTime()));
             final int timerType = command.payload().getInt(0);
             final long timerId = command.payload().getInt(4);
             final long timeout = command.payload().getLong(12);
@@ -148,12 +148,12 @@ public class TimerApplication {
                 }
                 context.route(length);
             }
-        } else if (command.type() == TimerCommands.TRIGGER_TIMER) {
+        } else if (command.payloadType() == TimerCommands.TRIGGER_TIMER) {
             final long timerId = TimerCommands.timerId(command);
             final int timerType = TimerCommands.timerType(command);
             final int repetition = TimerCommands.timerRepetition(command);
             final long timeout = TimerCommands.timerTimeout(command);
-            System.out.println("...COMMAND: trigger timer: timerId=" + timerId + ", timerType=" + timerType + ", repetition=" + repetition + ", timeout=" + timeout + ", time=" + formatTime(command.time()));
+            System.out.println("...COMMAND: trigger timer: timerId=" + timerId + ", timerType=" + timerType + ", repetition=" + repetition + ", timeout=" + timeout + ", time=" + formatTime(command.commandTime()));
             if (TimerCommands.timerRepetition(command) >= PERIODIC_REPETITIONS) {
                 try (final RoutingContext context = router.routingEvent(TimerEvents.TIMER_STOPPED)) {
                     final int length = TimerEvents.timerStopped(context.buffer(), 0, timerId, timerType, repetition, timeout);
@@ -171,7 +171,7 @@ public class TimerApplication {
             final int timerType = TimerEvents.timerType(event);
             final int repetition = TimerEvents.timerRepetition(event);
             final long timeout = TimerEvents.timerTimeout(event);
-            System.out.println("...EVENT: " + name + ": timerId=" + timerId + ", timerType=" + timerType + ", repetition=" + repetition + ", timeout=" + timeout + ", time=" + formatTime(event.time()));
+            System.out.println("...EVENT: " + name + ": timerId=" + timerId + ", timerType=" + timerType + ", repetition=" + repetition + ", timeout=" + timeout + ", time=" + formatTime(event.eventTime()));
         }
     }
 
@@ -192,7 +192,7 @@ public class TimerApplication {
     private static Event cloneEvent(final Event event) {
         final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
         event.writeTo(buffer, 0);
-        return new FlyweightEvent().init(buffer, 0);
+        return new FlyweightEvent().wrap(buffer, 0);
     }
 
     private static class CommandInput implements Input {

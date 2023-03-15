@@ -25,8 +25,9 @@ package org.tools4j.elara.plugin.timer;
 
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.flyweight.Frame;
+import org.tools4j.elara.flyweight.DataFrame;
 
+import static org.tools4j.elara.flyweight.FrameType.COMMAND_TYPE;
 import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.PAYLOAD_SIZE;
 import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_ID_OFFSET;
 import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_REPETITION_OFFSET;
@@ -72,15 +73,15 @@ public enum TimerCommands {
     }
 
     public static boolean isTimerCommand(final Command command) {
-        return isTimerCommandType(command.type());
+        return isTimerCommand(command.payloadType());
     }
 
-    public static boolean isTimerCommand(final Frame frame) {
-        return frame.header().index() < 0 && isTimerCommandType(frame.header().type());
+    public static boolean isTimerCommand(final DataFrame frame) {
+        return frame.type() == COMMAND_TYPE && isTimerCommand(frame.payloadType());
     }
 
-    public static boolean isTimerCommandType(final int commandType) {
-        switch (commandType) {
+    public static boolean isTimerCommand(final int payloadType) {
+        switch (payloadType) {
             case TRIGGER_TIMER:
                 return true;
             default:
@@ -89,19 +90,19 @@ public enum TimerCommands {
     }
 
     public static String timerCommandName(final Command command) {
-        return timerCommandName(command.type());
+        return timerCommandName(command.payloadType());
     }
 
-    public static String timerCommandName(final Frame frame) {
-        return timerCommandName(frame.header().type());
+    public static String timerCommandName(final DataFrame frame) {
+        return timerCommandName(frame.payloadType());
     }
 
-    public static String timerCommandName(final int commandType) {
-        switch (commandType) {
+    public static String timerCommandName(final int payloadType) {
+        switch (payloadType) {
             case TRIGGER_TIMER:
                 return "TRIGGER_TIMER";
             default:
-                throw new IllegalArgumentException("Not a timer command type: " + commandType);
+                throw new IllegalArgumentException("Not a timer command type: " + payloadType);
         }
     }
 }

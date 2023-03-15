@@ -43,7 +43,7 @@ public class Accountant implements EventApplier {
     @Override
     public void onEvent(final Event event) {
         if (event.isApplication()) {
-            final EventType type = EventType.byValue(event.type());
+            final EventType type = EventType.byValue(event.payloadType());
             switch (type) {
                 case AccountCreated: {
                     final AccountCreatedEvent evt = AccountCreatedEvent.decode(event.payload());

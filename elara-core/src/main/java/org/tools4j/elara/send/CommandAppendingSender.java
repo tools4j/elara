@@ -24,9 +24,7 @@
 package org.tools4j.elara.send;
 
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.flyweight.FlyweightHeader;
 import org.tools4j.elara.store.ExpandableDirectBuffer;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.store.MessageStore.AppendingContext;
@@ -34,12 +32,9 @@ import org.tools4j.elara.stream.SendingResult;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
-import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_SEQUENCE_OFFSET;
+import static org.tools4j.elara.flyweight.CommandDescriptor.HEADER_LENGTH;
+import static org.tools4j.elara.flyweight.CommandDescriptor.HEADER_OFFSET;
+import static org.tools4j.elara.flyweight.CommandDescriptor.PAYLOAD_OFFSET;
 
 /**
  * A command sender that appends the command to a command store.
@@ -56,8 +51,8 @@ public final class CommandAppendingSender extends FlyweightCommandSender {
     }
 
     @Override
-    public CommandSender.SendingContext sendingCommand(final int type) {
-        return sendingContext.init(sourceId(), nextCommandSequence(), type, commandStoreAppender.appending());
+    public CommandSender.SendingContext sendingCommand(final int payloadType) {
+        return sendingContext.init(sourceId(), nextCommandSequence(), payloadType, commandStoreAppender.appending());
     }
 
     private final class SendingContext implements CommandSender.SendingContext {
@@ -65,15 +60,15 @@ public final class CommandAppendingSender extends FlyweightCommandSender {
         final ExpandableDirectBuffer buffer = new ExpandableDirectBuffer();
         AppendingContext context;
 
-        SendingContext init(final int sourceId, final long sequence, final int type, final AppendingContext context) {
+        SendingContext init(final int sourceId, final long sequence, final int payloadType, final AppendingContext context) {
             if (this.context != null) {
                 abort();
                 throw new IllegalStateException("Sending context not closed");
             }
             this.context = requireNonNull(context);
             this.buffer.wrap(context.buffer(), PAYLOAD_OFFSET);
-            FlyweightHeader.writeTo(
-                    sourceId, type, sequence, timeSource.currentTime(), Flags.NONE, FlyweightCommand.INDEX, 0,
+            FlyweightCommand.writeHeader(
+                    sourceId, sequence, timeSource.currentTime(), payloadType, 0,
                     context.buffer(), HEADER_OFFSET
             );
             return this;
@@ -88,12 +83,12 @@ public final class CommandAppendingSender extends FlyweightCommandSender {
 
         @Override
         public int sourceId() {
-            return unclosedContext().buffer().getInt(SOURCE_OFFSET);
+            return FlyweightCommand.sourceId(unclosedContext().buffer());
         }
 
         @Override
         public long sourceSequence() {
-            return unclosedContext().buffer().getLong(SOURCE_SEQUENCE_OFFSET);
+            return FlyweightCommand.sourceSequence(unclosedContext().buffer());
         }
 
         @Override
@@ -111,7 +106,7 @@ public final class CommandAppendingSender extends FlyweightCommandSender {
             buffer.unwrap();
             try (final AppendingContext ac = unclosedContext()) {
                 if (length > 0) {
-                    ac.buffer().putInt(PAYLOAD_SIZE_OFFSET, length);
+                    FlyweightCommand.payloadSize(length, ac.buffer(), HEADER_OFFSET);
                 }
                 ac.commit(HEADER_LENGTH + length);
                 incrementCommandSequence();

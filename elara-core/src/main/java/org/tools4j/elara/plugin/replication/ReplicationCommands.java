@@ -25,8 +25,9 @@ package org.tools4j.elara.plugin.replication;
 
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.flyweight.Frame;
+import org.tools4j.elara.flyweight.DataFrame;
 
+import static org.tools4j.elara.flyweight.FrameType.COMMAND_TYPE;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.CANDIDATE_ID_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.DATA_SIZE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.FLAGS_NONE;
@@ -83,11 +84,11 @@ public enum ReplicationCommands {
     }
 
     public static boolean isReplicationCommand(final Command command) {
-        return isReplicationCommandType(command.type());
+        return isReplicationCommandType(command.payloadType());
     }
 
-    public static boolean isReplicationCommand(final Frame frame) {
-        return frame.header().index() >= 0 && isReplicationCommandType(frame.header().type());
+    public static boolean isReplicationCommand(final DataFrame frame) {
+        return frame.type() == COMMAND_TYPE && isReplicationCommandType(frame.payloadType());
     }
 
     public static boolean isReplicationCommandType(final int commandType) {
@@ -100,11 +101,11 @@ public enum ReplicationCommands {
     }
 
     public static String replicationCommandName(final Command command) {
-        return replicationCommandName(command.type());
+        return replicationCommandName(command.payloadType());
     }
 
-    public static String replicationCommandName(final Frame frame) {
-        return replicationCommandName(frame.header().type());
+    public static String replicationCommandName(final DataFrame frame) {
+        return replicationCommandName(frame.payloadType());
     }
 
     public static String replicationCommandName(final int commandType) {

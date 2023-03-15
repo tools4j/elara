@@ -49,7 +49,7 @@ public class FlyweightMetricsStoreEntry implements MetricsStoreEntry, Flyweight<
     private final MutableDirectBuffer buffer = new UnsafeBuffer(0, 0);
 
     @Override
-    public FlyweightMetricsStoreEntry init(final DirectBuffer src, final int srcOffset) {
+    public FlyweightMetricsStoreEntry wrap(final DirectBuffer src, final int srcOffset) {
         final int length = src.capacity() - srcOffset;
         if (length < MetricsDescriptor.HEADER_LENGTH) {
             throw new IllegalArgumentException("Invalid metrics store entry, expected min length + " + MetricsDescriptor.HEADER_LENGTH + " but found only " + length);

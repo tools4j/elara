@@ -110,7 +110,7 @@ public class MessageStorePrinter implements AutoCloseable {
                                 final MessagePrinter<? super M> printer) {
         final long[] linePtr = {0};
         final Handler handler = message -> {
-            final M msg = flyweight.init(message, 0);
+            final M msg = flyweight.wrap(message, 0);
             final long line = linePtr[0]++;
             if (filter.test(msg)) {
                 printer.print(line, poller.entryId(), msg, printWriter);

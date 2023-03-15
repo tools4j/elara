@@ -102,12 +102,12 @@ class TimerApplicationTest {
                 final int iExpired = i + 4;
                 final Event started = evts.get(iStarted);
                 final Event expired = evts.get(iExpired);
-                assertEquals(TimerEvents.TIMER_STARTED, started.type(), "events[" + iStarted + "].type");
+                assertEquals(TimerEvents.TIMER_STARTED, started.payloadType(), "events[" + iStarted + "].type");
                 assertEquals(1000 + (i + 1), timerId(started), "events[" + iStarted + "].timerId");
                 assertEquals(TIMER_TYPE_SINGLE, timerType(started), "events[" + iStarted + "].timerType");
                 assertEquals(timeouts[i], timerTimeout(started), "events[" + iStarted + "].timerTimeout");
 
-                assertEquals(TimerEvents.TIMER_EXPIRED, expired.type(), "events[" + iExpired + "].type");
+                assertEquals(TimerEvents.TIMER_EXPIRED, expired.payloadType(), "events[" + iExpired + "].type");
                 assertEquals(1000 + (i + 1), timerId(expired), "events[" + iExpired + "].timerId");
                 assertEquals(TIMER_TYPE_SINGLE, timerType(expired), "events[" + iExpired + "].timerType");
                 assertEquals(timeouts[i], timerTimeout(expired), "events[" + iExpired + "].timerTimeout");
@@ -129,7 +129,7 @@ class TimerApplicationTest {
             //then
             asserter.accept(replay);
             for (int i = 0; i < events.size(); i++) {
-                assertEquals(events.get(i).time(), replay.get(i).time(), "events[" + i + "].time == replay[" + i + "].time");
+                assertEquals(events.get(i).eventTime(), replay.get(i).eventTime(), "events[" + i + "].time == replay[" + i + "].time");
             }
             System.out.println(replay.size() + " replay events asserted");
         }
@@ -178,21 +178,21 @@ class TimerApplicationTest {
 
             final int iStarted = 0;
             final Event started = evts.get(iStarted);
-            assertEquals(TimerEvents.TIMER_STARTED, started.type(), "events[" + iStarted + "].type");
+            assertEquals(TimerEvents.TIMER_STARTED, started.payloadType(), "events[" + iStarted + "].type");
             assertEquals(timerId, timerId(started), "events[" + iStarted + "].timerId");
             assertEquals(TIMER_TYPE_PERIODIC, timerType(started), "events[" + iStarted + "].timerType");
             assertEquals(periodMillis, timerTimeout(started), "events[" + iStarted + "].timerTimeout");
             for (int i = 0; i < PERIODIC_REPETITIONS; i++) {
                 final int iFired = i + 1;
                 final Event fired = evts.get(iFired);
-                assertEquals(TimerEvents.TIMER_FIRED, fired.type(), "events[" + iFired + "].type");
+                assertEquals(TimerEvents.TIMER_FIRED, fired.payloadType(), "events[" + iFired + "].type");
                 assertEquals(timerId, timerId(fired), "events[" + iFired + "].timerId");
                 assertEquals(TIMER_TYPE_PERIODIC, timerType(fired), "events[" + iFired + "].timerType");
                 assertEquals(periodMillis, timerTimeout(fired), "events[" + iFired + "].timerTimeout");
             }
             final int iStopped = 1 + PERIODIC_REPETITIONS;
             final Event stopped = evts.get(iStopped);
-            assertEquals(TimerEvents.TIMER_STOPPED, stopped.type(), "events[" + iStopped + "].type");
+            assertEquals(TimerEvents.TIMER_STOPPED, stopped.payloadType(), "events[" + iStopped + "].type");
             assertEquals(timerId, timerId(stopped), "events[" + iStopped + "].timerId");
             assertEquals(TIMER_TYPE_PERIODIC, timerType(stopped), "events[" + iStopped + "].timerType");
             assertEquals(periodMillis, timerTimeout(stopped), "events[" + iStopped + "].timerTimeout");
@@ -213,7 +213,7 @@ class TimerApplicationTest {
             //then
             asserter.accept(replay);
             for (int i = 0; i < events.size(); i++) {
-                assertEquals(events.get(i).time(), replay.get(i).time(), "events[" + i + "].time == replay[" + i + "].time");
+                assertEquals(events.get(i).eventTime(), replay.get(i).eventTime(), "events[" + i + "].time == replay[" + i + "].time");
             }
             System.out.println(replay.size() + " replay events asserted");
         }

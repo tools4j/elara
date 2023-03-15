@@ -24,14 +24,14 @@
 package org.tools4j.elara.flyweight;
 
 /**
- * Version of the current flyweight format as defined by {@link FrameDescriptor}.
+ * Version of the current frame layout as defined by {@link FrameDescriptor}.
  */
 public enum Version {
     ;
-    /** Current flyweight version */
-    public static final byte CURRENT = 3;
+    /** Current Elara frame layout version, a value between 1 and 255*/
+    public static final byte CURRENT = 4;
 
-    public static void validate(final short version) {
+    public static void validate(final int version) {
         if (version != CURRENT) {
             throw new IllegalArgumentException("Version " + version + " is not compatible with current version " + CURRENT);
         }

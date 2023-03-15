@@ -44,10 +44,10 @@ public class TimerEventApplier implements EventApplier {
 
     @Override
     public void onEvent(final Event event) {
-        switch (event.type()) {
+        switch (event.payloadType()) {
             case TimerEvents.TIMER_STARTED:
                 if (timerState.add(
-                        timerId(event), timerType(event), timerRepetition(event), event.time(), timerTimeout(event)
+                        timerId(event), timerType(event), timerRepetition(event), event.eventTime(), timerTimeout(event)
                 )) {
                     timerTriggerInput.timerEventApplied();
                 }

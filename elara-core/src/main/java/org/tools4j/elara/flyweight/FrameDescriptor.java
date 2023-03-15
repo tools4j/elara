@@ -24,48 +24,153 @@
 package org.tools4j.elara.flyweight;
 
 /**
- * Descriptor of frame layout for commands and events in a byte buffer.  A frame
- * starts with a header followed by payload data:
+ * Descriptor of byte layouts of Elara data in a byte buffer.  The exact layout depends on the
+ * {@link FrameType}, but every frame starts with a header possibly followed by user defined
+ * payload data.
+ * <p>
+ * <br>
+ * Elara frames types are defined as follows:
+ * </p>
+ *
  * <pre>
 
-     0         1         2         3         4         5         6
-     0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
-     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-     |          Source ID            |             Type              |
-     +-------+-------+-------+-------+-------+-------+-------+-------+
-     |                        Source Sequence                        |
-     +-------+-------+-------+-------+-------+-------+-------+-------+
-     |                             Time                              |
-     +-------+-------+-------+-------+-------+-------+-------+-------+
-     |Version| Flags |     Index     |         Payload Size          |
-     +-------+-------+-------+-------+-------+-------+-------+-------+
-     |                            Payload                            |
-     |                             ...                               |
+    General Header common to all frame types:
+
+    0         1         2         3         4         5         6
+    0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |Version| Type  |   Reserved    |          Frame Size           |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                        Type Dependent                         |
+    |                             ...                               |
+
+
+    Command Header: Type=1
+
+    0         1         2         3         4         5         6
+    0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |Version|Type=01|   Reserved    |          Frame Size           |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |           Source ID           |         Payload Type          |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                        Source Sequence                        |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                         Command Time                          |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                            Payload                            |
+    |                             ...                               |
+
+
+    Event Header: Type=2, F=0/1 (1 if last event for command)
+
+    0         1         2         3         4         5         6
+    0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |Version|Type=02|L    Index     |          Frame Size           |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |           Source ID           |         Payload Type          |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                        Source Sequence                        |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                        Event Sequence                         |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                          Event Time                           |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                            Payload                            |
+    |                             ...                               |
+
+
+    Nil Event Header: Type=3, F=1 (always last event for command)
+
+    0         1         2         3         4         5         6
+    0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |Version|Type=03|1  Index = 0   |       Frame Size = 40         |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |           Source ID           |         Payload Type          |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                        Source Sequence                        |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                        Event Sequence                         |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                          Event Time                           |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+
+    Rollback Event Header: Type=4, F=1 (always last event for command)
+
+    0         1         2         3         4         5         6
+    0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |Version|Type=04|1    Index     |       Frame Size = 40         |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |           Source ID           |         Payload Type          |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                        Source Sequence                        |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                        Event Sequence                         |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                          Event Time                           |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+
+    Time Metric Header: Type=5
+
+    0         1         2         3         4         5         6
+    0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |Version|Type=05|F    Index     |          Frame Size           |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |           Source ID           |         Metric Types          |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                        Source Sequence                        |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                        Event Sequence                         |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                          Metric Time                          |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                            Time 0                             |
+    |                            Time 1                             |
+    |                             ...                               |
+
+
+    Frequency Metric Header: Type=6
+
+    0         1         2         3         4         5         6
+    0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |Version|Type=06| Metric Types  |          Frame Size           |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                           Iteration                           |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                           Interval                            |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                          Metric Time                          |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                            Count 0                            |
+    |                            Count 1                            |
+    |                             ...                               |
 
  * </pre>
+ *
+ * @see FrameType
+ * @see CommandDescriptor
+ * @see EventDescriptor
  */
 public enum FrameDescriptor {
     ;
 
-    public static final int SOURCE_OFFSET = 0;
-    public static final int SOURCE_ID_LENGTH = Integer.BYTES;
-    public static final int TYPE_OFFSET = SOURCE_OFFSET + SOURCE_ID_LENGTH;
-    public static final int TYPE_LENGTH = Integer.BYTES;
-    public static final int SOURCE_SEQUENCE_OFFSET = TYPE_OFFSET + TYPE_LENGTH;
-    public static final int SEQUENCE_LENGTH = Long.BYTES;
-    public static final int TIME_OFFSET = SOURCE_SEQUENCE_OFFSET + SEQUENCE_LENGTH;
-    public static final int TIME_LENGTH = Long.BYTES;
-    public static final int VERSION_OFFSET = TIME_OFFSET + TIME_LENGTH;
+    public static final int VERSION_OFFSET = 0;
     public static final int VERSION_LENGTH = Byte.BYTES;
-    public static final int FLAGS_OFFSET = VERSION_OFFSET + VERSION_LENGTH;
-    public static final int FLAGS_LENGTH = Byte.BYTES;
-    public static final int INDEX_OFFSET = FLAGS_OFFSET + FLAGS_LENGTH;
-    public static final int INDEX_LENGTH = Short.BYTES;
-    public static final int PAYLOAD_SIZE_OFFSET = INDEX_OFFSET + INDEX_LENGTH;
-    public static final int PAYLOAD_SIZE_LENGTH = Integer.BYTES;
+    public static final int TYPE_OFFSET = VERSION_OFFSET + VERSION_LENGTH;
+    public static final int TYPE_LENGTH = Byte.BYTES;
+    public static final int RESERVED_OFFSET = TYPE_OFFSET + TYPE_LENGTH;
+
+    public static final int RESERVED_LENGTH = Short.BYTES;
+    public static final int FRAME_SIZE_OFFSET = RESERVED_OFFSET + RESERVED_LENGTH;
+    public static final int FRAME_SIZE_LENGTH = Integer.BYTES;
 
     public static final int HEADER_OFFSET = 0;
-    public static final int HEADER_LENGTH = PAYLOAD_SIZE_OFFSET + PAYLOAD_SIZE_LENGTH;
-
-    public static final int PAYLOAD_OFFSET = HEADER_OFFSET + HEADER_LENGTH;
+    public static final int HEADER_LENGTH = FRAME_SIZE_OFFSET + FRAME_SIZE_LENGTH;
 }

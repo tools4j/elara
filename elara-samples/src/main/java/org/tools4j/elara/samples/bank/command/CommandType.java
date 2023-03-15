@@ -46,7 +46,7 @@ public enum CommandType {
 
     public static String toString(final Command command) {
         if (command.isApplication()) {
-            switch (CommandType.byValue(command.type())) {
+            switch (CommandType.byValue(command.payloadType())) {
                 case CreateAccount:
                     return CreateAccountCommand.toString(command.payload());
                 case Deposit:

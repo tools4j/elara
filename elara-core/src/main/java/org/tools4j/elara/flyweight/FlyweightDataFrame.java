@@ -1,3 +1,4 @@
+
 /*
  * The MIT License (MIT)
  *
@@ -27,118 +28,112 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 
-import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
-import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
+import static org.tools4j.elara.flyweight.FrameType.COMMAND_TYPE;
 
+/**
+ * A flyweight that can read either of {@link CommandFrame} and {@link EventFrame}.
+ */
 public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFrame {
-
-    private final FlyweightHeader header = new FlyweightHeader();
-    private final DirectBuffer payload = new UnsafeBuffer(0, 0);
-
-    public FlyweightDataFrame init(final MutableDirectBuffer header,
-                                   final int headerOffset,
-                                   final int sourceId,
-                                   final int type,
-                                   final long sourceSeq,
-                                   final long time,
-                                   final byte flags,
-                                   final short index,
-                                   final DirectBuffer payload,
-                                   final int payloadOffset,
-                                   final int payloadSize) {
-        this.header.init(sourceId, type, sourceSeq, time, flags, index, payloadSize, header, headerOffset);
-        return initPayload(payload, payloadOffset, payloadSize);
-    }
-
-    public FlyweightDataFrame init(final DirectBuffer header,
-                                   final int headerOffset,
-                                   final DirectBuffer payload,
-                                   final int payloadOffset,
-                                   final int payloadSize) {
-        this.header.init(header, headerOffset);
-        return initPayload(payload, payloadOffset, payloadSize);
-    }
-
-    public FlyweightDataFrame initSilent(final DirectBuffer header,
-                                         final int headerOffset,
-                                         final DirectBuffer payload,
-                                         final int payloadOffset,
-                                         final int payloadSize) {
-        this.header.initSilent(header, headerOffset);
-        return initPayload(payload, payloadOffset, payloadSize);
-    }
+    private static final DirectBuffer EMPTY = new UnsafeBuffer(0, 0);
+    private final FlyweightHeader header = new FlyweightHeader(FrameDescriptor.HEADER_LENGTH);
+    private final FlyweightCommand command = new FlyweightCommand();
+    private final FlyweightEvent event = new FlyweightEvent();
 
     @Override
-    public FlyweightDataFrame init(final DirectBuffer event, final int offset) {
-        return this.init(
-                event, offset + HEADER_OFFSET,
-                event, offset + PAYLOAD_OFFSET,
-                event.getInt(offset + PAYLOAD_SIZE_OFFSET)
-        );
-    }
-
-    private FlyweightDataFrame initPayload(final DirectBuffer payload,
-                                           final int payloadOffset,
-                                           final int payloadSize) {
-        if (payloadSize == 0) {
-            this.payload.wrap(0, 0);
+    public FlyweightDataFrame wrap(final DirectBuffer buffer, final int offset) {
+        header.wrap(buffer, offset);
+        if (header.type() == COMMAND_TYPE) {
+            command.wrap(buffer, offset);
+            event.reset();
         } else {
-            this.payload.wrap(payload, payloadOffset, payloadSize);
+            command.reset();
+            event.wrap(buffer, offset);
         }
         return this;
     }
 
+    @Override
     public boolean valid() {
-        return header.valid();
+        return command.valid() || event.valid();
+    }
+
+    @Override
+    public int headerLength() {
+        return command.valid() ? command.headerLength() : event.valid() ? event.headerLength() : header.headerLength();
     }
 
     public FlyweightDataFrame reset() {
         header.reset();
-        payload.wrap(0, 0);
+        command.reset();
+        event.reset();
         return this;
     }
 
     @Override
     public Header header() {
-        return header;
+        return command.valid() ? command.header() : event.valid() ? event.header() : header;
     }
 
+    @Override
+    public int sourceId() {
+        return command.valid() ? command.sourceId() : event.valid() ? event.sourceId() : 0;
+    }
+
+    @Override
+    public long sourceSequence() {
+        return command.valid() ? command.sourceSequence() : event.valid() ? event.sourceSequence() : 0;
+    }
+
+    public int index() {
+        return event.valid() ? event.index() : 0;
+    }
+
+    public boolean last() {
+        return event.valid() && event.last();
+    }
+
+
+    public long eventSequence() {
+        return event.valid() ? event.eventSequence() : 0;
+    }
+
+    @Override
+    public int payloadType() {
+        return command.valid() ? command.payloadType() : event.valid() ? event.payloadType() : 0;
+    }
+
+    public long eventTime() {
+        return event.valid() ? event.eventTime() : 0;
+    }
     @Override
     public DirectBuffer payload() {
-        return payload;
+        return command.valid() ? command.payload() : event.valid() ? event.payload() : EMPTY;
     }
 
     @Override
-    public int writeTo(final MutableDirectBuffer dst, final int offset) {
-        final int payloadSize = payload.capacity();
-        header.writeTo(dst, offset);
-        payload.getBytes(0, dst, offset + PAYLOAD_OFFSET, payloadSize);
-        return HEADER_LENGTH + payloadSize;
+    public int writeTo(final MutableDirectBuffer dst, final int dstOffset) {
+        if (command.valid()) {
+            return command.writeTo(dst, dstOffset);
+        }
+        if (event.valid()) {
+            return event.writeTo(dst, dstOffset);
+        }
+        return 0;
     }
-
     @Override
     public StringBuilder printTo(final StringBuilder dst) {
-        dst.append("FlyweightDataFrame{");
-        if (valid()) {
-            dst.append("version=").append(header.version());
-            dst.append("|source-id=").append(header.sourceId());
-            dst.append("|source-seq=").append(header.sourceSequence());
-            dst.append("|index=").append(header.index());
-            dst.append("|flags=").append(Flags.toString(header().flags()));
-            dst.append("|type=").append(header.type());
-            dst.append("|time=").append(header.time());
-            dst.append("|payload-size=").append(header.payloadSize());
-        } else {
-            dst.append("???");
+        if (command.valid()) {
+            return command.printTo(dst);
         }
-        dst.append('}');
-        return dst;
+        if (event.valid()) {
+            return event.printTo(dst);
+        }
+        return dst.append("FlyweightDataFrame{???}");
     }
 
     @Override
     public String toString() {
-        return printTo(new StringBuilder(128)).toString();
+        return printTo(new StringBuilder(256)).toString();
     }
+
 }

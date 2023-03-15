@@ -61,7 +61,7 @@ public class ReceiverPublisherStep implements AgentStep {
     }
 
     private void onMessage(final DirectBuffer message) {
-        flyweightEvent.init(message, 0);
+        flyweightEvent.wrap(message, 0);
         try {
             for (int retry = 0; retry < MAX_RETRIES; retry++) {
                 final Ack ack = handler.publish(flyweightEvent, false, retry);

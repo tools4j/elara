@@ -23,22 +23,23 @@
  */
 package org.tools4j.elara.flyweight;
 
-import org.agrona.DirectBuffer;
-
 /**
- * A {@link Frame} for a command or an event.
+ * An event {@link DataFrame}.
  *
- * @see CommandFrame
- * @see EventFrame
- * @see CommandDescriptor
  * @see EventDescriptor
+ * @see CommandFrame
  */
-public interface DataFrame extends Frame {
-    int sourceId();
-    long sourceSequence();
-    int payloadType();
-    default int payloadSize() {
-        return payload().capacity();
+public interface EventFrame extends DataFrame {
+    @Override
+    default int headerLength() {
+        return EventDescriptor.HEADER_LENGTH;
     }
-    DirectBuffer payload();
+    boolean last();
+    int index();
+    long eventSequence();
+    long eventTime();
+    @Override
+    default int payloadSize() {
+        return frameSize() - EventDescriptor.HEADER_LENGTH;
+    }
 }

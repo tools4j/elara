@@ -28,10 +28,10 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
-import org.tools4j.elara.flyweight.Flags;
+import org.tools4j.elara.flyweight.CommandDescriptor;
+import org.tools4j.elara.flyweight.EventDescriptor;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FlyweightEvent;
-import org.tools4j.elara.flyweight.FlyweightHeader;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.base.EventIdApplier;
 import org.tools4j.elara.store.ExpandableDirectBuffer;
@@ -41,14 +41,6 @@ import org.tools4j.elara.stream.SendingResult;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.flyweight.FrameDescriptor.FLAGS_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
-import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.INDEX_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_SEQUENCE_OFFSET;
 
 /**
  * A command sender that directly invokes the passthrough command handler without persisting the command, instead
@@ -83,8 +75,8 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
     }
 
     @Override
-    public CommandSender.SendingContext sendingCommand(final int type) {
-        return sendingContext.init(sourceId(), nextCommandSequence(), type, eventStoreAppender.appending());
+    public CommandSender.SendingContext sendingCommand(final int payloadType) {
+        return sendingContext.init(sourceId(), nextCommandSequence(), payloadType, eventStoreAppender.appending());
     }
 
     private final class SendingContext implements CommandSender.SendingContext {
@@ -93,16 +85,16 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
         final ExpandableDirectBuffer buffer = new ExpandableDirectBuffer();
         AppendingContext context;
 
-        SendingContext init(final int sourceId, final long sourceSeq, final int type, final AppendingContext context) {
+        SendingContext init(final int sourceId, final long sourceSeq, final int payloadType, final AppendingContext context) {
             if (this.context != null) {
                 abort();
                 throw new IllegalStateException("Sending context not closed");
             }
             this.context = requireNonNull(context);
-            this.buffer.wrap(context.buffer(), PAYLOAD_OFFSET);
-            FlyweightHeader.writeTo(
-                    sourceId, type, sourceSeq, timeSource.currentTime(), Flags.NONE, INDEX, 0,
-                    context.buffer(), HEADER_OFFSET
+            this.buffer.wrap(context.buffer(), EventDescriptor.PAYLOAD_OFFSET);
+            FlyweightEvent.writeHeader(
+                    sourceId, sourceSeq, INDEX, true, 0 /*FIXME*/, timeSource.currentTime(), payloadType, 0,
+                    context.buffer(), EventDescriptor.HEADER_OFFSET
             );
             return this;
         }
@@ -116,12 +108,12 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
 
         @Override
         public int sourceId() {
-            return unclosedContext().buffer().getInt(SOURCE_OFFSET);
+            return FlyweightEvent.sourceId(unclosedContext().buffer());
         }
 
         @Override
         public long sourceSequence() {
-            return unclosedContext().buffer().getLong(SOURCE_SEQUENCE_OFFSET);
+            return FlyweightEvent.sourceSequence(unclosedContext().buffer());
         }
 
         @Override
@@ -139,13 +131,13 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
             buffer.unwrap();
             try (final AppendingContext ac = unclosedContext()) {
                 if (length > 0) {
-                    ac.buffer().putInt(PAYLOAD_SIZE_OFFSET, length);
+                    FlyweightEvent.payloadSize(length, ac.buffer());
                 }
                 if (baseState.allEventsAppliedFor(sourceId(), sourceSequence())) {
                     skipCommand(ac.buffer(), length);
                 } else {
                     applyEvent(ac.buffer(), length);
-                    ac.commit(HEADER_LENGTH + length);
+                    ac.commit(FlyweightEvent.HEADER_LENGTH + length);
                 }
                 incrementCommandSequence();
                 return SendingResult.SENT;
@@ -155,9 +147,15 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
         }
 
         private void skipCommand(final MutableDirectBuffer buffer, final int length) {
-            buffer.putByte(FLAGS_OFFSET, Flags.NONE);
-            buffer.putShort(INDEX_OFFSET, FlyweightCommand.INDEX);
-            skippedCommand.initSilent(buffer, HEADER_OFFSET, buffer, PAYLOAD_OFFSET, length);
+            FlyweightCommand.writeHeader(
+                    FlyweightEvent.sourceId(buffer),
+                    FlyweightEvent.sourceSequence(buffer),
+                    FlyweightEvent.eventTime(buffer),
+                    FlyweightEvent.payloadType(buffer),
+                    length,
+                    buffer, CommandDescriptor.HEADER_OFFSET
+            );
+            skippedCommand.wrapSilently(buffer, CommandDescriptor.HEADER_OFFSET, buffer, EventDescriptor.PAYLOAD_OFFSET);
             try {
                 duplicateHandler.skipCommandProcessing(skippedCommand);
             } catch (final Throwable t) {
@@ -172,7 +170,7 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
                 eventIdApplierOrNull.onEventId(sourceId(), sourceSequence(), INDEX);
                 return;
             }
-            appliedEvent.initSilent(buffer, HEADER_OFFSET, buffer, PAYLOAD_OFFSET, length);
+            appliedEvent.wrapSilently(buffer, EventDescriptor.HEADER_OFFSET);
             try {
                 eventApplier.onEvent(appliedEvent);
             } catch (final Throwable t) {

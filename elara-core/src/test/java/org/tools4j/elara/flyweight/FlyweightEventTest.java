@@ -32,9 +32,9 @@ import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
+import static org.tools4j.elara.flyweight.FlyweightEvent.HEADER_LENGTH;
 
 /**
  * Unit test for {@link FlyweightEvent}
@@ -50,17 +50,12 @@ public class FlyweightEventTest {
         assertNotNull(event.payload(), "id.payload");
         assertEquals(0, event.payload().capacity(), "id.payload.capacity");
         assertFalse(event.valid(), "event.valid");
-
-        try {
-            event.sourceId();
-        } catch (final IndexOutOfBoundsException e) {
-            //expected
-        }
+        assertThrowsExactly(IndexOutOfBoundsException.class, event::type, "event.type");
     }
 
     @Test
     public void invalidVersion() {
-        assertThrows(IllegalArgumentException.class, () -> new FlyweightEvent().init(
+        assertThrowsExactly(IllegalArgumentException.class, () -> new FlyweightEvent().wrap(
                 new ExpandableArrayBuffer(HEADER_LENGTH), 0
         ));
     }
@@ -70,129 +65,67 @@ public class FlyweightEventTest {
         //given
         final MutableDirectBuffer buffer = new ExpandableArrayBuffer(HEADER_LENGTH);
         buffer.putShort(FrameDescriptor.VERSION_OFFSET, Version.CURRENT);
-        final FlyweightEvent event = new FlyweightEvent().init(buffer, 0);
+        buffer.putInt(FrameDescriptor.FRAME_SIZE_OFFSET, HEADER_LENGTH);
+        final FlyweightEvent event = new FlyweightEvent().wrap(buffer, 0);
 
         //when + then
         assertEquals(0, event.sourceId(), "sourceId");
         assertEquals(0, event.sourceSequence(), "sourceSequence");
         assertEquals(0, event.index(), "index");
-        assertEquals(0, event.type(), "type");
-        assertEquals(0, event.time(), "time");
+        assertEquals(0, event.payloadType(), "payloadType");
+        assertEquals(0, event.eventTime(), "eventTime");
         assertNotNull(event.payload(), "payload");
         assertEquals(0, event.payload().capacity(), "payload.capacity");
         assertTrue(event.valid(), "event.valid");
     }
 
     @Test
-    public void initWithValues() {
-        //given
-        final int headerOffset = 23;
-        final int payloadOffset = 13;
-        final Values values = new Values(payloadOffset, "Hello world");
-        final FlyweightEvent event = new FlyweightEvent();
-
-        //when
-        event.init(new ExpandableArrayBuffer(), headerOffset, values.sourceId, values.sourceSeq, values.index,
-                values.type, values.time, values.flags, values.payload, payloadOffset, values.payloadLength()
-        );
-
-        //then
-        values.assertEvent(event);
-
-        //when
-        final int copyOffset = 7;
-        final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
-        final int totalLen = event.writeTo(buffer, copyOffset);
-
-        //then
-        assertEquals(HEADER_LENGTH + values.payloadLength(), totalLen, "total bytes length");
-
-        //when
-        final FlyweightEvent copy = new FlyweightEvent().init(buffer, copyOffset);
-
-        //then
-        values.assertEvent(copy);
-    }
-
-    @Test
-    public void initWithBuffer() {
-        //given
-        final Values values = new Values(0, "Hello world");
-        final FlyweightEvent event = new FlyweightEvent().init(
-                new ExpandableArrayBuffer(), 0, values.sourceId, values.sourceSeq, values.index,
-                values.type, values.time, values.flags, values.payload, 0, values.payloadLength()
-        );
-
-        //when
-        final int copyOffset = 7;
-        final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
-        final int totalLen = event.writeTo(buffer, copyOffset);
-
-        //then
-        assertEquals(HEADER_LENGTH + values.payloadLength(), totalLen, "total bytes length");
-
-        //when
-        final FlyweightEvent copy = new FlyweightEvent().init(buffer, copyOffset);
-
-        //then
-        values.assertEvent(copy);
-    }
-
-    @Test
-    public void initWithHeaderAndPayload() {
-        //given
-        final Values values = new Values(0, "Hello world");
-        final FlyweightEvent event = new FlyweightEvent().init(
-                new ExpandableArrayBuffer(), 0, values.sourceId, values.sourceSeq, values.index,
-                values.type, values.time, values.flags, values.payload, 0, values.payloadLength()
-        );
-
-        //when
-        final int headerOffset = 7;
-        final int payloadOffset = 7;
-        final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
-        event.writeTo(buffer, 0);
-        final MutableDirectBuffer header = new ExpandableArrayBuffer();
-        header.putBytes(headerOffset, buffer, 0, HEADER_LENGTH);
-        final MutableDirectBuffer payload = new ExpandableArrayBuffer();
-        payload.putBytes(payloadOffset, buffer, HEADER_LENGTH, values.payloadLength());
-
-        //when
-        final FlyweightEvent copy = new FlyweightEvent().init(header, headerOffset, payload, payloadOffset, values.payloadLength());
-
-        //then
-        values.assertEvent(copy);
-    }
-
-    @Test
     public void write() {
         //given
         final int headerOffset = 23;
-        final int payloadOffset = 13;
-        final Values values = new Values(payloadOffset, "Hello world");
+        final int payloadOffset = 42;
+        final Values values = new Values(payloadOffset, "Hello World");
         final FlyweightEvent event = new FlyweightEvent();
-        event.init(new ExpandableArrayBuffer(), headerOffset, values.sourceId, values.sourceSeq, values.index,
-                values.type, values.time, values.flags, values.payload, payloadOffset, values.payloadLength()
-        );
+        final MutableDirectBuffer buffer = new ExpandableArrayBuffer(headerOffset + HEADER_LENGTH + values.payloadSize());
+
+        //when
+        final int written = FlyweightEvent.writeHeader(values.sourceId, values.sourceSeq, values.index, values.last,
+                values.eventSeq, values.eventTime, values.payloadType, values.payloadSize(), buffer, headerOffset);
+        event.wrap(buffer, headerOffset);
+
+        //then
+        values.assertHeader(event);
+        assertEquals(HEADER_LENGTH, written, "bytes written");
 
         //when
         final int copyOffset = 7;
-        final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
-        final int writeToLen = event.writeTo(buffer, copyOffset);
-        final FlyweightEvent writtenTo = new FlyweightEvent().init(buffer, copyOffset);
+        final MutableDirectBuffer copyBuffer = new ExpandableArrayBuffer();
+        final int copyLen = event.writeTo(copyBuffer, copyOffset);
 
         //then
-        assertEquals(HEADER_LENGTH + values.payloadLength(), writeToLen, "write-to length");
-        values.assertEvent(writtenTo);
+        assertEquals(HEADER_LENGTH + values.payloadSize(), copyLen, "bytes copied");
+
+        //when
+        final FlyweightEvent copy = new FlyweightEvent().wrap(copyBuffer, copyOffset);
+
+        //then
+        values.assertHeader(copy);
+
+        //when
+        final FlyweightEvent silent = new FlyweightEvent().wrapSilently(copyBuffer, copyOffset);
+
+        //then
+        values.assertHeader(silent);
     }
 
     private static class Values {
         final int sourceId = 77;
-        final long sourceSeq = 998877;
+        final long sourceSeq = 998877000111000L;
         final short index = 7;
-        final int type = 123;
-        final long time = 998877665544L;
-        final byte flags = Flags.COMMIT;
+        final long eventSeq = 777666000000001L;
+        final int payloadType = 12345;
+        final long eventTime = 998877665544L;
+        final boolean last = true;
         final String msg;
         final MutableDirectBuffer payload = new ExpandableArrayBuffer();
 
@@ -201,19 +134,23 @@ public class FlyweightEventTest {
             payload.putStringAscii(payloadOffset, msg);
         }
 
-        int payloadLength() {
+        int payloadSize() {
             return Integer.BYTES + msg.length();
         }
 
-        void assertEvent(final Event event) {
+        void assertHeader(final Event event) {
             assertEquals(sourceId, event.sourceId(), "sourceId");
             assertEquals(sourceSeq, event.sourceSequence(), "sourceSequence");
             assertEquals(index, event.index(), "index");
-            assertEquals(type, event.type(), "type");
-            assertEquals(time, event.time(), "time");
-            assertEquals(Flags.COMMIT_STRING, event.flags().toString(), "flags");
+            assertEquals(payloadType, event.payloadType(), "payloadType");
+            assertEquals(eventTime, event.eventTime(), "eventTime");
+            assertEquals('C', event.flags().value(), "flags");
             assertNotNull(event.payload(), "payload");
-            assertEquals(payloadLength(), event.payload().capacity(), "payload.capacity");
+            assertEquals(payloadSize(), event.payload().capacity(), "payload.capacity");
+        }
+
+        void assertHeaderAndPayload(final Event event) {
+            assertHeader(event);
             assertEquals(msg, event.payload().getStringAscii(0), "payload.msg");
         }
     }

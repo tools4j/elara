@@ -23,7 +23,17 @@
  */
 package org.tools4j.elara.flyweight;
 
-@FunctionalInterface
-public interface Frame {
+import org.tools4j.elara.logging.Printable;
+
+public interface Frame extends Writable, Printable {
     Header header();
+    int headerLength();
+    default byte type() {
+        return header().type();
+    }
+    default int frameSize() {
+        return header().frameSize();
+    }
+
+    boolean valid();
 }

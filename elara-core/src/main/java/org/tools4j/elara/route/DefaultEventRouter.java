@@ -27,7 +27,6 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.EventType;
-import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.flyweight.FlyweightHeader;
 import org.tools4j.elara.store.ExpandableDirectBuffer;
@@ -36,11 +35,8 @@ import org.tools4j.elara.store.MessageStore.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.flyweight.FrameDescriptor.FLAGS_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
-import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
+import static org.tools4j.elara.flyweight.EventDescriptor.HEADER_OFFSET;
+import static org.tools4j.elara.flyweight.EventDescriptor.PAYLOAD_OFFSET;
 
 public class DefaultEventRouter implements EventRouter.Default {
 
@@ -77,11 +73,11 @@ public class DefaultEventRouter implements EventRouter.Default {
         return routingEvent0(type);
     }
 
-    private RoutingContext routingEvent0(final int type) {
+    private RoutingContext routingEvent0(final int payloadType) {
         if (nextIndex > 0 && routingContext.isCommitPending()) {
-            routingContext.commit(Flags.NONE);
+            routingContext.commit(false);
         }
-        return routingContext.init(type, appender.appending());
+        return routingContext.init(payloadType, appender.appending());
     }
 
     public void complete() {
@@ -90,7 +86,7 @@ public class DefaultEventRouter implements EventRouter.Default {
             if (nextIndex == 0 || !routingContext.isCommitPending()) {
                 routeCommitEvent();
             }
-            routingContext.commit(Flags.COMMIT);
+            routingContext.commit(true);
         }
         this.command = null;
         this.skipped = false;
@@ -98,7 +94,7 @@ public class DefaultEventRouter implements EventRouter.Default {
     }
 
     private void routeCommitEvent() {
-        try (final EventRouter.RoutingContext context = routingEvent0(EventType.COMMIT)) {
+        try (final EventRouter.RoutingContext context = routingEvent0(EventType.AUTO_COMMIT)) {
             context.route(0);
         }
     }
@@ -135,7 +131,7 @@ public class DefaultEventRouter implements EventRouter.Default {
     }
 
     private static void checkEventType(final int eventType) {
-        if (eventType == EventType.COMMIT || eventType == EventType.ROLLBACK) {
+        if (eventType == EventType.AUTO_COMMIT || eventType == EventType.ROLLBACK) {
             throw new IllegalArgumentException("Illegal event type: " + eventType);
         }
     }
@@ -163,28 +159,26 @@ public class DefaultEventRouter implements EventRouter.Default {
         final ExpandableDirectBuffer buffer = new ExpandableDirectBuffer();
         AppendingContext context;
 
-        RoutingContext init(final int type, final AppendingContext context) {
+        RoutingContext init(final int payloadType, final AppendingContext context) {
             if (this.context != null) {
                 abort();
                 throw new IllegalStateException("Routing context not closed");
             }
             this.context = requireNonNull(context);
             this.buffer.wrap(context.buffer(), PAYLOAD_OFFSET);
-            FlyweightHeader.writeTo(
-                    command.sourceId(), type, command.sourceSequence(), timeSource.currentTime(),
-                    Flags.NONE, nextIndex, 0,
-                    context.buffer(), HEADER_OFFSET
+            FlyweightEvent.writeHeader(
+                    command.sourceId(), command.sourceSequence(), nextIndex, false, 0 /*FIXME*/,
+                    timeSource.currentTime(), payloadType, 0, context.buffer(), HEADER_OFFSET
             );
             return this;
         }
 
-        void commit(final byte flags) {
+        void commit(final boolean last) {
             try (final AppendingContext ac = unclosedContext()) {
-                if (flags != Flags.NONE) {
-                    ac.buffer().putByte(FLAGS_OFFSET, flags);
+                if (last) {
+                    FlyweightEvent.last(true, ac.buffer());
                 }
-                final int payloadLength = ac.buffer().getInt(PAYLOAD_SIZE_OFFSET);
-                ac.commit(HEADER_LENGTH + payloadLength);
+                ac.commit(FlyweightHeader.frameSize(ac.buffer()));
             } finally {
                 context = null;
             }
@@ -217,9 +211,9 @@ public class DefaultEventRouter implements EventRouter.Default {
             final AppendingContext ac = unclosedContext();
             buffer.unwrap();
             if (length > 0) {
-                ac.buffer().putInt(PAYLOAD_SIZE_OFFSET, length);
+                FlyweightEvent.payloadSize(length, ac.buffer());
             }
-            flyweightEvent.initSilent(ac.buffer(), HEADER_OFFSET, ac.buffer(), PAYLOAD_OFFSET, length);
+            flyweightEvent.wrapSilently(ac.buffer(), HEADER_OFFSET);
             eventApplier.onEvent(flyweightEvent);
             flyweightEvent.reset();
             ++nextIndex;

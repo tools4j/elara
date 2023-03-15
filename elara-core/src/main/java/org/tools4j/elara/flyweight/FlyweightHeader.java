@@ -27,131 +27,109 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 
-import static org.tools4j.elara.flyweight.FrameDescriptor.FLAGS_OFFSET;
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
+import static org.tools4j.elara.flyweight.FrameDescriptor.FRAME_SIZE_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
 import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.INDEX_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_SEQUENCE_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.TIME_OFFSET;
+import static org.tools4j.elara.flyweight.FrameDescriptor.RESERVED_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.TYPE_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.VERSION_OFFSET;
 
-public class FlyweightHeader implements Flyweight<FlyweightHeader>, Header, Frame {
+public final class FlyweightHeader implements Flyweight<FlyweightHeader>, Header {
 
-    private final MutableDirectBuffer header = new UnsafeBuffer(0, 0);
+    private final int headerLength;
+    private final MutableDirectBuffer buffer = new UnsafeBuffer(0, 0);
 
-    public FlyweightHeader init(final int sourceId,
-                                final int type,
-                                final long sourceSeq,
-                                final long time,
-                                final byte flags,
-                                final short index,
-                                final int payloadLSize,
-                                final MutableDirectBuffer dst,
-                                final int dstOffset) {
-        writeTo(sourceId, type, sourceSeq, time, flags, index, payloadLSize, dst, dstOffset);
-        return initSilent(dst, dstOffset);
+    public FlyweightHeader(final int headerLength) {
+        if (headerLength < HEADER_LENGTH) {
+            throw new IllegalArgumentException("Invalid header length + " + headerLength);
+        }
+        this.headerLength = headerLength;
     }
 
-    public FlyweightHeader init(final Header header, final MutableDirectBuffer dst, final int dstOffset) {
-        return init(header.sourceId(), header.type(), header.sourceSequence(), header.time(), header.flags(), header.index(),
-                header.payloadSize(), dst, dstOffset);
+    public int headerLength() {
+        return headerLength;
+    }
+
+    public MutableDirectBuffer buffer() {
+        return buffer;
     }
 
     @Override
-    public FlyweightHeader init(final DirectBuffer src, final int srcOffset) {
-        final int length = src.capacity() - srcOffset;
-        if (length < HEADER_LENGTH) {
-            throw new IllegalArgumentException("Invalid frame header, expected min length + " + HEADER_LENGTH + " but found only " + length);
-        }
-        Version.validate(src.getByte(srcOffset + VERSION_OFFSET));
-        return initSilent(src, srcOffset);
+    public FlyweightHeader wrap(final DirectBuffer buffer, final int offset) {
+        Version.validate(buffer.getByte(offset + VERSION_OFFSET));
+        return wrapSilently(buffer, offset);
     }
 
-    public FlyweightHeader initSilent(final DirectBuffer src, final int srcOffset) {
-        this.header.wrap(src, srcOffset, HEADER_LENGTH);
+    public FlyweightHeader wrapSilently(final DirectBuffer buffer, final int offset) {
+        this.buffer.wrap(buffer, offset, headerLength);
         return this;
     }
 
     public boolean valid() {
-        return header.capacity() >= HEADER_LENGTH;
+        return buffer.capacity() >= headerLength;
     }
 
     public FlyweightHeader reset() {
-        header.wrap(0, 0);
+        buffer.wrap(0, 0);
         return this;
     }
-
     @Override
-    public Header header() {
-        return this;
+    public int version() {
+        return version(buffer);
+    }
+
+    public static int version(final DirectBuffer buffer) {
+        return 0xff & buffer.getByte(VERSION_OFFSET);
     }
 
     @Override
-    public int sourceId() {
-        return header.getInt(SOURCE_OFFSET);
+    public byte type() {
+        return type(buffer);
+    }
+
+    public static byte type(final DirectBuffer buffer) {
+        return buffer.getByte(TYPE_OFFSET);
     }
 
     @Override
-    public int type() {
-        return header.getInt(TYPE_OFFSET);
+    public short reserved() {
+        return reserved(buffer);
+    }
+
+    public static short reserved(final DirectBuffer buffer) {
+        return buffer.getShort(RESERVED_OFFSET, LITTLE_ENDIAN);
     }
 
     @Override
-    public long sourceSequence() {
-        return header.getLong(SOURCE_SEQUENCE_OFFSET);
+    public int frameSize() {
+        return frameSize(buffer);
     }
 
-    @Override
-    public long time() {
-        return header.getLong(TIME_OFFSET);
+    public static int frameSize(final DirectBuffer buffer) {
+        return buffer.getInt(FRAME_SIZE_OFFSET, LITTLE_ENDIAN);
     }
 
-    @Override
-    public short version() {
-        return (short)(0xff & header.getByte(VERSION_OFFSET));
-    }
-
-    @Override
-    public byte flags() {
-        return header.getByte(FLAGS_OFFSET);
-    }
-
-    @Override
-    public short index() {
-        return header.getShort(INDEX_OFFSET);
-    }
-
-    @Override
-    public int payloadSize() {
-        return header.getInt(PAYLOAD_SIZE_OFFSET);
+    public static void frameSize(final int frameSize, final MutableDirectBuffer dst) {
+        dst.putInt(FRAME_SIZE_OFFSET, frameSize, LITTLE_ENDIAN);
     }
 
     @Override
     public int writeTo(final MutableDirectBuffer dst, final int dstOffset) {
-        dst.putBytes(dstOffset + HEADER_OFFSET, header, 0, HEADER_LENGTH);
+        dst.putBytes(dstOffset + HEADER_OFFSET, buffer, 0, HEADER_LENGTH);
         return HEADER_LENGTH;
     }
 
-    public static int writeTo(final int sourceId,
-                              final int type,
-                              final long sourceSeq,
-                              final long time,
-                              final byte flags,
-                              final short index,
-                              final int payloadLSize,
-                              final MutableDirectBuffer dst,
-                              final int dstOffset) {
-        dst.putInt(dstOffset + SOURCE_OFFSET, sourceId);
-        dst.putInt(dstOffset + TYPE_OFFSET, type);
-        dst.putLong(dstOffset + SOURCE_SEQUENCE_OFFSET, sourceSeq);
-        dst.putLong(dstOffset + TIME_OFFSET, time);
-        dst.putByte(dstOffset + VERSION_OFFSET, Version.CURRENT);
-        dst.putByte(dstOffset + FLAGS_OFFSET, flags);
-        dst.putShort(dstOffset + INDEX_OFFSET, index);
-        dst.putInt(dstOffset + PAYLOAD_SIZE_OFFSET, payloadLSize);
+    public static int write(final byte type,
+                            final short reserved,
+                            final int frameSize,
+                            final MutableDirectBuffer dst, final int dstOffset) {
+        dst.putLong(dstOffset + HEADER_OFFSET,
+                (0xffL & Version.CURRENT) |
+                        ((0xffL & type) << 8) |
+                        ((0xffffL & reserved) << 16) |
+                        ((0x7fffffffL & frameSize) << 32),
+                LITTLE_ENDIAN);
         return HEADER_LENGTH;
     }
 
@@ -160,13 +138,9 @@ public class FlyweightHeader implements Flyweight<FlyweightHeader>, Header, Fram
         dst.append("FlyweightHeader{");
         if (valid()) {
             dst.append("version=").append(version());
-            dst.append("|source-id=").append(sourceId());
-            dst.append("|source-seq=").append(sourceSequence());
-            dst.append("|index=").append(index());
-            dst.append("|flags=").append(Flags.toString(header().flags()));
             dst.append("|type=").append(type());
-            dst.append("|time=").append(time());
-            dst.append("|payload-size=").append(payloadSize());
+            dst.append("|reserved=").append(reserved());
+            dst.append("|frame-size=").append(frameSize());
         } else {
             dst.append("???");
         }

@@ -27,10 +27,11 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.flyweight.Frame;
+import org.tools4j.elara.flyweight.DataFrame;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 
+import static org.tools4j.elara.flyweight.FrameType.EVENT_TYPE;
 import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.PAYLOAD_SIZE;
 import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_ID_OFFSET;
 import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_REPETITION_OFFSET;
@@ -124,8 +125,8 @@ public enum TimerEvents {
     private static int timerTriggered(final MutableDirectBuffer buffer,
                                       final int offset,
                                       final Command command) {
-        if (command.type() != TimerCommands.TRIGGER_TIMER) {
-            throw new IllegalArgumentException("Expected " + TimerCommands.TRIGGER_TIMER + " command but found " + command.type());
+        if (command.payloadType() != TimerCommands.TRIGGER_TIMER) {
+            throw new IllegalArgumentException("Expected " + TimerCommands.TRIGGER_TIMER + " command but found " + command.payloadType());
         }
         final DirectBuffer payload = command.payload();
         buffer.putBytes(offset, payload, 0, payload.capacity());
@@ -162,15 +163,15 @@ public enum TimerEvents {
     }
 
     public static boolean isTimerEvent(final Event event) {
-        return isTimerEventType(event.type());
+        return isTimerEvent(event.payloadType());
     }
 
-    public static boolean isTimerEvent(final Frame frame) {
-        return frame.header().index() >= 0 && isTimerEventType(frame.header().type());
+    public static boolean isTimerEvent(final DataFrame frame) {
+        return frame.type() == EVENT_TYPE && isTimerEvent(frame.payloadType());
     }
 
-    public static boolean isTimerEventType(final int eventType) {
-        switch (eventType) {
+    public static boolean isTimerEvent(final int payloadType) {
+        switch (payloadType) {
             case TIMER_EXPIRED://fallthrough
             case TIMER_FIRED://fallthrough
             case TIMER_STARTED://fallthrough
@@ -182,15 +183,15 @@ public enum TimerEvents {
     }
 
     public static String timerEventName(final Event event) {
-        return timerEventName(event.type());
+        return timerEventName(event.payloadType());
     }
 
-    public static String timerEventName(final Frame frame) {
-        return timerEventName(frame.header().type());
+    public static String timerEventName(final DataFrame frame) {
+        return timerEventName(frame.payloadType());
     }
 
-    public static String timerEventName(final int eventType) {
-        switch (eventType) {
+    public static String timerEventName(final int payloadType) {
+        switch (payloadType) {
             case TIMER_EXPIRED:
                 return "TIMER_EXPIRED";
             case TIMER_FIRED:
@@ -200,7 +201,7 @@ public enum TimerEvents {
             case TIMER_STOPPED:
                 return "TIMER_STOPPED";
             default:
-                throw new IllegalArgumentException("Not a timer event type: " + eventType);
+                throw new IllegalArgumentException("Not a timer event type: " + payloadType);
         }
     }
 }

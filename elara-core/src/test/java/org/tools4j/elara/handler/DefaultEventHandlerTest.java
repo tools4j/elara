@@ -24,7 +24,7 @@
 package org.tools4j.elara.handler;
 
 import org.agrona.ExpandableArrayBuffer;
-import org.agrona.concurrent.UnsafeBuffer;
+import org.agrona.MutableDirectBuffer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,7 +36,6 @@ import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
-import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.plugin.base.BaseState;
 
@@ -154,10 +153,11 @@ public class DefaultEventHandlerTest {
     private static Event event(final int sourceId, final long sourceSeq, final short index) {
         return event(sourceId, sourceSeq, index, EventType.APPLICATION);
     }
-    private static Event event(final int sourceId, final long sourceSeq, final short index, final int type) {
-        return new FlyweightEvent()
-                .init(new ExpandableArrayBuffer(), 0, sourceId, sourceSeq, index, type, 123L,
-                        Flags.NONE, new UnsafeBuffer(0, 0), 0, 0
-                );
+    private static Event event(final int sourceId, final long sourceSeq, final short index, final int payloadType) {
+        final MutableDirectBuffer buffer = new ExpandableArrayBuffer(FlyweightEvent.HEADER_LENGTH);
+        FlyweightEvent.writeHeader(
+                sourceId, sourceSeq, index, false, 0,123L, payloadType, 0, buffer, 0
+        );
+        return new FlyweightEvent().wrapSilently(buffer, 0);
     }
 }

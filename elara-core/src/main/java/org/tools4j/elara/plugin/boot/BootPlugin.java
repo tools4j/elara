@@ -114,7 +114,7 @@ public class BootPlugin implements SystemPlugin<NullState> {
             @Override
             public Output output(final BaseState baseState) {
                 return (event, replay, retry) -> {
-                    if (!replay && retry == 0 && event.type() == APP_INITIALISATION_STARTED) {
+                    if (!replay && retry == 0 && event.payloadType() == APP_INITIALISATION_STARTED) {
                         sendBootCommand(SIGNAL_APP_INITIALISATION_COMPLETE);
                         return Ack.COMMIT;
                     }

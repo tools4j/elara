@@ -23,22 +23,23 @@
  */
 package org.tools4j.elara.flyweight;
 
-import org.agrona.DirectBuffer;
-
 /**
- * A {@link Frame} for a command or an event.
- *
- * @see CommandFrame
- * @see EventFrame
- * @see CommandDescriptor
- * @see EventDescriptor
+ * Defines header type constants used in headers as TYPE field as per {@link FrameDescriptor}.
+ * @see FrameDescriptor#TYPE_OFFSET
+ * @see FrameDescriptor#TYPE_LENGTH
  */
-public interface DataFrame extends Frame {
-    int sourceId();
-    long sourceSequence();
-    int payloadType();
-    default int payloadSize() {
-        return payload().capacity();
-    }
-    DirectBuffer payload();
+public enum FrameType {
+    ;
+    /** Type for a frame that contains a command */
+    public static final byte COMMAND_TYPE = 0x1;
+    /** Type for a frame that contains a normal user routed event */
+    public static final byte EVENT_TYPE = 0x2;
+    /** Type for a frame that contains an auto-commit event */
+    public static final byte NIL_EVENT_TYPE = 0x3;
+    /** Type for a frame that contains a rollback event */
+    public static final byte ROLLBACK_EVENT_TYPE = 0x4;
+    /** Type for a frame that contains time metric data */
+    public static final byte TIME_METRIC_TYPE = 0x5;
+    /** Type for a frame that contains frequency metric data */
+    public static final byte FREQUENCY_METRIC_TYPE = 0x6;
 }

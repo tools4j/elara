@@ -24,54 +24,41 @@
 package org.tools4j.elara.flyweight;
 
 /**
- * Descriptor of event layout in a byte buffer:
+ * Descriptor of command layout in a byte buffer:
  * <pre>
 
     0         1         2         3         4         5         6
     0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    |Version|Type=02|L    Index     |          Frame Size           |
+    |Version|Type=01|   Reserved    |          Frame Size           |
     +-------+-------+-------+-------+-------+-------+-------+-------+
     |           Source ID           |         Payload Type          |
     +-------+-------+-------+-------+-------+-------+-------+-------+
     |                        Source Sequence                        |
     +-------+-------+-------+-------+-------+-------+-------+-------+
-    |                        Event Sequence                         |
-    +-------+-------+-------+-------+-------+-------+-------+-------+
-    |                          Event Time                           |
+    |                         Command Time                          |
     +-------+-------+-------+-------+-------+-------+-------+-------+
     |                            Payload                            |
     |                             ...                               |
-
-    L=0/1 (1 if last event for command)
-
  * </pre>
  *
  * @see FrameDescriptor
  */
-public enum EventDescriptor {
+public enum CommandDescriptor {
     ;
-    public static final int TYPE = FrameType.EVENT_TYPE;
-    public static final int NIL_TYPE = FrameType.NIL_EVENT_TYPE;
-    public static final int ROLLBACK_TYPE = FrameType.ROLLBACK_EVENT_TYPE;
+    public static final int TYPE = FrameType.COMMAND_TYPE;
 
-    public static final int INDEX_OFFSET = FrameDescriptor.RESERVED_OFFSET;
-
-    public static final int INDEX_LENGTH = FrameDescriptor.RESERVED_LENGTH;
     public static final int SOURCE_ID_OFFSET = FrameDescriptor.HEADER_LENGTH;
     public static final int SOURCE_ID_LENGTH = Integer.BYTES;
-
     public static final int PAYLOAD_TYPE_OFFSET = SOURCE_ID_OFFSET + SOURCE_ID_LENGTH;
     public static final int PAYLOAD_TYPE_LENGTH = Integer.BYTES;
     public static final int SOURCE_SEQUENCE_OFFSET = PAYLOAD_TYPE_OFFSET + PAYLOAD_TYPE_LENGTH;
     public static final int SOURCE_SEQUENCE_LENGTH = Long.BYTES;
-    public static final int EVENT_SEQUENCE_OFFSET = SOURCE_SEQUENCE_OFFSET + SOURCE_SEQUENCE_LENGTH;
-    public static final int EVENT_SEQUENCE_LENGTH = Long.BYTES;
-    public static final int EVENT_TIME_OFFSET = EVENT_SEQUENCE_OFFSET + EVENT_SEQUENCE_LENGTH;
-    public static final int EVENT_TIME_LENGTH = Long.BYTES;
+    public static final int COMMAND_TIME_OFFSET = SOURCE_SEQUENCE_OFFSET + SOURCE_SEQUENCE_LENGTH;
+    public static final int COMMAND_TIME_LENGTH = Long.BYTES;
 
     public static final int HEADER_OFFSET = FrameDescriptor.HEADER_OFFSET;
-    public static final int HEADER_LENGTH = EVENT_TIME_OFFSET + EVENT_TIME_LENGTH;
+    public static final int HEADER_LENGTH = COMMAND_TIME_OFFSET + COMMAND_TIME_LENGTH;
 
     public static final int PAYLOAD_OFFSET = HEADER_LENGTH;
 }

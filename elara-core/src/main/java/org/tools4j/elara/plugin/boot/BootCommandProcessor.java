@@ -36,9 +36,9 @@ public class BootCommandProcessor implements CommandProcessor {
 
     @Override
     public void onCommand(final Command command, final EventRouter router) {
-        if (command.type() == SIGNAL_APP_INITIALISATION_START) {
+        if (command.payloadType() == SIGNAL_APP_INITIALISATION_START) {
             router.routeEventWithoutPayload(APP_INITIALISATION_STARTED);
-        } else if (command.type() == SIGNAL_APP_INITIALISATION_COMPLETE) {
+        } else if (command.payloadType() == SIGNAL_APP_INITIALISATION_COMPLETE) {
             router.routeEventWithoutPayload(APP_INITIALISATION_COMPLETED);
         }
     }

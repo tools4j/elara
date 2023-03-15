@@ -63,7 +63,7 @@ public interface EventRouter {
      *
      * @param type the event type, typically non-negative for application events (plugins use negative types)
      * @return the context for event encoding and routing
-     * @throws IllegalArgumentException if type is {@link EventType#COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
+     * @throws IllegalArgumentException if type is {@link EventType#AUTO_COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
      */
     RoutingContext routingEvent(int type);
 
@@ -78,44 +78,44 @@ public interface EventRouter {
     void routeEvent(DirectBuffer buffer, int offset, int length);
 
     /***
-     * Routes an already encoded event of the specified event {@code type}.
+     * Routes an already encoded event of the specified event {@code payloadType}.
      *
-     * @param type      the event type, typically non-negative for application events (plugins use negative types)
-     * @param buffer    the buffer containing the event data
-     * @param offset    offset where the event data starts in {@code buffer}
-     * @param length    the length of the event data in bytes
-     * @throws IllegalArgumentException if type is {@link EventType#COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
+     * @param payloadType   the payload type, typically non-negative for application events (plugins use negative types)
+     * @param buffer        the buffer containing the event data
+     * @param offset        offset where the event data starts in {@code buffer}
+     * @param length        the length of the event data in bytes
+     * @throws IllegalArgumentException if payloadType is {@link EventType#AUTO_COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
      * @throws IllegalStateException if this command has been {@link #isSkipped() skipped}
      */
-    void routeEvent(int type, DirectBuffer buffer, int offset, int length);
+    void routeEvent(int payloadType, DirectBuffer buffer, int offset, int length);
 
     /***
-     * Routes an event that carries the same payload data as the {@link #command() command};  the {@link Command#type() command type} is
+     * Routes an event that carries the same payload data as the {@link #command() command};  the {@link Command#payloadType() command type} is
      * used as event type.
      *
      * @throws IllegalStateException if this command has been {@link #isSkipped() skipped}, or if the command's type is
-     *                               equal to {@link EventType#COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
+     *                               equal to {@link EventType#AUTO_COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
      */
     void routeEventWithCommandPayload();
 
     /***
-     * Routes an event of the specified event {@code type} that carries the same payload data as the
+     * Routes an event of the specified event {@code payloadType} that carries the same payload data as the
      * {@link #command() command}.
      *
-     * @param type the event type, typically non-negative for application events (plugins use negative types)
-     * @throws IllegalArgumentException if type is {@link EventType#COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
+     * @param payloadType the payload type, typically non-negative for application events (plugins use negative types)
+     * @throws IllegalArgumentException if payloadType is {@link EventType#AUTO_COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
      * @throws IllegalStateException if this command has been {@link #isSkipped() skipped}
      */
-    void routeEventWithCommandPayload(int type);
+    void routeEventWithCommandPayload(int payloadType);
 
     /***
-     * Routes an event of the specified event {@code type} that carries no payload data.
+     * Routes an event of the specified event {@code payloadType} that carries no payload data.
      *
-     * @param type the event type, typically non-negative for application events (plugins use negative types)
-     * @throws IllegalArgumentException if type is {@link EventType#COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
+     * @param payloadType the payload type, typically non-negative for application events (plugins use negative types)
+     * @throws IllegalArgumentException if payloadType is {@link EventType#AUTO_COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
      * @throws IllegalStateException if this command has been {@link #isSkipped() skipped}
      */
-    void routeEventWithoutPayload(int type);
+    void routeEventWithoutPayload(int payloadType);
 
     /**
      * Returns the zero based index of the next event to be routed.  If routing has started via {@link #routingEvent()}
@@ -234,8 +234,8 @@ public interface EventRouter {
         }
 
         @Override
-        default void routeEvent(final int type, final DirectBuffer buffer, final int offset, final int length) {
-            try (final RoutingContext context = routingEvent(type)) {
+        default void routeEvent(final int payloadType, final DirectBuffer buffer, final int offset, final int length) {
+            try (final RoutingContext context = routingEvent(payloadType)) {
                 context.buffer().putBytes(0, buffer, offset, length);
                 context.route(length);
             }
@@ -244,8 +244,8 @@ public interface EventRouter {
         @Override
         default void routeEventWithCommandPayload() {
             final Command command = command();
-            final int commandType = command().type();
-            if (commandType == EventType.COMMIT || commandType == EventType.ROLLBACK) {
+            final int commandType = command().payloadType();
+            if (commandType == EventType.AUTO_COMMIT || commandType == EventType.ROLLBACK) {
                 throw new IllegalStateException("Command type cannot be used as event type: " + commandType);
             }
             final DirectBuffer payload = command.payload();
@@ -253,14 +253,14 @@ public interface EventRouter {
         }
 
         @Override
-        default void routeEventWithCommandPayload(final int type) {
+        default void routeEventWithCommandPayload(final int payloadType) {
             final DirectBuffer payload = command().payload();
-            routeEvent(type, payload, 0, payload.capacity());
+            routeEvent(payloadType, payload, 0, payload.capacity());
         }
 
         @Override
-        default void routeEventWithoutPayload(final int type) {
-            try (final RoutingContext context = routingEvent(type)) {
+        default void routeEventWithoutPayload(final int payloadType) {
+            try (final RoutingContext context = routingEvent(payloadType)) {
                 context.route(0);
             }
         }

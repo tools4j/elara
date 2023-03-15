@@ -59,14 +59,14 @@ public interface CommandSender {
      */
     SendingContext sendingCommand();
     /**
-     * Starts sending of a command of the given {@code type} returning the sending context with the buffer for command
+     * Starts sending of a command of the given {@code payloadType} returning the sending context with the buffer for command
      * encoding.  Encoding and sending is completed with {@link SendingContext#send(int) send(..)} and is recommended
      * to be performed inside a try-resource block; see {@link CommandSender class documentation} for an example.
      *
-     * @param type the command type, typically non-negative for application commands (plugins use negative types)
+     * @param payloadType the payload type, typically non-negative for application commands (plugins use negative types)
      * @return the context for command encoding and sending
      */
-    SendingContext sendingCommand(int type);
+    SendingContext sendingCommand(int payloadType);
 
     /***
      * Sends a {@link CommandType#APPLICATION APPLICATION} command already encoded in the given buffer.
@@ -79,23 +79,23 @@ public interface CommandSender {
     SendingResult sendCommand(DirectBuffer buffer, int offset, int length);
 
     /***
-     * Routes an already encoded command of the specified command {@code type}.
+     * Routes an already encoded command of the specified command {@code payloadType}.
      *
-     * @param type      the command type, typically non-negative for application commands (plugins use negative types)
-     * @param buffer    the buffer containing the command data
-     * @param offset    offset where the command data starts in {@code buffer}
-     * @param length    the length of the command data in bytes
+     * @param payloadType   the payload type, typically non-negative for application commands (plugins use negative types)
+     * @param buffer        the buffer containing the command data
+     * @param offset        offset where the command data starts in {@code buffer}
+     * @param length        the length of the command data in bytes
      * @return the result indicating whether sending was successful, with options to resend after failures
      */
-    SendingResult sendCommand(int type, DirectBuffer buffer, int offset, int length);
+    SendingResult sendCommand(int payloadType, DirectBuffer buffer, int offset, int length);
 
     /***
-     * Sends a command of the specified command {@code type} that carries no payload data.
+     * Sends a command of the specified command {@code payloadType} that carries no payload data.
      *
-     * @param type the command type, typically non-negative for application commands (plugins use negative types)
+     * @param payloadType the payload type, typically non-negative for application commands (plugins use negative types)
      * @return the result indicating whether sending was successful, with options to resend after failures
      */
-    SendingResult sendCommandWithoutPayload(int type);
+    SendingResult sendCommandWithoutPayload(int payloadType);
 
     /**
      * Returns the source ID associated with the node sending commands with this command sender.
@@ -182,16 +182,16 @@ public interface CommandSender {
         }
 
         @Override
-        default SendingResult sendCommand(final int type, final DirectBuffer buffer, final int offset, final int length) {
-            try (final SendingContext context = sendingCommand(type)) {
+        default SendingResult sendCommand(final int payloadType, final DirectBuffer buffer, final int offset, final int length) {
+            try (final SendingContext context = sendingCommand(payloadType)) {
                 context.buffer().putBytes(0, buffer, offset, length);
                 return context.send(length);
             }
         }
 
         @Override
-        default SendingResult sendCommandWithoutPayload(final int type) {
-            try (final SendingContext context = sendingCommand(type)) {
+        default SendingResult sendCommandWithoutPayload(final int payloadType) {
+            try (final SendingContext context = sendingCommand(payloadType)) {
                 return context.send(0);
             }
         }

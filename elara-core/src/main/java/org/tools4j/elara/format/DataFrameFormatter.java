@@ -25,12 +25,12 @@ package org.tools4j.elara.format;
 
 import org.tools4j.elara.command.CommandType;
 import org.tools4j.elara.event.EventType;
+import org.tools4j.elara.flyweight.CommandFrame;
 import org.tools4j.elara.flyweight.DataFrame;
-import org.tools4j.elara.flyweight.Flags;
-import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.flyweight.Header;
+import org.tools4j.elara.flyweight.EventFrame;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.flyweight.FrameType.COMMAND_TYPE;
 import static org.tools4j.elara.format.Hex.hex;
 
 /**
@@ -65,8 +65,8 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
     String TIME = "{time}";
     /** Placeholder in format string for data frame header's version value */
     String VERSION = "{version}";
-    /** Placeholder in format string for data frame header's flags value */
-    String FLAGS = "{flags}";
+    /** Placeholder in format string for event frame header's last flag */
+    String LAST = "{last}";
     /** Placeholder in format string for data frame header's index value */
     String INDEX = "{index}";
     /** Placeholder in format string for data frame header's  payload-size value */
@@ -76,22 +76,21 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
 
     default Object line(long line, long entryId, DataFrame frame) {return line;}
     default Object entryId(long line, long entryId, DataFrame frame) {return entryId;}
-    default Object source(long line, long entryId, DataFrame frame) {return frame.header().sourceId();}
+    default Object source(long line, long entryId, DataFrame frame) {return frame.sourceId();}
     default Object type(long line, long entryId, DataFrame frame) {
-        final Header header = frame.header();
-        final int type = header.type();
-        if (header.index() >= 0) {
+        final int type = frame.payloadType();
+        if (frame.type() != COMMAND_TYPE) {
             //event
             switch (type) {
                 case EventType.APPLICATION:
                     return "A";
-                case EventType.COMMIT:
+                case EventType.AUTO_COMMIT:
                     return "C";
                 case EventType.ROLLBACK:
                     return "R";
             }
         }
-        if (header.index() == FlyweightCommand.INDEX) {
+        if (frame.type() == COMMAND_TYPE) {
             //command
             if (type == CommandType.APPLICATION) {
                 return "A";
@@ -99,12 +98,24 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
         }
         return type;
     }
-    default Object sequence(long line, long entryId, DataFrame frame) {return frame.header().sourceSequence();}
-    default Object time(long line, long entryId, DataFrame frame) {return timeFormatter().formatDateTime(frame.header().time());}
+    default Object sequence(long line, long entryId, DataFrame frame) {return frame.sourceSequence();}
+    default Object time(long line, long entryId, DataFrame frame) {
+        if (frame instanceof CommandFrame) {
+            return timeFormatter().formatDateTime(((CommandFrame)frame).commandTime());
+        }
+        if (frame instanceof EventFrame) {
+            return timeFormatter().formatDateTime(((EventFrame)frame).eventTime());
+        }
+        return "";
+    }
     default Object version(long line,long entryId,  DataFrame frame) {return frame.header().version();}
-    default Object flags(long line,long entryId,  DataFrame frame) {return Flags.toString(frame.header().flags());}
-    default Object index(long line, long entryId, DataFrame frame) {return frame.header().index();}
-    default Object payloadSize(long line, long entryId, DataFrame frame) {return frame.header().payloadSize();}
+    default Object last(long line, long entryId, DataFrame frame) {
+        return frame instanceof EventFrame && ((EventFrame)frame).last() ? "L" : "";
+    }
+    default Object index(long line, long entryId, DataFrame frame) {
+        return frame instanceof EventFrame ? ((EventFrame)frame).index() : 0;
+    }
+    default Object payloadSize(long line, long entryId, DataFrame frame) {return frame.payloadSize();}
     default Object payload(long line, long entryId, DataFrame frame) {
         final int size = frame.payload().capacity();
         return size == 0 ? "(empty)" : hex(frame.payload());}
@@ -123,7 +134,7 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
             case SEQUENCE: return sequence(entryId, entryId, frame);
             case TIME: return time(entryId, entryId, frame);
             case VERSION: return version(entryId, entryId, frame);
-            case FLAGS: return flags(entryId, entryId, frame);
+            case LAST: return last(entryId, entryId, frame);
             case INDEX: return index(entryId, entryId, frame);
             case PAYLOAD_SIZE: return payloadSize(entryId, entryId, frame);
             case PAYLOAD: return payload(entryId, entryId, frame);

@@ -32,16 +32,16 @@ public interface Command extends Writable, Printable {
     int sourceId();
     long sourceSequence();
 
-    int type();
+    int payloadType();
 
-    long time();
+    long commandTime();
 
     default boolean isAdmin() {
-        return CommandType.isAdmin(type());
+        return CommandType.isAdmin(payloadType());
     }
 
     default boolean isApplication() {
-        return CommandType.isApplication(type());
+        return CommandType.isApplication(payloadType());
     }
 
     DirectBuffer payload();

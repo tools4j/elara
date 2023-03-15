@@ -25,7 +25,7 @@ package org.tools4j.elara.store;
 
 import org.agrona.DirectBuffer;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.flyweight.Flags;
+import org.tools4j.elara.event.Event.Flags;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.store.MessageStore.Poller;
 
@@ -98,7 +98,7 @@ public class CommittedEventPoller implements Poller {
             aheadPoller.moveTo(curHeadId);
             return false;
         }
-        byte lastEventFlags = aheadState.lastEventFlags;
+        char lastEventFlags = aheadState.lastEventFlags;
         aheadState.reset();
         while (aheadPoller.poll(aheadState) > 0) {
             if (aheadState.isCommit()) {
@@ -143,12 +143,12 @@ public class CommittedEventPoller implements Poller {
     }
 
     private static class LookAheadState implements MessageStore.Handler {
-        byte lastEventFlags;
+        char lastEventFlags;
         final FlyweightEvent event = new FlyweightEvent();
 
         @Override
         public Result onMessage(final DirectBuffer buffer) {
-            onEvent(event.init(buffer, 0));
+            onEvent(event.wrap(buffer, 0));
             return POLL;
         }
 

@@ -24,7 +24,9 @@
 package org.tools4j.elara.plugin.boot;
 
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.flyweight.Frame;
+import org.tools4j.elara.flyweight.DataFrame;
+
+import static org.tools4j.elara.flyweight.FrameType.EVENT_TYPE;
 
 /**
  * Boot events issued in response to boot commands.
@@ -45,15 +47,15 @@ public enum BootEvents {
     public static final int APP_INITIALISATION_COMPLETED = -21;
 
     public static boolean isBootEvent(final Event event) {
-        return isBootEvent(event.type());
+        return isBootEvent(event.payloadType());
     }
 
-    public static boolean isBootEvent(final Frame frame) {
-        return frame.header().index() >= 0 && isBootEvent(frame.header().type());
+    public static boolean isBootEvent(final DataFrame frame) {
+        return frame.type() == EVENT_TYPE && isBootEvent(frame.payloadType());
     }
 
-    public static boolean isBootEvent(final int eventType) {
-        switch (eventType) {
+    public static boolean isBootEvent(final int payloadType) {
+        switch (payloadType) {
             case APP_INITIALISATION_STARTED://fallthrough
             case APP_INITIALISATION_COMPLETED://fallthrough
                 return true;
@@ -63,21 +65,21 @@ public enum BootEvents {
     }
 
     public static String bootEventName(final Event event) {
-        return bootEventName(event.type());
+        return bootEventName(event.payloadType());
     }
 
-    public static String bootEventName(final Frame frame) {
-        return bootEventName(frame.header().type());
+    public static String bootEventName(final DataFrame frame) {
+        return bootEventName(frame.payloadType());
     }
 
-    public static String bootEventName(final int eventType) {
-        switch (eventType) {
+    public static String bootEventName(final int payloadType) {
+        switch (payloadType) {
             case APP_INITIALISATION_STARTED:
                 return "APP_INITIALISATION_STARTED";
             case APP_INITIALISATION_COMPLETED:
                 return "APP_INITIALISATION_COMPLETED";
             default:
-                throw new IllegalArgumentException("Not a boot event type: " + eventType);
+                throw new IllegalArgumentException("Not a boot event type: " + payloadType);
         }
     }
 }

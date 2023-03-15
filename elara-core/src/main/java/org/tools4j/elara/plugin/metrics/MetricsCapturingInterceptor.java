@@ -605,9 +605,9 @@ public class MetricsCapturingInterceptor implements Interceptor {
         }
 
         @Override
-        public SendingContext sendingCommand(final int type) {
+        public SendingContext sendingCommand(final int payloadType) {
             captureTime(INPUT_POLLING_TIME);
-            return sendingContext(type, sender.sendingCommand(type));
+            return sendingContext(payloadType, sender.sendingCommand(payloadType));
         }
 
         @Override
@@ -620,20 +620,20 @@ public class MetricsCapturingInterceptor implements Interceptor {
         }
 
         @Override
-        public SendingResult sendCommand(final int type, final DirectBuffer buffer, final int offset, final int length) {
+        public SendingResult sendCommand(final int payloadType, final DirectBuffer buffer, final int offset, final int length) {
             captureTime(INPUT_POLLING_TIME);
-            captureInputSendingTime(sender.sourceId(), sender.nextCommandSequence(), type, buffer, offset, length);
-            final SendingResult result = sender.sendCommand(type, buffer, offset, length);
+            captureInputSendingTime(sender.sourceId(), sender.nextCommandSequence(), payloadType, buffer, offset, length);
+            final SendingResult result = sender.sendCommand(payloadType, buffer, offset, length);
             captureTime(COMMAND_APPENDING_TIME);
             return result;
         }
 
         @Override
-        public SendingResult sendCommandWithoutPayload(final int type) {
+        public SendingResult sendCommandWithoutPayload(final int payloadType) {
             captureTime(INPUT_POLLING_TIME);
-            captureInputSendingTime(sender.sourceId(), sender.nextCommandSequence(), type, unwrap(empty), 0, 0);
+            captureInputSendingTime(sender.sourceId(), sender.nextCommandSequence(), payloadType, unwrap(empty), 0, 0);
             unwrap(empty);//just in case somebody wraps our buffer
-            final SendingResult result = sender.sendCommandWithoutPayload(type);
+            final SendingResult result = sender.sendCommandWithoutPayload(payloadType);
             captureTime(COMMAND_APPENDING_TIME);
             return result;
         }

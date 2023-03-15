@@ -24,8 +24,8 @@
 package org.tools4j.elara.plugin.replication;
 
 import org.agrona.collections.IntHashSet;
-import org.tools4j.elara.flyweight.Flags;
-import org.tools4j.elara.flyweight.FlyweightHeader;
+import org.tools4j.elara.flyweight.EventDescriptor;
+import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.logging.ElaraLogger;
 import org.tools4j.elara.logging.Logger.Factory;
 import org.tools4j.elara.plugin.replication.EnforceLeaderInput.EnforceLeaderReceiver;
@@ -34,9 +34,8 @@ import org.tools4j.elara.store.MessageStore.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
-import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_OFFSET;
+import static org.tools4j.elara.flyweight.EventDescriptor.HEADER_LENGTH;
+import static org.tools4j.elara.flyweight.EventDescriptor.HEADER_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationEvents.LEADER_CONFIRMED;
 import static org.tools4j.elara.plugin.replication.ReplicationEvents.LEADER_ENFORCED;
 import static org.tools4j.elara.plugin.replication.ReplicationEvents.LEADER_REJECTED;
@@ -91,11 +90,11 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
             logger.info("Server {} processing enforce-leader request: leader confirmed since attempted enforced leader {} is already leader")
                     .replace(serverId).replace(leaderId).format();
             try (final AppendingContext context = eventStoreAppender.appending()) {
-                FlyweightHeader.writeTo(
-                        sourceId, LEADER_CONFIRMED, sourceSeq, time, Flags.COMMIT, (short)0, PAYLOAD_LENGTH,
+                FlyweightEvent.writeHeader(
+                        sourceId, sourceSeq, 0, true, 0 /*FIXME*/, time, LEADER_CONFIRMED, PAYLOAD_LENGTH,
                         context.buffer(), HEADER_OFFSET
                 );
-                ReplicationEvents.leaderConfirmed(context.buffer(), PAYLOAD_OFFSET, currentTerm, leaderId);
+                ReplicationEvents.leaderConfirmed(context.buffer(), EventDescriptor.PAYLOAD_OFFSET, currentTerm, leaderId);
                 context.commit(HEADER_LENGTH + PAYLOAD_LENGTH);
             }
             return;
@@ -104,11 +103,11 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
             logger.info("Server {} processing enforce-leader request: rejected since leader ID {} is invalid")
                     .replace(serverId).replace(leaderId).format();
             try (final AppendingContext context = eventStoreAppender.appending()) {
-                FlyweightHeader.writeTo(
-                        sourceId, LEADER_REJECTED, sourceSeq, time, Flags.COMMIT, (short)0, PAYLOAD_LENGTH,
+                FlyweightEvent.writeHeader(
+                        sourceId, sourceSeq, 0, true, 0/*FIXME*/, time, LEADER_REJECTED, PAYLOAD_LENGTH,
                         context.buffer(), HEADER_OFFSET
                 );
-                ReplicationEvents.leaderRejected(context.buffer(), PAYLOAD_OFFSET, currentTerm, leaderId);
+                ReplicationEvents.leaderRejected(context.buffer(), EventDescriptor.PAYLOAD_OFFSET, currentTerm, leaderId);
                 context.commit(HEADER_LENGTH + PAYLOAD_LENGTH);
             }
             return;
@@ -117,11 +116,11 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
         logger.info("Server {} processing enforce-leader request: enforcing leader {} to replace current leader {} for next term {}")
                 .replace(serverId).replace(leaderId).replace(state.leaderId()).replace(nextTerm).format();
         try (final AppendingContext context = eventStoreAppender.appending()) {
-            FlyweightHeader.writeTo(
-                    sourceId, LEADER_ENFORCED, sourceSeq, timeSource.currentTime(), Flags.COMMIT, (short)0, PAYLOAD_LENGTH,
+            FlyweightEvent.writeHeader(
+                    sourceId, sourceSeq, 0, true, 0/*FIXME*/, time, LEADER_ENFORCED, PAYLOAD_LENGTH,
                     context.buffer(), HEADER_OFFSET
             );
-            ReplicationEvents.leaderEnforced(context.buffer(), PAYLOAD_OFFSET, nextTerm, leaderId);
+            ReplicationEvents.leaderEnforced(context.buffer(), EventDescriptor.PAYLOAD_OFFSET, nextTerm, leaderId);
             context.commit(HEADER_LENGTH + PAYLOAD_LENGTH);
         }
     }

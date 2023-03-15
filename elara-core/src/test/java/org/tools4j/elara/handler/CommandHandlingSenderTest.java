@@ -69,7 +69,7 @@ public class CommandHandlingSenderTest {
         senderSupplier = new DefaultSenderSupplier(new CommandHandlingSender(INITIAL_BUFFER_CAPACITY, timeSource, command -> {
             final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer();
             command.writeTo(buffer, 0);
-            commandStore.add(new FlyweightCommand().init(buffer, 0));
+            commandStore.add(new FlyweightCommand().wrap(buffer, 0));
             return Result.POLL;
         }));
     }
@@ -159,10 +159,10 @@ public class CommandHandlingSenderTest {
         final int payloadSize = text == null ? 0 : Integer.BYTES + text.length();
         assertEquals(sourceId, command.sourceId(), "command.source-id");
         assertEquals(seq, command.sourceSequence(), "command.source-sequence");
-        assertEquals(commandTime, command.time(), "command.time");
+        assertEquals(commandTime, command.commandTime(), "command.time");
         assertFalse(command.isAdmin(), "command.isAdmin");
         assertTrue(command.isApplication(), "command.isApplication");
-        assertEquals(type, command.type(), "command.type");
+        assertEquals(type, command.payloadType(), "command.type");
         final DirectBuffer payload = command.payload();
         assertEquals(payloadSize, payload.capacity(), "command.payload.capacity");
         if (text != null) {

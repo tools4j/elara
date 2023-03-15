@@ -47,7 +47,7 @@ public class ReplicationEventApplier implements EventApplier {
 
     @Override
     public void onEvent(final Event event) {
-        switch (event.type()) {
+        switch (event.payloadType()) {
             case ReplicationEvents.LEADER_ELECTED://same for both
             case ReplicationEvents.LEADER_ENFORCED:
                 updateLeader(event);

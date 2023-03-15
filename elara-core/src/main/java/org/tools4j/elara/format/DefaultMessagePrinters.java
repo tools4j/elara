@@ -28,6 +28,7 @@ import org.tools4j.elara.plugin.metrics.MetricsStoreEntry;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.flyweight.FrameType.COMMAND_TYPE;
 import static org.tools4j.elara.format.DataFrameFormatter.SEQUENCE;
 import static org.tools4j.elara.format.DataFrameFormatter.SOURCE;
 import static org.tools4j.elara.format.HistogramFormatter.CaptureResult.PRINT;
@@ -96,7 +97,7 @@ public class DefaultMessagePrinters implements MessagePrinters {
         final ValueFormatter<DataFrame> formatterN = Spacer.spacer(formatter0, '.', SOURCE, SEQUENCE);
         return composite((line, entryId, frame) -> {
                     if (line == 0) return 0;
-                    if (frame.header().index() == 0) return 1;
+                    if (frame.type() == COMMAND_TYPE) return 1;
                     return 2;
                 },
                 parameterized(VERSION_LINE + EVENT_FORMAT_0, formatter0),

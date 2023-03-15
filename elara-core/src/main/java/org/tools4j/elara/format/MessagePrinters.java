@@ -24,12 +24,12 @@
 package org.tools4j.elara.format;
 
 import org.tools4j.elara.flyweight.DataFrame;
-import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.plugin.metrics.MetricsStoreEntry;
 import org.tools4j.elara.plugin.metrics.MetricsStoreEntry.Type;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.tools4j.elara.flyweight.FrameType.COMMAND_TYPE;
 import static org.tools4j.elara.format.MessagePrinter.composite;
 
 public interface MessagePrinters {
@@ -48,7 +48,7 @@ public interface MessagePrinters {
 
     default MessagePrinter<DataFrame> frame() {
         return composite(
-                (line, entryId, frame) -> frame.header().index() == FlyweightCommand.INDEX ? 0 : 1,
+                (line, entryId, frame) -> frame.type() == COMMAND_TYPE ? 0 : 1,
                 command(),
                 event()
         );

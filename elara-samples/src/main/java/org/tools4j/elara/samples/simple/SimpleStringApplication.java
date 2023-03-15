@@ -55,18 +55,18 @@ public class SimpleStringApplication implements AllInOneApp, Output {
 
     @Override
     public void onCommand(final Command command, final EventRouter router) {
-        System.out.println("processing: " + command + ", payload=" + payloadFor(command.type(), command.payload()));
-        router.routeEvent(command.type(), command.payload(), 0, command.payload().capacity());
+        System.out.println("processing: " + command + ", payload=" + payloadFor(command.payloadType(), command.payload()));
+        router.routeEvent(command.payloadType(), command.payload(), 0, command.payload().capacity());
     }
 
     @Override
     public void onEvent(final Event event) {
-        System.out.println("applied: " + event + ", payload=" + payloadFor(event.type(), event.payload()));
+        System.out.println("applied: " + event + ", payload=" + payloadFor(event.payloadType(), event.payload()));
     }
 
     @Override
     public Ack publish(final Event event, final boolean replay, final int retry) {
-        System.out.println("published: " + event + ", replay=" + replay + ", retry=" + retry + ", payload=" + payloadFor(event.type(), event.payload()));
+        System.out.println("published: " + event + ", replay=" + replay + ", retry=" + retry + ", payload=" + payloadFor(event.payloadType(), event.payload()));
         return Ack.COMMIT;
     }
 

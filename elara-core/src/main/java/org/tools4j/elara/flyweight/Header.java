@@ -27,25 +27,17 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.logging.Printable;
 
 /**
- * A header of a frame as described by {@link FrameDescriptor}.
+ * A general header of a frame as described in {@link FrameDescriptor}.
  */
 public interface Header extends Writable, Printable {
 
-    int sourceId();
+    int version();
 
-    int type();
+    byte type();
 
-    long sourceSequence();
+    short reserved();
 
-    long time();
-
-    short version();
-
-    byte flags();
-
-    short index();
-
-    int payloadSize();
+    int frameSize();
 
     @Override
     int writeTo(MutableDirectBuffer dst, int offset);

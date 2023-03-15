@@ -29,9 +29,9 @@ public enum EventType {
     ;
     /** Default application event type if no other positive type value is provided. */
     public static final int APPLICATION = 0;
-    /** Final event marking the completion of processing a command. */
-    public static final int COMMIT = -1;
-    /** Final event marking the rollback of processing a command. */
+    /** Implicit auto-commit event routed if the application does not route any events. */
+    public static final int AUTO_COMMIT = -1;
+    /** Rollback event appended if a corrupted event file was detected with an unfinished command. */
     public static final int ROLLBACK = -2;
 
     /** Max event type that is reserved for elara and elara plugins*/

@@ -59,5 +59,5 @@ public interface CommandProcessor {
     CommandProcessor NOOP = (command, router) -> {};
 
     /** Processor that routes an event with type and payload identical to the command */
-    CommandProcessor ROUTE_EVENT_WITH_COMMAND_PAYLOAD = (cmd, rte) -> rte.routeEventWithCommandPayload(cmd.type());
+    CommandProcessor ROUTE_EVENT_WITH_COMMAND_PAYLOAD = (cmd, rte) -> rte.routeEventWithCommandPayload(cmd.payloadType());
 }

@@ -23,22 +23,43 @@
  */
 package org.tools4j.elara.flyweight;
 
-import org.agrona.DirectBuffer;
+import org.tools4j.elara.event.Event;
 
-/**
- * A {@link Frame} for a command or an event.
- *
- * @see CommandFrame
- * @see EventFrame
- * @see CommandDescriptor
- * @see EventDescriptor
- */
-public interface DataFrame extends Frame {
-    int sourceId();
-    long sourceSequence();
-    int payloadType();
-    default int payloadSize() {
-        return payload().capacity();
+import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.flyweight.FrameType.EVENT_TYPE;
+import static org.tools4j.elara.flyweight.FrameType.NIL_EVENT_TYPE;
+import static org.tools4j.elara.flyweight.FrameType.ROLLBACK_EVENT_TYPE;
+
+final class FlyweightFlags implements Event.Flags {
+    private final EventFrame frame;
+
+    public FlyweightFlags(final EventFrame frame) {
+        this.frame = requireNonNull(frame);
     }
-    DirectBuffer payload();
+
+    @Override
+    public char value() {
+        switch (frame.type()) {
+            case EVENT_TYPE:
+                return isLast() ? COMMIT : NONE;
+            case NIL_EVENT_TYPE:
+                assert isLast();
+                return NIL;
+            case ROLLBACK_EVENT_TYPE:
+                assert isLast();
+                return ROLLBACK;
+        }
+        return NONE;
+    }
+
+    @Override
+    public boolean isLast() {
+        return frame.last();
+    }
+
+    @Override
+    public String toString() {
+        return "flags=" + (frame.valid() ? value() : "?");
+    }
+
 }

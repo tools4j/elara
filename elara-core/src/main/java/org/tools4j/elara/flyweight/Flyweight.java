@@ -27,5 +27,5 @@ import org.agrona.DirectBuffer;
 
 @FunctionalInterface
 public interface Flyweight<F> {
-    F init(DirectBuffer event, int offset);
+    F wrap(DirectBuffer event, int offset);
 }

@@ -39,7 +39,7 @@ import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
  * Class to repair an event store that was corrupted usually due to application crash.  A corrupted event store is an
  * event store that is non-empty and whose last event entry has neither the commit nor the rollback flag set.
  *
- * @see Flags#isFinal()
+ * @see Flags#isLast()
  */
 public class EventStoreRepairer {
 
@@ -79,7 +79,7 @@ public class EventStoreRepairer {
             }
             try (final AppendingContext context = eventStore.appender().appending()) {
                 BaseEvents.rollback(event, context.buffer(), 0, event.sourceId(), event.sourceSequence(),
-                        (short)nextIndex, event.time());
+                        (short)nextIndex, event.eventTime());
                 context.commit(HEADER_LENGTH);
             }
             return true;
@@ -96,7 +96,7 @@ public class EventStoreRepairer {
                 final int length = message.capacity();
                 final MutableDirectBuffer copy = new ExpandableArrayBuffer(length);
                 message.getBytes(0, copy, 0, length);
-                event.init(copy, 0);
+                event.wrap(copy, 0);
                 return Result.POLL;
             })) {
                 throw new RuntimeException("Poller should have returned last event");
@@ -104,7 +104,7 @@ public class EventStoreRepairer {
             if (event.index() < 0) {
                 throw new IllegalArgumentException("Not an event store (is it a command store?): " + eventStore);
             }
-            if (event.flags().isFinal()) {
+            if (event.flags().isLast()) {
                 return null;
             }
             if (event.index() >= MAX_EVENT_INDEX) {

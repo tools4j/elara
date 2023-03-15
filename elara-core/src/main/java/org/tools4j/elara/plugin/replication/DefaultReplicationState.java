@@ -74,7 +74,7 @@ public class DefaultReplicationState implements ReplicationState.Mutable {
 
     @Override
     public Mutable eventApplied(final Event event) {
-        lastAppliedEventTime = event.time();
+        lastAppliedEventTime = event.eventTime();
         eventStoreSize++;
         return this;
     }

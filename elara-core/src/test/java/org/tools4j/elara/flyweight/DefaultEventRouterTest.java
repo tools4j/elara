@@ -35,6 +35,8 @@ import org.tools4j.elara.route.DefaultEventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.store.InMemoryStore;
 import org.tools4j.elara.store.MessageStore;
+import org.tools4j.elara.store.MessageStore.Handler.Result;
+import org.tools4j.elara.store.MessageStore.Poller;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +67,7 @@ public class DefaultEventRouterTest {
         eventRouter = new DefaultEventRouter(() -> eventTime, messageStore.appender(), event -> {
             final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
             event.writeTo(buffer, 0);
-            routed.add(new FlyweightEvent().init(buffer, 0));
+            routed.add(new FlyweightEvent().wrap(buffer, 0));
         });
     }
 
@@ -90,7 +92,8 @@ public class DefaultEventRouterTest {
         //then
         assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[x]");
         assertEquals(1, routed.size(), "events.size");
-        assertEvent(command, routed.get(0), EventType.COMMIT, 0, Flags.COMMIT, 0, "events[0]");
+        assertEvent(command, routed.get(0), EventType.AUTO_COMMIT, 0, false, 0, "events[0]");
+        assertEvent(command, poll(0), EventType.AUTO_COMMIT, 0, true, 0, "poll(0)");
     }
 
     @Test
@@ -125,8 +128,9 @@ public class DefaultEventRouterTest {
         //then
         assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[x]");
         assertEquals(2, routed.size(), "events.size");
-        assertEvent(command, routed.get(0), EventType.APPLICATION, 0, Flags.NONE, 0, "events[0]");
-        assertEvent(command, routed.get(1), eventType, 1, Flags.COMMIT, payloadSize, "events[1]");
+        assertEvent(command, routed.get(0), EventType.APPLICATION, 0, false, 0, "events[0]");
+        assertEvent(command, routed.get(1), eventType, 1, false, payloadSize, "events[1]");
+        assertEvent(command, poll(1), eventType, 1, true, payloadSize, "poll(1)");
         assertEquals(msg, routed.get(1).payload().getStringAscii(msgOffset), "events[1].payload.msg");
     }
 
@@ -200,8 +204,9 @@ public class DefaultEventRouterTest {
         assertFalse(skipped, "skipped");
         assertEquals(0, eventRouter.nextEventIndex(), "commitIndex[x]");
         assertEquals(2, routed.size(), "events.size");
-        assertEvent(command, routed.get(0), EventType.APPLICATION, 0, Flags.NONE, 0, "events[0]");
-        assertEvent(command, routed.get(1), eventType, 1, Flags.COMMIT, payloadSize, "events[1]");
+        assertEvent(command, routed.get(0), EventType.APPLICATION, 0, false, 0, "events[0]");
+        assertEvent(command, routed.get(1), eventType, 1, false, payloadSize, "events[1]");
+        assertEvent(command, poll(1), eventType, 1, true, payloadSize, "poll(1)");
     }
 
     @Test
@@ -225,8 +230,9 @@ public class DefaultEventRouterTest {
                                   final long sourceSeq,
                                   final int type,
                                   final long time) {
-        command.init(new ExpandableArrayBuffer(), 0, sourceId, sourceSeq, type, time,
-                new ExpandableArrayBuffer(12), 2, 10);
+        final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
+        FlyweightCommand.writeHeader(sourceId, sourceSeq, time, type, 10, buffer, 0);
+        command.wrap(buffer, 0);
         eventRouter.start(command);
     }
 
@@ -256,7 +262,7 @@ public class DefaultEventRouterTest {
 
         //when + then
         assertThrows(IllegalArgumentException.class,
-                () -> eventRouter.routeEvent(EventType.COMMIT, zeroPayload, 0, 0)
+                () -> eventRouter.routeEvent(EventType.AUTO_COMMIT, zeroPayload, 0, 0)
         );
     }
 
@@ -277,15 +283,30 @@ public class DefaultEventRouterTest {
         );
     }
 
+    private Event poll(final int index) {
+        final Poller poller = messageStore.poller();
+        //skip those we are not interested in
+        for (int i = 0; i < index; i++) {
+            poller.poll(message -> Result.POLL);
+        }
+        //read and copy the event we actually want
+        final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
+        poller.poll(message -> {
+            buffer.putBytes(0, message, 0, message.capacity());
+            return Result.POLL;
+        });
+        return new FlyweightEvent().wrap(buffer, 0);
+    }
+
     private void assertEvent(final Command command, final Event event,
-                             final int type, final int index, final byte flags, final int payloadSize,
+                             final int type, final int index, final boolean last, final int payloadSize,
                              final String evtName) {
         assertEquals(command.sourceId(), event.sourceId(), evtName + ".sourceId");
         assertEquals(command.sourceSequence(), event.sourceSequence(), evtName + ".sourceSequence");
         assertEquals(index, event.index(), evtName + ".index");
-        assertEquals(type, event.type(), evtName + ".type");
-        assertEquals(Flags.NONE, event.flags().value(), evtName + ".flags");
-        assertEquals(eventTime, event.time(), evtName + ".time");
+        assertEquals(type, event.payloadType(), evtName + ".payloadType");
+        assertEquals(last, event.flags().isLast(), evtName + ".last");
+        assertEquals(eventTime, event.eventTime(), evtName + ".eventTime");
         assertEquals(payloadSize, event.payload().capacity(), evtName + ".payload.capacity");
     }
 }

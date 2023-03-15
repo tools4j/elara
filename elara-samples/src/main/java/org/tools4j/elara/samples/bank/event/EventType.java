@@ -46,7 +46,7 @@ public enum EventType {
 
     public static String toString(final Event event) {
         if (event.isApplication()) {
-            switch (EventType.byValue(event.type())) {
+            switch (EventType.byValue(event.payloadType())) {
                 case AccountCreated:
                     return AccountCreatedEvent.toString(event.payload());
                 case AccountCreationRejected:

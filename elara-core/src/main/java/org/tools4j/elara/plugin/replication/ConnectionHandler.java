@@ -27,7 +27,6 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.flyweight.FlyweightEvent;
-import org.tools4j.elara.flyweight.FrameDescriptor;
 import org.tools4j.elara.logging.ElaraLogger;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.logging.Logger.Level;
@@ -132,12 +131,12 @@ final class ConnectionHandler implements Connection.Handler {
         long nextEventStoreIndex = state.eventStoreSize();
         if (storeIndex == nextEventStoreIndex) {
             final int payloadSize = payloadSize(buffer);
-            if (payloadSize < FrameDescriptor.HEADER_LENGTH) {
+            if (payloadSize < FlyweightEvent.HEADER_LENGTH) {
                 logger.warn("Server {}: Ignoring append-request message in follower mode: payload size {} is smaller than frame header length {}")
-                        .replace(serverId).replace(payloadSize).replace(FrameDescriptor.HEADER_LENGTH).format();
+                        .replace(serverId).replace(payloadSize).replace(FlyweightEvent.HEADER_LENGTH).format();
                 return;
             }
-            flyweightEvent.init(buffer, PAYLOAD_OFFSET);
+            flyweightEvent.wrap(buffer, PAYLOAD_OFFSET);
             if (baseState.eventApplied(flyweightEvent.sourceId(), flyweightEvent.sourceId(), flyweightEvent.index())) {
                 logger.warn("Server {}: Ignoring append-request message in follower mode: event {}:{}.{} has already been applied")
                         .replace(serverId).replace(flyweightEvent.sourceId()).replace(flyweightEvent.sourceSequence()).replace(flyweightEvent.index()).format();

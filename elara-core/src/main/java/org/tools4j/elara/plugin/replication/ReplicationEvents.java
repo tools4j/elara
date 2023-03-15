@@ -25,8 +25,9 @@ package org.tools4j.elara.plugin.replication;
 
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.flyweight.Frame;
+import org.tools4j.elara.flyweight.DataFrame;
 
+import static org.tools4j.elara.flyweight.FrameType.EVENT_TYPE;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.CANDIDATE_ID_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.DATA_SIZE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.FLAGS_NONE;
@@ -132,11 +133,11 @@ public enum ReplicationEvents {
     }
 
     public static boolean isReplicationEvent(final Event event) {
-        return isReplicationEventType(event.type());
+        return isReplicationEventType(event.payloadType());
     }
 
-    public static boolean isReplicationEvent(final Frame frame) {
-        return frame.header().index() >= 0 && isReplicationEventType(frame.header().type());
+    public static boolean isReplicationEvent(final DataFrame frame) {
+        return frame.type() == EVENT_TYPE && isReplicationEventType(frame.payloadType());
     }
 
     public static boolean isReplicationEventType(final int eventType) {
@@ -152,11 +153,11 @@ public enum ReplicationEvents {
     }
 
     public static String replicationEventName(final Event event) {
-        return replicationEventName(event.type());
+        return replicationEventName(event.payloadType());
     }
 
-    public static String replicationEventName(final Frame frame) {
-        return replicationEventName(frame.header().type());
+    public static String replicationEventName(final DataFrame frame) {
+        return replicationEventName(frame.payloadType());
     }
 
     public static String replicationEventName(final int eventType) {

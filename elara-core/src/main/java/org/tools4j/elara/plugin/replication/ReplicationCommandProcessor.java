@@ -59,7 +59,7 @@ public class ReplicationCommandProcessor implements CommandProcessor {
 
     @Override
     public void onCommand(final Command command, final EventRouter router) {
-        if (command.type() == ReplicationCommands.PROPOSE_LEADER) {
+        if (command.payloadType() == ReplicationCommands.PROPOSE_LEADER) {
             final String commandName = replicationCommandName(command);
             final int serverId = configuration.serverId();
             final int candidateId = ReplicationCommands.candidateId(command);

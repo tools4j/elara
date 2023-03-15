@@ -49,7 +49,7 @@ public class Teller implements CommandProcessor {
     @Override
     public void onCommand(final Command command, final EventRouter router) {
         if (command.isApplication()) {
-            final CommandType commandType = CommandType.byValue(command.type());
+            final CommandType commandType = CommandType.byValue(command.payloadType());
             onCommand(commandType, command, router);
         }
     }

@@ -23,44 +23,21 @@
  */
 package org.tools4j.elara.flyweight;
 
-public enum Flags {
-    ;
-    public static final byte NONE = 0;
-    public static final byte COMMIT = 1;
-    public static final byte ROLLBACK = 2;
-
-    public static final String NONE_STRING = "0";
-    public static final String COMMIT_STRING = "C";
-    public static final String ROLLBACK_STRING = "R";
-
-    private static final int FINAL_MASK = COMMIT | ROLLBACK;
-
-    public static boolean isCommit(final byte flags) {
-        return (flags & COMMIT) != 0;
+/**
+ * A command {@link DataFrame}.
+ *
+ * @see CommandDescriptor
+ * @see EventFrame
+ */
+public interface CommandFrame extends DataFrame {
+    @Override
+    default int headerLength() {
+        return CommandDescriptor.HEADER_LENGTH;
     }
 
-    public static boolean isRollback(final byte flags) {
-        return (flags & ROLLBACK) != 0;
-    }
-
-    public static boolean isFinal(final byte flags) {
-        return (flags & FINAL_MASK) != 0;
-    }
-
-    public static boolean isNonFinal(final byte flags) {
-        return (flags & FINAL_MASK) == 0;
-    }
-
-    public static String toString(final byte flags) {
-        switch (flags) {
-            case NONE:
-                return NONE_STRING;
-            case COMMIT:
-                return COMMIT_STRING;
-            case ROLLBACK:
-                return ROLLBACK_STRING;
-            default:
-                return Integer.toHexString(flags & 0xff);
-        }
+    long commandTime();
+    @Override
+    default int payloadSize() {
+        return frameSize() - CommandDescriptor.HEADER_LENGTH;
     }
 }

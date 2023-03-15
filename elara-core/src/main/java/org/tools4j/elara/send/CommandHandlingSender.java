@@ -27,19 +27,14 @@ import org.agrona.DirectBuffer;
 import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
-import org.tools4j.elara.flyweight.Flags;
 import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.flyweight.FlyweightHeader;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.stream.SendingResult;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
-import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_SEQUENCE_OFFSET;
+import static org.tools4j.elara.flyweight.CommandDescriptor.HEADER_LENGTH;
+import static org.tools4j.elara.flyweight.CommandDescriptor.HEADER_OFFSET;
 
 /**
  * A command sender that directly invokes the command handler without persisting the command.
@@ -63,32 +58,33 @@ public final class CommandHandlingSender extends FlyweightCommandSender {
     }
 
     @Override
-    public CommandSender.SendingContext sendingCommand(final int type) {
-        return commandContext.init(sourceId(), nextCommandSequence(), type);
+    public CommandSender.SendingContext sendingCommand(final int payloadType) {
+        return commandContext.init(sourceId(), nextCommandSequence(), payloadType);
     }
 
     @Override
-    public SendingResult sendCommandWithoutPayload(final int type) {
-        return sendCommand(type, EMPTY_BUFFER, 0, 0);
+    public SendingResult sendCommandWithoutPayload(final int payloadType) {
+        return sendCommand(payloadType, EMPTY_BUFFER, 0, 0);
     }
 
     @Override
-    public SendingResult sendCommand(final int type, final DirectBuffer buffer, final int offset, final int length) {
-        initHeader(sourceId(), nextCommandSequence(), type, length);
+    public SendingResult sendCommand(final int payloadType, final DirectBuffer buffer, final int offset, final int length) {
+        initHeader(sourceId(), nextCommandSequence(), payloadType, length);
         invokeCommandHandler(buffer, offset, length);//TODO handle result value here
         incrementCommandSequence();
         return SendingResult.SENT;
     }
 
-    private void initHeader(final int sourceId, final long sourceSeq, final int type, final int payloadSize) {
-        FlyweightHeader.writeTo(
-                sourceId, type, sourceSeq, timeSource.currentTime(), Flags.NONE, FlyweightCommand.INDEX, payloadSize,
+    private void initHeader(final int sourceId, final long sourceSeq, final int payloadType, final int payloadSize) {
+        FlyweightCommand.writeHeader(
+                sourceId, sourceSeq, timeSource.currentTime(), payloadType, payloadSize,
                 header, HEADER_OFFSET
         );
     }
 
     private void invokeCommandHandler(final DirectBuffer payload, final int offset, final int length) {
-        command.initSilent(header, HEADER_OFFSET, payload, offset, length);
+        command.wrapSilently(header, HEADER_OFFSET, payload, offset);
+        assert length == command.payloadSize();
         try {
             commandHandler.onCommand(command);
         } finally {
@@ -124,13 +120,13 @@ public final class CommandHandlingSender extends FlyweightCommandSender {
         @Override
         public int sourceId() {
             ensureNotClosed();
-            return header.getInt(SOURCE_OFFSET);
+            return FlyweightCommand.sourceId(header);
         }
 
         @Override
         public long sourceSequence() {
             ensureNotClosed();
-            return header.getLong(SOURCE_SEQUENCE_OFFSET);
+            return FlyweightCommand.sourceSequence(header);
         }
 
         @Override
@@ -147,7 +143,7 @@ public final class CommandHandlingSender extends FlyweightCommandSender {
             }
             try {
                 if (length > 0) {
-                    header.putInt(PAYLOAD_SIZE_OFFSET, length);
+                    FlyweightCommand.payloadSize(length, header, HEADER_OFFSET);
                 }
                 invokeCommandHandler(payload, 0, length);//TODO handler result value here
                 incrementCommandSequence();

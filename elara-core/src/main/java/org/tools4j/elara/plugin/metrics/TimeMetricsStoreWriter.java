@@ -26,7 +26,6 @@ package org.tools4j.elara.plugin.metrics;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 import org.tools4j.elara.store.MessageStore.Appender;
 import org.tools4j.elara.store.MessageStore.AppendingContext;
@@ -58,7 +57,7 @@ public class TimeMetricsStoreWriter {
     }
 
     public int writeMetrics(final Command command) {
-        return writeMetrics(Target.COMMAND, command.sourceId(), command.sourceSequence(), FlyweightCommand.INDEX);
+        return writeMetrics(Target.COMMAND, command.sourceId(), command.sourceSequence(), (short)0);
     }
 
     public int writeMetrics(final Target target, final Event event) {

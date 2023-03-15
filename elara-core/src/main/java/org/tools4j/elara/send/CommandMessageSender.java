@@ -24,21 +24,16 @@
 package org.tools4j.elara.send;
 
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.flyweight.Flags;
+import org.tools4j.elara.flyweight.CommandDescriptor;
 import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.flyweight.FlyweightHeader;
 import org.tools4j.elara.store.ExpandableDirectBuffer;
 import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.SendingResult;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
-import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.PAYLOAD_SIZE_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_OFFSET;
-import static org.tools4j.elara.flyweight.FrameDescriptor.SOURCE_SEQUENCE_OFFSET;
+import static org.tools4j.elara.flyweight.CommandDescriptor.HEADER_LENGTH;
+import static org.tools4j.elara.flyweight.CommandDescriptor.HEADER_OFFSET;
 
 /**
  * A command sender that uses {@link MessageSender} to send the command.
@@ -55,8 +50,8 @@ public final class CommandMessageSender extends FlyweightCommandSender {
     }
 
     @Override
-    public CommandSender.SendingContext sendingCommand(final int type) {
-        return sendingContext.init(sourceId(), nextCommandSequence(), type, messageSender.sendingMessage());
+    public CommandSender.SendingContext sendingCommand(final int payloadType) {
+        return sendingContext.init(sourceId(), nextCommandSequence(), payloadType, messageSender.sendingMessage());
     }
 
     private final class SendingContext implements CommandSender.SendingContext {
@@ -64,15 +59,15 @@ public final class CommandMessageSender extends FlyweightCommandSender {
         final ExpandableDirectBuffer buffer = new ExpandableDirectBuffer();
         MessageSender.SendingContext context;
 
-        SendingContext init(final int sourceId, final long sourceSeq, final int type, final MessageSender.SendingContext context) {
+        SendingContext init(final int sourceId, final long sourceSeq, final int payloadType, final MessageSender.SendingContext context) {
             if (this.context != null) {
                 abort();
                 throw new IllegalStateException("Sending context not closed");
             }
             this.context = requireNonNull(context);
-            this.buffer.wrap(context.buffer(), PAYLOAD_OFFSET);
-            FlyweightHeader.writeTo(
-                    sourceId, type, sourceSeq, timeSource.currentTime(), Flags.NONE, FlyweightCommand.INDEX, 0,
+            this.buffer.wrap(context.buffer(), CommandDescriptor.PAYLOAD_OFFSET);
+            FlyweightCommand.writeHeader(
+                    sourceId, sourceSeq, timeSource.currentTime(), payloadType, 0,
                     context.buffer(), HEADER_OFFSET
             );
             return this;
@@ -87,12 +82,12 @@ public final class CommandMessageSender extends FlyweightCommandSender {
 
         @Override
         public int sourceId() {
-            return unclosedContext().buffer().getInt(SOURCE_OFFSET);
+            return FlyweightCommand.sourceId(unclosedContext().buffer());
         }
 
         @Override
         public long sourceSequence() {
-            return unclosedContext().buffer().getLong(SOURCE_SEQUENCE_OFFSET);
+            return FlyweightCommand.sourceSequence(unclosedContext().buffer());
         }
 
         @Override
@@ -110,7 +105,7 @@ public final class CommandMessageSender extends FlyweightCommandSender {
             buffer.unwrap();
             try (final MessageSender.SendingContext mc = unclosedContext()) {
                 if (length > 0) {
-                    mc.buffer().putInt(PAYLOAD_SIZE_OFFSET, length);
+                    FlyweightCommand.payloadSize(length, mc.buffer(), HEADER_OFFSET);
                 }
                 final SendingResult result = mc.send(HEADER_LENGTH + length);
                 incrementCommandSequence();

@@ -24,7 +24,9 @@
 package org.tools4j.elara.plugin.boot;
 
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.flyweight.Frame;
+import org.tools4j.elara.flyweight.DataFrame;
+
+import static org.tools4j.elara.flyweight.FrameType.COMMAND_TYPE;
 
 /**
  * Boot commands added to the command store when booting an elara application to signal startup and initialisation of
@@ -45,15 +47,15 @@ public enum BootCommands {
     public static final int SIGNAL_APP_INITIALISATION_COMPLETE = -21;
 
     public static boolean isBootCommand(final Command command) {
-        return isBootCommandType(command.type());
+        return isBootCommand(command.payloadType());
     }
 
-    public static boolean isBootCommand(final Frame frame) {
-        return frame.header().index() >= 0 && isBootCommandType(frame.header().type());
+    public static boolean isBootCommand(final DataFrame frame) {
+        return frame.header().type() == COMMAND_TYPE && isBootCommand(frame.payloadType());
     }
 
-    public static boolean isBootCommandType(final int commandType) {
-        switch (commandType) {
+    public static boolean isBootCommand(final int payloadType) {
+        switch (payloadType) {
             case SIGNAL_APP_INITIALISATION_START://fallthrough
             case SIGNAL_APP_INITIALISATION_COMPLETE://fallthrough
                 return true;
@@ -63,21 +65,21 @@ public enum BootCommands {
     }
 
     public static String bootCommandName(final Command command) {
-        return bootCommandName(command.type());
+        return bootCommandName(command.payloadType());
     }
 
-    public static String bootCommandName(final Frame frame) {
-        return bootCommandName(frame.header().type());
+    public static String bootCommandName(final DataFrame frame) {
+        return bootCommandName(frame.payloadType());
     }
 
-    public static String bootCommandName(final int commandType) {
-        switch (commandType) {
+    public static String bootCommandName(final int payloadType) {
+        switch (payloadType) {
             case SIGNAL_APP_INITIALISATION_START:
                 return "SIGNAL_APP_INITIALISATION_START";
             case SIGNAL_APP_INITIALISATION_COMPLETE:
                 return "SIGNAL_APP_INITIALISATION_COMPLETE";
             default:
-                throw new IllegalArgumentException("Not a boot command type: " + commandType);
+                throw new IllegalArgumentException("Not a boot command type: " + payloadType);
         }
     }
 }

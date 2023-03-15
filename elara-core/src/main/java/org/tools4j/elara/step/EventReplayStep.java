@@ -78,7 +78,7 @@ public class EventReplayStep implements AgentStep {
     }
 
     private Result onEvent(final DirectBuffer event) {
-        eventHandler.onEvent(flyweightEvent.init(event, 0));
+        eventHandler.onEvent(flyweightEvent.wrap(event, 0));
         return Result.POLL;
     }
 

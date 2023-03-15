@@ -84,7 +84,7 @@ public class CommandAppendingSenderTest {
                     @Override
                     public void commit(final int length) {
                         if (buffer != null) {
-                            commandStore.add(new FlyweightCommand().init(buffer, 0));
+                            commandStore.add(new FlyweightCommand().wrap(buffer, 0));
                             buffer = null;
                         }
                     }
@@ -157,10 +157,10 @@ public class CommandAppendingSenderTest {
         final int payloadSize = Integer.BYTES + text.length();
         assertEquals(sourceId, command.sourceId(), "command.source-id");
         assertEquals(seq, command.sourceSequence(), "command.source-sequence");
-        assertEquals(commandTime, command.time(), "command.time");
+        assertEquals(commandTime, command.commandTime(), "command.time");
         assertFalse(command.isAdmin(), "command.isAdmin");
         assertTrue(command.isApplication(), "command.isApplication");
-        assertEquals(type, command.type(), "command.type");
+        assertEquals(type, command.payloadType(), "command.type");
         final DirectBuffer payload = command.payload();
         assertEquals(payloadSize, payload.capacity(), "command.payload.capacity");
         assertEquals(text, payload.getStringAscii(0), "command.payload.text");

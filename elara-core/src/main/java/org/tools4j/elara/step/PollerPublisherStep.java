@@ -108,7 +108,7 @@ public class PollerPublisherStep implements AgentStep {
     }
 
     private Result onMessage(final DirectBuffer message, final boolean replay) {
-        flyweightEvent.init(message, 0);
+        flyweightEvent.wrap(message, 0);
         try {
             final Ack ack = handler.publish(flyweightEvent, replay, retry);
             if (Ack.RETRY != ack) {

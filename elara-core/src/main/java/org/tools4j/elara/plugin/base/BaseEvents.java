@@ -23,19 +23,18 @@
  */
 package org.tools4j.elara.plugin.base;
 
-import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.event.EventType;
-import org.tools4j.elara.flyweight.Flags;
+import org.tools4j.elara.flyweight.DataFrame;
 import org.tools4j.elara.flyweight.FlyweightEvent;
-import org.tools4j.elara.flyweight.Frame;
+
+import static org.tools4j.elara.flyweight.FrameType.EVENT_TYPE;
+import static org.tools4j.elara.flyweight.FrameType.NIL_EVENT_TYPE;
+import static org.tools4j.elara.flyweight.FrameType.ROLLBACK_EVENT_TYPE;
 
 public enum BaseEvents {
     ;
-    private static final DirectBuffer EMPTY_BUFFER = new UnsafeBuffer(0, 0);
-
     public static FlyweightEvent commit(final FlyweightEvent flyweightEvent,
                                         final MutableDirectBuffer headerBuffer,
                                         final int offset,
@@ -43,8 +42,8 @@ public enum BaseEvents {
                                         final long sourceSeq,
                                         final short index,
                                         final long time) {
-        return empty(flyweightEvent, headerBuffer, offset, sourceId, sourceSeq, index, EventType.COMMIT, time,
-                Flags.COMMIT);
+        return empty(flyweightEvent, headerBuffer, offset, NIL_EVENT_TYPE, sourceId, sourceSeq, index, true,
+                EventType.AUTO_COMMIT, time);
     }
 
     public static FlyweightEvent rollback(final FlyweightEvent flyweightEvent,
@@ -54,35 +53,40 @@ public enum BaseEvents {
                                           final long sourceSeq,
                                           final short index,
                                           final long time) {
-        return empty(flyweightEvent, headerBuffer, offset, sourceId, sourceSeq, index, EventType.ROLLBACK, time,
-                Flags.ROLLBACK);
+        return empty(flyweightEvent, headerBuffer, offset, ROLLBACK_EVENT_TYPE, sourceId, sourceSeq, index, true,
+                EventType.ROLLBACK, time);
     }
 
     public static FlyweightEvent empty(final FlyweightEvent flyweightEvent,
-                                        final MutableDirectBuffer headerBuffer,
-                                        final int offset,
-                                        final int sourceId,
-                                        final long sourceSeq,
-                                        final short index,
-                                        final int type,
-                                        final long time,
-                                        final byte flags) {
-        return flyweightEvent.init(headerBuffer, offset, sourceId, sourceSeq, index, type, time, flags,
-                EMPTY_BUFFER, 0, 0);
+                                       final MutableDirectBuffer headerBuffer,
+                                       final int offset,
+                                       final byte eventType,
+                                       final int sourceId,
+                                       final long sourceSeq,
+                                       final short index,
+                                       final boolean last,
+                                       final int payloadType,
+                                       final long eventTime) {
+        FlyweightEvent.writeHeader(eventType, sourceId, sourceSeq, index, last, 0 /*FIXME*/, eventTime, payloadType, 0, headerBuffer, offset);
+        return flyweightEvent.wrapSilently(headerBuffer, offset);
     }
 
     public static boolean isBaseEvent(final Event event) {
-        return isBaseEventType(event.type());
+        return isBaseEvent(event.payloadType());
     }
 
-    public static boolean isBaseEvent(final Frame frame) {
-        return frame.header().index() >= 0 && isBaseEventType(frame.header().type());
+    public static boolean isBaseEvent(final DataFrame frame) {
+        final byte frameType = frame.type();;
+        final int payloadType = frame.payloadType();
+        return (frameType == EVENT_TYPE && payloadType == EventType.APPLICATION) ||
+                (frameType == NIL_EVENT_TYPE && payloadType == EventType.AUTO_COMMIT) ||
+                (frameType == ROLLBACK_EVENT_TYPE && payloadType == EventType.ROLLBACK);
     }
 
-    public static boolean isBaseEventType(final int eventType) {
-        switch (eventType) {
+    public static boolean isBaseEvent(final int payloadType) {
+        switch (payloadType) {
             case EventType.APPLICATION://fallthrough
-            case EventType.COMMIT://fallthrough
+            case EventType.AUTO_COMMIT://fallthrough
             case EventType.ROLLBACK://fallthrough
                 return true;
             default:
@@ -91,18 +95,18 @@ public enum BaseEvents {
     }
 
     public static String baseEventName(final Event event) {
-        return baseEventName(event.type());
+        return baseEventName(event.payloadType());
     }
 
-    public static String baseEventName(final Frame frame) {
-        return baseEventName(frame.header().type());
+    public static String baseEventName(final DataFrame frame) {
+        return baseEventName(frame.payloadType());
     }
 
     public static String baseEventName(final int eventType) {
         switch (eventType) {
             case EventType.APPLICATION:
                 return "APPLICATION";
-            case EventType.COMMIT:
+            case EventType.AUTO_COMMIT:
                 return "COMMIT";
             case EventType.ROLLBACK:
                 return "ROLLBACK";
@@ -112,18 +116,18 @@ public enum BaseEvents {
     }
 
     public static char baseEventCode(final Event event) {
-        return baseEventCode(event.type());
+        return baseEventCode(event.payloadType());
     }
 
-    public static char baseEventCode(final Frame frame) {
-        return baseEventCode(frame.header().type());
+    public static char baseEventCode(final DataFrame frame) {
+        return baseEventCode(frame.payloadType());
     }
 
     public static char baseEventCode(final int eventType) {
         switch (eventType) {
             case EventType.APPLICATION:
                 return 'A';
-            case EventType.COMMIT:
+            case EventType.AUTO_COMMIT:
                 return 'C';
             case EventType.ROLLBACK:
                 return 'R';
