@@ -135,7 +135,7 @@ public class HashPassthroughApplication implements PassthroughApp {
                 .eventStore(new ChronicleMessageStore(eq))
                 .timeSource(pseudoNanoClock)
                 .idleStrategy(BusySpinIdleStrategy.INSTANCE)
-                .plugin(BasePlugin.INSTANCE, SingleEventBaseState::new)
+                .plugin(BasePlugin.INSTANCE, SingleEventBaseState::create)
         );
     }
 }

@@ -56,15 +56,15 @@ public class DefaultCommandHandler implements CommandHandler {
 
     @Override
     public Result onCommand(final Command command) {
-        if (allEventsAppliedFor(command)) {
+        if (eventAppliedForCommand(command)) {
             skipCommand(command);
             return POLL;
         }
         return processCommand(command);
     }
 
-    protected boolean allEventsAppliedFor(final Command command) {
-        return baseState.allEventsAppliedFor(command.sourceId(), command.sourceSequence());
+    protected boolean eventAppliedForCommand(final Command command) {
+        return baseState.eventAppliedForCommand(command.sourceId(), command.sourceSequence());
     }
 
     protected Result processCommand(final Command command) {

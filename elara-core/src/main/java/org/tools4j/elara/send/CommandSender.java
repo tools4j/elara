@@ -25,23 +25,22 @@ package org.tools4j.elara.send;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.app.handler.EventProcessor;
-import org.tools4j.elara.command.CommandType;
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.flyweight.PayloadType;
 import org.tools4j.elara.stream.SendingResult;
 
 /**
- * Facilitates sending of commands when
- * {@link EventProcessor#onEvent(Event, EventContext, InFlightState, CommandSender) processing}
- * events.
+ * Provides functions to encode and send commands through {@link SenderSupplier} when polling an
+ * {@link org.tools4j.elara.input.Input input} source.
  * <p>
  * Command sending can be done in two ways: already coded commands can be sent via one of the
  * {@link #sendCommand(DirectBuffer, int, int) sendCommand(..)} methods.  Alternatively the command can be encoded into
  * the sending transport buffer directly as follows:
  * <pre>
- *     try (SendingContext context = sendingEvent()) {
- *         int length = context.buffer().putStringAscii(0, "Hello world");
- *         context.send(length);
+ *      try (SendingContext context = sendingEvent()) {
+ *          int length = 0;
+ *          length += context.buffer().putInt(0, 123);
+ *          length += context.buffer().putStringAscii(4, "Hello world");
+ *          context.send(length);
  *     }
  * </pre>
  * Note that {@code SendingContext} implements {@link AutoCloseable} and if command sending is performed inside a
@@ -50,18 +49,20 @@ import org.tools4j.elara.stream.SendingResult;
  */
 public interface CommandSender {
     /**
-     * Starts sending of an {@link CommandType#APPLICATION APPLICATION} command and returns the sending context with the
-     * buffer for command encoding.  Encoding and sending is completed with {@link SendingContext#send(int) send(..)}
-     * and is recommended to be performed inside a try-resource block; see {@link CommandSender class documentation} for
-     * an example.
+     * Starts sending of a command and returns the sending context with the buffer for command encoding.  Encoding and
+     * sending are completed with {@link SendingContext#send(int) send(..)} and it is recommended to perform the
+     * encoding inside a try-resource block; see {@link CommandSender class documentation} for an example.
+     * <p>
+     * The command uses the {@link PayloadType#DEFAULT DEFAULT} payload type.
      *
      * @return the context for command encoding and sending
+     * @see #sendingCommand(int)
      */
     SendingContext sendingCommand();
     /**
-     * Starts sending of a command of the given {@code payloadType} returning the sending context with the buffer for command
-     * encoding.  Encoding and sending is completed with {@link SendingContext#send(int) send(..)} and is recommended
-     * to be performed inside a try-resource block; see {@link CommandSender class documentation} for an example.
+     * Starts sending of a command and returns the sending context with the buffer for command encoding.  Encoding and
+     * sending are completed with {@link SendingContext#send(int) send(..)} and it is recommended to perform the
+     * encoding inside a try-resource block; see {@link CommandSender class documentation} for an example.
      *
      * @param payloadType the payload type, typically non-negative for application commands (plugins use negative types)
      * @return the context for command encoding and sending
@@ -69,17 +70,20 @@ public interface CommandSender {
     SendingContext sendingCommand(int payloadType);
 
     /***
-     * Sends a {@link CommandType#APPLICATION APPLICATION} command already encoded in the given buffer.
+     * Sends a command that has already encoded into the given buffer.
+     * <p>
+     * The command uses the {@link PayloadType#DEFAULT DEFAULT} payload type.
      *
      * @param buffer    the buffer containing the command data
      * @param offset    offset where the command data starts in {@code buffer}
      * @param length    the length of the command data in bytes
      * @return the result indicating whether sending was successful, with options to resend after failures
+     * @see #sendCommand(int, DirectBuffer, int, int)
      */
     SendingResult sendCommand(DirectBuffer buffer, int offset, int length);
 
     /***
-     * Routes an already encoded command of the specified command {@code payloadType}.
+     * Sends a command that has already encoded into the given buffer.
      *
      * @param payloadType   the payload type, typically non-negative for application commands (plugins use negative types)
      * @param buffer        the buffer containing the command data
@@ -90,7 +94,7 @@ public interface CommandSender {
     SendingResult sendCommand(int payloadType, DirectBuffer buffer, int offset, int length);
 
     /***
-     * Sends a command of the specified command {@code payloadType} that carries no payload data.
+     * Sends a command that has a zero-length payload and the specified payload type.
      *
      * @param payloadType the payload type, typically non-negative for application commands (plugins use negative types)
      * @return the result indicating whether sending was successful, with options to resend after failures
@@ -173,12 +177,12 @@ public interface CommandSender {
     interface Default extends CommandSender {
         @Override
         default SendingContext sendingCommand() {
-            return sendingCommand(CommandType.APPLICATION);
+            return sendingCommand(PayloadType.DEFAULT);
         }
 
         @Override
         default SendingResult sendCommand(final DirectBuffer buffer, final int offset, final int length) {
-            return sendCommand(CommandType.APPLICATION, buffer, offset, length);
+            return sendCommand(PayloadType.DEFAULT, buffer, offset, length);
         }
 
         @Override

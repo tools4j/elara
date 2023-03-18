@@ -202,14 +202,14 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFr
         return HEADER_LENGTH;
     }
 
-    public static void last(final boolean last, final MutableDirectBuffer dst) {
-        final int index = FlyweightEvent.index(dst);
-        final short flagAndIndex = (short)(last ? (0x8000 | index) : index);
+    public static void writeIndex(final short index, final boolean last, final MutableDirectBuffer dst) {
+        assert index >= 0;
+        final short flagAndIndex = (short)(last ? (0x8000 | index) : (0x7fff & index));
         dst.putShort(INDEX_OFFSET, flagAndIndex, LITTLE_ENDIAN);
     }
 
-    public static void payloadSize(final int payloadSize, final MutableDirectBuffer dst) {
-        FlyweightHeader.frameSize(HEADER_LENGTH + payloadSize, dst);
+    public static void writePayloadSize(final int payloadSize, final MutableDirectBuffer dst) {
+        FlyweightHeader.writeFrameSize(HEADER_LENGTH + payloadSize, dst);
     }
 
     @Override

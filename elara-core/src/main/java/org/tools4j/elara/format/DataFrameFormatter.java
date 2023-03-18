@@ -23,11 +23,11 @@
  */
 package org.tools4j.elara.format;
 
-import org.tools4j.elara.command.CommandType;
-import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.CommandFrame;
 import org.tools4j.elara.flyweight.DataFrame;
 import org.tools4j.elara.flyweight.EventFrame;
+import org.tools4j.elara.flyweight.PayloadType;
+import org.tools4j.elara.plugin.base.BaseEvents;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.flyweight.FrameType.COMMAND_TYPE;
@@ -82,18 +82,18 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
         if (frame.type() != COMMAND_TYPE) {
             //event
             switch (type) {
-                case EventType.APPLICATION:
-                    return "A";
-                case EventType.AUTO_COMMIT:
+                case PayloadType.DEFAULT:
+                    return "D";
+                case BaseEvents.AUTO_COMMIT:
                     return "C";
-                case EventType.ROLLBACK:
+                case BaseEvents.ROLLBACK:
                     return "R";
             }
         }
         if (frame.type() == COMMAND_TYPE) {
             //command
-            if (type == CommandType.APPLICATION) {
-                return "A";
+            if (type == PayloadType.DEFAULT) {
+                return "D";
             }
         }
         return type;

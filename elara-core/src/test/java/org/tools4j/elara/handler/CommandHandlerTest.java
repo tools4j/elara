@@ -33,10 +33,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.flyweight.FlyweightCommand;
+import org.tools4j.elara.flyweight.PayloadType;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.route.DefaultEventRouter;
 import org.tools4j.elara.store.MessageStore.Handler.Result;
@@ -79,7 +79,7 @@ public class CommandHandlerTest {
     }
 
     @Test
-    public void commandSkippedIfAllEventsApplied() {
+    public void commandSkippedIfEventAlreadyAppliedForCommand() {
         //given
         final int sourceId = 1;
         final long sourceSeq = 22;
@@ -88,7 +88,7 @@ public class CommandHandlerTest {
         Result result;
 
         //when
-        when(baseState.allEventsAppliedFor(anyInt(), anyLong())).thenReturn(true);
+        when(baseState.eventAppliedForCommand(anyInt(), anyLong())).thenReturn(true);
         result = commandHandler.onCommand(command);
 
         //then
@@ -99,7 +99,7 @@ public class CommandHandlerTest {
     }
 
     @Test
-    public void commandProcessedIfNotAllEventsApplied() {
+    public void commandProcessedIfEventNotYetAppliedForCommand() {
         //given
         final int sourceId = 1;
         final long sourceSeq = 22;
@@ -108,7 +108,7 @@ public class CommandHandlerTest {
         Result result;
 
         //when
-        when(baseState.allEventsAppliedFor(anyInt(), anyLong())).thenReturn(false);
+        when(baseState.eventAppliedForCommand(anyInt(), anyLong())).thenReturn(false);
         result = commandHandler.onCommand(command);
 
         //then
@@ -129,7 +129,7 @@ public class CommandHandlerTest {
         Result result;
 
         //when
-        when(baseState.allEventsAppliedFor(anyInt(), anyLong())).thenReturn(false);
+        when(baseState.eventAppliedForCommand(anyInt(), anyLong())).thenReturn(false);
         doThrow(testException).when(commandProcessor).onCommand(any(), any());
         result = commandHandler.onCommand(command);
 
@@ -151,7 +151,7 @@ public class CommandHandlerTest {
         Result result;
 
         //when
-        when(baseState.allEventsAppliedFor(anyInt(), anyLong())).thenReturn(true);
+        when(baseState.eventAppliedForCommand(anyInt(), anyLong())).thenReturn(true);
         doThrow(testException).when(duplicateHandler).skipCommandProcessing(any());
         result = commandHandler.onCommand(command);
 
@@ -165,7 +165,7 @@ public class CommandHandlerTest {
 
     private static Command command(final int sourceId, final long sourceSeq) {
         final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
-        FlyweightCommand.writeHeader(sourceId, sourceSeq, 123L, 0, EventType.APPLICATION, buffer, 0);
+        FlyweightCommand.writeHeader(sourceId, sourceSeq, 123L, 0, PayloadType.DEFAULT, buffer, 0);
         return new FlyweightCommand().wrap(buffer, 0);
     }
 }

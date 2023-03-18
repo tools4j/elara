@@ -171,10 +171,8 @@ public final class FlyweightCommand implements Flyweight<FlyweightCommand>, Comm
         return frameSize;
     }
 
-    public static void payloadSize(final int payloadSize,
-                                   final MutableDirectBuffer dst,
-                                   final int dstOffset) {
-        FlyweightHeader.frameSize(HEADER_LENGTH + payloadSize, dst);
+    public static void writePayloadSize(final int payloadSize, final MutableDirectBuffer dst) {
+        FlyweightHeader.writeFrameSize(HEADER_LENGTH + payloadSize, dst);
     }
 
     @Override

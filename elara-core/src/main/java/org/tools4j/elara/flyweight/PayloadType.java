@@ -21,30 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.event;
+package org.tools4j.elara.flyweight;
 
 import org.tools4j.elara.plugin.api.TypeRange;
 
-public enum EventType {
+public enum PayloadType {
     ;
-    /** Default application event type if no other positive type value is provided. */
-    public static final int APPLICATION = 0;
-    /** Implicit auto-commit event routed if the application does not route any events. */
-    public static final int AUTO_COMMIT = -1;
-    /** Rollback event appended if a corrupted event file was detected with an unfinished command. */
-    public static final int ROLLBACK = -2;
+    /** Default payload type if no other type value is provided. */
+    public static final int DEFAULT = 0;
 
-    /** Max event type that is reserved for elara and elara plugins*/
+    /** Max payload type that is reserved for elara and elara plugins*/
     public static final int RESERVED_MAX = TypeRange.MAX_RESERVED_TYPE;
-    /** Min event type that is reserved for elara and elara plugins*/
+    /** Min payload type that is reserved for elara and elara plugins*/
     public static final int RESERVED_MIN = TypeRange.MIN_RESERVED_TYPE;
 
-    public static boolean isAdmin(final int value) {
-        return value < 0;
+    public static boolean isSystem(final int payloadType) {
+        return payloadType < 0;
     }
 
-    public static boolean isApplication(final int value) {
-        return value >= 0;
+    public static boolean isApplication(final int payloadType) {
+        return payloadType >= 0;
     }
-
 }

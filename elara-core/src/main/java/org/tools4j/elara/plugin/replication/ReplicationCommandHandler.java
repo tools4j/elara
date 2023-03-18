@@ -59,7 +59,7 @@ public class ReplicationCommandHandler extends DefaultCommandHandler {
 
     @Override
     public Result onCommand(final Command command) {
-        if (allEventsAppliedFor(command)) {
+        if (eventAppliedForCommand(command)) {
             skipCommand(command);
             return POLL;
         }

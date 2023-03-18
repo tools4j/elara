@@ -110,7 +110,7 @@ public final class FlyweightHeader implements Flyweight<FlyweightHeader>, Header
         return buffer.getInt(FRAME_SIZE_OFFSET, LITTLE_ENDIAN);
     }
 
-    public static void frameSize(final int frameSize, final MutableDirectBuffer dst) {
+    public static void writeFrameSize(final int frameSize, final MutableDirectBuffer dst) {
         dst.putInt(FRAME_SIZE_OFFSET, frameSize, LITTLE_ENDIAN);
     }
 

@@ -25,6 +25,7 @@ package org.tools4j.elara.event;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.flyweight.PayloadType;
 import org.tools4j.elara.flyweight.Writable;
 import org.tools4j.elara.logging.Printable;
 
@@ -40,12 +41,12 @@ public interface Event extends Writable, Printable {
 
     Flags flags();
 
-    default boolean isAdmin() {
-        return EventType.isAdmin(payloadType());
+    default boolean isSystem() {
+        return PayloadType.isSystem(payloadType());
     }
 
     default boolean isApplication() {
-        return EventType.isApplication(payloadType());
+        return PayloadType.isApplication(payloadType());
     }
 
     DirectBuffer payload();

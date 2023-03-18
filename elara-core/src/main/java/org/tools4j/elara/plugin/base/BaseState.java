@@ -26,12 +26,23 @@ package org.tools4j.elara.plugin.base;
 import org.tools4j.elara.event.Event;
 
 public interface BaseState {
+    long NIL_SEQUENCE = -1;
 
-    boolean allEventsAppliedFor(int sourceId, long sourceSeq);
-    boolean eventApplied(int sourceId, long sourceSeq, int index);
+    long lastAppliedCommandSequence(int sourceId);
+    long lastAppliedEventSequence();
+
+    default boolean eventAppliedForCommand(final int sourceId, final long commandSeq) {
+        return commandSeq <= lastAppliedCommandSequence(sourceId);
+    }
+    default boolean eventApplied(final long eventSeq) {
+        return eventSeq <= lastAppliedEventSequence();
+    }
 
     interface Mutable extends BaseState {
-        Mutable applyEvent(Event event);
-        Mutable applyEvent(int sourceId, long sourceSeq, int index);
+        default Mutable applyEvent(final Event event) {
+            return applyEvent(event.sourceId(), event.sourceSequence(), event.eventSequence(), event.index());
+        }
+
+        Mutable applyEvent(int sourceId, long sourceSeq, long eventSeq, int index);
     }
 }

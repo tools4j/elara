@@ -30,6 +30,7 @@ public interface ReplicationState {
 
     int term();
     int leaderId();
+    long lastAppliedEventSequence();//redundant to base state, but kind of more convenient so
     long lastAppliedEventTime();
 
     interface Volatile extends ReplicationState {

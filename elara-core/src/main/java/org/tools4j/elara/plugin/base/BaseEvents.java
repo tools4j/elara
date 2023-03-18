@@ -25,16 +25,26 @@ package org.tools4j.elara.plugin.base;
 
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.DataFrame;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 
-import static org.tools4j.elara.flyweight.FrameType.EVENT_TYPE;
 import static org.tools4j.elara.flyweight.FrameType.NIL_EVENT_TYPE;
 import static org.tools4j.elara.flyweight.FrameType.ROLLBACK_EVENT_TYPE;
 
 public enum BaseEvents {
     ;
+    /**
+     * Payload type used for implicit auto-commit event routed if the application does not route any events.
+     *
+     * @see org.tools4j.elara.flyweight.FrameType#NIL_EVENT_TYPE
+     */
+    public static final int AUTO_COMMIT = -1;
+    /**
+     * Payload type used for rollback event appended if a corrupted event file was detected with an unfinished command.
+     *
+     * @see org.tools4j.elara.flyweight.FrameType#ROLLBACK_EVENT_TYPE
+     */
+    public static final int ROLLBACK = -2;
     public static FlyweightEvent commit(final FlyweightEvent flyweightEvent,
                                         final MutableDirectBuffer headerBuffer,
                                         final int offset,
@@ -43,7 +53,7 @@ public enum BaseEvents {
                                         final short index,
                                         final long time) {
         return empty(flyweightEvent, headerBuffer, offset, NIL_EVENT_TYPE, sourceId, sourceSeq, index, true,
-                EventType.AUTO_COMMIT, time);
+                AUTO_COMMIT, time);
     }
 
     public static FlyweightEvent rollback(final FlyweightEvent flyweightEvent,
@@ -54,7 +64,7 @@ public enum BaseEvents {
                                           final short index,
                                           final long time) {
         return empty(flyweightEvent, headerBuffer, offset, ROLLBACK_EVENT_TYPE, sourceId, sourceSeq, index, true,
-                EventType.ROLLBACK, time);
+                ROLLBACK, time);
     }
 
     public static FlyweightEvent empty(final FlyweightEvent flyweightEvent,
@@ -78,16 +88,14 @@ public enum BaseEvents {
     public static boolean isBaseEvent(final DataFrame frame) {
         final byte frameType = frame.type();;
         final int payloadType = frame.payloadType();
-        return (frameType == EVENT_TYPE && payloadType == EventType.APPLICATION) ||
-                (frameType == NIL_EVENT_TYPE && payloadType == EventType.AUTO_COMMIT) ||
-                (frameType == ROLLBACK_EVENT_TYPE && payloadType == EventType.ROLLBACK);
+        return (frameType == NIL_EVENT_TYPE && payloadType == AUTO_COMMIT) ||
+                (frameType == ROLLBACK_EVENT_TYPE && payloadType == ROLLBACK);
     }
 
     public static boolean isBaseEvent(final int payloadType) {
         switch (payloadType) {
-            case EventType.APPLICATION://fallthrough
-            case EventType.AUTO_COMMIT://fallthrough
-            case EventType.ROLLBACK://fallthrough
+            case AUTO_COMMIT://fallthrough
+            case ROLLBACK://fallthrough
                 return true;
             default:
                 return false;
@@ -104,33 +112,10 @@ public enum BaseEvents {
 
     public static String baseEventName(final int eventType) {
         switch (eventType) {
-            case EventType.APPLICATION:
-                return "APPLICATION";
-            case EventType.AUTO_COMMIT:
-                return "COMMIT";
-            case EventType.ROLLBACK:
+            case AUTO_COMMIT:
+                return "AUTO_COMMIT";
+            case ROLLBACK:
                 return "ROLLBACK";
-            default:
-                throw new IllegalArgumentException("Not a base event type: " + eventType);
-        }
-    }
-
-    public static char baseEventCode(final Event event) {
-        return baseEventCode(event.payloadType());
-    }
-
-    public static char baseEventCode(final DataFrame frame) {
-        return baseEventCode(frame.payloadType());
-    }
-
-    public static char baseEventCode(final int eventType) {
-        switch (eventType) {
-            case EventType.APPLICATION:
-                return 'A';
-            case EventType.AUTO_COMMIT:
-                return 'C';
-            case EventType.ROLLBACK:
-                return 'R';
             default:
                 throw new IllegalArgumentException("Not a base event type: " + eventType);
         }

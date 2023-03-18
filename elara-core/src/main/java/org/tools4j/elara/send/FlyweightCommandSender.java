@@ -47,5 +47,4 @@ abstract class FlyweightCommandSender implements CommandSender.Default {
     public long nextCommandSequence() {
         return sourceSeq;
     }
-
 }

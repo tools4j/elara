@@ -143,7 +143,7 @@ public final class CommandHandlingSender extends FlyweightCommandSender {
             }
             try {
                 if (length > 0) {
-                    FlyweightCommand.payloadSize(length, header, HEADER_OFFSET);
+                    FlyweightCommand.writePayloadSize(length, header);
                 }
                 invokeCommandHandler(payload, 0, length);//TODO handler result value here
                 incrementCommandSequence();

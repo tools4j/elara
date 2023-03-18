@@ -103,7 +103,9 @@ class ReplicationInterceptor implements Interceptor {
                         baseState,
                         replicationState,
                         new DefaultEventRouter(
-                                appConfig.timeSource(), eventStoreConfig.eventStore().appender(),
+                                appConfig.timeSource(),
+                                baseState,
+                                eventStoreConfig.eventStore().appender(),
                                 eventApplierSingletons.get().eventHandler()
                         ),
                         commandProcessor(),

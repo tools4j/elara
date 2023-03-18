@@ -26,9 +26,10 @@ package org.tools4j.elara.route;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.flyweight.FlyweightHeader;
+import org.tools4j.elara.plugin.base.BaseEvents;
+import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.store.ExpandableDirectBuffer;
 import org.tools4j.elara.store.MessageStore.Appender;
 import org.tools4j.elara.store.MessageStore.AppendingContext;
@@ -40,19 +41,24 @@ import static org.tools4j.elara.flyweight.EventDescriptor.PAYLOAD_OFFSET;
 
 public class DefaultEventRouter implements EventRouter.Default {
 
-    private static final int MAX_EVENTS = Short.MAX_VALUE + 1;
+    private static final int MAX_EVENTS = Short.MAX_VALUE;
 
     private final TimeSource timeSource;
+    private final BaseState baseState;
     private final Appender appender;
     private final EventApplier eventApplier;
     private final RoutingContext routingContext = new RoutingContext();
 
     private Command command;
-    private short nextIndex;
+    private int nextIndex;
     private boolean skipped;
 
-    public DefaultEventRouter(final TimeSource timeSource, final Appender appender, final EventApplier eventApplier) {
+    public DefaultEventRouter(final TimeSource timeSource,
+                              final BaseState baseState,
+                              final Appender appender,
+                              final EventApplier eventApplier) {
         this.timeSource = requireNonNull(timeSource);
+        this.baseState = requireNonNull(baseState);
         this.appender = requireNonNull(appender);
         this.eventApplier = requireNonNull(eventApplier);
     }
@@ -66,7 +72,6 @@ public class DefaultEventRouter implements EventRouter.Default {
 
     @Override
     public RoutingContext routingEvent(final int type) {
-        checkEventType(type);
         checkValidCommand();
         checkNotSkipped();
         checkEventLimit();
@@ -94,7 +99,7 @@ public class DefaultEventRouter implements EventRouter.Default {
     }
 
     private void routeCommitEvent() {
-        try (final EventRouter.RoutingContext context = routingEvent0(EventType.AUTO_COMMIT)) {
+        try (final EventRouter.RoutingContext context = routingEvent0(BaseEvents.AUTO_COMMIT)) {
             context.route(0);
         }
     }
@@ -120,7 +125,12 @@ public class DefaultEventRouter implements EventRouter.Default {
     }
 
     @Override
-    public short nextEventIndex() {
+    public long nextEventSequence() {
+        return baseState.lastAppliedEventSequence() + 1;
+    }
+
+    @Override
+    public int nextEventIndex() {
         return nextIndex;
     }
 
@@ -128,12 +138,6 @@ public class DefaultEventRouter implements EventRouter.Default {
     public Command command() {
         checkValidCommand();
         return command;
-    }
-
-    private static void checkEventType(final int eventType) {
-        if (eventType == EventType.AUTO_COMMIT || eventType == EventType.ROLLBACK) {
-            throw new IllegalArgumentException("Illegal event type: " + eventType);
-        }
     }
 
     private void checkValidCommand() {
@@ -148,7 +152,7 @@ public class DefaultEventRouter implements EventRouter.Default {
     }
 
     private void checkEventLimit() {
-        if ((0xffff & nextIndex) >= MAX_EVENTS) {
+        if (nextIndex >= MAX_EVENTS) {
             throw new IllegalStateException("Maximum number of events per command reached: " + MAX_EVENTS);
         }
     }
@@ -167,7 +171,7 @@ public class DefaultEventRouter implements EventRouter.Default {
             this.context = requireNonNull(context);
             this.buffer.wrap(context.buffer(), PAYLOAD_OFFSET);
             FlyweightEvent.writeHeader(
-                    command.sourceId(), command.sourceSequence(), nextIndex, false, 0 /*FIXME*/,
+                    command.sourceId(), command.sourceSequence(), nextIndex, false, nextEventSequence(),
                     timeSource.currentTime(), payloadType, 0, context.buffer(), HEADER_OFFSET
             );
             return this;
@@ -176,7 +180,8 @@ public class DefaultEventRouter implements EventRouter.Default {
         void commit(final boolean last) {
             try (final AppendingContext ac = unclosedContext()) {
                 if (last) {
-                    FlyweightEvent.last(true, ac.buffer());
+                    assert nextIndex > 0;
+                    FlyweightEvent.writeIndex((short)(nextIndex - 1), true, ac.buffer());
                 }
                 ac.commit(FlyweightHeader.frameSize(ac.buffer()));
             } finally {
@@ -211,7 +216,7 @@ public class DefaultEventRouter implements EventRouter.Default {
             final AppendingContext ac = unclosedContext();
             buffer.unwrap();
             if (length > 0) {
-                FlyweightEvent.payloadSize(length, ac.buffer());
+                FlyweightEvent.writePayloadSize(length, ac.buffer());
             }
             flyweightEvent.wrapSilently(ac.buffer(), HEADER_OFFSET);
             eventApplier.onEvent(flyweightEvent);

@@ -74,9 +74,13 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
         this.duplicateHandler = requireNonNull(duplicateHandler);
     }
 
+    private long nextEventSequence() {
+        return baseState.lastAppliedEventSequence() + 1;
+    }
+
     @Override
     public CommandSender.SendingContext sendingCommand(final int payloadType) {
-        return sendingContext.init(sourceId(), nextCommandSequence(), payloadType, eventStoreAppender.appending());
+        return sendingContext.init(sourceId(), nextCommandSequence(), nextEventSequence(), payloadType, eventStoreAppender.appending());
     }
 
     private final class SendingContext implements CommandSender.SendingContext {
@@ -85,7 +89,8 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
         final ExpandableDirectBuffer buffer = new ExpandableDirectBuffer();
         AppendingContext context;
 
-        SendingContext init(final int sourceId, final long sourceSeq, final int payloadType, final AppendingContext context) {
+        SendingContext init(final int sourceId, final long sourceSeq, final long eventSeq,
+                            final int payloadType, final AppendingContext context) {
             if (this.context != null) {
                 abort();
                 throw new IllegalStateException("Sending context not closed");
@@ -93,7 +98,7 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
             this.context = requireNonNull(context);
             this.buffer.wrap(context.buffer(), EventDescriptor.PAYLOAD_OFFSET);
             FlyweightEvent.writeHeader(
-                    sourceId, sourceSeq, INDEX, true, 0 /*FIXME*/, timeSource.currentTime(), payloadType, 0,
+                    sourceId, sourceSeq, INDEX, true, eventSeq, timeSource.currentTime(), payloadType, 0,
                     context.buffer(), EventDescriptor.HEADER_OFFSET
             );
             return this;
@@ -116,6 +121,10 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
             return FlyweightEvent.sourceSequence(unclosedContext().buffer());
         }
 
+        private long eventSequence() {
+            return FlyweightEvent.sourceSequence(unclosedContext().buffer());
+        }
+
         @Override
         public MutableDirectBuffer buffer() {
             //noinspection ResultOfMethodCallIgnored
@@ -131,9 +140,9 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
             buffer.unwrap();
             try (final AppendingContext ac = unclosedContext()) {
                 if (length > 0) {
-                    FlyweightEvent.payloadSize(length, ac.buffer());
+                    FlyweightEvent.writePayloadSize(length, ac.buffer());
                 }
-                if (baseState.allEventsAppliedFor(sourceId(), sourceSequence())) {
+                if (baseState.eventAppliedForCommand(sourceId(), sourceSequence())) {
                     skipCommand(ac.buffer(), length);
                 } else {
                     applyEvent(ac.buffer(), length);
@@ -167,7 +176,7 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
 
         private void applyEvent(final DirectBuffer buffer, final int length) {
             if (eventIdApplierOrNull != null) {
-                eventIdApplierOrNull.onEventId(sourceId(), sourceSequence(), INDEX);
+                eventIdApplierOrNull.onEventId(sourceId(), sourceSequence(), eventSequence(), INDEX);
                 return;
             }
             appliedEvent.wrapSilently(buffer, EventDescriptor.HEADER_OFFSET);

@@ -35,8 +35,8 @@ public interface EventIdApplier extends EventApplier {
     //NOTE: this method may not be invoked at all, so do not override it!
     @Override
     default void onEvent(final Event event) {
-        onEventId(event.sourceId(), event.sourceSequence(), event.index());
+        onEventId(event.sourceId(), event.sourceSequence(), event.eventSequence(), event.index());
     }
 
-    void onEventId(int sourceId, long sourceSeq, int index);
+    void onEventId(int sourceId, long sourceSeq, long eventSeq, int index);
 }

@@ -27,12 +27,14 @@ import org.agrona.collections.Long2LongHashMap;
 import org.agrona.collections.Long2LongHashMap.ValueIterator;
 import org.agrona.collections.LongArrayList;
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.time.TimeSource;
 
 public class DefaultReplicationState implements ReplicationState.Mutable {
 
     private int term;
     private int leaderId = NULL_SERVER;
+    private long lastAppliedEventSequence = BaseState.NIL_SEQUENCE;
     private long lastAppliedEventTime = TimeSource.MIN_VALUE;
     private long eventStoreSize;
     private final Long2LongHashMap nextEventStoreIndexByServerId = new Long2LongHashMap(0);
@@ -63,6 +65,11 @@ public class DefaultReplicationState implements ReplicationState.Mutable {
     }
 
     @Override
+    public long lastAppliedEventSequence() {
+        return lastAppliedEventSequence;
+    }
+
+    @Override
     public long lastAppliedEventTime() {
         return lastAppliedEventTime;
     }
@@ -74,6 +81,7 @@ public class DefaultReplicationState implements ReplicationState.Mutable {
 
     @Override
     public Mutable eventApplied(final Event event) {
+        lastAppliedEventSequence = event.eventSequence();
         lastAppliedEventTime = event.eventTime();
         eventStoreSize++;
         return this;
@@ -145,6 +153,7 @@ public class DefaultReplicationState implements ReplicationState.Mutable {
         return "DefaultReplicationState{" +
                 "term=" + term +
                 ", leaderId=" + leaderId +
+                ", lastAppliedEventSequence=" + lastAppliedEventSequence +
                 ", lastAppliedEventTime=" + lastAppliedEventTime +
                 ", eventStoreSize=" + eventStoreSize +
                 ", nextEventStoreIndexByServerId=" + nextEventStoreIndexByServerId +

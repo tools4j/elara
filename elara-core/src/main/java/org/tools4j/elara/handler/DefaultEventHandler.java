@@ -50,7 +50,7 @@ public class DefaultEventHandler implements EventHandler {
 
     @Override
     public void onEvent(final Event event) {
-        if (baseState.eventApplied(event.sourceId(), event.sourceSequence(), event.index())) {
+        if (baseState.eventApplied(event.eventSequence())) {
             skipEvent(event);
         } else {
             applyEvent(event);

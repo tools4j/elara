@@ -106,7 +106,7 @@ public final class CommandAppendingSender extends FlyweightCommandSender {
             buffer.unwrap();
             try (final AppendingContext ac = unclosedContext()) {
                 if (length > 0) {
-                    FlyweightCommand.payloadSize(length, ac.buffer(), HEADER_OFFSET);
+                    FlyweightCommand.writePayloadSize(length, ac.buffer());
                 }
                 ac.commit(HEADER_LENGTH + length);
                 incrementCommandSequence();

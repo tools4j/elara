@@ -25,6 +25,7 @@ package org.tools4j.elara.command;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.flyweight.PayloadType;
 import org.tools4j.elara.flyweight.Writable;
 import org.tools4j.elara.logging.Printable;
 
@@ -36,12 +37,12 @@ public interface Command extends Writable, Printable {
 
     long commandTime();
 
-    default boolean isAdmin() {
-        return CommandType.isAdmin(payloadType());
+    default boolean isSystem() {
+        return PayloadType.isSystem(payloadType());
     }
 
     default boolean isApplication() {
-        return CommandType.isApplication(payloadType());
+        return PayloadType.isApplication(payloadType());
     }
 
     DirectBuffer payload();

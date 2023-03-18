@@ -39,7 +39,7 @@ import org.tools4j.elara.app.factory.SequencerFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.command.CommandType;
+import org.tools4j.elara.flyweight.PayloadType;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.handler.OutputHandler;
@@ -365,9 +365,9 @@ public class MetricsCapturingInterceptor implements Interceptor {
                     if (shouldCapture(EVENT_APPLIED_FREQUENCY) || shouldCaptureAnyOf(EVENT)) {//includes APPLYING_START_TIME and APPLYING_END_TIME
                         if (eventApplier instanceof EventIdApplier) {
                             final EventIdApplier eventIdApplier = (EventIdApplier)eventApplier;
-                            return (EventIdApplier)(sourceId, sourceSeq, index) -> {
+                            return (EventIdApplier)(sourceId, sourceSeq, eventSeq, index) -> {
                                 captureTime(APPLYING_START_TIME);
-                                eventIdApplier.onEventId(sourceId, sourceSeq, index);
+                                eventIdApplier.onEventId(sourceId, sourceSeq, eventSeq, index);
                                 captureTime(APPLYING_END_TIME);
                                 captureCount(EVENT_APPLIED_FREQUENCY);
                                 if (timeMetricsWriter != null) {
@@ -491,7 +491,12 @@ public class MetricsCapturingInterceptor implements Interceptor {
         }
 
         @Override
-        public short nextEventIndex() {
+        public long nextEventSequence() {
+            return router.nextEventSequence();
+        }
+
+        @Override
+        public int nextEventIndex() {
             return router.nextEventIndex();
         }
 
@@ -601,7 +606,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
         @Override
         public SendingContext sendingCommand() {
             captureTime(INPUT_POLLING_TIME);
-            return sendingContext(CommandType.APPLICATION, sender.sendingCommand());
+            return sendingContext(PayloadType.DEFAULT, sender.sendingCommand());
         }
 
         @Override
@@ -613,7 +618,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
         @Override
         public SendingResult sendCommand(final DirectBuffer buffer, final int offset, final int length) {
             captureTime(INPUT_POLLING_TIME);
-            captureInputSendingTime(sender.sourceId(), sender.nextCommandSequence(), CommandType.APPLICATION, buffer, offset, length);
+            captureInputSendingTime(sender.sourceId(), sender.nextCommandSequence(), PayloadType.DEFAULT, buffer, offset, length);
             final SendingResult result = sender.sendCommand(buffer, offset, length);
             captureTime(COMMAND_APPENDING_TIME);
             return result;

@@ -92,6 +92,7 @@ public class DefaultProcessorFactory implements ProcessorFactory {
                 pluginSingletons.get().baseState(),
                 new DefaultEventRouter(
                         appConfig.timeSource(),
+                        pluginSingletons.get().baseState(),
                         eventStoreConfig.eventStore().appender(),
                         applierSingletons.get().eventHandler()
                 ),

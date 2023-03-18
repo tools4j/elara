@@ -23,50 +23,35 @@
  */
 package org.tools4j.elara.plugin.base;
 
-import org.agrona.collections.Int2ObjectHashMap;
-import org.tools4j.elara.event.Event;
+import org.agrona.collections.Long2LongHashMap;
 
 public class DefaultBaseState implements BaseState.Mutable {
 
-    private final Int2ObjectHashMap<AppliedEventState> sourceToAppliedEventState = new Int2ObjectHashMap<>();
+    private final Long2LongHashMap sourceIdToSequence = new Long2LongHashMap(NIL_SEQUENCE);
+    private long lastAppliedEventSequence = NIL_SEQUENCE;
 
-    private static final class AppliedEventState {
-        long sourceSeq;
-        int index;
-        void update(final long sourceSeq, final int index) {
-            this.sourceSeq = sourceSeq;
-            this.index = index;
-        }
+    @Override
+    public long lastAppliedCommandSequence(final int sourceId) {
+        return sourceIdToSequence.get(sourceId);
     }
 
     @Override
-    public boolean allEventsAppliedFor(final int sourceId, final long sourceSeq) {
-        final AppliedEventState appliedEventState = sourceToAppliedEventState.get(sourceId);
-        if (appliedEventState != null) {
-            return sourceSeq < appliedEventState.sourceSeq;
-        }
-        return false;
+    public long lastAppliedEventSequence() {
+        return lastAppliedEventSequence;
     }
 
     @Override
-    public boolean eventApplied(final int sourceId, final long sourceSeq, final int index) {
-        final AppliedEventState appliedEventState = sourceToAppliedEventState.get(sourceId);
-        if (appliedEventState != null) {
-            return sourceSeq < appliedEventState.sourceSeq ||
-                    sourceSeq == appliedEventState.sourceSeq && index <= appliedEventState.index;
-        }
-        return false;
-    }
-
-    @Override
-    public Mutable applyEvent(final Event event) {
-        return applyEvent(event.sourceId(), event.sourceSequence(), event.index());
-    }
-
-    @Override
-    public Mutable applyEvent(final int sourceId, final long sourceSeq, final int index) {
-        sourceToAppliedEventState.computeIfAbsent(sourceId, k -> new AppliedEventState())
-                .update(sourceSeq, index);
+    public Mutable applyEvent(final int sourceId, final long sourceSeq, final long eventSeq, final int index) {
+        this.sourceIdToSequence.put(sourceId, sourceSeq);
+        this.lastAppliedEventSequence = eventSeq;
         return this;
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultBaseState{" +
+                "sourceIdToSequence=" + sourceIdToSequence +
+                ", lastAppliedEventSequence=" + lastAppliedEventSequence +
+                '}';
     }
 }

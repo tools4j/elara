@@ -32,8 +32,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.flyweight.FlyweightCommand;
+import org.tools4j.elara.flyweight.PayloadType;
 import org.tools4j.elara.send.CommandAppendingSender;
 import org.tools4j.elara.send.DefaultSenderSupplier;
 import org.tools4j.elara.send.SenderSupplier;
@@ -125,7 +125,7 @@ public class CommandAppendingSenderTest {
 
         //then
         assertEquals(1, commandStore.size(), "commandStore.size");
-        assertCommand(sourceIdId, sourceIdSeq, commandTime, EventType.APPLICATION, text, commandStore.get(0));
+        assertCommand(sourceIdId, sourceIdSeq, commandTime, PayloadType.DEFAULT, text, commandStore.get(0));
     }
 
     @Test
@@ -158,7 +158,7 @@ public class CommandAppendingSenderTest {
         assertEquals(sourceId, command.sourceId(), "command.source-id");
         assertEquals(seq, command.sourceSequence(), "command.source-sequence");
         assertEquals(commandTime, command.commandTime(), "command.time");
-        assertFalse(command.isAdmin(), "command.isAdmin");
+        assertFalse(command.isSystem(), "command.isSystem");
         assertTrue(command.isApplication(), "command.isApplication");
         assertEquals(type, command.payloadType(), "command.type");
         final DirectBuffer payload = command.payload();

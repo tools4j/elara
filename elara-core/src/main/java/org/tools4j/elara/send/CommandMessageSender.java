@@ -105,7 +105,7 @@ public final class CommandMessageSender extends FlyweightCommandSender {
             buffer.unwrap();
             try (final MessageSender.SendingContext mc = unclosedContext()) {
                 if (length > 0) {
-                    FlyweightCommand.payloadSize(length, mc.buffer(), HEADER_OFFSET);
+                    FlyweightCommand.writePayloadSize(length, mc.buffer());
                 }
                 final SendingResult result = mc.send(HEADER_LENGTH + length);
                 incrementCommandSequence();

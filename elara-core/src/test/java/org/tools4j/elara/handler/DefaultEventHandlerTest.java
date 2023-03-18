@@ -33,10 +33,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.event.EventType;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.flyweight.FlyweightEvent;
+import org.tools4j.elara.flyweight.PayloadType;
 import org.tools4j.elara.plugin.base.BaseState;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -70,16 +70,17 @@ public class DefaultEventHandlerTest {
     }
 
     @Test
-    public void eventSkippedIfCommandEventsApplied() {
+    public void eventSkippedIfAlreadyApplied() {
         //given
         final int sourceId = 1;
         final long sourceSeq = 22;
+        final long eventSeq = 444;
         final short index = 2;
-        final Event event = event(sourceId, sourceSeq, index);
+        final Event event = event(sourceId, sourceSeq, eventSeq, index);
         final InOrder inOrder = inOrder(eventApplier, baseState, duplicateHandler);
 
         //when
-        when(baseState.eventApplied(sourceId, sourceSeq, index)).thenReturn(true);
+        when(baseState.eventApplied(eventSeq)).thenReturn(true);
         eventHandler.onEvent(event);
 
         //then
@@ -89,16 +90,17 @@ public class DefaultEventHandlerTest {
     }
 
     @Test
-    public void eventAppliedIfCommandEventsNotYetApplied() {
+    public void eventAppliedIfNotYetApplied() {
         //given
         final int sourceId = 1;
         final long sourceSeq = 22;
+        final long eventSeq = 444;
         final short index = 2;
-        final Event event = event(sourceId, sourceSeq, index);
+        final Event event = event(sourceId, sourceSeq, eventSeq, index);
         final InOrder inOrder = inOrder(eventApplier, baseState);
 
         //when
-        when(baseState.eventApplied(sourceId, sourceSeq, index)).thenReturn(false);
+        when(baseState.eventApplied(eventSeq)).thenReturn(false);
         eventHandler.onEvent(event);
 
         //then
@@ -112,13 +114,14 @@ public class DefaultEventHandlerTest {
         //given
         final int sourceId = 1;
         final long sourceSeq = 22;
+        final long eventSeq = 444;
         final short index = 2;
-        final Event event = event(sourceId, sourceSeq, index);
+        final Event event = event(sourceId, sourceSeq, eventSeq, index);
         final RuntimeException testException = new RuntimeException("test event applier exception");
         final InOrder inOrder = inOrder(eventApplier, exceptionHandler);
 
         //when
-        when(baseState.eventApplied(sourceId, sourceSeq, index)).thenReturn(false);
+        when(baseState.eventApplied(eventSeq)).thenReturn(false);
         doThrow(testException).when(eventApplier).onEvent(any());
         eventHandler.onEvent(event);
 
@@ -133,13 +136,14 @@ public class DefaultEventHandlerTest {
         //given
         final int sourceId = 1;
         final long sourceSeq = 22;
+        final long eventSeq = 444;
         final short index = 2;
-        final Event event = event(sourceId, sourceSeq, index);
+        final Event event = event(sourceId, sourceSeq, eventSeq, index);
         final RuntimeException testException = new RuntimeException("test skip event exception");
         final InOrder inOrder = inOrder(eventApplier, duplicateHandler, exceptionHandler);
 
         //when
-        when(baseState.eventApplied(sourceId, sourceSeq, index)).thenReturn(true);
+        when(baseState.eventApplied(eventSeq)).thenReturn(true);
         doThrow(testException).when(duplicateHandler).skipEventApplying(any());
         eventHandler.onEvent(event);
 
@@ -150,13 +154,13 @@ public class DefaultEventHandlerTest {
         inOrder.verifyNoMoreInteractions();
     }
 
-    private static Event event(final int sourceId, final long sourceSeq, final short index) {
-        return event(sourceId, sourceSeq, index, EventType.APPLICATION);
+    private static Event event(final int sourceId, final long sourceSeq, final long eventSeq, final short index) {
+        return event(sourceId, sourceSeq, eventSeq, index, PayloadType.DEFAULT);
     }
-    private static Event event(final int sourceId, final long sourceSeq, final short index, final int payloadType) {
+    private static Event event(final int sourceId, final long sourceSeq, final long eventSeq, final short index, final int payloadType) {
         final MutableDirectBuffer buffer = new ExpandableArrayBuffer(FlyweightEvent.HEADER_LENGTH);
         FlyweightEvent.writeHeader(
-                sourceId, sourceSeq, index, false, 0,123L, payloadType, 0, buffer, 0
+                sourceId, sourceSeq, index, false, eventSeq,123L, payloadType, 0, buffer, 0
         );
         return new FlyweightEvent().wrapSilently(buffer, 0);
     }

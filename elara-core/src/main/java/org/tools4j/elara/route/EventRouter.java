@@ -27,7 +27,7 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.command.Command;
-import org.tools4j.elara.event.EventType;
+import org.tools4j.elara.flyweight.PayloadType;
 
 /**
  * Facilitates routing of events when
@@ -48,7 +48,7 @@ import org.tools4j.elara.event.EventType;
  */
 public interface EventRouter {
     /**
-     * Starts routing of an {@link EventType#APPLICATION APPLICATION} event and returns the routing context with the
+     * Starts routing of an {@link PayloadType#DEFAULT APPLICATION} event and returns the routing context with the
      * buffer for event encoding.  Encoding and routing is completed with {@link RoutingContext#route(int) route(..)}
      * and is recommended to be performed inside a try-resource block; see {@link EventRouter class documentation} for
      * an example.
@@ -63,12 +63,11 @@ public interface EventRouter {
      *
      * @param type the event type, typically non-negative for application events (plugins use negative types)
      * @return the context for event encoding and routing
-     * @throws IllegalArgumentException if type is {@link EventType#AUTO_COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
      */
     RoutingContext routingEvent(int type);
 
     /***
-     * Routes an {@link EventType#APPLICATION APPLICATION} event already encoded in the given buffer.
+     * Routes an {@link PayloadType#DEFAULT APPLICATION} event already encoded in the given buffer.
      *
      * @param buffer    the buffer containing the event data
      * @param offset    offset where the event data starts in {@code buffer}
@@ -84,7 +83,6 @@ public interface EventRouter {
      * @param buffer        the buffer containing the event data
      * @param offset        offset where the event data starts in {@code buffer}
      * @param length        the length of the event data in bytes
-     * @throws IllegalArgumentException if payloadType is {@link EventType#AUTO_COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
      * @throws IllegalStateException if this command has been {@link #isSkipped() skipped}
      */
     void routeEvent(int payloadType, DirectBuffer buffer, int offset, int length);
@@ -93,8 +91,7 @@ public interface EventRouter {
      * Routes an event that carries the same payload data as the {@link #command() command};  the {@link Command#payloadType() command type} is
      * used as event type.
      *
-     * @throws IllegalStateException if this command has been {@link #isSkipped() skipped}, or if the command's type is
-     *                               equal to {@link EventType#AUTO_COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
+     * @throws IllegalStateException if this command has been {@link #isSkipped() skipped}
      */
     void routeEventWithCommandPayload();
 
@@ -103,7 +100,6 @@ public interface EventRouter {
      * {@link #command() command}.
      *
      * @param payloadType the payload type, typically non-negative for application events (plugins use negative types)
-     * @throws IllegalArgumentException if payloadType is {@link EventType#AUTO_COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
      * @throws IllegalStateException if this command has been {@link #isSkipped() skipped}
      */
     void routeEventWithCommandPayload(int payloadType);
@@ -112,18 +108,30 @@ public interface EventRouter {
      * Routes an event of the specified event {@code payloadType} that carries no payload data.
      *
      * @param payloadType the payload type, typically non-negative for application events (plugins use negative types)
-     * @throws IllegalArgumentException if payloadType is {@link EventType#AUTO_COMMIT COMMIT} or {@link EventType#ROLLBACK ROLLBACK}
      * @throws IllegalStateException if this command has been {@link #isSkipped() skipped}
      */
     void routeEventWithoutPayload(int payloadType);
 
     /**
-     * Returns the zero based index of the next event to be routed.  If routing has started via {@link #routingEvent()}
-     * then the index refers to the event currently being encoded.
+     * Returns the event sequence of the next event to be routed.  If routing has started via {@link #routingEvent()}
+     * then the sequence refers to the event currently being encoded.
+     * <p>
+     * Event sequence is a monotonically increasing sequence number for all events ever applied to the application.
      *
      * @return index of the next event to be routed.
      */
-    short nextEventIndex();
+    long nextEventSequence();
+
+    /**
+     * Returns the zero based index of the next event to be routed.  If routing has started via {@link #routingEvent()}
+     * then the index refers to the event currently being encoded.
+     * <p>
+     * Event index is a zero based index for all events routed from the same command.  For every new command, the event
+     * index will be reset to zero.  If only one event is routed for a command, its index will be zero.
+     *
+     * @return index of the next event to be routed.
+     */
+    int nextEventIndex();
 
     /**
      * Skip the current command if possible.  Skipping is only possible when no events have been routed yet.  Routing
@@ -225,12 +233,12 @@ public interface EventRouter {
     interface Default extends EventRouter {
         @Override
         default RoutingContext routingEvent() {
-            return routingEvent(EventType.APPLICATION);
+            return routingEvent(PayloadType.DEFAULT);
         }
 
         @Override
         default void routeEvent(final DirectBuffer buffer, final int offset, final int length) {
-            routeEvent(EventType.APPLICATION, buffer, offset, length);
+            routeEvent(PayloadType.DEFAULT, buffer, offset, length);
         }
 
         @Override
@@ -245,9 +253,6 @@ public interface EventRouter {
         default void routeEventWithCommandPayload() {
             final Command command = command();
             final int commandType = command().payloadType();
-            if (commandType == EventType.AUTO_COMMIT || commandType == EventType.ROLLBACK) {
-                throw new IllegalStateException("Command type cannot be used as event type: " + commandType);
-            }
             final DirectBuffer payload = command.payload();
             routeEvent(commandType, payload, 0, payload.capacity());
         }

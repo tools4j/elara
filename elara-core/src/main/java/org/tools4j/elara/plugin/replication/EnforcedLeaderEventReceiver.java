@@ -82,6 +82,10 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
         return state.leaderId();
     }
 
+    private long nextEventSequence() {
+        return state.lastAppliedEventSequence() + 1;
+    }
+
     @Override
     public void enforceLeader(final int sourceId, final long sourceSeq, final int leaderId) {
         final long time = timeSource.currentTime();
@@ -91,7 +95,7 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
                     .replace(serverId).replace(leaderId).format();
             try (final AppendingContext context = eventStoreAppender.appending()) {
                 FlyweightEvent.writeHeader(
-                        sourceId, sourceSeq, 0, true, 0 /*FIXME*/, time, LEADER_CONFIRMED, PAYLOAD_LENGTH,
+                        sourceId, sourceSeq, 0, true, nextEventSequence(), time, LEADER_CONFIRMED, PAYLOAD_LENGTH,
                         context.buffer(), HEADER_OFFSET
                 );
                 ReplicationEvents.leaderConfirmed(context.buffer(), EventDescriptor.PAYLOAD_OFFSET, currentTerm, leaderId);
@@ -104,7 +108,7 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
                     .replace(serverId).replace(leaderId).format();
             try (final AppendingContext context = eventStoreAppender.appending()) {
                 FlyweightEvent.writeHeader(
-                        sourceId, sourceSeq, 0, true, 0/*FIXME*/, time, LEADER_REJECTED, PAYLOAD_LENGTH,
+                        sourceId, sourceSeq, 0, true, nextEventSequence(), time, LEADER_REJECTED, PAYLOAD_LENGTH,
                         context.buffer(), HEADER_OFFSET
                 );
                 ReplicationEvents.leaderRejected(context.buffer(), EventDescriptor.PAYLOAD_OFFSET, currentTerm, leaderId);
@@ -117,7 +121,7 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
                 .replace(serverId).replace(leaderId).replace(state.leaderId()).replace(nextTerm).format();
         try (final AppendingContext context = eventStoreAppender.appending()) {
             FlyweightEvent.writeHeader(
-                    sourceId, sourceSeq, 0, true, 0/*FIXME*/, time, LEADER_ENFORCED, PAYLOAD_LENGTH,
+                    sourceId, sourceSeq, 0, true, nextEventSequence(), time, LEADER_ENFORCED, PAYLOAD_LENGTH,
                     context.buffer(), HEADER_OFFSET
             );
             ReplicationEvents.leaderEnforced(context.buffer(), EventDescriptor.PAYLOAD_OFFSET, nextTerm, leaderId);
