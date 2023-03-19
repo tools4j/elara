@@ -25,7 +25,9 @@ package org.tools4j.elara.store;
 
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.event.Event.Flags;
+import org.tools4j.elara.event.Event;
+import org.tools4j.elara.flyweight.EventFrame;
+import org.tools4j.elara.flyweight.EventType;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.plugin.base.BaseEvents;
 import org.tools4j.elara.store.MessageStore.AppendingContext;
@@ -39,11 +41,10 @@ import static org.tools4j.elara.flyweight.FrameDescriptor.HEADER_LENGTH;
  * Class to repair an event store that was corrupted usually due to application crash.  A corrupted event store is an
  * event store that is non-empty and whose last event entry has neither the commit nor the rollback flag set.
  *
- * @see Flags#isLast()
+ * @see Event#eventType()
+ * @see EventType#isLast()
  */
 public class EventStoreRepairer {
-
-    private static final int MAX_EVENT_INDEX = Short.MAX_VALUE;
 
     private final MessageStore eventStore;
     private final FlyweightEvent lastNonFinalEventOrNull;
@@ -52,8 +53,8 @@ public class EventStoreRepairer {
      * Initialises this repairer with the given {@code eventStore}
      *
      * @param eventStore the event store to inspect and prepare for reparation
-     * @throws IllegalArgumentException if {@code eventStore} is not a valid event store or a wroong version or if it cannot
-     *                                  be repaired
+     * @throws IllegalArgumentException if {@code eventStore} is not a valid event store or a wrong version or if it
+     *                                  cannot be repaired
      */
     public EventStoreRepairer(final MessageStore eventStore) {
         this.eventStore = requireNonNull(eventStore);
@@ -73,13 +74,14 @@ public class EventStoreRepairer {
         if (lastNonFinalEventOrNull != null) {
             final FlyweightEvent event = lastNonFinalEventOrNull;
             final int nextIndex = lastNonFinalEventOrNull.index() + 1;
-            if (nextIndex > MAX_EVENT_INDEX) {
+            final long nextSeq = lastNonFinalEventOrNull.eventSequence() + 1;
+            if (nextIndex > EventFrame.MAX_INDEX) {
                 //should not get here since we checked on init
-                throw new RuntimeException("Event index " + nextIndex + " exceeds max allowed " + MAX_EVENT_INDEX);
+                throw new RuntimeException("Event index " + nextIndex + " exceeds max allowed " + EventFrame.MAX_INDEX);
             }
             try (final AppendingContext context = eventStore.appender().appending()) {
                 BaseEvents.rollback(event, context.buffer(), 0, event.sourceId(), event.sourceSequence(),
-                        (short)nextIndex, event.eventTime());
+                        (short)nextIndex, nextSeq, event.eventTime());
                 context.commit(HEADER_LENGTH);
             }
             return true;
@@ -101,13 +103,13 @@ public class EventStoreRepairer {
             })) {
                 throw new RuntimeException("Poller should have returned last event");
             }
-            if (event.index() < 0) {
+            if (!EventType.isEventFrameType(event.header().type())) {
                 throw new IllegalArgumentException("Not an event store (is it a command store?): " + eventStore);
             }
-            if (event.flags().isLast()) {
+            if (event.eventType().isLast()) {
                 return null;
             }
-            if (event.index() >= MAX_EVENT_INDEX) {
+            if (event.index() >= EventFrame.MAX_INDEX) {
                 throw new IllegalArgumentException("Event store cannot be repaired, last event has maximum allowed index: " +
                         event.index());
             }

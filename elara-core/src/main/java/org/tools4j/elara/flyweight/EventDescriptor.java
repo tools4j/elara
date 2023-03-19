@@ -30,7 +30,7 @@ package org.tools4j.elara.flyweight;
     0         1         2         3         4         5         6
     0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    |Version|Type=02|L    Index     |          Frame Size           |
+    |Version|Type=ET|     Index     |          Frame Size           |
     +-------+-------+-------+-------+-------+-------+-------+-------+
     |           Source ID           |         Payload Type          |
     +-------+-------+-------+-------+-------+-------+-------+-------+
@@ -43,7 +43,7 @@ package org.tools4j.elara.flyweight;
     |                            Payload                            |
     |                             ...                               |
 
-    L=0/1 (1 if last event for command)
+    ET = 02-04, see {@link EventType#frameType()}
 
  * </pre>
  *
@@ -51,10 +51,6 @@ package org.tools4j.elara.flyweight;
  */
 public enum EventDescriptor {
     ;
-    public static final int TYPE = FrameType.EVENT_TYPE;
-    public static final int NIL_TYPE = FrameType.NIL_EVENT_TYPE;
-    public static final int ROLLBACK_TYPE = FrameType.ROLLBACK_EVENT_TYPE;
-
     public static final int INDEX_OFFSET = FrameDescriptor.RESERVED_OFFSET;
 
     public static final int INDEX_LENGTH = FrameDescriptor.RESERVED_LENGTH;

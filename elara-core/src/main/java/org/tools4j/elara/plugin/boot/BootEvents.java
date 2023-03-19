@@ -25,8 +25,7 @@ package org.tools4j.elara.plugin.boot;
 
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.flyweight.DataFrame;
-
-import static org.tools4j.elara.flyweight.FrameType.EVENT_TYPE;
+import org.tools4j.elara.flyweight.FrameType;
 
 /**
  * Boot events issued in response to boot commands.
@@ -51,7 +50,7 @@ public enum BootEvents {
     }
 
     public static boolean isBootEvent(final DataFrame frame) {
-        return frame.type() == EVENT_TYPE && isBootEvent(frame.payloadType());
+        return FrameType.isAppRoutedEventType(frame.type()) && isBootEvent(frame.payloadType());
     }
 
     public static boolean isBootEvent(final int payloadType) {

@@ -35,6 +35,7 @@ import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
+import org.tools4j.elara.flyweight.EventType;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.flyweight.PayloadType;
 import org.tools4j.elara.plugin.base.BaseState;
@@ -160,7 +161,7 @@ public class DefaultEventHandlerTest {
     private static Event event(final int sourceId, final long sourceSeq, final long eventSeq, final short index, final int payloadType) {
         final MutableDirectBuffer buffer = new ExpandableArrayBuffer(FlyweightEvent.HEADER_LENGTH);
         FlyweightEvent.writeHeader(
-                sourceId, sourceSeq, index, false, eventSeq,123L, payloadType, 0, buffer, 0
+                EventType.INTERMEDIARY, sourceId, sourceSeq, index, eventSeq,123L, payloadType, 0, buffer, 0
         );
         return new FlyweightEvent().wrapSilently(buffer, 0);
     }

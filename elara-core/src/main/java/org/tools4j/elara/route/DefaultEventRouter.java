@@ -26,6 +26,8 @@ package org.tools4j.elara.route;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.command.Command;
+import org.tools4j.elara.flyweight.EventFrame;
+import org.tools4j.elara.flyweight.EventType;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.flyweight.FlyweightHeader;
 import org.tools4j.elara.plugin.base.BaseEvents;
@@ -41,8 +43,6 @@ import static org.tools4j.elara.flyweight.EventDescriptor.PAYLOAD_OFFSET;
 
 public class DefaultEventRouter implements EventRouter.Default {
 
-    private static final int MAX_EVENTS = Short.MAX_VALUE;
-
     private final TimeSource timeSource;
     private final BaseState baseState;
     private final Appender appender;
@@ -50,7 +50,7 @@ public class DefaultEventRouter implements EventRouter.Default {
     private final RoutingContext routingContext = new RoutingContext();
 
     private Command command;
-    private int nextIndex;
+    private short nextIndex;
     private boolean skipped;
 
     public DefaultEventRouter(final TimeSource timeSource,
@@ -75,14 +75,14 @@ public class DefaultEventRouter implements EventRouter.Default {
         checkValidCommand();
         checkNotSkipped();
         checkEventLimit();
-        return routingEvent0(type);
+        return routingEvent0(EventType.INTERMEDIARY, type);
     }
 
-    private RoutingContext routingEvent0(final int payloadType) {
+    private RoutingContext routingEvent0(final EventType eventType, final int payloadType) {
         if (nextIndex > 0 && routingContext.isCommitPending()) {
-            routingContext.commit(false);
+            routingContext.commit(EventType.INTERMEDIARY);
         }
-        return routingContext.init(payloadType, appender.appending());
+        return routingContext.init(eventType, payloadType, appender.appending());
     }
 
     public void complete() {
@@ -90,8 +90,10 @@ public class DefaultEventRouter implements EventRouter.Default {
             //we need a commit event if (a) there was no event, or (b) if routing of the last event was aborted
             if (nextIndex == 0 || !routingContext.isCommitPending()) {
                 routeCommitEvent();
+                routingContext.commit(EventType.AUTO_COMMIT);
+            } else {
+                routingContext.commit(EventType.APP_COMMIT);
             }
-            routingContext.commit(true);
         }
         this.command = null;
         this.skipped = false;
@@ -99,7 +101,7 @@ public class DefaultEventRouter implements EventRouter.Default {
     }
 
     private void routeCommitEvent() {
-        try (final EventRouter.RoutingContext context = routingEvent0(BaseEvents.AUTO_COMMIT)) {
+        try (final EventRouter.RoutingContext context = routingEvent0(EventType.AUTO_COMMIT, BaseEvents.AUTO_COMMIT)) {
             context.route(0);
         }
     }
@@ -152,8 +154,8 @@ public class DefaultEventRouter implements EventRouter.Default {
     }
 
     private void checkEventLimit() {
-        if (nextIndex >= MAX_EVENTS) {
-            throw new IllegalStateException("Maximum number of events per command reached: " + MAX_EVENTS);
+        if ((0x7fff & nextIndex) >= EventFrame.MAX_INDEX) {
+            throw new IllegalStateException("Maximum number of events per command reached: " + EventFrame.MAX_INDEX);
         }
     }
 
@@ -163,7 +165,7 @@ public class DefaultEventRouter implements EventRouter.Default {
         final ExpandableDirectBuffer buffer = new ExpandableDirectBuffer();
         AppendingContext context;
 
-        RoutingContext init(final int payloadType, final AppendingContext context) {
+        RoutingContext init(final EventType eventType, final int payloadType, final AppendingContext context) {
             if (this.context != null) {
                 abort();
                 throw new IllegalStateException("Routing context not closed");
@@ -171,17 +173,17 @@ public class DefaultEventRouter implements EventRouter.Default {
             this.context = requireNonNull(context);
             this.buffer.wrap(context.buffer(), PAYLOAD_OFFSET);
             FlyweightEvent.writeHeader(
-                    command.sourceId(), command.sourceSequence(), nextIndex, false, nextEventSequence(),
+                    eventType, command.sourceId(), command.sourceSequence(), nextIndex, nextEventSequence(),
                     timeSource.currentTime(), payloadType, 0, context.buffer(), HEADER_OFFSET
             );
             return this;
         }
 
-        void commit(final boolean last) {
+        void commit(final EventType eventType) {
             try (final AppendingContext ac = unclosedContext()) {
-                if (last) {
+                if (eventType == EventType.APP_COMMIT) {
                     assert nextIndex > 0;
-                    FlyweightEvent.writeIndex((short)(nextIndex - 1), true, ac.buffer());
+                    FlyweightEvent.writeEventType(EventType.APP_COMMIT, ac.buffer());
                 }
                 ac.commit(FlyweightHeader.frameSize(ac.buffer()));
             } finally {

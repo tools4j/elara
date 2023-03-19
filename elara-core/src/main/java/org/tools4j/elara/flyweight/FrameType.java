@@ -34,14 +34,28 @@ public enum FrameType {
     ;
     /** Type for a frame that contains a command */
     public static final byte COMMAND_TYPE = 0x1;
-    /** Type for a frame that contains a normal user routed event */
-    public static final byte EVENT_TYPE = 0x2;
-    /** Type for a frame that contains an auto-commit event */
-    public static final byte NIL_EVENT_TYPE = 0x3;
+    /** Type for a frame that contains an application routed intermediary event to be succeeded by further events for same the command */
+    public static final byte INTERMEDIARY_EVENT_TYPE = 0x2;
+    /** Type for a frame that contains an application routed commit event, the last for the command */
+    public static final byte COMMIT_EVENT_TYPE = 0x3;
+    /** Type for a frame that contains a system routed auto-commit event used if the application routes no events for a command */
+    public static final byte AUTO_COMMIT_EVENT_TYPE = 0x4;
     /** Type for a frame that contains a rollback event */
-    public static final byte ROLLBACK_EVENT_TYPE = 0x4;
+    public static final byte ROLLBACK_EVENT_TYPE = 0x5;
     /** Type for a frame that contains time metric data */
-    public static final byte TIME_METRIC_TYPE = 0x5;
+    public static final byte TIME_METRIC_TYPE = 0x6;
     /** Type for a frame that contains frequency metric data */
-    public static final byte FREQUENCY_METRIC_TYPE = 0x6;
+    public static final byte FREQUENCY_METRIC_TYPE = 0x7;
+
+    public static boolean isCommandType(final byte frameType) {
+        return frameType == COMMAND_TYPE;
+    }
+
+    public static boolean isAppRoutedEventType(final byte frameType) {
+        return frameType >= INTERMEDIARY_EVENT_TYPE && frameType <= COMMIT_EVENT_TYPE;
+    }
+
+    public static boolean isEventType(final byte frameType) {
+        return frameType >= INTERMEDIARY_EVENT_TYPE && frameType <= AUTO_COMMIT_EVENT_TYPE;
+    }
 }

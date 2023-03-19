@@ -25,7 +25,7 @@ package org.tools4j.elara.store;
 
 import org.agrona.DirectBuffer;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.event.Event.Flags;
+import org.tools4j.elara.flyweight.EventType;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.store.MessageStore.Poller;
 
@@ -98,7 +98,7 @@ public class CommittedEventPoller implements Poller {
             aheadPoller.moveTo(curHeadId);
             return false;
         }
-        char lastEventFlags = aheadState.lastEventFlags;
+        EventType lastEventType = aheadState.lastEventType;
         aheadState.reset();
         while (aheadPoller.poll(aheadState) > 0) {
             if (aheadState.isCommit()) {
@@ -110,7 +110,7 @@ public class CommittedEventPoller implements Poller {
                 break;
             }
         }
-        aheadState.lastEventFlags = lastEventFlags;
+        aheadState.lastEventType = lastEventType;
         aheadPoller.moveTo(curHeadId);
         return false;
     }
@@ -143,7 +143,7 @@ public class CommittedEventPoller implements Poller {
     }
 
     private static class LookAheadState implements MessageStore.Handler {
-        char lastEventFlags;
+        EventType lastEventType;
         final FlyweightEvent event = new FlyweightEvent();
 
         @Override
@@ -153,16 +153,16 @@ public class CommittedEventPoller implements Poller {
         }
 
         void onEvent(final Event event) {
-            lastEventFlags = event.flags().value();
+            lastEventType = event.eventType();
         }
         void reset() {
-            lastEventFlags = Flags.NONE;
+            lastEventType = null;
         }
         boolean isCommit() {
-            return Flags.isCommit(lastEventFlags);
+            return lastEventType != null && lastEventType.isCommit();
         }
         boolean isRollback() {
-            return Flags.isRollback(lastEventFlags);
+            return lastEventType != null && lastEventType.isRollback();
         }
     }
 }

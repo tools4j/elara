@@ -62,12 +62,12 @@ package org.tools4j.elara.flyweight;
     |                             ...                               |
 
 
-    Event Header: Type=2, F=0/1 (1 if last event for command)
+    Intermediary Event Header: Type=2
 
     0         1         2         3         4         5         6
     0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    |Version|Type=02|L    Index     |          Frame Size           |
+    |Version|Type=02|     Index     |          Frame Size           |
     +-------+-------+-------+-------+-------+-------+-------+-------+
     |           Source ID           |         Payload Type          |
     +-------+-------+-------+-------+-------+-------+-------+-------+
@@ -81,12 +81,31 @@ package org.tools4j.elara.flyweight;
     |                             ...                               |
 
 
-    Nil Event Header: Type=3, F=1 (always last event for command)
+    Commit Event Header: Type=3
 
     0         1         2         3         4         5         6
     0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    |Version|Type=03|1  Index = 0   |       Frame Size = 40         |
+    |Version|Type=03|     Index     |          Frame Size           |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |           Source ID           |         Payload Type          |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                        Source Sequence                        |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                        Event Sequence                         |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                          Event Time                           |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                            Payload                            |
+    |                             ...                               |
+
+
+    Auto-Commit Event Header: Type=4
+
+    0         1         2         3         4         5         6
+    0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |Version|Type=04|     Index     |       Frame Size = 40         |
     +-------+-------+-------+-------+-------+-------+-------+-------+
     |           Source ID           |         Payload Type          |
     +-------+-------+-------+-------+-------+-------+-------+-------+
@@ -98,12 +117,12 @@ package org.tools4j.elara.flyweight;
     +-------+-------+-------+-------+-------+-------+-------+-------+
 
 
-    Rollback Event Header: Type=4, F=1 (always last event for command)
+    Rollback Event Header: Type=5
 
     0         1         2         3         4         5         6
     0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    |Version|Type=04|1    Index     |       Frame Size = 40         |
+    |Version|Type=05|     Index     |       Frame Size = 40         |
     +-------+-------+-------+-------+-------+-------+-------+-------+
     |           Source ID           |         Payload Type          |
     +-------+-------+-------+-------+-------+-------+-------+-------+
@@ -115,12 +134,12 @@ package org.tools4j.elara.flyweight;
     +-------+-------+-------+-------+-------+-------+-------+-------+
 
 
-    Time Metric Header: Type=5
+    Time Metric Header: Type=6
 
     0         1         2         3         4         5         6
     0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    |Version|Type=05|F    Index     |          Frame Size           |
+    |Version|Type=06|F    Index     |          Frame Size           |
     +-------+-------+-------+-------+-------+-------+-------+-------+
     |           Source ID           |         Metric Types          |
     +-------+-------+-------+-------+-------+-------+-------+-------+
@@ -135,12 +154,12 @@ package org.tools4j.elara.flyweight;
     |                             ...                               |
 
 
-    Frequency Metric Header: Type=6
+    Frequency Metric Header: Type=7
 
     0         1         2         3         4         5         6
     0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    |Version|Type=06| Metric Types  |          Frame Size           |
+    |Version|Type=07| Metric Types  |          Frame Size           |
     +-------+-------+-------+-------+-------+-------+-------+-------+
     |                           Iteration                           |
     +-------+-------+-------+-------+-------+-------+-------+-------+

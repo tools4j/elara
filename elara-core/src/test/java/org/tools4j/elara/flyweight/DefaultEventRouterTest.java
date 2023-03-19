@@ -47,6 +47,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.tools4j.elara.flyweight.EventType.APP_COMMIT;
+import static org.tools4j.elara.flyweight.EventType.AUTO_COMMIT;
+import static org.tools4j.elara.flyweight.EventType.INTERMEDIARY;
 
 /**
  * Unit test for {@link DefaultEventRouter}
@@ -99,8 +102,8 @@ public class DefaultEventRouterTest {
         assertEquals(1, eventRouter.nextEventSequence(), "nextEventSequence[x]");
         assertEquals(0, eventRouter.nextEventIndex(), "nextEventIndex[x]");
         assertEquals(1, routed.size(), "routed.size");
-        assertEvent(command, routed.get(0), 0, 0, false, BaseEvents.AUTO_COMMIT, 0, "events[0]");
-        assertEvent(command, poll(0), 0, 0, true, BaseEvents.AUTO_COMMIT, 0, "poll(0)");
+        assertEvent(command, routed.get(0), AUTO_COMMIT, 0, 0, BaseEvents.AUTO_COMMIT, 0, "events[0]");
+        assertEvent(command, poll(0), AUTO_COMMIT, 0, 0, BaseEvents.AUTO_COMMIT, 0, "poll(0)");
     }
 
     @Test
@@ -138,10 +141,51 @@ public class DefaultEventRouterTest {
         assertEquals(2, eventRouter.nextEventSequence(), "nextEventSequence[x]");
         assertEquals(0, eventRouter.nextEventIndex(), "nextEventIndex[x]");
         assertEquals(2, routed.size(), "routed.size");
-        assertEvent(command, routed.get(0), 0, 0, false, PayloadType.DEFAULT, 0, "events[0]");
-        assertEvent(command, routed.get(1), 1, 1, false, eventType, payloadSize, "events[1]");
-        assertEvent(command, poll(1), 1, 1, true, eventType, payloadSize, "poll(1)");
+        assertEvent(command, routed.get(0), INTERMEDIARY, 0, 0, PayloadType.DEFAULT, 0, "events[0]");
+        assertEvent(command, routed.get(1), INTERMEDIARY, 1, 1, eventType, payloadSize, "events[1]");
+        assertEvent(command, poll(1), APP_COMMIT, 1, 1, eventType, payloadSize, "poll(1)");
         assertEquals(msg, routed.get(1).payload().getStringAscii(msgOffset), "routed[1].payload.msg");
+    }
+
+    @Test
+    public void lastEventAborted() {
+        //given
+        final int sourceIdId = 11;
+        final long sourceIdSeq = 22;
+        final int type = 33;
+        final long time = 44;
+        eventTime = time + 1;
+
+        startWithCommand(sourceIdId, sourceIdSeq, type, time);
+
+        //when
+        routeEmptyApplicationEvent();
+
+        //then
+        assertEquals(1, eventRouter.nextEventSequence(), "nextEventSequence[1]");
+        assertEquals(1, eventRouter.nextEventIndex(), "nextEventIndex[1]");
+
+        //when
+        try (RoutingContext context = eventRouter.routingEvent()) {
+            context.buffer().putInt(0, 123);
+            context.buffer().putStringAscii(4, "Hello world");
+            context.abort();
+        }
+
+        //then
+        assertEquals(1, eventRouter.nextEventSequence(), "nextEventSequence[1+-]");
+        assertEquals(1, eventRouter.nextEventIndex(), "nextEventIndex[1+-]");
+
+        //when
+        eventRouter.complete();
+
+        //then
+        assertEquals(2, eventRouter.nextEventSequence(), "nextEventSequence[x]");
+        assertEquals(0, eventRouter.nextEventIndex(), "nextEventIndex[x]");
+        assertEquals(2, routed.size(), "routed.size");
+        assertEvent(command, routed.get(0), INTERMEDIARY, 0, 0, PayloadType.DEFAULT, 0, "events[0]");
+        assertEvent(command, routed.get(1), AUTO_COMMIT, 1, 1, BaseEvents.AUTO_COMMIT, 0, "events[1]");
+        assertEvent(command, poll(1), AUTO_COMMIT, 1, 1, BaseEvents.AUTO_COMMIT, 0, "poll(1)");
     }
 
     @Test
@@ -217,9 +261,9 @@ public class DefaultEventRouterTest {
         assertEquals(2, eventRouter.nextEventSequence(), "nextEventSequence[x]");
         assertEquals(0, eventRouter.nextEventIndex(), "nextEventIndex[x]");
         assertEquals(2, routed.size(), "routed.size");
-        assertEvent(command, routed.get(0), 0, 0, false, PayloadType.DEFAULT, 0, "events[0]");
-        assertEvent(command, routed.get(1), 1, 1, false, eventType, payloadSize, "events[1]");
-        assertEvent(command, poll(1), 1, 1, true, eventType, payloadSize, "poll(1)");
+        assertEvent(command, routed.get(0), INTERMEDIARY, 0, 0, PayloadType.DEFAULT, 0, "events[0]");
+        assertEvent(command, routed.get(1), INTERMEDIARY, 1, 1, eventType, payloadSize, "events[1]");
+        assertEvent(command, poll(1), APP_COMMIT, 1, 1, eventType, payloadSize, "poll(1)");
     }
 
     @Test
@@ -278,13 +322,14 @@ public class DefaultEventRouterTest {
     }
 
     private void assertEvent(final Command command, final Event event,
-                             final long eventSequence, final int index, final boolean last,
+                             final EventType eventType, final long eventSequence, final int index,
                              final int payloadType, final int payloadSize, final String evtName) {
         assertEquals(command.sourceId(), event.sourceId(), evtName + ".sourceId");
         assertEquals(command.sourceSequence(), event.sourceSequence(), evtName + ".sourceSequence");
+        assertEquals(eventType, event.eventType(), evtName + ".eventType");
         assertEquals(eventSequence, event.eventSequence(), evtName + ".eventSequence");
         assertEquals(index, event.index(), evtName + ".index");
-        assertEquals(last, event.flags().isLast(), evtName + ".last");
+        assertEquals(eventTime, event.eventTime(), evtName + ".eventTime");
         assertEquals(eventTime, event.eventTime(), evtName + ".eventTime");
         assertEquals(payloadType, event.payloadType(), evtName + ".payloadType");
         assertEquals(payloadSize, event.payload().capacity(), evtName + ".payload.capacity");

@@ -36,9 +36,6 @@ import static org.tools4j.elara.flyweight.EventDescriptor.PAYLOAD_OFFSET;
 import static org.tools4j.elara.flyweight.EventDescriptor.PAYLOAD_TYPE_OFFSET;
 import static org.tools4j.elara.flyweight.EventDescriptor.SOURCE_ID_OFFSET;
 import static org.tools4j.elara.flyweight.EventDescriptor.SOURCE_SEQUENCE_OFFSET;
-import static org.tools4j.elara.flyweight.FrameType.EVENT_TYPE;
-import static org.tools4j.elara.flyweight.FrameType.NIL_EVENT_TYPE;
-import static org.tools4j.elara.flyweight.FrameType.ROLLBACK_EVENT_TYPE;
 
 /**
  * A flyweight event for reading and writing event data laid out as per {@link EventDescriptor} definition.
@@ -48,7 +45,6 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFr
 
     private final FlyweightHeader header = new FlyweightHeader(HEADER_LENGTH);
     private final MutableDirectBuffer payload = new UnsafeBuffer(0, 0);
-    private final Flags flags = new FlyweightFlags(this);
 
     @Override
     public FlyweightEvent wrap(final DirectBuffer buffer, final int offset) {
@@ -111,16 +107,6 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFr
     }
 
     @Override
-    public boolean last() {
-        return last(header.buffer());
-    }
-
-    public static boolean last(final DirectBuffer buffer) {
-        return (0x8000 & buffer.getShort(INDEX_OFFSET, LITTLE_ENDIAN)) != 0;
-    }
-
-
-    @Override
     public long eventSequence() {
         return eventSequence(header.buffer());
     }
@@ -148,8 +134,8 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFr
     }
 
     @Override
-    public Flags flags() {
-        return flags;
+    public EventType eventType() {
+        return EventType.valueByFrameType(header.type());
     }
 
     @Override
@@ -160,42 +146,25 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFr
     @Override
     public int writeTo(final MutableDirectBuffer dst, final int dstOffset) {
         final int payloadSize = payload.capacity();
-        writeHeader(sourceId(), sourceSequence(), index(), flags().isLast(), eventSequence(),
+        writeHeader(eventType(), sourceId(), sourceSequence(), (short)index(), eventSequence(),
                 eventTime(), payloadType(), payloadSize, dst, dstOffset);
         dst.putBytes(dstOffset + PAYLOAD_OFFSET, payload, 0, payloadSize);
         return HEADER_LENGTH + payloadSize;
     }
 
-    public static int writeHeader(final int sourceId,
-                                  final long sourceSequence,
-                                  final int index,
-                                  final boolean last,
-                                  final long eventSequence,
-                                  final long eventTime,
-                                  final int payloadType,
-                                  final int payloadSize,
-                                  final MutableDirectBuffer dst,
-                                  final int dstOffset) {
-        return writeHeader(EVENT_TYPE, sourceId, sourceSequence, index, last, eventSequence, eventTime, payloadType,
-                payloadSize, dst, dstOffset);
-    }
-
-    public static int writeHeader(final byte eventType,
+    public static int writeHeader(final EventType eventType,
                                   final int sourceId,
                                   final long sourceSequence,
-                                  final int index,
-                                  final boolean last,
+                                  final short index,
                                   final long eventSequence,
                                   final long eventTime,
                                   final int payloadType,
                                   final int payloadSize,
                                   final MutableDirectBuffer dst,
                                   final int dstOffset) {
-        assert eventType == EVENT_TYPE || eventType == NIL_EVENT_TYPE || eventType == ROLLBACK_EVENT_TYPE;
-        assert index >= 0 && index <= Short.MAX_VALUE;
+        assert index >= 0;
         final int frameSize = HEADER_LENGTH + payloadSize;
-        final short flagAndIndex = (short)((last ? 0x8000: 0x0) | (0x7fff & index));
-        FlyweightHeader.write(eventType, flagAndIndex, frameSize, dst, dstOffset);
+        FlyweightHeader.write(eventType.frameType(), index, frameSize, dst, dstOffset);
         dst.putLong(dstOffset + SOURCE_ID_OFFSET,
                 (0xffffffffL & sourceId) | ((0xffffffffL & payloadType) << 32),
                 LITTLE_ENDIAN);
@@ -205,13 +174,12 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFr
         return HEADER_LENGTH;
     }
 
-    public static void writeIndex(final short index, final boolean last, final MutableDirectBuffer dst) {
-        assert index >= 0;
-        final short flagAndIndex = (short)(last ? (0x8000 | index) : (0x7fff & index));
-        dst.putShort(INDEX_OFFSET, flagAndIndex, LITTLE_ENDIAN);
+    public static void writeEventType(final EventType eventType, final MutableDirectBuffer dst) {
+        FlyweightHeader.writeType(eventType.frameType(), dst);
     }
 
     public static void writePayloadSize(final int payloadSize, final MutableDirectBuffer dst) {
+        assert payloadSize >= 0;
         FlyweightHeader.writeFrameSize(HEADER_LENGTH + payloadSize, dst);
     }
 
@@ -226,7 +194,6 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFr
             dst.append("|source-id=").append(sourceId());
             dst.append("|source-seq=").append(sourceSequence());
             dst.append("|index=").append(index());
-            dst.append("|last=").append(flags.isLast());
             dst.append("|event-seq=").append(eventSequence());
             dst.append("|event-time=").append(eventTime());
             dst.append("|payload-type=").append(payloadType());

@@ -30,6 +30,7 @@ import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.flyweight.CommandDescriptor;
 import org.tools4j.elara.flyweight.EventDescriptor;
+import org.tools4j.elara.flyweight.EventType;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.plugin.base.BaseState;
@@ -85,7 +86,7 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
 
     private final class SendingContext implements CommandSender.SendingContext {
 
-        private static final short INDEX = 0;
+        private static final short INDEX_0 = 0;
         final ExpandableDirectBuffer buffer = new ExpandableDirectBuffer();
         AppendingContext context;
 
@@ -98,7 +99,7 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
             this.context = requireNonNull(context);
             this.buffer.wrap(context.buffer(), EventDescriptor.PAYLOAD_OFFSET);
             FlyweightEvent.writeHeader(
-                    sourceId, sourceSeq, INDEX, true, eventSeq, timeSource.currentTime(), payloadType, 0,
+                    EventType.APP_COMMIT, sourceId, sourceSeq, INDEX_0, eventSeq, timeSource.currentTime(), payloadType, 0,
                     context.buffer(), EventDescriptor.HEADER_OFFSET
             );
             return this;
@@ -176,7 +177,7 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
 
         private void applyEvent(final DirectBuffer buffer, final int length) {
             if (eventIdApplierOrNull != null) {
-                eventIdApplierOrNull.onEventId(sourceId(), sourceSequence(), eventSequence(), INDEX);
+                eventIdApplierOrNull.onEventId(sourceId(), sourceSequence(), eventSequence(), INDEX_0);
                 return;
             }
             appliedEvent.wrapSilently(buffer, EventDescriptor.HEADER_OFFSET);

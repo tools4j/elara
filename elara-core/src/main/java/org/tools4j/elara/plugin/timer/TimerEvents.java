@@ -28,10 +28,10 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.flyweight.DataFrame;
+import org.tools4j.elara.flyweight.FrameType;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 
-import static org.tools4j.elara.flyweight.FrameType.EVENT_TYPE;
 import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.PAYLOAD_SIZE;
 import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_ID_OFFSET;
 import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_REPETITION_OFFSET;
@@ -167,7 +167,7 @@ public enum TimerEvents {
     }
 
     public static boolean isTimerEvent(final DataFrame frame) {
-        return frame.type() == EVENT_TYPE && isTimerEvent(frame.payloadType());
+        return FrameType.isAppRoutedEventType(frame.type()) && isTimerEvent(frame.payloadType());
     }
 
     public static boolean isTimerEvent(final int payloadType) {

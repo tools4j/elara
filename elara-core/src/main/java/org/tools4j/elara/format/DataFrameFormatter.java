@@ -66,8 +66,6 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
     /** Placeholder in format string for data frame header's version value */
     String VERSION = "{version}";
     /** Placeholder in format string for event frame header's last flag */
-    String LAST = "{last}";
-    /** Placeholder in format string for data frame header's index value */
     String INDEX = "{index}";
     /** Placeholder in format string for data frame header's  payload-size value */
     String PAYLOAD_SIZE = "{payload-size}";
@@ -109,9 +107,6 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
         return "";
     }
     default Object version(long line,long entryId,  DataFrame frame) {return frame.header().version();}
-    default Object last(long line, long entryId, DataFrame frame) {
-        return frame instanceof EventFrame && ((EventFrame)frame).last() ? "L" : "";
-    }
     default Object index(long line, long entryId, DataFrame frame) {
         return frame instanceof EventFrame ? ((EventFrame)frame).index() : 0;
     }
@@ -134,7 +129,6 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
             case SEQUENCE: return sequence(entryId, entryId, frame);
             case TIME: return time(entryId, entryId, frame);
             case VERSION: return version(entryId, entryId, frame);
-            case LAST: return last(entryId, entryId, frame);
             case INDEX: return index(entryId, entryId, frame);
             case PAYLOAD_SIZE: return payloadSize(entryId, entryId, frame);
             case PAYLOAD: return payload(entryId, entryId, frame);

@@ -25,6 +25,7 @@ package org.tools4j.elara.plugin.replication;
 
 import org.agrona.collections.IntHashSet;
 import org.tools4j.elara.flyweight.EventDescriptor;
+import org.tools4j.elara.flyweight.EventType;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.logging.ElaraLogger;
 import org.tools4j.elara.logging.Logger.Factory;
@@ -95,7 +96,7 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
                     .replace(serverId).replace(leaderId).format();
             try (final AppendingContext context = eventStoreAppender.appending()) {
                 FlyweightEvent.writeHeader(
-                        sourceId, sourceSeq, 0, true, nextEventSequence(), time, LEADER_CONFIRMED, PAYLOAD_LENGTH,
+                        EventType.APP_COMMIT, sourceId, sourceSeq, (short)0, nextEventSequence(), time, LEADER_CONFIRMED, PAYLOAD_LENGTH,
                         context.buffer(), HEADER_OFFSET
                 );
                 ReplicationEvents.leaderConfirmed(context.buffer(), EventDescriptor.PAYLOAD_OFFSET, currentTerm, leaderId);
@@ -108,7 +109,7 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
                     .replace(serverId).replace(leaderId).format();
             try (final AppendingContext context = eventStoreAppender.appending()) {
                 FlyweightEvent.writeHeader(
-                        sourceId, sourceSeq, 0, true, nextEventSequence(), time, LEADER_REJECTED, PAYLOAD_LENGTH,
+                        EventType.APP_COMMIT, sourceId, sourceSeq, (short)0, nextEventSequence(), time, LEADER_REJECTED, PAYLOAD_LENGTH,
                         context.buffer(), HEADER_OFFSET
                 );
                 ReplicationEvents.leaderRejected(context.buffer(), EventDescriptor.PAYLOAD_OFFSET, currentTerm, leaderId);
@@ -121,7 +122,7 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
                 .replace(serverId).replace(leaderId).replace(state.leaderId()).replace(nextTerm).format();
         try (final AppendingContext context = eventStoreAppender.appending()) {
             FlyweightEvent.writeHeader(
-                    sourceId, sourceSeq, 0, true, nextEventSequence(), time, LEADER_ENFORCED, PAYLOAD_LENGTH,
+                    EventType.APP_COMMIT, sourceId, sourceSeq, (short)0, nextEventSequence(), time, LEADER_ENFORCED, PAYLOAD_LENGTH,
                     context.buffer(), HEADER_OFFSET
             );
             ReplicationEvents.leaderEnforced(context.buffer(), EventDescriptor.PAYLOAD_OFFSET, nextTerm, leaderId);

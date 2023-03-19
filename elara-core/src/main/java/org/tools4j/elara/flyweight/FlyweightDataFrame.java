@@ -89,11 +89,6 @@ public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFr
         return event.valid() ? event.index() : 0;
     }
 
-    public boolean last() {
-        return event.valid() && event.last();
-    }
-
-
     public long eventSequence() {
         return event.valid() ? event.eventSequence() : 0;
     }

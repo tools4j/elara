@@ -26,8 +26,8 @@ package org.tools4j.elara.plugin.replication;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.flyweight.DataFrame;
+import org.tools4j.elara.flyweight.FrameType;
 
-import static org.tools4j.elara.flyweight.FrameType.EVENT_TYPE;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.CANDIDATE_ID_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.DATA_SIZE_OFFSET;
 import static org.tools4j.elara.plugin.replication.ReplicationPayloadDescriptor.FLAGS_NONE;
@@ -137,7 +137,7 @@ public enum ReplicationEvents {
     }
 
     public static boolean isReplicationEvent(final DataFrame frame) {
-        return frame.type() == EVENT_TYPE && isReplicationEventType(frame.payloadType());
+        return FrameType.isAppRoutedEventType(frame.type()) && isReplicationEventType(frame.payloadType());
     }
 
     public static boolean isReplicationEventType(final int eventType) {

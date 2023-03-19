@@ -95,6 +95,10 @@ public final class FlyweightHeader implements Flyweight<FlyweightHeader>, Header
         return buffer.getByte(TYPE_OFFSET);
     }
 
+    public static void writeType(final byte type, final MutableDirectBuffer dst) {
+        dst.putByte(TYPE_OFFSET, type);
+    }
+
     @Override
     public short reserved() {
         return reserved(buffer);
@@ -114,6 +118,7 @@ public final class FlyweightHeader implements Flyweight<FlyweightHeader>, Header
     }
 
     public static void writeFrameSize(final int frameSize, final MutableDirectBuffer dst) {
+        assert frameSize >= 0;
         dst.putInt(FRAME_SIZE_OFFSET, frameSize, LITTLE_ENDIAN);
     }
 
@@ -127,11 +132,27 @@ public final class FlyweightHeader implements Flyweight<FlyweightHeader>, Header
                             final short reserved,
                             final int frameSize,
                             final MutableDirectBuffer dst, final int dstOffset) {
+        assert frameSize >= 0;
         dst.putLong(dstOffset + HEADER_OFFSET,
                 (0xffL & Version.CURRENT) |
                         ((0xffL & type) << 8) |
                         ((0xffffL & reserved) << 16) |
                         ((0x7fffffffL & frameSize) << 32),
+                LITTLE_ENDIAN);
+        return HEADER_LENGTH;
+    }
+
+    public static int write(final byte type,
+                            final short reserved,
+                            final int frameSize,
+                            final boolean flag,
+                            final MutableDirectBuffer dst, final int dstOffset) {
+        assert frameSize >= 0;
+        dst.putLong(dstOffset + HEADER_OFFSET,
+                (0xffL & Version.CURRENT) |
+                        ((0xffL & type) << 8) |
+                        ((0xffffL & reserved) << 16) |
+                        (((flag ? (0x80000000L | (0x7fffffffL & frameSize)) : (0x7fffffffL & frameSize))) << 32),
                 LITTLE_ENDIAN);
         return HEADER_LENGTH;
     }

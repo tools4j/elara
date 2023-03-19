@@ -85,7 +85,6 @@ public interface MetricsFormatter extends ValueFormatter<MetricsStoreEntry> {
     String TIME_UNIT = "{time-unit}";
     /** Placeholder in format string for the number of metrics */
     String METRICS_COUNT = "{metrics-count}";
-    /** Placeholder in format string for the metrics names */
 
     default Object line(long line, long entryId, MetricsStoreEntry entry) {return line;}
     default Object entryId(long line, long entryId, MetricsStoreEntry entry) {return entryId;}
