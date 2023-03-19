@@ -23,17 +23,23 @@
  */
 package org.tools4j.elara.flyweight;
 
-import org.tools4j.elara.plugin.api.TypeRange;
+import org.tools4j.elara.plugin.api.ReservedPayloadType;
 
+/**
+ * Contains static helper methods for command and event payload type.
+ *
+ * @see CommandFrame#payloadType()
+ * @see EventFrame#payloadType()
+ */
 public enum PayloadType {
     ;
-    /** Default payload type if no other type value is provided. */
+    /** Default payload type used if no explicit value is provided when encoding commands or events. */
     public static final int DEFAULT = 0;
 
     /** Max payload type that is reserved for elara and elara plugins*/
-    public static final int RESERVED_MAX = TypeRange.MAX_RESERVED_TYPE;
+    public static final int RESERVED_MAX = ReservedPayloadType.MAX_RESERVED_TYPE;
     /** Min payload type that is reserved for elara and elara plugins*/
-    public static final int RESERVED_MIN = TypeRange.MIN_RESERVED_TYPE;
+    public static final int RESERVED_MIN = ReservedPayloadType.MIN_RESERVED_TYPE;
 
     public static boolean isSystem(final int payloadType) {
         return payloadType < 0;

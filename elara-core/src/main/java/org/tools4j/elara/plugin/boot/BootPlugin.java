@@ -33,8 +33,8 @@ import org.tools4j.elara.input.SimpleSequenceGenerator;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.plugin.api.Plugin.NullState;
+import org.tools4j.elara.plugin.api.ReservedPayloadType;
 import org.tools4j.elara.plugin.api.SystemPlugin;
-import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.step.AgentStep;
@@ -64,8 +64,8 @@ public class BootPlugin implements SystemPlugin<NullState> {
     }
 
     @Override
-    public TypeRange typeRange() {
-        return TypeRange.BOOT;
+    public ReservedPayloadType reservedPayloadType() {
+        return ReservedPayloadType.BOOT;
     }
 
     @Override

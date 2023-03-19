@@ -25,6 +25,9 @@ package org.tools4j.elara.flyweight;
 
 import org.agrona.MutableDirectBuffer;
 
+/**
+ * An object that can write its state data to a byte buffer.
+ */
 public interface Writable {
     int writeTo(MutableDirectBuffer dst, int dstOffset);
 }

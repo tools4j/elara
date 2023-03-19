@@ -24,9 +24,9 @@
 package org.tools4j.elara.plugin.api;
 
 /**
- * Type ranges for command and event types used by {@link SystemPlugin system plugins}.
+ * Reserved payload type ranges for commands and events used by {@link SystemPlugin system plugins}.
  */
-public enum TypeRange {
+public enum ReservedPayloadType {
     BASE(-1, -9),
     TIMER(-10, -19),
     BOOT(-20, -29),
@@ -42,7 +42,7 @@ public enum TypeRange {
     private final int maxType;
     private final int minType;
 
-    TypeRange(final int maxType, final int minType) {
+    ReservedPayloadType(final int maxType, final int minType) {
         assert maxType >= minType;
         assert minType >= MIN_RESERVED_TYPE;
         assert maxType <= MAX_RESERVED_TYPE;

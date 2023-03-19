@@ -25,6 +25,8 @@ package org.tools4j.elara.flyweight;
 
 /**
  * Defines header type constants used in headers as TYPE field as per {@link FrameDescriptor}.
+ *
+ * @see Header#type()
  * @see FrameDescriptor#TYPE_OFFSET
  * @see FrameDescriptor#TYPE_LENGTH
  */

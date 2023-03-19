@@ -35,6 +35,9 @@ import static org.tools4j.elara.flyweight.FrameDescriptor.RESERVED_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.TYPE_OFFSET;
 import static org.tools4j.elara.flyweight.FrameDescriptor.VERSION_OFFSET;
 
+/**
+ * A flyweight header for reading and writing general header data laid out as per {@link FrameDescriptor} definition.
+ */
 public final class FlyweightHeader implements Flyweight<FlyweightHeader>, Header {
 
     private final int headerLength;

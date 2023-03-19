@@ -28,8 +28,8 @@ import org.tools4j.elara.app.config.ApplierConfig;
 import org.tools4j.elara.app.config.EventStoreConfig;
 import org.tools4j.elara.app.type.PassthroughAppConfig;
 import org.tools4j.elara.exception.ExceptionHandler;
+import org.tools4j.elara.plugin.api.ReservedPayloadType;
 import org.tools4j.elara.plugin.api.SystemPlugin;
-import org.tools4j.elara.plugin.api.TypeRange;
 import org.tools4j.elara.plugin.base.BaseState.Mutable;
 import org.tools4j.elara.store.EventStoreRepairer;
 import org.tools4j.elara.store.MessageStore;
@@ -62,8 +62,8 @@ public enum BasePlugin implements SystemPlugin<Mutable> {
     }
 
     @Override
-    public TypeRange typeRange() {
-        return TypeRange.BASE;
+    public ReservedPayloadType reservedPayloadType() {
+        return ReservedPayloadType.BASE;
     }
 
     /**

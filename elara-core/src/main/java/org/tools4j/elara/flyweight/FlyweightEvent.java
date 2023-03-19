@@ -40,6 +40,9 @@ import static org.tools4j.elara.flyweight.FrameType.EVENT_TYPE;
 import static org.tools4j.elara.flyweight.FrameType.NIL_EVENT_TYPE;
 import static org.tools4j.elara.flyweight.FrameType.ROLLBACK_EVENT_TYPE;
 
+/**
+ * A flyweight event for reading and writing event data laid out as per {@link EventDescriptor} definition.
+ */
 public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFrame {
     public static final int HEADER_LENGTH = EventDescriptor.HEADER_LENGTH;
 

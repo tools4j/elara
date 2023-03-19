@@ -36,6 +36,9 @@ import static org.tools4j.elara.flyweight.CommandDescriptor.SOURCE_ID_OFFSET;
 import static org.tools4j.elara.flyweight.CommandDescriptor.SOURCE_SEQUENCE_OFFSET;
 import static org.tools4j.elara.flyweight.FrameType.COMMAND_TYPE;
 
+/**
+ * A flyweight command for reading and writing event data laid out as per {@link CommandDescriptor} definition.
+ */
 public final class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, CommandFrame {
     public static final int HEADER_LENGTH = CommandDescriptor.HEADER_LENGTH;
 

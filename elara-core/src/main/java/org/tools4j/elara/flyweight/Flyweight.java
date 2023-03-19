@@ -25,6 +25,11 @@ package org.tools4j.elara.flyweight;
 
 import org.agrona.DirectBuffer;
 
+/**
+ * A flyweight can read data {@link #wrap(DirectBuffer, int) wrapping} around a buffer that contains it.
+ *
+ * @param <F> the type of the API returned by {@link #wrap(DirectBuffer, int) wrap} to access the data
+ */
 @FunctionalInterface
 public interface Flyweight<F> {
     F wrap(DirectBuffer event, int offset);

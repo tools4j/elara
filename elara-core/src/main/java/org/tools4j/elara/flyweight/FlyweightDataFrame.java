@@ -31,7 +31,8 @@ import org.agrona.concurrent.UnsafeBuffer;
 import static org.tools4j.elara.flyweight.FrameType.COMMAND_TYPE;
 
 /**
- * A flyweight that can read either of {@link CommandFrame} and {@link EventFrame}.
+ * A flyweight that can read either of {@link CommandFrame} and {@link EventFrame} data laid out as per
+ * {@link CommandDescriptor} and {@link EventDescriptor}, respectively
  */
 public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFrame {
     private static final DirectBuffer EMPTY = new UnsafeBuffer(0, 0);
