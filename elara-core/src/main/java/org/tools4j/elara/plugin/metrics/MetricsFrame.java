@@ -23,47 +23,15 @@
  */
 package org.tools4j.elara.plugin.metrics;
 
-import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
+import org.tools4j.elara.flyweight.Frame;
 
 /**
- * An entry of a metrics store as described by {@link MetricsDescriptor}.
+ * A frame holding metrics data.
  */
-public interface MetricsStoreEntry {
-
-    enum Type {
-        TIME,
-        FREQUENCY
-    }
-
-    short version();
-
-    byte flags();
-
-    Type type();
-
-    long time();
-
-    int count();
-
-    // TimeMetric
-
-    Target target();
-
-    short index();
-
-    int sourceId();
-
-    long sourceSequence();
-
-    long time(int index);
-
-    // Frequency Metric
-
-    short choice();
-
-    int repetition();
-
-    long interval();
-
-    long counter(int index);
+public interface MetricsFrame extends Frame {
+    MetricType metricType();
+    long metricTime();
+    int valueCount();
+    boolean hasMetric(Metric metric);
+    Metric metric(int valueIndex);
 }

@@ -55,7 +55,7 @@ package org.tools4j.elara.format;
 
 import org.tools4j.elara.format.HistogramFormatter.HistogramValues;
 import org.tools4j.elara.plugin.metrics.Metric;
-import org.tools4j.elara.plugin.metrics.MetricsStoreEntry;
+import org.tools4j.elara.plugin.metrics.TimeMetricsFrame;
 
 import java.util.Arrays;
 
@@ -78,7 +78,7 @@ final class DefaultHistogramValues implements HistogramValues {
     /* init with smaller array, allows storing up to 1s in micros before resizing */
     private final static int INITIAL_ARRAY_LENGTH = COUNTS_ARRAY_LENGTH / 8;
 
-    private final MetricsStoreEntry entry;
+    private final TimeMetricsFrame frame;
     private final Metric metric;
     private final TimeFormatter timeFormatter;
 
@@ -89,11 +89,11 @@ final class DefaultHistogramValues implements HistogramValues {
     private int count;
     private long[] counts = new long[INITIAL_ARRAY_LENGTH];
 
-    DefaultHistogramValues(final MetricsStoreEntry entry, final Metric metric, final TimeFormatter timeFormatter) {
-        this.entry = requireNonNull(entry);
+    DefaultHistogramValues(final TimeMetricsFrame frame, final Metric metric, final TimeFormatter timeFormatter) {
+        this.frame = requireNonNull(frame);
         this.metric = requireNonNull(metric);
         this.timeFormatter = requireNonNull(timeFormatter);
-        this.resetTime = entry.time();
+        this.resetTime = frame.metricTime();
     }
 
     @Override
@@ -129,7 +129,7 @@ final class DefaultHistogramValues implements HistogramValues {
     private int countsArrayIndex(final int bucketIndex, final int subBucketIndex) {
         assert(subBucketIndex < SUB_BUCKET_COUNT);
         assert(bucketIndex == 0 || (subBucketIndex >= SUB_BUCKET_HALF_COUNT));
-        // Calculate the index for the first entry that will be used in the bucket (halfway through subBucketCount).
+        // Calculate the index for the first frame that will be used in the bucket (halfway through subBucketCount).
         // For bucketIndex 0, all subBucketCount entries may be used, but bucketBaseIndex is still set in the middle.
         final int bucketBaseIndex = (bucketIndex + 1) << SUB_BUCKET_HALF_COUNT_MAGNITUDE;
         // Calculate the offset in the bucket. This subtraction will result in a positive value in all buckets except
@@ -158,8 +158,8 @@ final class DefaultHistogramValues implements HistogramValues {
     }
 
     @Override
-    public MetricsStoreEntry entry() {
-        return entry;
+    public TimeMetricsFrame frame() {
+        return frame;
     }
 
     @Override

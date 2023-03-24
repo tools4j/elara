@@ -48,6 +48,7 @@ public final class FlyweightCommand implements Flyweight<FlyweightCommand>, Comm
     @Override
     public FlyweightCommand wrap(final DirectBuffer buffer, final int offset) {
         header.wrap(buffer, offset);
+        FrameType.validateCommandType(header.type());
         return wrapPayload(buffer, offset + HEADER_LENGTH);
     }
 

@@ -27,8 +27,8 @@ import java.util.Arrays;
 
 public class DefaultMetricsState implements MetricsState {
 
-    private final long[] times = new long[TimeMetric.count()];
-    private final long[] counters = new long[FrequencyMetric.count()];
+    private final long[] times = new long[TimeMetric.length()];
+    private final long[] counters = new long[FrequencyMetric.length()];
 
     @Override
     public long time(final TimeMetric metric) {

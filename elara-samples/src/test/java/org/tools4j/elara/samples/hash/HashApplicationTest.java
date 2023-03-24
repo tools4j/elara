@@ -141,10 +141,14 @@ public class HashApplicationTest {
     public void passthroughWithMetrics() throws Exception {
         //given
         final int n = 500_000;
+//        final int n = 5_000_000;
+//        final int n = 50_000_000;
         final long expected = 8951308420835593941L;//  500_000
+//        final long expected = -4253299023651259134L;//5_000_000
+//        final long expected = 8536806003277137281L;//50_000_000
 
         //when
-        final long result = passthroughWithMetrics("hash-passthrough", n, true);
+        final long result = passthroughWithMetrics("hash-metrics", n, true);
 
         //then
         assertEquals(expected, result, "state.hash(" + n + ")");

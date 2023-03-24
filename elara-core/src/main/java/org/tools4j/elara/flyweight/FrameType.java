@@ -42,10 +42,10 @@ public enum FrameType {
     public static final byte AUTO_COMMIT_EVENT_TYPE = 0x4;
     /** Type for a frame that contains a rollback event */
     public static final byte ROLLBACK_EVENT_TYPE = 0x5;
-    /** Type for a frame that contains time metric data */
-    public static final byte TIME_METRIC_TYPE = 0x6;
-    /** Type for a frame that contains frequency metric data */
-    public static final byte FREQUENCY_METRIC_TYPE = 0x7;
+    /** Type for a frame that contains time metrics data */
+    public static final byte TIME_METRICS_TYPE = 0x6;
+    /** Type for a frame that contains frequency metrics data */
+    public static final byte FREQUENCY_METRICS_TYPE = 0x7;
 
     public static boolean isCommandType(final byte frameType) {
         return frameType == COMMAND_TYPE;
@@ -57,5 +57,49 @@ public enum FrameType {
 
     public static boolean isEventType(final byte frameType) {
         return frameType >= INTERMEDIARY_EVENT_TYPE && frameType <= AUTO_COMMIT_EVENT_TYPE;
+    }
+
+    public static boolean isTimeMetricsType(final byte frameType) {
+        return frameType == TIME_METRICS_TYPE;
+    }
+
+    public static boolean isFrequencyMetricsType(final byte frameType) {
+        return frameType == FREQUENCY_METRICS_TYPE;
+    }
+
+    public static void validateCommandType(final byte frameType) {
+        if (!isCommandType(frameType)) {
+            throw new IllegalArgumentException("Frame type " + frameType + " is not valid for a command frame");
+        }
+    }
+
+    public static void validateEventType(final byte frameType) {
+        if (!isEventType(frameType)) {
+            throw new IllegalArgumentException("Frame type " + frameType + " is not valid for an event frame");
+        }
+    }
+
+    public static void validateDataFrameType(final byte frameType) {
+        if (!(isCommandType(frameType) || isEventType(frameType))) {
+            throw new IllegalArgumentException("Frame type " + frameType + " is not valid for a command or an event frame");
+        }
+    }
+
+    public static void validateTimeMetricsType(final byte frameType) {
+        if (!isTimeMetricsType(frameType)) {
+            throw new IllegalArgumentException("Frame type " + frameType + " is not valid for a time metrics frame");
+        }
+    }
+
+    public static void validateFrequencyMetricsType(final byte frameType) {
+        if (!isFrequencyMetricsType(frameType)) {
+            throw new IllegalArgumentException("Frame type " + frameType + " is not valid for a frequency metrics frame");
+        }
+    }
+
+    public static void validateMetricsType(final byte frameType) {
+        if (!(isTimeMetricsType(frameType) || isFrequencyMetricsType(frameType))) {
+            throw new IllegalArgumentException("Frame type " + frameType + " is not valid for a metrics frame");
+        }
     }
 }

@@ -29,17 +29,18 @@ import org.tools4j.elara.store.MessageStore.Appender;
 import org.tools4j.elara.store.MessageStore.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
 
+import java.util.Set;
+
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.plugin.metrics.FlyweightMetricsStoreEntry.writeCounter;
-import static org.tools4j.elara.plugin.metrics.FlyweightMetricsStoreEntry.writeFrequencyMetricsHeader;
 
 public class FrequencyMetricsWriterStep implements AgentStep {
 
     private final TimeSource timeSource;
-    private final MetricsConfig configuration;
-    private final MetricsState state;
     private final long interval;
+    private final MetricsState state;
     private final Appender appender;
+    private final FrequencyMetric[] metrics;
+    private final short metricTypes;
     private long repetition;
     private long lastWriteTime;
 
@@ -47,17 +48,31 @@ public class FrequencyMetricsWriterStep implements AgentStep {
                                       final MetricsConfig configuration,
                                       final MetricsState state) {
         this.timeSource = requireNonNull(timeSource);
-        this.configuration = requireNonNull(configuration);
-        this.state = requireNonNull(state);
-        if (configuration.frequencyMetrics().isEmpty()) {
-            throw new IllegalArgumentException("Configuration contains no frequency metrics");
-        }
         this.interval = configuration.frequencyMetricInterval();
+        this.state = requireNonNull(state);
+        this.metrics = metrics(configuration.frequencyMetrics());
+        this.metricTypes = FlyweightFrequencyMetrics.metricTypes(metrics);
         if (interval <= 0) {
             throw new IllegalArgumentException("configuration.frequencyMetricInterval() must be positive: " + interval);
         }
+        if (metrics.length == 0) {
+            throw new IllegalArgumentException("Configuration contains no frequency metrics");
+        }
         this.appender = requireNonNull(configuration.frequencyMetricsStore(), "configuration.frequencyMetricsStore()")
                 .appender();
+    }
+
+    private static FrequencyMetric[] metrics(final Set<FrequencyMetric> metrics) {
+        final FrequencyMetric[] array = new FrequencyMetric[metrics.size()];
+        int index = 0;
+        for (int ordinal = 0; ordinal < FrequencyMetric.length(); ordinal++) {
+            final FrequencyMetric metric = FrequencyMetric.byOrdinal(ordinal);
+            if (metrics.contains(metric)) {
+                array[index++] = metric;
+            }
+        }
+        assert index == metrics.size();
+        return array;
     }
 
     @Override
@@ -82,19 +97,16 @@ public class FrequencyMetricsWriterStep implements AgentStep {
     }
 
     private void writeMetrics(final long time) {
-        final short choice = FrequencyMetric.choice(configuration.frequencyMetrics());
-        final int count = FrequencyMetric.count(choice);
         try (final AppendingContext context = appender.appending()) {
             final MutableDirectBuffer buffer = context.buffer();
             //NOTE: our repetition is intentionally a long so we can also use the sign bit before overflow
-            final int headerLen = writeFrequencyMetricsHeader(choice, (int)repetition, interval, time, buffer, 0);
-            int offset = headerLen;
-            for (int i = 0; i < count; i++) {
-                final FrequencyMetric metric = FrequencyMetric.metric(choice, i);
+            int length = FlyweightFrequencyMetrics.writeHeader(repetition, interval, metricTypes, time, metrics.length,
+                    buffer, 0);
+            for (int i = 0; i < metrics.length; i++) {
+                final FrequencyMetric metric = metrics[i];
                 final long counter = state.counter(metric);
-                offset += writeCounter(counter, buffer, offset);
+                length += FlyweightFrequencyMetrics.writeFrequencyValue(i, counter, buffer, 0);
             }
-            final int length = offset;
             context.commit(length);
         }
     }

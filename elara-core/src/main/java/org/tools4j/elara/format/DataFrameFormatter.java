@@ -30,7 +30,13 @@ import org.tools4j.elara.flyweight.PayloadType;
 import org.tools4j.elara.plugin.base.BaseEvents;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.flyweight.FrameType.AUTO_COMMIT_EVENT_TYPE;
 import static org.tools4j.elara.flyweight.FrameType.COMMAND_TYPE;
+import static org.tools4j.elara.flyweight.FrameType.COMMIT_EVENT_TYPE;
+import static org.tools4j.elara.flyweight.FrameType.FREQUENCY_METRICS_TYPE;
+import static org.tools4j.elara.flyweight.FrameType.INTERMEDIARY_EVENT_TYPE;
+import static org.tools4j.elara.flyweight.FrameType.ROLLBACK_EVENT_TYPE;
+import static org.tools4j.elara.flyweight.FrameType.TIME_METRICS_TYPE;
 import static org.tools4j.elara.format.Hex.hex;
 
 /**
@@ -54,28 +60,71 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
     String FRAME = "{frame}";
     /** Placeholder in format string for data frame's header */
     String HEADER = "{header}";
-
-    /** Placeholder in format string for data frame header's source value */
-    String SOURCE = "{source}";
-    /** Placeholder in format string for data frame header's type value */
-    String TYPE = "{type}";
-    /** Placeholder in format string for data frame header's sequence value */
-    String SEQUENCE = "{sequence}";
-    /** Placeholder in format string for data frame header's time value */
-    String TIME = "{time}";
     /** Placeholder in format string for data frame header's version value */
     String VERSION = "{version}";
-    /** Placeholder in format string for event frame header's last flag */
-    String INDEX = "{index}";
-    /** Placeholder in format string for data frame header's  payload-size value */
+    /** Placeholder in format string for data frame header's type value */
+    String FRAME_TYPE = "{frame-type}";
+
+    /** Placeholder in format string for data frame header's source-ID value */
+    String SOURCE_ID = "{source-id}";
+    /** Placeholder in format string for data frame header's source sequence value */
+    String SOURCE_SEQUENCE = "{source-sequence}";
+    /** Placeholder in format string for data frame header's event sequence value */
+    String EVENT_SEQUENCE = "{event-sequence}";
+    /** Placeholder in format string for data frame header's command or event time value */
+    String TIME = "{time}";
+    /** Placeholder in format string for event frame header's event index value */
+    String EVENT_INDEX = "{event-index}";
+    /** Placeholder in format string for data frame header's payload-type value */
+    String PAYLOAD_TYPE = "{payload-type}";
+    /** Placeholder in format string for data frame header's payload-size value */
     String PAYLOAD_SIZE = "{payload-size}";
     /** Placeholder in format string for data frame's payload value */
     String PAYLOAD = "{payload}";
 
     default Object line(long line, long entryId, DataFrame frame) {return line;}
     default Object entryId(long line, long entryId, DataFrame frame) {return entryId;}
-    default Object source(long line, long entryId, DataFrame frame) {return frame.sourceId();}
-    default Object type(long line, long entryId, DataFrame frame) {
+    default Object sourceId(long line, long entryId, DataFrame frame) {return frame.sourceId();}
+    default Object frameType(long line, long entryId, DataFrame frame) {
+        final int type = frame.type();
+        switch (type) {
+            case COMMAND_TYPE:
+                return "cmd";
+            case INTERMEDIARY_EVENT_TYPE:
+            case COMMIT_EVENT_TYPE:
+            case AUTO_COMMIT_EVENT_TYPE:
+                return "evt";
+            case ROLLBACK_EVENT_TYPE:
+                return "rbk";
+            case TIME_METRICS_TYPE:
+                return "tim";
+            case FREQUENCY_METRICS_TYPE:
+                return "frq";
+            default:
+                return type;
+        }
+    }
+    default Object sourceSequence(long line, long entryId, DataFrame frame) {return frame.sourceSequence();}
+    default Object eventSequence(long line, long entryId, DataFrame frame) {
+        if (frame instanceof EventFrame) {
+            return timeFormatter().formatDateTime(((EventFrame)frame).eventSequence());
+        }
+        return "";
+    }
+    default Object time(long line, long entryId, DataFrame frame) {
+        if (frame instanceof CommandFrame) {
+            return timeFormatter().formatDateTime(((CommandFrame)frame).commandTime());
+        }
+        if (frame instanceof EventFrame) {
+            return timeFormatter().formatDateTime(((EventFrame)frame).eventTime());
+        }
+        return "";
+    }
+    default Object version(long line,long entryId,  DataFrame frame) {return frame.header().version();}
+    default Object eventIndex(long line, long entryId, DataFrame frame) {
+        return frame instanceof EventFrame ? ((EventFrame)frame).eventIndex() : 0;
+    }
+    default Object payloadType(long line, long entryId, DataFrame frame) {
         final int type = frame.payloadType();
         if (frame.type() != COMMAND_TYPE) {
             //event
@@ -96,20 +145,6 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
         }
         return type;
     }
-    default Object sequence(long line, long entryId, DataFrame frame) {return frame.sourceSequence();}
-    default Object time(long line, long entryId, DataFrame frame) {
-        if (frame instanceof CommandFrame) {
-            return timeFormatter().formatDateTime(((CommandFrame)frame).commandTime());
-        }
-        if (frame instanceof EventFrame) {
-            return timeFormatter().formatDateTime(((EventFrame)frame).eventTime());
-        }
-        return "";
-    }
-    default Object version(long line,long entryId,  DataFrame frame) {return frame.header().version();}
-    default Object index(long line, long entryId, DataFrame frame) {
-        return frame instanceof EventFrame ? ((EventFrame)frame).index() : 0;
-    }
     default Object payloadSize(long line, long entryId, DataFrame frame) {return frame.payloadSize();}
     default Object payload(long line, long entryId, DataFrame frame) {
         final int size = frame.payload().capacity();
@@ -122,14 +157,16 @@ public interface DataFrameFormatter extends ValueFormatter<DataFrame> {
             case MESSAGE://fallthrough
             case FRAME: return frame;
             case HEADER: return frame.header();
+            case VERSION: return version(entryId, entryId, frame);
+            case FRAME_TYPE: return frameType(entryId, entryId, frame);
             case LINE: return line(line, entryId, frame);
             case ENTRY_ID: return entryId(line, entryId, frame);
-            case SOURCE: return source(entryId, entryId, frame);
-            case TYPE: return type(entryId, entryId, frame);
-            case SEQUENCE: return sequence(entryId, entryId, frame);
+            case SOURCE_ID: return sourceId(entryId, entryId, frame);
+            case SOURCE_SEQUENCE: return sourceSequence(entryId, entryId, frame);
+            case EVENT_SEQUENCE: return eventSequence(entryId, entryId, frame);
             case TIME: return time(entryId, entryId, frame);
-            case VERSION: return version(entryId, entryId, frame);
-            case INDEX: return index(entryId, entryId, frame);
+            case EVENT_INDEX: return eventIndex(entryId, entryId, frame);
+            case PAYLOAD_TYPE: return payloadType(entryId, entryId, frame);
             case PAYLOAD_SIZE: return payloadSize(entryId, entryId, frame);
             case PAYLOAD: return payload(entryId, entryId, frame);
             default: return placeholder;

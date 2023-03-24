@@ -104,6 +104,5 @@ class TimeMetricTest {
 
         //then
         assertEquals(VALUES.length, captured.size());
-        assertEquals(Byte.BYTES, MetricsDescriptor.FLAGS_LENGTH);
     }
 }

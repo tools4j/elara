@@ -34,13 +34,13 @@ public interface Event extends Writable, Printable {
     int sourceId();
     long sourceSequence();
     long eventSequence();
-    int index();
-
-    int payloadType();
+    int eventIndex();
 
     long eventTime();
 
     EventType eventType();
+
+    int payloadType();
 
     default boolean isSystem() {
         return PayloadType.isSystem(payloadType());

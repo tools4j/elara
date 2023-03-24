@@ -35,7 +35,7 @@ public interface EventFrame extends DataFrame {
     default int headerLength() {
         return EventDescriptor.HEADER_LENGTH;
     }
-    int index();
+    int eventIndex();
     long eventSequence();
     long eventTime();
     @Override

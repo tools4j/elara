@@ -66,28 +66,28 @@ public enum EventType {
     }
 
     /**
-     * @return true if this {@link #APP_COMMIT}
+     * @return true if this is {@link #APP_COMMIT}
      */
     public boolean isAppCommit() {
         return this == APP_COMMIT;
     }
 
     /**
-     * @return true if this {@link #AUTO_COMMIT}
+     * @return true if this is {@link #AUTO_COMMIT}
      */
     public boolean isAutoCommit() {
         return this == AUTO_COMMIT;
     }
 
     /**
-     * @return true if this {@link #ROLLBACK}
+     * @return true if this is {@link #ROLLBACK}
      */
     public boolean isRollback() {
         return this == ROLLBACK;
     }
 
     /**
-     * @return true if this {@link #INTERMEDIARY}
+     * @return true if this is {@link #INTERMEDIARY}
      */
     public boolean isIntermediary() {
         return this == INTERMEDIARY;
@@ -132,6 +132,5 @@ public enum EventType {
             default:
                 return false;
         }
-
     }
 }

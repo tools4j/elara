@@ -27,8 +27,8 @@ import org.tools4j.elara.format.IteratorMessagePrinter.Item;
 import org.tools4j.elara.format.IteratorMessagePrinter.ItemFormatter;
 import org.tools4j.elara.plugin.metrics.LatencyMetric;
 import org.tools4j.elara.plugin.metrics.Metric;
-import org.tools4j.elara.plugin.metrics.MetricsStoreEntry;
-import org.tools4j.elara.plugin.metrics.MetricsStoreEntry.Type;
+import org.tools4j.elara.plugin.metrics.MetricType;
+import org.tools4j.elara.plugin.metrics.TimeMetricsFrame;
 
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -50,7 +50,7 @@ public interface HistogramFormatter extends LatencyFormatter {
             }
 
             @Override
-            public long intervalValue(final long line, final long entryId, final MetricsStoreEntry entry) {
+            public long intervalValue(final long line, final long entryId, final TimeMetricsFrame frame) {
                 return interval;
             }
         };
@@ -58,8 +58,21 @@ public interface HistogramFormatter extends LatencyFormatter {
 
     ThreadLocal<HistogramValues[]> latencyHistograms = ThreadLocal.withInitial(() -> new HistogramValues[LatencyMetric.count()]);
 
+    /** Placeholder in format string for iteration value */
+    String ITERATION = "{iteration}";
+    /** Placeholder in format string for interval value */
+    String INTERVAL = "{interval}";
+
+    @Override
+    default Object value(final String placeholder, final long line, final long entryId, final TimeMetricsFrame frame) {
+        switch (placeholder) {
+            case INTERVAL: return interval(entryId, entryId, frame);
+            default: return LatencyFormatter.super.value(placeholder, line, entryId, frame);
+        }
+    }
+
     interface HistogramValues {
-        MetricsStoreEntry entry();
+        TimeMetricsFrame frame();
         Metric metric();
         TimeFormatter timeFormatter();
         long resetTime();
@@ -88,36 +101,35 @@ public interface HistogramFormatter extends LatencyFormatter {
         CAPTURE,
         PRINT
     }
-    default CaptureResult capture(long line, long entryId, MetricsStoreEntry entry) {
-        if (entry.type() != Type.TIME) {
+    default CaptureResult capture(long line, long entryId, TimeMetricsFrame frame) {
+        if (frame.metricType() != MetricType.TIME) {
             return CaptureResult.NOOP;
         }
-        cacheTimeValues(line, entryId, entry);
-        final EnumSet<LatencyMetric> set = metricsSet(line, entryId, entry);
-        final long intervalValue = intervalValue(line, entryId, entry);
+        cacheTimeValues(line, entryId, frame);
+        final EnumSet<LatencyMetric> set = metricsSet(frame);
+        final long intervalValue = intervalValue(line, entryId, frame);
         boolean printAny = false;
         for (final LatencyMetric metric : set) {
-            final HistogramValues histogram = histogramValue(line, entryId, entry, metric);
-            final MetricValue value = metricValue(line, entryId, entry, metric);
+            final HistogramValues histogram = histogramValue(line, entryId, frame, metric);
+            final MetricValue value = metricValue(line, entryId, frame, metric);
             histogram.record(Math.max(0, value.value()));
-            printAny = entry.time() - histogram.resetTime() >= intervalValue;
+            printAny = frame.metricTime() - histogram.resetTime() >= intervalValue;
         }
         return printAny ? CaptureResult.PRINT : CaptureResult.CAPTURE;
     }
 
-    @Override
-    default Object interval(long line, long entryId, MetricsStoreEntry entry) {
-        return timeFormatter().formatDuration(intervalValue(line, entryId, entry));
+    default Object interval(long line, long entryId, TimeMetricsFrame frame) {
+        return timeFormatter().formatDuration(intervalValue(line, entryId, frame));
     }
 
-    default long intervalValue(long line, long entryId, MetricsStoreEntry entry) {
+    default long intervalValue(long line, long entryId, TimeMetricsFrame frame) {
         return 1000;//every second if in millis
     }
 
     @Override
-    default Object type(long line, long entryId, MetricsStoreEntry entry) {
-        final Type type = entry.type();
-        switch (entry.type()) {
+    default Object metricType(long line, long entryId, TimeMetricsFrame frame) {
+        final MetricType type = frame.metricType();
+        switch (frame.metricType()) {
             case TIME:
                 return "HIST";
             case FREQUENCY:
@@ -144,15 +156,15 @@ public interface HistogramFormatter extends LatencyFormatter {
     }
 
 
-    default Iterable<HistogramValues> histogramValues(long line, long entryId, MetricsStoreEntry entry) {
-        final EnumSet<LatencyMetric> set = metricsSet(line, entryId, entry);
-        return set.stream().map(metric -> histogramValue(line, entryId, entry, metric)).collect(Collectors.toList());
+    default Iterable<HistogramValues> histogramValues(long line, long entryId, TimeMetricsFrame frame) {
+        final EnumSet<LatencyMetric> set = metricsSet(frame);
+        return set.stream().map(metric -> histogramValue(line, entryId, frame, metric)).collect(Collectors.toList());
     }
 
-    default HistogramValues histogramValue(final long line, final long entryId, final MetricsStoreEntry entry, final LatencyMetric metric) {
+    default HistogramValues histogramValue(final long line, final long entryId, final TimeMetricsFrame frame, final LatencyMetric metric) {
         HistogramValues histogram = latencyHistograms.get()[metric.ordinal()];
         if (histogram == null) {
-            histogram = new DefaultHistogramValues(entry, metric, timeFormatter());
+            histogram = new DefaultHistogramValues(frame, metric, timeFormatter());
             latencyHistograms.get()[metric.ordinal()] = histogram;
         }
         return histogram;
@@ -163,7 +175,7 @@ public interface HistogramFormatter extends LatencyFormatter {
         final Iterable<BucketValue> bucketValues = bucketValues(line, entryId, histogram);
         //NOTE: we reset the histograms after accessing the bucket values via item, which is not the case when we print only names
         //TODO: find a cleaner way to reset histograms
-        histogram.reset(histogram.entry().time());
+        histogram.reset(histogram.frame().metricTime());
         return bucketValues;
     }
 
@@ -189,7 +201,7 @@ public interface HistogramFormatter extends LatencyFormatter {
         String BUCKET_VALUES = "{bucket-values}";
 
         default Object metricName(long line, long entryId, HistogramValues histogram) {return histogram.metric().displayName();}
-        default Object repetition(long line, long entryId, HistogramValues histogram) {return histogram.resetCount();}
+        default Object iteration(long line, long entryId, HistogramValues histogram) {return histogram.resetCount();}
 
         default Object valueCount(long line, long entryId, HistogramValues histogram) {return histogram.count();}
 
@@ -197,7 +209,7 @@ public interface HistogramFormatter extends LatencyFormatter {
         default Object value(final String placeholder, final long line, final long entryId, final Item<? extends HistogramValues> item) {
             switch (placeholder) {
                 case METRIC_NAME: return metricName(line, entryId, item.itemValue());
-                case REPETITION: return repetition(line, entryId, item.itemValue());
+                case ITERATION: return iteration(line, entryId, item.itemValue());
                 case VALUE_COUNT: return valueCount(line, entryId, item.itemValue());
                 default: return ItemFormatter.super.value(placeholder, line, entryId, item);
             }
@@ -209,7 +221,7 @@ public interface HistogramFormatter extends LatencyFormatter {
                 @Override
                 public Object value(final String placeholder, final long line, final long entryId, final Item<? extends HistogramValues> item) {
                     final Object resolved = HistogramValuesFormatter.this.value(placeholder, line, entryId, item);
-                    return resolved != placeholder ? resolved : parentFormatter.value(placeholder, line, entryId, item.itemValue().entry());
+                    return resolved != placeholder ? resolved : parentFormatter.value(placeholder, line, entryId, item.itemValue().frame());
                 }
             };
         }
@@ -245,7 +257,7 @@ public interface HistogramFormatter extends LatencyFormatter {
                 @Override
                 public Object value(final String placeholder, final long line, final long entryId, final Item<? extends BucketValue> item) {
                     final Object resolved = BucketValueFormatter.this.value(placeholder, line, entryId, item);
-                    return resolved != placeholder ? resolved : rootFormatter.value(placeholder, line, entryId, item.itemValue().histogram().entry());
+                    return resolved != placeholder ? resolved : rootFormatter.value(placeholder, line, entryId, item.itemValue().histogram().frame());
                 }
             };
         }

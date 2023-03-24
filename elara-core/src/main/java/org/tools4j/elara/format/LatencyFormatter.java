@@ -24,10 +24,10 @@
 package org.tools4j.elara.format;
 
 import org.tools4j.elara.plugin.metrics.LatencyMetric;
-import org.tools4j.elara.plugin.metrics.MetricsStoreEntry;
-import org.tools4j.elara.plugin.metrics.MetricsStoreEntry.Type;
+import org.tools4j.elara.plugin.metrics.MetricType;
 import org.tools4j.elara.plugin.metrics.TimeMetric;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
+import org.tools4j.elara.plugin.metrics.TimeMetricsFrame;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
-public interface LatencyFormatter extends MetricsFormatter {
+public interface LatencyFormatter extends TimeMetricsFormatter {
 
     LatencyFormatter DEFAULT = new LatencyFormatter() {};
 
@@ -54,13 +54,13 @@ public interface LatencyFormatter extends MetricsFormatter {
         };
     }
 
-    ThreadLocal<long[]> commandTimes = ThreadLocal.withInitial(() -> new long[TimeMetric.count()]);
-    ThreadLocal<long[]> eventTimes = ThreadLocal.withInitial(() -> new long[TimeMetric.count()]);
+    ThreadLocal<long[]> commandTimes = ThreadLocal.withInitial(() -> new long[TimeMetric.length()]);
+    ThreadLocal<long[]> eventTimes = ThreadLocal.withInitial(() -> new long[TimeMetric.length()]);
 
     @Override
-    default Object type(long line, long entryId, MetricsStoreEntry entry) {
-        final Type type = entry.type();
-        switch (entry.type()) {
+    default Object metricType(long line, long entryId, TimeMetricsFrame frame) {
+        final MetricType type = frame.metricType();
+        switch (frame.metricType()) {
             case TIME:
                 return "LATE";
             case FREQUENCY:
@@ -70,16 +70,14 @@ public interface LatencyFormatter extends MetricsFormatter {
     }
 
     @Override
-    default Object metricsCount(long line, long entryId, MetricsStoreEntry entry) {
-        if (entry.type() != Type.TIME) {
-            return MetricsFormatter.super.metricsCount(line, entryId, entry);
-        }
-        return metricsSet(line, entryId, entry).size();
+    default int valueCount(TimeMetricsFrame frame) {
+        return metricsSet(frame).size();
     }
 
-    default EnumSet<LatencyMetric> metricsSet(long line, long entryId, MetricsStoreEntry entry) {
+    default EnumSet<LatencyMetric> metricsSet(TimeMetricsFrame frame) {
+        final Target target = frame.target();
         final Predicate<LatencyMetric> skip;
-        switch (entry.target()) {
+        switch (target) {
             case COMMAND: skip = metric ->
                     Target.EVENT.both(metric.start(), metric.end()) || Target.OUTPUT.both(metric.start(), metric.end());
                 break;
@@ -96,7 +94,7 @@ public interface LatencyFormatter extends MetricsFormatter {
         final EnumSet<LatencyMetric> twoSet = EnumSet.noneOf(LatencyMetric.class);
         for (final TimeMetric timeMetric : TimeMetric.values()) {
             if (commandTimes.get()[timeMetric.ordinal()] != 0 || eventTimes.get()[timeMetric.ordinal()] != 0 ||
-                    entry.target().contains(entry.flags(), timeMetric)) {
+                    frame.hasMetric(timeMetric)) {
                 for (final LatencyMetric latencyMetric : oneSet) {
                     if (latencyMetric.involves(timeMetric) && !skip.test(latencyMetric)) {
                         twoSet.add(latencyMetric);
@@ -112,20 +110,17 @@ public interface LatencyFormatter extends MetricsFormatter {
         return twoSet;
     }
 
-    default void cacheTimeValues(long line, long entryId, MetricsStoreEntry entry) {
-        if (entry.type() != Type.TIME) {
-            return;
-        }
+    default void cacheTimeValues(long line, long entryId, TimeMetricsFrame frame) {
         final Consumer<long[]> cacher = times -> {
             Arrays.fill(times, 0);
-            final int count = entry.count();
+            final int count = frame.valueCount();
             for (int i = 0; i < count; i++) {
-                final TimeMetric metric = entry.target().metric(entry.flags(), i);
-                final long time = entry.time(i);
+                final TimeMetric metric = frame.timeMetric(i);
+                final long time = frame.timeValue(i);
                 times[metric.ordinal()] = time;
             }
         };
-        switch (entry.target()) {
+        switch (frame.target()) {
             case COMMAND:
                 cacher.accept(commandTimes.get());
                 break;
@@ -138,29 +133,22 @@ public interface LatencyFormatter extends MetricsFormatter {
     }
 
     @Override
-    default Iterable<MetricValue> metricValues(final long line, final long entryId, final MetricsStoreEntry entry) {
-        if (entry.type() != Type.TIME) {
-            return MetricsFormatter.super.metricValues(line, entryId, entry);
-        }
-        cacheTimeValues(line, entryId, entry);
-        return metricsSet(line, entryId, entry)
+    default Iterable<MetricValue> metricValues(final long line, final long entryId, final TimeMetricsFrame frame) {
+        cacheTimeValues(line, entryId, frame);
+        return metricsSet(frame)
                 .stream()
-                .map(latencyMetric -> metricValue(line, entryId, entry, latencyMetric))
+                .map(latencyMetric -> metricValue(line, entryId, frame, latencyMetric))
                 .collect(Collectors.toList());
     }
 
     @Override
-    default MetricValue metricValue(final long line, final long entryId, final MetricsStoreEntry entry, final int index) {
-        if (entry.type() != Type.TIME) {
-            return MetricsFormatter.super.metricValue(line, entryId, entry, index);
-        }
-        final List<LatencyMetric> list = new ArrayList<>(metricsSet(line, entryId, entry));
+    default MetricValue metricValue(final long line, final long entryId, final TimeMetricsFrame frame, final int index) {
+        final List<LatencyMetric> list = new ArrayList<>(metricsSet(frame));
         final LatencyMetric metric = index >= 0 && index < list.size() ? list.get(index) : null;
-        return metricValue(line, entryId, entry, metric);
+        return metricValue(line, entryId, frame, metric);
     }
 
-    default MetricValue metricValue(final long line, final long entryId, final MetricsStoreEntry entry, final LatencyMetric metric) {
-        final Target target = entry.target();
+    default MetricValue metricValue(final long line, final long entryId, final TimeMetricsFrame frame, final LatencyMetric metric) {
         final ToLongFunction<TimeMetric> timeLookup = timeMetric -> {
             final long commandTime = commandTimes.get()[timeMetric.ordinal()];
             if (commandTime != 0) {
@@ -170,11 +158,11 @@ public interface LatencyFormatter extends MetricsFormatter {
             if (eventTime != 0) {
                 return eventTime;
             }
-            final int count = entry.count();
+            final int count = frame.valueCount();
             for (int i = 0; i < count; i++) {
-                final TimeMetric m = target.metric(entry.flags(), i);
+                final TimeMetric m = frame.timeMetric(i);
                 if (m == timeMetric) {
-                    return entry.time(i);
+                    return frame.timeValue(i);
                 }
             }
             return 0;

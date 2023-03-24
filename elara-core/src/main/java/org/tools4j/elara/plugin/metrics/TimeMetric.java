@@ -103,10 +103,11 @@ public enum TimeMetric implements Metric {
                 1, 2, 2, 3, //4-7
                 1, 2, 2, 3, 2, 3, 3, 4, //8-15
         };
+        private static final Target[] VALUES = values();
 
         private final byte allFlags;
         private final TimeMetric[] metrics;
-        private final byte[] metricFlagByOrdinal = new byte[VALUES.length];
+        private final byte[] metricFlagByOrdinal = new byte[TimeMetric.VALUES.length];
         Target(final TimeMetric... metrics) {
             this.metrics = requireNonNull(metrics);
             byte all = 0;
@@ -116,6 +117,12 @@ public enum TimeMetric implements Metric {
                 metricFlagByOrdinal[metrics[i].ordinal()] = flag;
             }
             this.allFlags = all;
+        }
+        public static int length() {
+            return VALUES.length;
+        }
+        public static Target byOrdinal(final int ordinal) {
+            return VALUES[ordinal];
         }
 
         public byte flag(final TimeMetric metric) {
@@ -189,7 +196,7 @@ public enum TimeMetric implements Metric {
 
     private static final TimeMetric[] VALUES = values();
 
-    public static int count() {
+    public static int length() {
         return VALUES.length;
     }
 

@@ -80,9 +80,9 @@ class FrequencyMetricTest {
         //when
         final short choice = FrequencyMetric.choice(VALUES);
         //then
-        assertEquals(VALUES.length, FrequencyMetric.count());
+        assertEquals(VALUES.length, FrequencyMetric.length());
         assertEquals(VALUES.length, Integer.bitCount(Short.toUnsignedInt(choice)));
         assertEquals(VALUES.length, FrequencyMetric.count(choice));
-        assertEquals(Short.BYTES, MetricsDescriptor.CHOICE_LENGTH);
+        assertEquals(Short.BYTES, FrequencyMetricsDescriptor.METRIC_TYPES_LENGTH);
     }
 }

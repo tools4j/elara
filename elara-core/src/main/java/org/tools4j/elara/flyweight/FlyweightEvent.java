@@ -29,9 +29,9 @@ import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.event.Event;
 
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
+import static org.tools4j.elara.flyweight.EventDescriptor.EVENT_INDEX_OFFSET;
 import static org.tools4j.elara.flyweight.EventDescriptor.EVENT_SEQUENCE_OFFSET;
 import static org.tools4j.elara.flyweight.EventDescriptor.EVENT_TIME_OFFSET;
-import static org.tools4j.elara.flyweight.EventDescriptor.INDEX_OFFSET;
 import static org.tools4j.elara.flyweight.EventDescriptor.PAYLOAD_OFFSET;
 import static org.tools4j.elara.flyweight.EventDescriptor.PAYLOAD_TYPE_OFFSET;
 import static org.tools4j.elara.flyweight.EventDescriptor.SOURCE_ID_OFFSET;
@@ -49,6 +49,7 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFr
     @Override
     public FlyweightEvent wrap(final DirectBuffer buffer, final int offset) {
         header.wrap(buffer, offset);
+        FrameType.validateEventType(header.type());
         return wrapPayload(buffer, offset);
     }
 
@@ -98,12 +99,12 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFr
     }
 
     @Override
-    public int index() {
-        return index(header.buffer());
+    public int eventIndex() {
+        return eventIndex(header.buffer());
     }
 
-    public static int index(final DirectBuffer buffer) {
-        return 0x7fff & buffer.getShort(INDEX_OFFSET, LITTLE_ENDIAN);
+    public static int eventIndex(final DirectBuffer buffer) {
+        return 0x7fff & buffer.getShort(EVENT_INDEX_OFFSET, LITTLE_ENDIAN);
     }
 
     @Override
@@ -146,7 +147,7 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFr
     @Override
     public int writeTo(final MutableDirectBuffer dst, final int dstOffset) {
         final int payloadSize = payload.capacity();
-        writeHeader(eventType(), sourceId(), sourceSequence(), (short)index(), eventSequence(),
+        writeHeader(eventType(), sourceId(), sourceSequence(), (short) eventIndex(), eventSequence(),
                 eventTime(), payloadType(), payloadSize, dst, dstOffset);
         dst.putBytes(dstOffset + PAYLOAD_OFFSET, payload, 0, payloadSize);
         return HEADER_LENGTH + payloadSize;
@@ -155,16 +156,16 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFr
     public static int writeHeader(final EventType eventType,
                                   final int sourceId,
                                   final long sourceSequence,
-                                  final short index,
+                                  final short eventIndex,
                                   final long eventSequence,
                                   final long eventTime,
                                   final int payloadType,
                                   final int payloadSize,
                                   final MutableDirectBuffer dst,
                                   final int dstOffset) {
-        assert index >= 0;
+        assert eventIndex >= 0;
         final int frameSize = HEADER_LENGTH + payloadSize;
-        FlyweightHeader.write(eventType.frameType(), index, frameSize, dst, dstOffset);
+        FlyweightHeader.write(eventType.frameType(), eventIndex, frameSize, dst, dstOffset);
         dst.putLong(dstOffset + SOURCE_ID_OFFSET,
                 (0xffffffffL & sourceId) | ((0xffffffffL & payloadType) << 32),
                 LITTLE_ENDIAN);
@@ -193,7 +194,7 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFr
             dst.append("|frame-size=").append(frameSize());
             dst.append("|source-id=").append(sourceId());
             dst.append("|source-seq=").append(sourceSequence());
-            dst.append("|index=").append(index());
+            dst.append("|event-index=").append(eventIndex());
             dst.append("|event-seq=").append(eventSequence());
             dst.append("|event-time=").append(eventTime());
             dst.append("|payload-type=").append(payloadType());

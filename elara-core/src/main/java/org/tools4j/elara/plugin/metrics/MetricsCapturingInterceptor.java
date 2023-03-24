@@ -98,7 +98,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
     private final TimeSource timeSource;
     private final MetricsConfig configuration;
     private final MetricsState state;
-    private final TimeMetricsStoreWriter timeMetricsWriter;
+    private final TimeMetricsWriter timeMetricsWriter;
 
     public MetricsCapturingInterceptor(final TimeSource timeSource,
                                        final MetricsConfig configuration,
@@ -106,7 +106,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
         this.timeSource = requireNonNull(timeSource);
         this.configuration = requireNonNull(configuration);
         this.state = requireNonNull(state);
-        this.timeMetricsWriter = configuration.timeMetrics().isEmpty() ? null : new TimeMetricsStoreWriter(timeSource, configuration, state);
+        this.timeMetricsWriter = configuration.timeMetrics().isEmpty() ? null : new TimeMetricsWriter(timeSource, configuration, state);
     }
 
     private boolean shouldCapture(final TimeMetric metric) {
@@ -371,7 +371,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
                                 captureTime(APPLYING_END_TIME);
                                 captureCount(EVENT_APPLIED_FREQUENCY);
                                 if (timeMetricsWriter != null) {
-                                    timeMetricsWriter.writeMetrics(EVENT, sourceId, sourceSeq, (short)index);
+                                    timeMetricsWriter.writeMetrics(EVENT, sourceId, sourceSeq, (short)index, eventSeq);
                                 }
                             };
                         }

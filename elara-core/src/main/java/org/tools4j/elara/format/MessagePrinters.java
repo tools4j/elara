@@ -24,8 +24,10 @@
 package org.tools4j.elara.format;
 
 import org.tools4j.elara.flyweight.DataFrame;
-import org.tools4j.elara.plugin.metrics.MetricsStoreEntry;
-import org.tools4j.elara.plugin.metrics.MetricsStoreEntry.Type;
+import org.tools4j.elara.plugin.metrics.FrequencyMetricsFrame;
+import org.tools4j.elara.plugin.metrics.MetricType;
+import org.tools4j.elara.plugin.metrics.MetricsFrame;
+import org.tools4j.elara.plugin.metrics.TimeMetricsFrame;
 
 import java.util.concurrent.TimeUnit;
 
@@ -54,32 +56,34 @@ public interface MessagePrinters {
         );
     }
 
-    default MessagePrinter<MetricsStoreEntry> metrics() {
+    default MessagePrinter<MetricsFrame> metrics() {
         return metrics(timeMetrics(), frequencyMetrics());
     }
 
-    default MessagePrinter<MetricsStoreEntry> metricsWithLatencies() {
+    default MessagePrinter<MetricsFrame> metricsWithLatencies() {
         return metrics(latencyMetrics(), frequencyMetrics());
     }
 
-    default MessagePrinter<MetricsStoreEntry> metricsWithLatencyHistogram() {
+    default MessagePrinter<MetricsFrame> metricsWithLatencyHistogram() {
         return metrics(latencyHistogram(), frequencyMetrics());
     }
 
-    default MessagePrinter<MetricsStoreEntry> metrics(final MessagePrinter<MetricsStoreEntry> timeMetricsPrinter,
-                                                      final MessagePrinter<MetricsStoreEntry> frequencyMetricsPrinter) {
-        return composite(
-                (line, entryId, emtry) -> emtry.type() == Type.TIME ? 0 : 1,
-                timeMetricsPrinter,
-                frequencyMetricsPrinter
-        );
+    default MessagePrinter<MetricsFrame> metrics(final MessagePrinter<TimeMetricsFrame> timeMetricsPrinter,
+                                                 final MessagePrinter<FrequencyMetricsFrame> frequencyMetricsPrinter) {
+        return (line, entryId, frame, writer) -> {
+            if (frame.metricType() == MetricType.TIME && frame instanceof TimeMetricsFrame) {
+                timeMetricsPrinter.print(line, entryId, (TimeMetricsFrame)frame, writer);
+            } else if (frame.metricType() == MetricType.FREQUENCY && frame instanceof FrequencyMetricsFrame) {
+                frequencyMetricsPrinter.print(line, entryId, (FrequencyMetricsFrame)frame, writer);
+            }
+        };
     }
 
     MessagePrinter<DataFrame> command();
     MessagePrinter<DataFrame> event();
-    MessagePrinter<MetricsStoreEntry> frequencyMetrics();
-    MessagePrinter<MetricsStoreEntry> timeMetrics();
-    MessagePrinter<MetricsStoreEntry> latencyMetrics();
-    MessagePrinter<MetricsStoreEntry> latencyHistogram();
+    MessagePrinter<FrequencyMetricsFrame> frequencyMetrics();
+    MessagePrinter<TimeMetricsFrame> timeMetrics();
+    MessagePrinter<TimeMetricsFrame> latencyMetrics();
+    MessagePrinter<TimeMetricsFrame> latencyHistogram();
 
 }

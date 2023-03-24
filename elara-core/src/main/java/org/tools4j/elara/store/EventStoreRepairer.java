@@ -73,7 +73,7 @@ public class EventStoreRepairer {
     public boolean repair() {
         if (lastNonFinalEventOrNull != null) {
             final FlyweightEvent event = lastNonFinalEventOrNull;
-            final int nextIndex = lastNonFinalEventOrNull.index() + 1;
+            final int nextIndex = lastNonFinalEventOrNull.eventIndex() + 1;
             final long nextSeq = lastNonFinalEventOrNull.eventSequence() + 1;
             if (nextIndex > EventFrame.MAX_INDEX) {
                 //should not get here since we checked on init
@@ -109,9 +109,9 @@ public class EventStoreRepairer {
             if (event.eventType().isLast()) {
                 return null;
             }
-            if (event.index() >= EventFrame.MAX_INDEX) {
+            if (event.eventIndex() >= EventFrame.MAX_INDEX) {
                 throw new IllegalArgumentException("Event store cannot be repaired, last event has maximum allowed index: " +
-                        event.index());
+                        event.eventIndex());
             }
             return event;
         }

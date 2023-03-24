@@ -328,7 +328,7 @@ public class DefaultEventRouterTest {
         assertEquals(command.sourceSequence(), event.sourceSequence(), evtName + ".sourceSequence");
         assertEquals(eventType, event.eventType(), evtName + ".eventType");
         assertEquals(eventSequence, event.eventSequence(), evtName + ".eventSequence");
-        assertEquals(index, event.index(), evtName + ".index");
+        assertEquals(index, event.eventIndex(), evtName + ".index");
         assertEquals(eventTime, event.eventTime(), evtName + ".eventTime");
         assertEquals(eventTime, event.eventTime(), evtName + ".eventTime");
         assertEquals(payloadType, event.payloadType(), evtName + ".payloadType");

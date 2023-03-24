@@ -94,6 +94,10 @@ public enum FrequencyMetric implements Metric {
         return choice;
     }
 
+    public static boolean contains(final short choice, final FrequencyMetric metric) {
+        return (choice & (1 << metric.ordinal())) != 0;
+    }
+
     public static int count(final short choice) {
         return Integer.bitCount(ALL_FLAGS & choice);
     }
@@ -113,7 +117,7 @@ public enum FrequencyMetric implements Metric {
         return null;
     }
 
-    public static int count() {
+    public static int length() {
         return VALUES.length;
     }
 

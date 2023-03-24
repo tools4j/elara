@@ -139,7 +139,7 @@ final class ConnectionHandler implements Connection.Handler {
             flyweightEvent.wrap(buffer, PAYLOAD_OFFSET);
             if (baseState.eventApplied(flyweightEvent.eventSequence())) {
                 logger.warn("Server {}: Ignoring append-request message in follower mode: event {}:{}.{} has already been applied")
-                        .replace(serverId).replace(flyweightEvent.sourceId()).replace(flyweightEvent.sourceSequence()).replace(flyweightEvent.index()).format();
+                        .replace(serverId).replace(flyweightEvent.sourceId()).replace(flyweightEvent.sourceSequence()).replace(flyweightEvent.eventIndex()).format();
                 return;
             }
             eventStoreAppender.append(buffer, PAYLOAD_OFFSET, payloadSize);

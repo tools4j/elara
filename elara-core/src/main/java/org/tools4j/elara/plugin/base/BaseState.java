@@ -40,7 +40,7 @@ public interface BaseState {
 
     interface Mutable extends BaseState {
         default Mutable applyEvent(final Event event) {
-            return applyEvent(event.sourceId(), event.sourceSequence(), event.eventSequence(), event.index());
+            return applyEvent(event.sourceId(), event.sourceSequence(), event.eventSequence(), event.eventIndex());
         }
 
         Mutable applyEvent(int sourceId, long sourceSeq, long eventSeq, int index);

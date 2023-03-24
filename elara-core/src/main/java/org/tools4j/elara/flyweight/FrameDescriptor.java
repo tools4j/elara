@@ -67,7 +67,7 @@ package org.tools4j.elara.flyweight;
     0         1         2         3         4         5         6
     0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    |Version|Type=02|     Index     |          Frame Size           |
+    |Version|Type=02|  Event Index  |          Frame Size           |
     +-------+-------+-------+-------+-------+-------+-------+-------+
     |           Source ID           |         Payload Type          |
     +-------+-------+-------+-------+-------+-------+-------+-------+
@@ -86,7 +86,7 @@ package org.tools4j.elara.flyweight;
     0         1         2         3         4         5         6
     0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    |Version|Type=03|     Index     |          Frame Size           |
+    |Version|Type=03|  Event Index  |          Frame Size           |
     +-------+-------+-------+-------+-------+-------+-------+-------+
     |           Source ID           |         Payload Type          |
     +-------+-------+-------+-------+-------+-------+-------+-------+
@@ -105,7 +105,7 @@ package org.tools4j.elara.flyweight;
     0         1         2         3         4         5         6
     0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    |Version|Type=04|     Index     |       Frame Size = 40         |
+    |Version|Type=04|  Event Index  |       Frame Size = 40         |
     +-------+-------+-------+-------+-------+-------+-------+-------+
     |           Source ID           |         Payload Type          |
     +-------+-------+-------+-------+-------+-------+-------+-------+
@@ -122,7 +122,7 @@ package org.tools4j.elara.flyweight;
     0         1         2         3         4         5         6
     0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    |Version|Type=05|     Index     |       Frame Size = 40         |
+    |Version|Type=05|  Event Index  |       Frame Size = 40         |
     +-------+-------+-------+-------+-------+-------+-------+-------+
     |           Source ID           |         Payload Type          |
     +-------+-------+-------+-------+-------+-------+-------+-------+
@@ -139,9 +139,9 @@ package org.tools4j.elara.flyweight;
     0         1         2         3         4         5         6
     0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    |Version|Type=06|F    Index     |          Frame Size           |
+    |Version|Type=06|  Event Index  |          Frame Size           |
     +-------+-------+-------+-------+-------+-------+-------+-------+
-    |           Source ID           |         Metric Types          |
+    |           Source ID           |EO       Metric Types          |
     +-------+-------+-------+-------+-------+-------+-------+-------+
     |                        Source Sequence                        |
     +-------+-------+-------+-------+-------+-------+-------+-------+
@@ -176,6 +176,8 @@ package org.tools4j.elara.flyweight;
  * @see FrameType
  * @see CommandDescriptor
  * @see EventDescriptor
+ * @see org.tools4j.elara.plugin.metrics.TimeMetricsDescriptor
+ * @see org.tools4j.elara.plugin.metrics.FrequencyMetricsDescriptor
  */
 public enum FrameDescriptor {
     ;

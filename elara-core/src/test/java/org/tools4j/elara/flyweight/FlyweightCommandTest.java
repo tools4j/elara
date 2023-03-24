@@ -69,7 +69,8 @@ public class FlyweightCommandTest {
     public void defaultValues() {
         //given
         final MutableDirectBuffer buffer = new ExpandableArrayBuffer(HEADER_LENGTH);
-        buffer.putShort(FrameDescriptor.VERSION_OFFSET, Version.CURRENT);
+        buffer.putByte(FrameDescriptor.VERSION_OFFSET, Version.CURRENT);
+        buffer.putByte(FrameDescriptor.TYPE_OFFSET, FrameType.COMMAND_TYPE);
         buffer.putInt(FrameDescriptor.FRAME_SIZE_OFFSET, FlyweightCommand.HEADER_LENGTH);
         final FlyweightCommand command = new FlyweightCommand().wrap(buffer, 0);
 

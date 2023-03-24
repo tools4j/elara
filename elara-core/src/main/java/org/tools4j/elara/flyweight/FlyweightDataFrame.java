@@ -43,6 +43,7 @@ public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFr
     @Override
     public FlyweightDataFrame wrap(final DirectBuffer buffer, final int offset) {
         header.wrap(buffer, offset);
+        FrameType.validateDataFrameType(header.type());
         if (header.type() == COMMAND_TYPE) {
             command.wrap(buffer, offset);
             event.reset();
@@ -58,11 +59,6 @@ public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFr
         return command.valid() || event.valid();
     }
 
-    @Override
-    public int headerLength() {
-        return command.valid() ? command.headerLength() : event.valid() ? event.headerLength() : header.headerLength();
-    }
-
     public FlyweightDataFrame reset() {
         header.reset();
         command.reset();
@@ -76,6 +72,11 @@ public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFr
     }
 
     @Override
+    public int headerLength() {
+        return header.headerLength();
+    }
+
+    @Override
     public int sourceId() {
         return command.valid() ? command.sourceId() : event.valid() ? event.sourceId() : 0;
     }
@@ -86,7 +87,7 @@ public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFr
     }
 
     public int index() {
-        return event.valid() ? event.index() : 0;
+        return event.valid() ? event.eventIndex() : 0;
     }
 
     public long eventSequence() {

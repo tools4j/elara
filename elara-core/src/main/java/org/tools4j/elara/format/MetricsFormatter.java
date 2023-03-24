@@ -25,10 +25,9 @@ package org.tools4j.elara.format;
 
 import org.tools4j.elara.format.IteratorMessagePrinter.Item;
 import org.tools4j.elara.format.IteratorMessagePrinter.ItemFormatter;
-import org.tools4j.elara.plugin.metrics.FrequencyMetric;
 import org.tools4j.elara.plugin.metrics.Metric;
-import org.tools4j.elara.plugin.metrics.MetricsStoreEntry;
-import org.tools4j.elara.plugin.metrics.MetricsStoreEntry.Type;
+import org.tools4j.elara.plugin.metrics.MetricType;
+import org.tools4j.elara.plugin.metrics.MetricsFrame;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,19 +39,7 @@ import static java.util.Objects.requireNonNull;
  * Formats value for {@link MessagePrinter} when printing lines containing metrics data produced by the
  * {@link org.tools4j.elara.plugin.metrics.MetricsPlugin MetricsPlugin}.
  */
-public interface MetricsFormatter extends ValueFormatter<MetricsStoreEntry> {
-
-    MetricsFormatter DEFAULT = new MetricsFormatter() {};
-
-    static MetricsFormatter create(final TimeFormatter timeFormatter) {
-        requireNonNull(timeFormatter);
-        return new MetricsFormatter() {
-            @Override
-            public TimeFormatter timeFormatter() {
-                return timeFormatter;
-            }
-        };
-    }
+public interface MetricsFormatter<M extends MetricsFrame> extends ValueFormatter<M> {
 
     interface MetricValue {
         Metric metric();
@@ -62,37 +49,24 @@ public interface MetricsFormatter extends ValueFormatter<MetricsStoreEntry> {
     /** Placeholder in format string for metrics descriptor's version value */
     String VERSION = "{version}";
     /** Placeholder in format string for metrics flags value */
-    String FLAGS = "{flags}";
-    /** Placeholder in format string for metrics type value */
-    String TYPE = "{type}";
+    String METRIC_TYPE = "{metric-type}";
     /** Placeholder in format string for target associated with time metrics */
-    String TARGET = "{target}";
-    /** Placeholder in format string for command source value available when printing time metrics */
-    String SOURCE = "{source}";
-    /** Placeholder in format string for command sequence value available when printing time metrics */
-    String SEQUENCE = "{sequence}";
-    /** Placeholder in format string for event index value available when printing time metrics */
-    String INDEX = "{index}";
-    /** Placeholder in format string for time value */
-    String TIME = "{time}";
+    String METRIC_TIME = "{metric-time}";
     /** Placeholder in format string for choice value available when printing frequency metrics */
-    String CHOICE = "{choice}";
-    /** Placeholder in format string for repetition value available when printing frequency metrics */
-    String REPETITION = "{repetition}";
-    /** Placeholder in format string for interval value available when printing frequency metrics */
-    String INTERVAL = "{interval}";
-    /** Placeholder in format string for time unit for latencies and durations */
     String TIME_UNIT = "{time-unit}";
-    /** Placeholder in format string for the number of metrics */
-    String METRICS_COUNT = "{metrics-count}";
+    /** Placeholder in format string for the number of metrics values */
+    String VALUE_COUNT = "{value-count}";
 
-    default Object line(long line, long entryId, MetricsStoreEntry entry) {return line;}
-    default Object entryId(long line, long entryId, MetricsStoreEntry entry) {return entryId;}
-    default Object version(long line,long entryId, MetricsStoreEntry entry) {return entry.version();}
-    default Object flags(long line,long entryId, MetricsStoreEntry entry) {return entry.flags();}
-    default Object type(long line, long entryId, MetricsStoreEntry entry) {
-        final Type type = entry.type();
-        switch (entry.type()) {
+    default TimeFormatter timeFormatter() {
+        return TimeFormatter.DEFAULT;
+    }
+
+    default Object line(long line, long entryId, M frame) {return line;}
+    default Object entryId(long line, long entryId, M frame) {return entryId;}
+    default Object version(long line,long entryId, M frame) {return frame.header().version();}
+    default Object metricType(long line, long entryId, M frame) {
+        final MetricType type = frame.metricType();
+        switch (frame.metricType()) {
             case TIME:
                 return "TIME";
             case FREQUENCY:
@@ -100,21 +74,11 @@ public interface MetricsFormatter extends ValueFormatter<MetricsStoreEntry> {
         }
         return type;
     }
-    default Object target(long line, long entryId, MetricsStoreEntry entry) {return entry.target();}
-    default Object time(long line, long entryId, MetricsStoreEntry entry) {
-        return timeFormatter().formatDateTime(entry.time());
+    default Object metricTime(long line, long entryId, M frame) {
+        return timeFormatter().formatDateTime(frame.metricTime());
     }
-    //time metrics
-    default Object source(long line, long entryId, MetricsStoreEntry entry) {return entry.sourceId();}
-    default Object sequence(long line, long entryId, MetricsStoreEntry entry) {return entry.sourceSequence();}
-    default Object index(long line, long entryId, MetricsStoreEntry entry) {return entry.index();}
-    //frequency metrics
-    default Object choice(long line, long entryId, MetricsStoreEntry entry) {return entry.choice();}
-    default Object repetition(long line, long entryId, MetricsStoreEntry entry) {return entry.repetition();}
-    default Object interval(long line, long entryId, MetricsStoreEntry entry) {
-        return timeFormatter().formatDuration(entry.interval());
-    }
-    default Object timeUnit(long line, long entryId, MetricsStoreEntry entry) {
+
+    default Object timeUnit(long line, long entryId, M frame) {
         final TimeUnit timeUnit = timeFormatter().timeUnit();
         if (timeUnit != null) {
             switch (timeUnit) {
@@ -130,27 +94,26 @@ public interface MetricsFormatter extends ValueFormatter<MetricsStoreEntry> {
         return "";
     }
 
-    default Object metricsCount(long line, long entryId, MetricsStoreEntry entry) {return entry.count();}
+    default int valueCount(M frame) {
+        return frame.valueCount();
+    }
+
+    default Object valueCount(long line, long entryId, M frame) {
+        return valueCount(frame);
+    }
+
     @Override
-    default Object value(final String placeholder, final long line, final long entryId, final MetricsStoreEntry entry) {
+    default Object value(final String placeholder, final long line, final long entryId, final M frame) {
         switch (placeholder) {
             case LINE_SEPARATOR: return System.lineSeparator();
-            case MESSAGE: return entry;
-            case LINE: return line(line, entryId, entry);
-            case ENTRY_ID: return entryId(line, entryId, entry);
-            case VERSION: return version(entryId, entryId, entry);
-            case FLAGS: return flags(entryId, entryId, entry);
-            case TYPE: return type(entryId, entryId, entry);
-            case TARGET: return target(entryId, entryId, entry);
-            case TIME: return time(entryId, entryId, entry);
-            case SOURCE: return source(entryId, entryId, entry);
-            case SEQUENCE: return sequence(entryId, entryId, entry);
-            case INDEX: return index(entryId, entryId, entry);
-            case CHOICE: return choice(entryId, entryId, entry);
-            case REPETITION: return repetition(entryId, entryId, entry);
-            case INTERVAL: return interval(entryId, entryId, entry);
-            case TIME_UNIT: return timeUnit(entryId, entryId, entry);
-            case METRICS_COUNT: return metricsCount(entryId, entryId, entry);
+            case MESSAGE: return frame;
+            case LINE: return line(line, entryId, frame);
+            case ENTRY_ID: return entryId(line, entryId, frame);
+            case VERSION: return version(entryId, entryId, frame);
+            case METRIC_TYPE: return metricType(entryId, entryId, frame);
+            case METRIC_TIME: return metricTime(entryId, entryId, frame);
+            case TIME_UNIT: return timeUnit(entryId, entryId, frame);
+            case VALUE_COUNT: return valueCount(entryId, entryId, frame);
             default: return placeholder;
         }
     }
@@ -205,25 +168,15 @@ public interface MetricsFormatter extends ValueFormatter<MetricsStoreEntry> {
         return MetricValueFormatter.DEFAULT.withTimeFormatter(timeFormatter());
     }
 
-    default Iterable<MetricValue> metricValues(final long line, final long entryId, final MetricsStoreEntry entry) {
-        final int count = entry.count();
+    default Iterable<MetricValue> metricValues(final long line, final long entryId, final M frame) {
+        final int count = valueCount(frame);
         final List<MetricValue> values = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            final MetricValue value = metricValue(line, entryId, entry, i);
+            final MetricValue value = metricValue(line, entryId, frame, i);
             values.add(value);
         }
         return values;
     }
 
-    default MetricValue metricValue(final long line, final long entryId, final MetricsStoreEntry entry, final int index) {
-        final Type type = entry.type();
-        final Metric metric = type == Type.TIME ? entry.target().metric(entry.flags(), index) :
-                FrequencyMetric.metric(entry.choice(), index);
-        final long value = type == Type.TIME ? entry.time(index) : entry.counter(index);
-        return new DefaultMetricValue(metric, value);
-    }
-
-    default TimeFormatter timeFormatter() {
-        return TimeFormatter.DEFAULT;
-    }
+    MetricValue metricValue(long line, long entryId, M frame, int valueIndex);
 }

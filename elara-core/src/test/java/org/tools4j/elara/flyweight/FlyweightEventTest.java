@@ -64,14 +64,15 @@ public class FlyweightEventTest {
     public void defaultValues() {
         //given
         final MutableDirectBuffer buffer = new ExpandableArrayBuffer(HEADER_LENGTH);
-        buffer.putShort(FrameDescriptor.VERSION_OFFSET, Version.CURRENT);
+        buffer.putByte(FrameDescriptor.VERSION_OFFSET, Version.CURRENT);
+        buffer.putByte(FrameDescriptor.TYPE_OFFSET, FrameType.COMMIT_EVENT_TYPE);
         buffer.putInt(FrameDescriptor.FRAME_SIZE_OFFSET, HEADER_LENGTH);
         final FlyweightEvent event = new FlyweightEvent().wrap(buffer, 0);
 
         //when + then
         assertEquals(0, event.sourceId(), "sourceId");
         assertEquals(0, event.sourceSequence(), "sourceSequence");
-        assertEquals(0, event.index(), "index");
+        assertEquals(0, event.eventIndex(), "index");
         assertEquals(0, event.payloadType(), "payloadType");
         assertEquals(0, event.eventTime(), "eventTime");
         assertNotNull(event.payload(), "payload");
@@ -142,7 +143,7 @@ public class FlyweightEventTest {
             assertEquals(eventType, event.eventType(), "eventType");
             assertEquals(sourceId, event.sourceId(), "sourceId");
             assertEquals(sourceSeq, event.sourceSequence(), "sourceSequence");
-            assertEquals(index, event.index(), "index");
+            assertEquals(index, event.eventIndex(), "index");
             assertEquals(payloadType, event.payloadType(), "payloadType");
             assertEquals(eventTime, event.eventTime(), "eventTime");
             assertNotNull(event.payload(), "payload");

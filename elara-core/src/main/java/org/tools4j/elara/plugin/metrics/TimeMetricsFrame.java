@@ -21,31 +21,29 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.command;
+package org.tools4j.elara.plugin.metrics;
 
-import org.agrona.DirectBuffer;
-import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.flyweight.PayloadType;
-import org.tools4j.elara.flyweight.Writable;
-import org.tools4j.elara.logging.Printable;
+import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 
-public interface Command extends Writable, Printable {
+/**
+ * A frame holding time metrics data as described by {@link TimeMetricsDescriptor}.
+ */
+public interface TimeMetricsFrame extends MetricsFrame {
+
     int sourceId();
+
     long sourceSequence();
+    long eventSequence();
+    int eventIndex();
+    Target target();
 
-    long commandTime();
-
-    int payloadType();
-
-    default boolean isSystem() {
-        return PayloadType.isSystem(payloadType());
+    @Override
+    int valueCount();
+    TimeMetric timeMetric(int valueIndex);
+    @Override
+    default Metric metric(final int valueIndex) {
+        return timeMetric(valueIndex);
     }
+    long timeValue(int valueIndex);
 
-    default boolean isApplication() {
-        return PayloadType.isApplication(payloadType());
-    }
-
-    DirectBuffer payload();
-
-    int writeTo(MutableDirectBuffer buffer, int offset);
 }

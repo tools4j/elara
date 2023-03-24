@@ -109,7 +109,7 @@ public class FlyweightHeaderTest {
     }
 
     private static class Values {
-        final byte type = FrameType.TIME_METRIC_TYPE;
+        final byte type = FrameType.TIME_METRICS_TYPE;
         final short reserved = 12345;
         final int frameSize = 2_000_999;
 
