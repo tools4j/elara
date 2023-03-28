@@ -30,7 +30,8 @@ import org.agrona.DirectBuffer;
  *
  * @param <F> the type of the API returned by {@link #wrap(DirectBuffer, int) wrap} to access the data
  */
-@FunctionalInterface
 public interface Flyweight<F> {
+    boolean valid();
+    F reset();
     F wrap(DirectBuffer event, int offset);
 }

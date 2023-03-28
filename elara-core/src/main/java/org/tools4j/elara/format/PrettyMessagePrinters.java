@@ -23,14 +23,14 @@
  */
 package org.tools4j.elara.format;
 
-import org.tools4j.elara.flyweight.DataFrame;
+import org.tools4j.elara.flyweight.CommandFrame;
+import org.tools4j.elara.flyweight.EventFrame;
 import org.tools4j.elara.flyweight.FrequencyMetricsFrame;
 import org.tools4j.elara.flyweight.MetricsFrame;
 import org.tools4j.elara.flyweight.TimeMetricsFrame;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.flyweight.FrameType.COMMAND_TYPE;
 import static org.tools4j.elara.format.DataFrameFormatter.SOURCE_ID;
 import static org.tools4j.elara.format.DataFrameFormatter.SOURCE_SEQUENCE;
 import static org.tools4j.elara.format.HistogramFormatter.CaptureResult.PRINT;
@@ -39,13 +39,13 @@ import static org.tools4j.elara.format.MessagePrinter.composite;
 import static org.tools4j.elara.format.MessagePrinter.iterationToken;
 import static org.tools4j.elara.format.MessagePrinter.parameterized;
 
-public class DefaultMessagePrinters implements MessagePrinters {
+public class PrettyMessagePrinters implements MessagePrinters {
 
     public static final String ITEM_SEPARATOR = ", ";
     public static final String VERSION_LINE = "(elara message store format V{version}){nl}";
-    public static final String COMMAND_FORMAT = "{time} | {line} - {frame-type}={source-id}:{command-sequence} | payload({payload-type}:{payload-size}b)={payload}{nl}";
-    public static final String EVENT_FORMAT_0 = "{time} | {event-sequence} - {frame-type}={source-id}:{command-sequence}.{event-index} | payload({payload-type}:{payload-size}b)={payload}{nl}";
-    public static final String EVENT_FORMAT_N = "{time} | {event-sequence} - {frame-type}={source-id}.{command-sequence}.{event-index} | payload({payload-type}:{payload-size}b)={payload}{nl}";
+    public static final String COMMAND_FORMAT = "{time} | {line} - {frame-type}={source-id}:{source-sequence} | payload({payload-type}:{payload-size})={payload}{nl}";
+    public static final String EVENT_FORMAT_0 = "{time} | {event-sequence} - {frame-type}={source-id}:{source-sequence}.{event-index} | payload({payload-type}:{payload-size})={payload}{nl}";
+    public static final String EVENT_FORMAT_N = "{time} | {event-sequence} - {frame-type}={source-id}.{source-sequence}.{event-index} | payload({payload-type}:{payload-size})={payload}{nl}";
 
     public static final String METRICS_COMMAND_FORMAT = "{metric-time} | {line} - {metric-type} {frame-type}={source-id}:{source-sequence}   | {metrics-values}{nl}";
     public static final String METRICS_EVENT_FORMAT_0 = "{metric-time} | {line} - {metric-type} {frame-type}={source-id}:{source-sequence}.{event-index} | {metrics-values}{nl}";
@@ -59,29 +59,32 @@ public class DefaultMessagePrinters implements MessagePrinters {
     public static final String HISTOGRAM_FORMAT = "{histogram-values}";
     public static final String HISTOGRAM_VALUE_FORMAT = "{metric-time} | {line} - {metric-type} indx={iteration}, intvl={interval}{time-unit} | {metric-name} - n={value-count}, {bucket-values}{nl}";
     public static final String HISTOGRAM_BUCKET_VALUE = "{sep}{bucket-name}={bucket-value}{time-unit}";
-    private final DataFrameFormatter dataFrameFormatter;
+    private final CommandFormatter commandFormatter;
+    private final EventFormatter eventFormatter;
     private final TimeMetricsFormatter timeMetricsFormatter;
     private final FrequencyMetricsFormatter frequencyMetricsFormatter;
     private final LatencyFormatter latencyFormatter;
     private final HistogramFormatter histogramFormatter;
 
-    public DefaultMessagePrinters() {
-        this(DataFrameFormatter.DEFAULT, TimeMetricsFormatter.DEFAULT, FrequencyMetricsFormatter.DEFAULT,
-                LatencyFormatter.DEFAULT, HistogramFormatter.DEFAULT);
+    public PrettyMessagePrinters() {
+        this(CommandFormatter.DEFAULT, EventFormatter.DEFAULT, TimeMetricsFormatter.DEFAULT,
+                FrequencyMetricsFormatter.DEFAULT, LatencyFormatter.DEFAULT, HistogramFormatter.DEFAULT);
     }
 
-    public DefaultMessagePrinters(final TimeFormatter timeFormatter, final long interval) {
-        this(DataFrameFormatter.create(timeFormatter), TimeMetricsFormatter.create(timeFormatter),
-                FrequencyMetricsFormatter.create(timeFormatter), LatencyFormatter.create(timeFormatter),
-                HistogramFormatter.create(timeFormatter, interval));
+    public PrettyMessagePrinters(final TimeFormatter timeFormatter, final long interval) {
+        this(CommandFormatter.create(timeFormatter), EventFormatter.create(timeFormatter),
+                TimeMetricsFormatter.create(timeFormatter), FrequencyMetricsFormatter.create(timeFormatter),
+                LatencyFormatter.create(timeFormatter), HistogramFormatter.create(timeFormatter, interval));
     }
 
-    public DefaultMessagePrinters(final DataFrameFormatter dataFrameFormatter,
-                                  final TimeMetricsFormatter timeMetricsFormatter,
-                                  final FrequencyMetricsFormatter frequencyMetricsFormatter,
-                                  final LatencyFormatter latencyFormatter,
-                                  final HistogramFormatter histogramFormatter) {
-        this.dataFrameFormatter = requireNonNull(dataFrameFormatter);
+    public PrettyMessagePrinters(final CommandFormatter commandFormatter,
+                                 final EventFormatter eventFormatter,
+                                 final TimeMetricsFormatter timeMetricsFormatter,
+                                 final FrequencyMetricsFormatter frequencyMetricsFormatter,
+                                 final LatencyFormatter latencyFormatter,
+                                 final HistogramFormatter histogramFormatter) {
+        this.commandFormatter = requireNonNull(commandFormatter);
+        this.eventFormatter = requireNonNull(eventFormatter);
         this.timeMetricsFormatter = requireNonNull(timeMetricsFormatter);
         this.frequencyMetricsFormatter = requireNonNull(frequencyMetricsFormatter);
         this.latencyFormatter = requireNonNull(latencyFormatter);
@@ -89,21 +92,21 @@ public class DefaultMessagePrinters implements MessagePrinters {
     }
 
     @Override
-    public MessagePrinter<DataFrame> command() {
+    public MessagePrinter<CommandFrame> command() {
         return composite(
                 (line, entryId, frame) -> line == 0 ? 0 : 1,
-                parameterized(VERSION_LINE + COMMAND_FORMAT, dataFrameFormatter),
-                parameterized(COMMAND_FORMAT, dataFrameFormatter)
+                parameterized(VERSION_LINE + COMMAND_FORMAT, commandFormatter),
+                parameterized(COMMAND_FORMAT, commandFormatter)
         );
     }
 
     @Override
-    public MessagePrinter<DataFrame> event() {
-        final ValueFormatter<DataFrame> formatter0 = dataFrameFormatter;
-        final ValueFormatter<DataFrame> formatterN = Spacer.spacer(formatter0, '.', SOURCE_ID, SOURCE_SEQUENCE);
+    public MessagePrinter<EventFrame> event() {
+        final ValueFormatter<EventFrame> formatter0 = eventFormatter;
+        final ValueFormatter<EventFrame> formatterN = Spacer.spacer(formatter0, '.', SOURCE_ID, SOURCE_SEQUENCE);
         return composite((line, entryId, frame) -> {
                     if (line == 0) return 0;
-                    if (frame.type() == COMMAND_TYPE) return 1;
+                    if (frame.eventIndex() == 0) return 1;
                     return 2;
                 },
                 parameterized(VERSION_LINE + EVENT_FORMAT_0, formatter0),

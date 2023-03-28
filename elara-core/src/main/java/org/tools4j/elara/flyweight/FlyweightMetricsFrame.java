@@ -25,20 +25,18 @@ package org.tools4j.elara.flyweight;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.plugin.metrics.FrequencyMetric;
 import org.tools4j.elara.plugin.metrics.Metric;
 import org.tools4j.elara.plugin.metrics.MetricType;
-import org.tools4j.elara.plugin.metrics.TimeMetric;
-import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 
 /**
  * A flyweight frame for reading and either a {@link TimeMetricsFrame} or a {@link FrequencyMetricsFrame}.
  */
-public class FlyweightMetricsFrame implements TimeMetricsFrame, FrequencyMetricsFrame, Flyweight<FlyweightMetricsFrame> {
+public class FlyweightMetricsFrame implements MetricsFrame, Flyweight<FlyweightMetricsFrame> {
 
     private final FlyweightHeader header = new FlyweightHeader(FrameDescriptor.HEADER_LENGTH);
     private final FlyweightTimeMetrics timeMetrics = new FlyweightTimeMetrics();
     private final FlyweightFrequencyMetrics frequencyMetrics = new FlyweightFrequencyMetrics();
+
     @Override
     public FlyweightMetricsFrame wrap(final DirectBuffer buffer, final int offset) {
         header.wrap(buffer, offset);
@@ -54,10 +52,12 @@ public class FlyweightMetricsFrame implements TimeMetricsFrame, FrequencyMetrics
         return this;
     }
 
+    @Override
     public boolean valid() {
          return timeMetrics.valid() || frequencyMetrics.valid();
     }
 
+    @Override
     public FlyweightMetricsFrame reset() {
         header.reset();
         timeMetrics.reset();
@@ -81,41 +81,6 @@ public class FlyweightMetricsFrame implements TimeMetricsFrame, FrequencyMetrics
     }
 
     @Override
-    public Target target() {
-        return timeMetrics.valid() ? timeMetrics.target() : null;
-    }
-
-    @Override
-    public int sourceId() {
-        return timeMetrics.valid() ? timeMetrics.sourceId() : 0;
-    }
-
-    @Override
-    public long sourceSequence() {
-        return timeMetrics.valid() ? timeMetrics.sourceSequence() : 0;
-    }
-
-    @Override
-    public int eventIndex() {
-        return timeMetrics.valid() ? timeMetrics.eventIndex() : 0;
-    }
-
-    @Override
-    public long eventSequence() {
-        return timeMetrics.valid() ? timeMetrics.eventSequence() : 0;
-    }
-
-    @Override
-    public long iteration() {
-        return frequencyMetrics.valid() ? frequencyMetrics.iteration() : 0;
-    }
-
-    @Override
-    public long interval() {
-        return frequencyMetrics.valid() ? frequencyMetrics.interval() : 0;
-    }
-
-    @Override
     public long metricTime() {
         return timeMetrics.valid() ? timeMetrics.metricTime() : frequencyMetrics.valid() ? frequencyMetrics.metricTime() : 0;
     }
@@ -132,33 +97,22 @@ public class FlyweightMetricsFrame implements TimeMetricsFrame, FrequencyMetrics
 
     @Override
     public Metric metric(final int valueIndex) {
-        return timeMetrics.valid() ? timeMetric(valueIndex) : frequencyMetrics.valid() ? frequencyMetric(valueIndex) : null;
-    }
-
-    @Override
-    public TimeMetric timeMetric(final int valueIndex) {
-        return timeMetrics.valid() ? timeMetrics.timeMetric(valueIndex) : null;
-    }
-
-    @Override
-    public FrequencyMetric frequencyMetric(final int valueIndex) {
-        return frequencyMetrics.valid() ? frequencyMetrics.frequencyMetric(valueIndex) : null;
-    }
-
-    @Override
-    public long timeValue(final int valueIndex) {
-        return timeMetrics.valid() ? timeMetrics.timeValue(valueIndex) : 0;
-    }
-
-    @Override
-    public long frequencyValue(final int valueIndex) {
-        return frequencyMetrics.valid() ? frequencyMetrics.frequencyValue(valueIndex) : 0;
+        return timeMetrics.valid() ? timeMetrics.timeMetric(valueIndex) : frequencyMetrics.valid() ? frequencyMetrics.frequencyMetric(valueIndex) : null;
     }
 
     @Override
     public int writeTo(final MutableDirectBuffer dst, final int dstOffset) {
         return timeMetrics.valid() ? timeMetrics.writeTo(dst, dstOffset) :
                 frequencyMetrics.valid() ? frequencyMetrics.writeTo(dst, dstOffset) : null ;
+    }
+
+    @Override
+    public void accept(final FrameVisitor visitor) {
+        if (timeMetrics.valid()) {
+            timeMetrics.accept(visitor);
+        } else if (frequencyMetrics.valid()) {
+            frequencyMetrics.accept(visitor);
+        }
     }
 
     @Override
@@ -169,7 +123,7 @@ public class FlyweightMetricsFrame implements TimeMetricsFrame, FrequencyMetrics
         if (frequencyMetrics.valid()) {
             return frequencyMetrics.printTo(dst);
         }
-        return dst.append("FlyweightMetrics{???}");
+        return dst.append("FlyweightMetricsFrame{???}");
     }
 
     @Override

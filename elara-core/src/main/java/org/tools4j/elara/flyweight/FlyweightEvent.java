@@ -66,9 +66,10 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFr
 
     @Override
     public boolean valid() {
-        return header.valid();
+        return header.valid() && FrameType.isEventType(header.type());
     }
 
+    @Override
     public FlyweightEvent reset() {
         header.reset();
         payload.wrap(0, 0);
@@ -182,6 +183,11 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFr
     public static void writePayloadSize(final int payloadSize, final MutableDirectBuffer dst) {
         assert payloadSize >= 0;
         FlyweightHeader.writeFrameSize(HEADER_LENGTH + payloadSize, dst);
+    }
+
+    @Override
+    public void accept(final FrameVisitor visitor) {
+        visitor.eventFrame(this);
     }
 
     @Override

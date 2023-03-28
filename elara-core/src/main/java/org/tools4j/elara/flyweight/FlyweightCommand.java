@@ -65,9 +65,10 @@ public final class FlyweightCommand implements Flyweight<FlyweightCommand>, Comm
 
     @Override
     public boolean valid() {
-        return header.valid();
+        return header.valid() && FrameType.isCommandType(header.type());
     }
 
+    @Override
     public FlyweightCommand reset() {
         header.reset();
         payload.wrap(0, 0);
@@ -177,6 +178,11 @@ public final class FlyweightCommand implements Flyweight<FlyweightCommand>, Comm
 
     public static void writePayloadSize(final int payloadSize, final MutableDirectBuffer dst) {
         FlyweightHeader.writeFrameSize(HEADER_LENGTH + payloadSize, dst);
+    }
+
+    @Override
+    public void accept(final FrameVisitor visitor) {
+        visitor.commandFrame(this);
     }
 
     @Override

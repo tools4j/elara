@@ -23,21 +23,22 @@
  */
 package org.tools4j.elara.format;
 
+import org.tools4j.elara.flyweight.CommandFrame;
 import org.tools4j.elara.flyweight.DataFrame;
+import org.tools4j.elara.flyweight.EventFrame;
+import org.tools4j.elara.flyweight.FrameVisitor;
 import org.tools4j.elara.flyweight.FrequencyMetricsFrame;
 import org.tools4j.elara.flyweight.MetricsFrame;
 import org.tools4j.elara.flyweight.TimeMetricsFrame;
-import org.tools4j.elara.plugin.metrics.MetricType;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.tools4j.elara.flyweight.FrameType.COMMAND_TYPE;
-import static org.tools4j.elara.format.MessagePrinter.composite;
+import static java.util.Objects.requireNonNull;
 
 public interface MessagePrinters {
 
     static MessagePrinters defaults() {
-        return new DefaultMessagePrinters();
+        return new PrettyMessagePrinters();
     }
 
     static MessagePrinters defaults(final TimeUnit timeUnit, final long interval) {
@@ -45,15 +46,22 @@ public interface MessagePrinters {
     }
 
     static MessagePrinters defaults(final TimeFormatter timeFormatter, final long interval) {
-        return new DefaultMessagePrinters(timeFormatter, interval);
+        return new PrettyMessagePrinters(timeFormatter, interval);
     }
 
     default MessagePrinter<DataFrame> frame() {
-        return composite(
-                (line, entryId, frame) -> frame.type() == COMMAND_TYPE ? 0 : 1,
-                command(),
-                event()
-        );
+        return (line, entryId, frame, writer) -> frame.accept(new FrameVisitor() {
+            final MessagePrinter<CommandFrame> commandPrinter = command();
+            final MessagePrinter<EventFrame> eventPrinter = event();
+            @Override
+            public void commandFrame(final CommandFrame frame) {
+                commandPrinter.print(line, entryId, frame, writer);
+            }
+            @Override
+            public void eventFrame(final EventFrame frame) {
+                eventPrinter.print(line, entryId, frame, writer);
+            }
+        });
     }
 
     default MessagePrinter<MetricsFrame> metrics() {
@@ -70,17 +78,22 @@ public interface MessagePrinters {
 
     default MessagePrinter<MetricsFrame> metrics(final MessagePrinter<TimeMetricsFrame> timeMetricsPrinter,
                                                  final MessagePrinter<FrequencyMetricsFrame> frequencyMetricsPrinter) {
-        return (line, entryId, frame, writer) -> {
-            if (frame.metricType() == MetricType.TIME && frame instanceof TimeMetricsFrame) {
-                timeMetricsPrinter.print(line, entryId, (TimeMetricsFrame)frame, writer);
-            } else if (frame.metricType() == MetricType.FREQUENCY && frame instanceof FrequencyMetricsFrame) {
-                frequencyMetricsPrinter.print(line, entryId, (FrequencyMetricsFrame)frame, writer);
+        requireNonNull(timeMetricsPrinter);
+        requireNonNull(frequencyMetricsPrinter);
+        return (line, entryId, frame, writer) -> frame.accept(new FrameVisitor() {
+            @Override
+            public void timeMetricsFrame(final TimeMetricsFrame frame) {
+                timeMetricsPrinter.print(line, entryId, frame, writer);
             }
-        };
+            @Override
+            public void frequencyMetricsFrame(final FrequencyMetricsFrame frame) {
+                frequencyMetricsPrinter.print(line, entryId, frame, writer);
+            }
+        });
     }
 
-    MessagePrinter<DataFrame> command();
-    MessagePrinter<DataFrame> event();
+    MessagePrinter<CommandFrame> command();
+    MessagePrinter<EventFrame> event();
     MessagePrinter<FrequencyMetricsFrame> frequencyMetrics();
     MessagePrinter<TimeMetricsFrame> timeMetrics();
     MessagePrinter<TimeMetricsFrame> latencyMetrics();

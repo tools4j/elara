@@ -71,10 +71,12 @@ public class FlyweightTimeMetrics implements TimeMetricsFrame, Flyweight<Flyweig
         return this;
     }
 
+    @Override
     public boolean valid() {
-        return header.valid();
+        return header.valid() && FrameType.isTimeMetricsType(header.type());
     }
 
+    @Override
     public FlyweightTimeMetrics reset() {
         header.reset();
         payload.wrap(0, 0);
@@ -266,6 +268,11 @@ public class FlyweightTimeMetrics implements TimeMetricsFrame, Flyweight<Flyweig
                                      final int dstOffset) {
         dst.putLong(dstOffset + PAYLOAD_OFFSET + valueIndex * Long.BYTES, timeValue, LITTLE_ENDIAN);
         return Long.BYTES;
+    }
+
+    @Override
+    public void accept(final FrameVisitor visitor) {
+        visitor.timeMetricsFrame(this);
     }
 
     @Override

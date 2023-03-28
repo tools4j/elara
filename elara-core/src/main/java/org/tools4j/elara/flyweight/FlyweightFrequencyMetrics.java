@@ -64,10 +64,12 @@ public class FlyweightFrequencyMetrics implements FrequencyMetricsFrame, Flyweig
         return this;
     }
 
+    @Override
     public boolean valid() {
-        return header.valid();
+        return header.valid() && FrameType.isFrequencyMetricsType(header.type());
     }
 
+    @Override
     public FlyweightFrequencyMetrics reset() {
         header.reset();
         payload.wrap(0, 0);
@@ -191,6 +193,11 @@ public class FlyweightFrequencyMetrics implements FrequencyMetricsFrame, Flyweig
                                           final int dstOffset) {
         dst.putLong(dstOffset + PAYLOAD_OFFSET + valueIndex * Long.BYTES, frequencyValue, LITTLE_ENDIAN);
         return Long.BYTES;
+    }
+
+    @Override
+    public void accept(final FrameVisitor visitor) {
+        visitor.frequencyMetricsFrame(this);
     }
 
     @Override

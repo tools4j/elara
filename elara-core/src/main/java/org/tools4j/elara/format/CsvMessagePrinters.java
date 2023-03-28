@@ -23,7 +23,8 @@
  */
 package org.tools4j.elara.format;
 
-import org.tools4j.elara.flyweight.DataFrame;
+import org.tools4j.elara.flyweight.CommandFrame;
+import org.tools4j.elara.flyweight.EventFrame;
 import org.tools4j.elara.flyweight.FrequencyMetricsFrame;
 import org.tools4j.elara.flyweight.MetricsFrame;
 import org.tools4j.elara.flyweight.TimeMetricsFrame;
@@ -57,29 +58,32 @@ public class CsvMessagePrinters implements MessagePrinters {
     public static final String HISTOGRAM_BUCKET_NAME    = "{sep}{bucket-name}";
     public static final String HISTOGRAM_BUCKET_VALUE   = "{sep}{bucket-value}";
 
-    private final DataFrameFormatter dataFrameFormatter;
+    private final CommandFormatter commandFormatter;
+    private final EventFormatter eventFormatter;
     private final TimeMetricsFormatter timeMetricsFormatter;
     private final FrequencyMetricsFormatter frequencyMetricsFormatter;
     private final LatencyFormatter latencyFormatter;
     private final HistogramFormatter histogramFormatter;
 
     public CsvMessagePrinters() {
-        this(DataFrameFormatter.DEFAULT, TimeMetricsFormatter.DEFAULT, FrequencyMetricsFormatter.DEFAULT,
-                LatencyFormatter.DEFAULT, HistogramFormatter.DEFAULT);
+        this(CommandFormatter.DEFAULT, EventFormatter.DEFAULT, TimeMetricsFormatter.DEFAULT,
+                FrequencyMetricsFormatter.DEFAULT, LatencyFormatter.DEFAULT, HistogramFormatter.DEFAULT);
     }
 
     public CsvMessagePrinters(final TimeFormatter timeFormatter, final long interval) {
-        this(DataFrameFormatter.create(timeFormatter), TimeMetricsFormatter.create(timeFormatter),
-                FrequencyMetricsFormatter.create(timeFormatter), LatencyFormatter.create(timeFormatter),
-                HistogramFormatter.create(timeFormatter, interval));
+        this(CommandFormatter.create(timeFormatter), EventFormatter.create(timeFormatter),
+                TimeMetricsFormatter.create(timeFormatter), FrequencyMetricsFormatter.create(timeFormatter),
+                LatencyFormatter.create(timeFormatter), HistogramFormatter.create(timeFormatter, interval));
     }
 
-    public CsvMessagePrinters(final DataFrameFormatter dataFrameFormatter,
+    public CsvMessagePrinters(final CommandFormatter commandFormatter,
+                              final EventFormatter eventFormatter,
                               final TimeMetricsFormatter timeMetricsFormatter,
                               final FrequencyMetricsFormatter frequencyMetricsFormatter,
                               final LatencyFormatter latencyFormatter,
                               final HistogramFormatter histogramFormatter) {
-        this.dataFrameFormatter = requireNonNull(dataFrameFormatter);
+        this.commandFormatter = requireNonNull(commandFormatter);
+        this.eventFormatter = requireNonNull(eventFormatter);
         this.timeMetricsFormatter = requireNonNull(timeMetricsFormatter);
         this.frequencyMetricsFormatter = requireNonNull(frequencyMetricsFormatter);
         this.latencyFormatter = requireNonNull(latencyFormatter);
@@ -108,20 +112,20 @@ public class CsvMessagePrinters implements MessagePrinters {
     }
 
     @Override
-    public MessagePrinter<DataFrame> command() {
+    public MessagePrinter<CommandFrame> command() {
         return composite(
                 (line, entryId, frame) -> line == 0 ? 0 : 1,
-                parameterized(HEADER_LINE + COMMAND_FORMAT, dataFrameFormatter),
-                parameterized(COMMAND_FORMAT, dataFrameFormatter)
+                parameterized(HEADER_LINE + COMMAND_FORMAT, commandFormatter),
+                parameterized(COMMAND_FORMAT, commandFormatter)
         );
     }
 
     @Override
-    public MessagePrinter<DataFrame> event() {
+    public MessagePrinter<EventFrame> event() {
         return composite(
                 (line, entryId, frame) -> line == 0 ? 0 : 1,
-                parameterized(HEADER_LINE + EVENT_FORMAT, dataFrameFormatter),
-                parameterized(EVENT_FORMAT, dataFrameFormatter)
+                parameterized(HEADER_LINE + EVENT_FORMAT, eventFormatter),
+                parameterized(EVENT_FORMAT, eventFormatter)
         );
     }
 

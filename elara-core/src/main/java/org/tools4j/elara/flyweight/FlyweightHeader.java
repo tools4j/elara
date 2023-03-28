@@ -69,10 +69,12 @@ public final class FlyweightHeader implements Flyweight<FlyweightHeader>, Header
         return this;
     }
 
+    @Override
     public boolean valid() {
         return buffer.capacity() >= headerLength;
     }
 
+    @Override
     public FlyweightHeader reset() {
         buffer.wrap(0, 0);
         return this;

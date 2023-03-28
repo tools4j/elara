@@ -23,7 +23,9 @@
  */
 package org.tools4j.elara.format;
 
-import org.tools4j.elara.flyweight.DataFrame;
+import org.tools4j.elara.flyweight.Frame;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.tools4j.elara.flyweight.FrameType.AUTO_COMMIT_EVENT_TYPE;
 import static org.tools4j.elara.flyweight.FrameType.COMMAND_TYPE;
@@ -32,29 +34,25 @@ import static org.tools4j.elara.flyweight.FrameType.FREQUENCY_METRICS_TYPE;
 import static org.tools4j.elara.flyweight.FrameType.INTERMEDIARY_EVENT_TYPE;
 import static org.tools4j.elara.flyweight.FrameType.ROLLBACK_EVENT_TYPE;
 import static org.tools4j.elara.flyweight.FrameType.TIME_METRICS_TYPE;
-import static org.tools4j.elara.format.Hex.hex;
 
 /**
- * Formats value for {@link MessagePrinter} when printing lines containing {@link F} elements.
+ * Formats value for {@link MessagePrinter} when printing lines containing a {@link Frame}.
  */
-public interface DataFrameFormatter<F extends DataFrame> extends FrameFormatter<F> {
+public interface FrameFormatter<F extends Frame> extends ValueFormatter<F> {
 
-    /** Placeholder in format string for data frame header's source-ID value */
-    String SOURCE_ID = "{source-id}";
-    /** Placeholder in format string for data frame header's source sequence value */
-    String SOURCE_SEQUENCE = "{source-sequence}";
-    /** Placeholder in format string for data frame header's command or event time value */
-    String TIME = "{time}";
-    /** Placeholder in format string for data frame header's payload-type value */
-    String PAYLOAD_TYPE = "{payload-type}";
-    /** Placeholder in format string for data frame header's payload-size value */
-    String PAYLOAD_SIZE = "{payload-size}";
-    /** Placeholder in format string for data frame's payload value */
-    String PAYLOAD = "{payload}";
+    /** Placeholder in format string for data frame itself */
+    String FRAME = "{frame}";
+    /** Placeholder in format string for data frame's header */
+    String HEADER = "{header}";
+    /** Placeholder in format string for data frame header's version value */
+    String VERSION = "{version}";
+    /** Placeholder in format string for data frame header's type value */
+    String FRAME_TYPE = "{frame-type}";
+    /** Placeholder in format string for choice value available when printing frequency metrics */
+    String TIME_UNIT = "{time-unit}";
 
     default Object line(long line, long entryId, F frame) {return line;}
     default Object entryId(long line, long entryId, F frame) {return entryId;}
-    default Object sourceId(long line, long entryId, F frame) {return frame.sourceId();}
     default Object frameType(long line, long entryId, F frame) {
         final int type = frame.type();
         switch (type) {
@@ -74,30 +72,40 @@ public interface DataFrameFormatter<F extends DataFrame> extends FrameFormatter<
                 return type;
         }
     }
-
-    default Object sourceSequence(long line, long entryId, F frame) {return frame.sourceSequence();}
-    Object time(long line, long entryId, F frame);
-
-    default Object payloadType(long line, long entryId, F frame) {
-        return frame.payloadType();
-    }
-    default Object payloadSize(long line, long entryId, F frame) {return frame.payloadSize();}
-    default Object payload(long line, long entryId, F frame) {
-        final int size = frame.payload().capacity();
-        return size == 0 ? "(empty)" : hex(frame.payload());
+    default Object version(long line,long entryId,  F frame) {return frame.header().version();}
+    default Object timeUnit(long line, long entryId, F frame) {
+        final TimeUnit timeUnit = timeFormatter().timeUnit();
+        if (timeUnit != null) {
+            switch (timeUnit) {
+                case NANOSECONDS: return "ns";
+                case MICROSECONDS: return "us";
+                case MILLISECONDS: return "ms";
+                case SECONDS: return "s";
+                case MINUTES: return "m";
+                case HOURS: return "h";
+                case DAYS: return "d";
+            }
+        }
+        return "";
     }
 
     @Override
     default Object value(final String placeholder, final long line, final long entryId, final F frame) {
         switch (placeholder) {
-            case SOURCE_ID: return sourceId(entryId, entryId, frame);
-            case SOURCE_SEQUENCE: return sourceSequence(entryId, entryId, frame);
-            case TIME: return time(entryId, entryId, frame);
-            case PAYLOAD_TYPE: return payloadType(entryId, entryId, frame);
-            case PAYLOAD_SIZE: return payloadSize(entryId, entryId, frame);
-            case PAYLOAD: return payload(entryId, entryId, frame);
-            default: return FrameFormatter.super.value(placeholder, line, entryId, frame);
+            case LINE_SEPARATOR: return System.lineSeparator();
+            case MESSAGE://fallthrough
+            case FRAME: return frame;
+            case HEADER: return frame.header();
+            case VERSION: return version(entryId, entryId, frame);
+            case FRAME_TYPE: return frameType(entryId, entryId, frame);
+            case LINE: return line(line, entryId, frame);
+            case ENTRY_ID: return entryId(line, entryId, frame);
+            case TIME_UNIT: return timeUnit(line, entryId, frame);
+            default: return placeholder;
         }
     }
 
+    default TimeFormatter timeFormatter() {
+        return TimeFormatter.DEFAULT;
+    }
 }

@@ -31,7 +31,6 @@ import org.tools4j.elara.plugin.metrics.MetricType;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
@@ -39,27 +38,19 @@ import static java.util.Objects.requireNonNull;
  * Formats value for {@link MessagePrinter} when printing lines containing metrics data produced by the
  * {@link org.tools4j.elara.plugin.metrics.MetricsPlugin MetricsPlugin}.
  */
-public interface MetricsFormatter<M extends MetricsFrame> extends ValueFormatter<M> {
+public interface MetricsFormatter<M extends MetricsFrame> extends FrameFormatter<M> {
 
     interface MetricValue {
         Metric metric();
         long value();
     }
 
-    /** Placeholder in format string for metrics descriptor's version value */
-    String VERSION = "{version}";
     /** Placeholder in format string for metrics flags value */
     String METRIC_TYPE = "{metric-type}";
     /** Placeholder in format string for target associated with time metrics */
     String METRIC_TIME = "{metric-time}";
-    /** Placeholder in format string for choice value available when printing frequency metrics */
-    String TIME_UNIT = "{time-unit}";
     /** Placeholder in format string for the number of metrics values */
     String VALUE_COUNT = "{value-count}";
-
-    default TimeFormatter timeFormatter() {
-        return TimeFormatter.DEFAULT;
-    }
 
     default Object line(long line, long entryId, M frame) {return line;}
     default Object entryId(long line, long entryId, M frame) {return entryId;}
@@ -78,22 +69,6 @@ public interface MetricsFormatter<M extends MetricsFrame> extends ValueFormatter
         return timeFormatter().formatDateTime(frame.metricTime());
     }
 
-    default Object timeUnit(long line, long entryId, M frame) {
-        final TimeUnit timeUnit = timeFormatter().timeUnit();
-        if (timeUnit != null) {
-            switch (timeUnit) {
-                case NANOSECONDS: return "ns";
-                case MICROSECONDS: return "us";
-                case MILLISECONDS: return "ms";
-                case SECONDS: return "s";
-                case MINUTES: return "m";
-                case HOURS: return "h";
-                case DAYS: return "d";
-            }
-        }
-        return "";
-    }
-
     default int valueCount(M frame) {
         return frame.valueCount();
     }
@@ -105,16 +80,10 @@ public interface MetricsFormatter<M extends MetricsFrame> extends ValueFormatter
     @Override
     default Object value(final String placeholder, final long line, final long entryId, final M frame) {
         switch (placeholder) {
-            case LINE_SEPARATOR: return System.lineSeparator();
-            case MESSAGE: return frame;
-            case LINE: return line(line, entryId, frame);
-            case ENTRY_ID: return entryId(line, entryId, frame);
-            case VERSION: return version(entryId, entryId, frame);
             case METRIC_TYPE: return metricType(entryId, entryId, frame);
             case METRIC_TIME: return metricTime(entryId, entryId, frame);
-            case TIME_UNIT: return timeUnit(entryId, entryId, frame);
             case VALUE_COUNT: return valueCount(entryId, entryId, frame);
-            default: return placeholder;
+            default: return FrameFormatter.super.value(placeholder, line, entryId, frame);
         }
     }
 

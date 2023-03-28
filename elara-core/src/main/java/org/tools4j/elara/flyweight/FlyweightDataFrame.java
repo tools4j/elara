@@ -59,6 +59,7 @@ public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFr
         return command.valid() || event.valid();
     }
 
+    @Override
     public FlyweightDataFrame reset() {
         header.reset();
         command.reset();
@@ -86,22 +87,11 @@ public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFr
         return command.valid() ? command.sourceSequence() : event.valid() ? event.sourceSequence() : 0;
     }
 
-    public int index() {
-        return event.valid() ? event.eventIndex() : 0;
-    }
-
-    public long eventSequence() {
-        return event.valid() ? event.eventSequence() : 0;
-    }
-
     @Override
     public int payloadType() {
         return command.valid() ? command.payloadType() : event.valid() ? event.payloadType() : 0;
     }
 
-    public long eventTime() {
-        return event.valid() ? event.eventTime() : 0;
-    }
     @Override
     public DirectBuffer payload() {
         return command.valid() ? command.payload() : event.valid() ? event.payload() : EMPTY;
@@ -117,6 +107,16 @@ public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFr
         }
         return 0;
     }
+
+    @Override
+    public void accept(final FrameVisitor visitor) {
+        if (command.valid()) {
+            command.accept(visitor);
+        } else if (event.valid()) {
+            event.accept(visitor);
+        }
+    }
+
     @Override
     public StringBuilder printTo(final StringBuilder dst) {
         if (command.valid()) {

@@ -23,21 +23,9 @@
  */
 package org.tools4j.elara.flyweight;
 
-import org.tools4j.elara.logging.Printable;
-
-/**
- * A frame is the base class for {@link Flyweight flyweights} reading and writing data stored in a byte buffer as per
- * {@link FrameDescriptor}.
- */
-public interface Frame extends Writable, Printable {
-    Header header();
-    int headerLength();
-    default byte type() {
-        return header().type();
-    }
-    default int frameSize() {
-        return header().frameSize();
-    }
-
-    void accept(FrameVisitor visitor);
+public interface FrameVisitor {
+    default void commandFrame(CommandFrame frame) {}
+    default void eventFrame(EventFrame frame) {}
+    default void timeMetricsFrame(TimeMetricsFrame frame) {};
+    default void frequencyMetricsFrame(FrequencyMetricsFrame frame) {};
 }
