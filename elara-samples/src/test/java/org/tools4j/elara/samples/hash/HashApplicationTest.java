@@ -148,7 +148,7 @@ public class HashApplicationTest {
 //        final long expected = 8536806003277137281L;//50_000_000
 
         //when
-        final long result = passthroughWithMetrics("hash-metrics", n, true);
+        final long result = passthroughWithMetrics("hash-passthrough", n, true);
 
         //then
         assertEquals(expected, result, "state.hash(" + n + ")");
