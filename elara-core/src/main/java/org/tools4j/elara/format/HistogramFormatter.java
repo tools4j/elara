@@ -23,12 +23,12 @@
  */
 package org.tools4j.elara.format;
 
+import org.tools4j.elara.flyweight.TimeMetricsFrame;
 import org.tools4j.elara.format.IteratorMessagePrinter.Item;
 import org.tools4j.elara.format.IteratorMessagePrinter.ItemFormatter;
 import org.tools4j.elara.plugin.metrics.LatencyMetric;
 import org.tools4j.elara.plugin.metrics.Metric;
 import org.tools4j.elara.plugin.metrics.MetricType;
-import org.tools4j.elara.plugin.metrics.TimeMetricsFrame;
 
 import java.util.Arrays;
 import java.util.EnumSet;

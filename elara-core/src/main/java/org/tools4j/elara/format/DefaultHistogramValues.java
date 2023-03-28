@@ -53,9 +53,9 @@
  */
 package org.tools4j.elara.format;
 
+import org.tools4j.elara.flyweight.TimeMetricsFrame;
 import org.tools4j.elara.format.HistogramFormatter.HistogramValues;
 import org.tools4j.elara.plugin.metrics.Metric;
-import org.tools4j.elara.plugin.metrics.TimeMetricsFrame;
 
 import java.util.Arrays;
 

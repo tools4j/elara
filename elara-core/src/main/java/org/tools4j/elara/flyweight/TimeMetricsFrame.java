@@ -21,17 +21,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.metrics;
+package org.tools4j.elara.flyweight;
 
-import org.tools4j.elara.flyweight.Frame;
+import org.tools4j.elara.plugin.metrics.Metric;
+import org.tools4j.elara.plugin.metrics.TimeMetric;
+import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 
 /**
- * A frame holding metrics data.
+ * A frame holding time metrics data as described by {@link TimeMetricsDescriptor}.
  */
-public interface MetricsFrame extends Frame {
-    MetricType metricType();
-    long metricTime();
+public interface TimeMetricsFrame extends MetricsFrame {
+
+    int sourceId();
+
+    long sourceSequence();
+    long eventSequence();
+    int eventIndex();
+    Target target();
+
+    @Override
     int valueCount();
-    boolean hasMetric(Metric metric);
-    Metric metric(int valueIndex);
+    TimeMetric timeMetric(int valueIndex);
+    @Override
+    default Metric metric(final int valueIndex) {
+        return timeMetric(valueIndex);
+    }
+    long timeValue(int valueIndex);
+
 }

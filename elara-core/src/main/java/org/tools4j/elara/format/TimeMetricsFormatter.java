@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.format;
 
-import org.tools4j.elara.plugin.metrics.TimeMetricsFrame;
+import org.tools4j.elara.flyweight.TimeMetricsFrame;
 
 import static java.util.Objects.requireNonNull;
 

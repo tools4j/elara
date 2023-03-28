@@ -176,8 +176,8 @@ package org.tools4j.elara.flyweight;
  * @see FrameType
  * @see CommandDescriptor
  * @see EventDescriptor
- * @see org.tools4j.elara.plugin.metrics.TimeMetricsDescriptor
- * @see org.tools4j.elara.plugin.metrics.FrequencyMetricsDescriptor
+ * @see TimeMetricsDescriptor
+ * @see FrequencyMetricsDescriptor
  */
 public enum FrameDescriptor {
     ;

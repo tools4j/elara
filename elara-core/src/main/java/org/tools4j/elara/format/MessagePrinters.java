@@ -24,10 +24,10 @@
 package org.tools4j.elara.format;
 
 import org.tools4j.elara.flyweight.DataFrame;
-import org.tools4j.elara.plugin.metrics.FrequencyMetricsFrame;
+import org.tools4j.elara.flyweight.FrequencyMetricsFrame;
+import org.tools4j.elara.flyweight.MetricsFrame;
+import org.tools4j.elara.flyweight.TimeMetricsFrame;
 import org.tools4j.elara.plugin.metrics.MetricType;
-import org.tools4j.elara.plugin.metrics.MetricsFrame;
-import org.tools4j.elara.plugin.metrics.TimeMetricsFrame;
 
 import java.util.concurrent.TimeUnit;
 

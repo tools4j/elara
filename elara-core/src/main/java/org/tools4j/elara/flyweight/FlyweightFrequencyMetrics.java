@@ -21,24 +21,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.metrics;
+package org.tools4j.elara.flyweight;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
-import org.tools4j.elara.flyweight.Flyweight;
-import org.tools4j.elara.flyweight.FlyweightHeader;
-import org.tools4j.elara.flyweight.FrameType;
-import org.tools4j.elara.flyweight.Header;
-import org.tools4j.elara.flyweight.Writable;
+import org.tools4j.elara.plugin.metrics.FrequencyMetric;
+import org.tools4j.elara.plugin.metrics.Metric;
+import org.tools4j.elara.plugin.metrics.MetricType;
 
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
-import static org.tools4j.elara.plugin.metrics.FrequencyMetricsDescriptor.HEADER_LENGTH;
-import static org.tools4j.elara.plugin.metrics.FrequencyMetricsDescriptor.INTERVAL_OFFSET;
-import static org.tools4j.elara.plugin.metrics.FrequencyMetricsDescriptor.ITERATION_OFFSET;
-import static org.tools4j.elara.plugin.metrics.FrequencyMetricsDescriptor.METRIC_TIME_OFFSET;
-import static org.tools4j.elara.plugin.metrics.FrequencyMetricsDescriptor.METRIC_TYPES_OFFSET;
-import static org.tools4j.elara.plugin.metrics.FrequencyMetricsDescriptor.PAYLOAD_OFFSET;
+import static org.tools4j.elara.flyweight.FrequencyMetricsDescriptor.HEADER_LENGTH;
+import static org.tools4j.elara.flyweight.FrequencyMetricsDescriptor.INTERVAL_OFFSET;
+import static org.tools4j.elara.flyweight.FrequencyMetricsDescriptor.ITERATION_OFFSET;
+import static org.tools4j.elara.flyweight.FrequencyMetricsDescriptor.METRIC_TIME_OFFSET;
+import static org.tools4j.elara.flyweight.FrequencyMetricsDescriptor.METRIC_TYPES_OFFSET;
+import static org.tools4j.elara.flyweight.FrequencyMetricsDescriptor.PAYLOAD_OFFSET;
 
 /**
  * A flyweight frame for reading and writing frequency metrics data laid out as per {@link FrequencyMetricsDescriptor}.

@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.format;
 
-import org.tools4j.elara.plugin.metrics.FrequencyMetricsFrame;
+import org.tools4j.elara.flyweight.FrequencyMetricsFrame;
 import org.tools4j.elara.plugin.metrics.Metric;
 
 import static java.util.Objects.requireNonNull;

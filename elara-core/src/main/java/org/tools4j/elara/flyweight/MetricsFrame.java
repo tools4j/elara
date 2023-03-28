@@ -21,23 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.metrics;
+package org.tools4j.elara.flyweight;
+
+import org.tools4j.elara.plugin.metrics.Metric;
+import org.tools4j.elara.plugin.metrics.MetricType;
 
 /**
- * A frame holding time metrics data as described by {@link FrequencyMetricsDescriptor}.
+ * A frame holding metrics data.
  */
-public interface FrequencyMetricsFrame extends MetricsFrame {
-
-    long iteration();
-
-    long interval();
-
-    @Override
+public interface MetricsFrame extends Frame {
+    MetricType metricType();
+    long metricTime();
     int valueCount();
-    @Override
-    default Metric metric(final int valueIndex) {
-        return frequencyMetric(valueIndex);
-    }
-    FrequencyMetric frequencyMetric(int valueIndex);
-    long frequencyValue(int valueIndex);
+    boolean hasMetric(Metric metric);
+    Metric metric(int valueIndex);
 }

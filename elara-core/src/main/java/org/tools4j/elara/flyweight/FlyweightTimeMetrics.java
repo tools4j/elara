@@ -21,30 +21,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.metrics;
+package org.tools4j.elara.flyweight;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
-import org.tools4j.elara.flyweight.EventDescriptor;
-import org.tools4j.elara.flyweight.Flyweight;
-import org.tools4j.elara.flyweight.FlyweightHeader;
-import org.tools4j.elara.flyweight.FrameType;
-import org.tools4j.elara.flyweight.Header;
-import org.tools4j.elara.flyweight.Writable;
+import org.tools4j.elara.plugin.metrics.Metric;
+import org.tools4j.elara.plugin.metrics.MetricType;
+import org.tools4j.elara.plugin.metrics.TimeMetric;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 
 import java.util.Set;
 
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
-import static org.tools4j.elara.plugin.metrics.TimeMetricsDescriptor.EVENT_INDEX_OFFSET;
-import static org.tools4j.elara.plugin.metrics.TimeMetricsDescriptor.EVENT_SEQUENCE_OFFSET;
-import static org.tools4j.elara.plugin.metrics.TimeMetricsDescriptor.HEADER_LENGTH;
-import static org.tools4j.elara.plugin.metrics.TimeMetricsDescriptor.METRIC_TIME_OFFSET;
-import static org.tools4j.elara.plugin.metrics.TimeMetricsDescriptor.METRIC_TYPES_OFFSET;
-import static org.tools4j.elara.plugin.metrics.TimeMetricsDescriptor.PAYLOAD_OFFSET;
-import static org.tools4j.elara.plugin.metrics.TimeMetricsDescriptor.SOURCE_ID_OFFSET;
-import static org.tools4j.elara.plugin.metrics.TimeMetricsDescriptor.SOURCE_SEQUENCE_OFFSET;
+import static org.tools4j.elara.flyweight.TimeMetricsDescriptor.EVENT_INDEX_OFFSET;
+import static org.tools4j.elara.flyweight.TimeMetricsDescriptor.EVENT_SEQUENCE_OFFSET;
+import static org.tools4j.elara.flyweight.TimeMetricsDescriptor.HEADER_LENGTH;
+import static org.tools4j.elara.flyweight.TimeMetricsDescriptor.METRIC_TIME_OFFSET;
+import static org.tools4j.elara.flyweight.TimeMetricsDescriptor.METRIC_TYPES_OFFSET;
+import static org.tools4j.elara.flyweight.TimeMetricsDescriptor.PAYLOAD_OFFSET;
+import static org.tools4j.elara.flyweight.TimeMetricsDescriptor.SOURCE_ID_OFFSET;
+import static org.tools4j.elara.flyweight.TimeMetricsDescriptor.SOURCE_SEQUENCE_OFFSET;
 
 /**
  * A flyweight frame for reading and writing time metrics data laid out as per {@link TimeMetricsDescriptor}.

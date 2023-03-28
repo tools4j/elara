@@ -21,50 +21,58 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.metrics;
-
-import org.tools4j.elara.flyweight.FrameDescriptor;
+package org.tools4j.elara.flyweight;
 
 /**
- * Descriptor of frame layout for frequency metrics.
+ * Descriptor of frame layout for time metrics.
  * <pre>
 
     0         1         2         3         4         5         6
     0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    |Version|Type=07| Metric Types  |          Frame Size           |
+    |Version|Type=06|  Event Index  |          Frame Size           |
     +-------+-------+-------+-------+-------+-------+-------+-------+
-    |                           Iteration                           |
+    |           Source ID           |EO      Metric Types           |
     +-------+-------+-------+-------+-------+-------+-------+-------+
-    |                           Interval                            |
+    |                        Source Sequence                        |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                        Event Sequence                         |
     +-------+-------+-------+-------+-------+-------+-------+-------+
     |                          Metric Time                          |
     +-------+-------+-------+-------+-------+-------+-------+-------+
-    |                            Count 0                            |
-    |                            Count 1                            |
+    |                            Time 0                             |
+    |                            Time 1                             |
     |                             ...                               |
+
+    E = Event Flag, O = Output Flag, Target: COMMAND(00), EVENT(10), OUTPUT(11)
 
  * </pre>
  *
- * @see TimeMetricsDescriptor
+ * @see FrequencyMetricsDescriptor
  * @see FrameDescriptor
  */
-public enum FrequencyMetricsDescriptor {
+public enum TimeMetricsDescriptor {
     ;
 
-    public static final int ITERATION_OFFSET = FrameDescriptor.HEADER_LENGTH;
+    static final byte FLAGS_NONE = 0;
 
-    public static final int METRIC_TYPES_OFFSET = FrameDescriptor.RESERVED_OFFSET;
-    public static final int METRIC_TYPES_LENGTH = FrameDescriptor.RESERVED_LENGTH;
-    public static final int ITERATION_LENGTH = Long.BYTES;
-    public static final int INTERVAL_OFFSET = ITERATION_OFFSET + ITERATION_LENGTH;
-    public static final int INTERVAL_LENGTH = Long.BYTES;
-    public static final int METRIC_TIME_OFFSET = INTERVAL_OFFSET + INTERVAL_LENGTH;
+    public static final int EVENT_INDEX_OFFSET = FrameDescriptor.RESERVED_OFFSET;
+
+    public static final int EVENT_INDEX_LENGTH = FrameDescriptor.RESERVED_LENGTH;
+    public static final int SOURCE_ID_OFFSET = EventDescriptor.SOURCE_ID_OFFSET;
+    public static final int SOURCE_ID_LENGTH = EventDescriptor.SOURCE_ID_LENGTH;
+
+    public static final int METRIC_TYPES_OFFSET = EventDescriptor.PAYLOAD_TYPE_OFFSET;
+    public static final int METRIC_TYPES_LENGTH = EventDescriptor.PAYLOAD_TYPE_LENGTH;
+    public static final int SOURCE_SEQUENCE_OFFSET = EventDescriptor.SOURCE_SEQUENCE_OFFSET;
+    public static final int SOURCE_SEQUENCE_LENGTH = EventDescriptor.SOURCE_SEQUENCE_LENGTH;
+    public static final int EVENT_SEQUENCE_OFFSET = EventDescriptor.EVENT_SEQUENCE_OFFSET;
+    public static final int EVENT_SEQUENCE_LENGTH = EventDescriptor.EVENT_SEQUENCE_LENGTH;
+    public static final int METRIC_TIME_OFFSET = EVENT_SEQUENCE_OFFSET + EVENT_SEQUENCE_LENGTH;
     public static final int METRIC_TIME_LENGTH = Long.BYTES;
 
     public static final int HEADER_OFFSET = FrameDescriptor.HEADER_OFFSET;
     public static final int HEADER_LENGTH = METRIC_TIME_OFFSET + METRIC_TIME_LENGTH;
 
     public static final int PAYLOAD_OFFSET = HEADER_OFFSET + HEADER_LENGTH;
-
 }

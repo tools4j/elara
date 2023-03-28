@@ -21,27 +21,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.metrics;
+package org.tools4j.elara.flyweight;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.flyweight.Flyweight;
-import org.tools4j.elara.flyweight.FlyweightHeader;
-import org.tools4j.elara.flyweight.FrameDescriptor;
-import org.tools4j.elara.flyweight.FrameType;
-import org.tools4j.elara.flyweight.Header;
+import org.tools4j.elara.plugin.metrics.FrequencyMetric;
+import org.tools4j.elara.plugin.metrics.Metric;
+import org.tools4j.elara.plugin.metrics.MetricType;
+import org.tools4j.elara.plugin.metrics.TimeMetric;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 
 /**
  * A flyweight frame for reading and either a {@link TimeMetricsFrame} or a {@link FrequencyMetricsFrame}.
  */
-public class FlyweightMetrics implements TimeMetricsFrame, FrequencyMetricsFrame, Flyweight<FlyweightMetrics> {
+public class FlyweightMetricsFrame implements TimeMetricsFrame, FrequencyMetricsFrame, Flyweight<FlyweightMetricsFrame> {
 
     private final FlyweightHeader header = new FlyweightHeader(FrameDescriptor.HEADER_LENGTH);
     private final FlyweightTimeMetrics timeMetrics = new FlyweightTimeMetrics();
     private final FlyweightFrequencyMetrics frequencyMetrics = new FlyweightFrequencyMetrics();
     @Override
-    public FlyweightMetrics wrap(final DirectBuffer buffer, final int offset) {
+    public FlyweightMetricsFrame wrap(final DirectBuffer buffer, final int offset) {
         header.wrap(buffer, offset);
         final byte type = header.type();
         FrameType.validateMetricsType(type);
@@ -59,7 +58,7 @@ public class FlyweightMetrics implements TimeMetricsFrame, FrequencyMetricsFrame
          return timeMetrics.valid() || frequencyMetrics.valid();
     }
 
-    public FlyweightMetrics reset() {
+    public FlyweightMetricsFrame reset() {
         header.reset();
         timeMetrics.reset();
         frequencyMetrics.reset();

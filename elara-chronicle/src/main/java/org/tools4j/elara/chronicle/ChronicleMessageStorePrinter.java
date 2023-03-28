@@ -29,11 +29,11 @@ import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.AgentRunner;
 import org.tools4j.elara.flyweight.Flyweight;
 import org.tools4j.elara.flyweight.FlyweightDataFrame;
+import org.tools4j.elara.flyweight.FlyweightMetricsFrame;
 import org.tools4j.elara.format.CsvMessagePrinters;
 import org.tools4j.elara.format.MessagePrinter;
 import org.tools4j.elara.format.MessagePrinters;
 import org.tools4j.elara.format.TimeFormatter;
-import org.tools4j.elara.plugin.metrics.FlyweightMetrics;
 import org.tools4j.elara.store.MessageStorePrinter;
 
 import java.io.OutputStream;
@@ -248,11 +248,11 @@ public class ChronicleMessageStorePrinter implements AutoCloseable {
             final MessagePrinters msgPrinters = timeUnit == null ? messagePrinters(format) :
                     messagePrinters(format, timeUnit, timeUnit.convert(interval >= 0 ? interval : 1000, MILLISECONDS));
             if (metrics) {
-                storePrinter.print(queue, new FlyweightMetrics(), msgPrinters.metrics());
+                storePrinter.print(queue, new FlyweightMetricsFrame(), msgPrinters.metrics());
             } else if (latencies) {
-                storePrinter.print(queue, new FlyweightMetrics(), msgPrinters.metricsWithLatencies());
+                storePrinter.print(queue, new FlyweightMetricsFrame(), msgPrinters.metricsWithLatencies());
             } else if (histograms) {
-                storePrinter.print(queue, new FlyweightMetrics(), msgPrinters.metricsWithLatencyHistogram());
+                storePrinter.print(queue, new FlyweightMetricsFrame(), msgPrinters.metricsWithLatencyHistogram());
             } else {
                 storePrinter.print(queue, new FlyweightDataFrame(), msgPrinters.frame());
             }

@@ -24,6 +24,7 @@
 package org.tools4j.elara.plugin.metrics;
 
 import org.junit.jupiter.api.Test;
+import org.tools4j.elara.flyweight.FrequencyMetricsDescriptor;
 import org.tools4j.elara.plugin.metrics.Metric.Type;
 
 import java.util.Arrays;

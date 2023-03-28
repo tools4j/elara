@@ -24,6 +24,7 @@
 package org.tools4j.elara.plugin.metrics;
 
 import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.flyweight.FlyweightFrequencyMetrics;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore.Appender;
 import org.tools4j.elara.store.MessageStore.AppendingContext;

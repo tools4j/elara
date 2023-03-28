@@ -23,11 +23,11 @@
  */
 package org.tools4j.elara.format;
 
+import org.tools4j.elara.flyweight.TimeMetricsFrame;
 import org.tools4j.elara.plugin.metrics.LatencyMetric;
 import org.tools4j.elara.plugin.metrics.MetricType;
 import org.tools4j.elara.plugin.metrics.TimeMetric;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
-import org.tools4j.elara.plugin.metrics.TimeMetricsFrame;
 
 import java.util.ArrayList;
 import java.util.Arrays;
