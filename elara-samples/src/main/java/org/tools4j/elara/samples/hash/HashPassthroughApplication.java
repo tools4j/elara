@@ -62,7 +62,7 @@ import static org.tools4j.elara.plugin.metrics.TimeMetric.ROUTING_START_TIME;
 import static org.tools4j.elara.samples.hash.HashApplication.isEven;
 
 public class HashPassthroughApplication implements PassthroughApp {
-    //nothing to add
+    public static final int SOURCE_ID = 44;
 
     public static class PublisherWithState implements PublisherApp {
         final ModifiableState state;
@@ -116,7 +116,7 @@ public class HashPassthroughApplication implements PassthroughApp {
                 .inputSendingTimeExtractor((sourceId, sequence, type, buffer, offset, length) -> pseudoNanoClock.currentTime() - 100_000)//for testing only
                 .timeMetricsStore(new ChronicleMessageStore(tq));
         return new HashPassthroughApplication().launch(context -> context
-                .input(HashApplication.input(input))
+                .input(HashApplication.input(SOURCE_ID, input))
                 .eventStore(new ChronicleMessageStore(eq))
                 .timeSource(pseudoNanoClock)
                 .idleStrategy(BusySpinIdleStrategy.INSTANCE)

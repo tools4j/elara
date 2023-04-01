@@ -24,6 +24,7 @@
 package org.tools4j.elara.plugin.timer;
 
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.send.CommandSender.SendingContext;
 import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.time.TimeSource;
@@ -35,13 +36,18 @@ import static org.tools4j.elara.plugin.timer.TimerCommands.triggerTimer;
 public final class TimerTriggerInput implements Input {
 
     private final int sourceId;
+    private final SequenceGenerator sourceSeqGenerator;
     private final TimeSource timeSource;
     private final TimerState timerState;
 
     private boolean timerTriggerPending;
 
-    public TimerTriggerInput(final int sourceId, final TimeSource timeSource, final TimerState timerState) {
+    public TimerTriggerInput(final int sourceId,
+                             final SequenceGenerator sourceSeqGenerator,
+                             final TimeSource timeSource,
+                             final TimerState timerState) {
         this.sourceId = sourceId;
+        this.sourceSeqGenerator = requireNonNull(sourceSeqGenerator);
         this.timeSource = requireNonNull(timeSource);
         this.timerState = requireNonNull(timerState);
     }
@@ -57,7 +63,9 @@ public final class TimerTriggerInput implements Input {
         }
         final int next = timerState.indexOfNextDeadline();
         if (next >= 0 && timerState.deadline(next) <= timeSource.currentTime()) {
-            try (final SendingContext context = senderSupplier.senderFor(sourceId).sendingCommand(TRIGGER_TIMER)) {
+            try (final SendingContext context = senderSupplier
+                    .senderFor(sourceId, sourceSeqGenerator.nextSequence())
+                    .sendingCommand(TRIGGER_TIMER)) {
                 final int length = triggerTimer(context.buffer(), 0, timerState.id(next),
                         timerState.type(next), timerState.repetition(next), timerState.timeout(next));
                 context.send(length);

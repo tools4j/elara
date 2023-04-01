@@ -26,7 +26,6 @@ package org.tools4j.elara.app.factory;
 import org.tools4j.elara.step.AgentStep;
 
 public interface AgentStepFactory {
-    Runnable initStep();
     AgentStep extraStepAlwaysWhenEventsApplied();
     AgentStep extraStepAlways();
 }

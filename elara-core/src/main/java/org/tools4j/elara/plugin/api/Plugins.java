@@ -23,7 +23,6 @@
  */
 package org.tools4j.elara.plugin.api;
 
-import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.plugin.base.BasePlugin;
 import org.tools4j.elara.plugin.boot.BootPlugin;
 import org.tools4j.elara.plugin.metrics.MetricsConfig;
@@ -40,15 +39,15 @@ public enum Plugins {
     public static TimerPlugin timerPlugin() {
         return TimerPlugin.DEFAULT;
     }
-    public static TimerPlugin timerPlugin(final int commandSource) {
-        return new TimerPlugin(commandSource);
+    public static TimerPlugin timerPlugin(final int sourceId) {
+        return new TimerPlugin(sourceId);
     }
 
     public static BootPlugin bootPlugin() {
         return BootPlugin.DEFAULT;
     }
-    public static BootPlugin bootPlugin(final int commandSource, final SequenceGenerator sequenceGenerator) {
-        return new BootPlugin(commandSource, sequenceGenerator);
+    public static BootPlugin bootPlugin(final int commandSource) {
+        return new BootPlugin(commandSource);
     }
 
     public static MetricsPlugin metricsPlugin(final MetricsConfig configuration) {

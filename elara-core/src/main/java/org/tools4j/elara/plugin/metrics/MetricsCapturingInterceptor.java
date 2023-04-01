@@ -245,11 +245,6 @@ public class MetricsCapturingInterceptor implements Interceptor {
         if (shouldCapture(STEP_ERROR_FREQUENCY) || shouldCapture(EXTRA_STEP_INVOCATION_FREQUENCY) || shouldCapture(EXTRA_STEP_PERFORMED_FREQUENCY)) {
             return new AgentStepFactory() {
                 @Override
-                public Runnable initStep() {
-                    return singletons.get().initStep();
-                }
-
-                @Override
                 public AgentStep extraStepAlwaysWhenEventsApplied() {
                     return counterStep(EXTRA_STEP_INVOCATION_FREQUENCY, EXTRA_STEP_PERFORMED_FREQUENCY, singletons.get().extraStepAlwaysWhenEventsApplied());
                 }

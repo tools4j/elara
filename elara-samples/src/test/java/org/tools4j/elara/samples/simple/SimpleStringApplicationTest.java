@@ -29,6 +29,9 @@ import org.tools4j.elara.run.ElaraRunner;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/**
+ * Unit test for {@link SimpleStringApplication}.
+ */
 public class SimpleStringApplicationTest {
 
     @Test

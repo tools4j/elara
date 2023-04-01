@@ -182,11 +182,6 @@ final class Singletons {
         final Singletons singletons = new Singletons();
         return new AgentStepFactory() {
             @Override
-            public Runnable initStep() {
-                return singletons.getOrCreate("initStep", Runnable.class, factory, AgentStepFactory::initStep);
-            }
-
-            @Override
             public AgentStep extraStepAlwaysWhenEventsApplied() {
                 return singletons.getOrCreate("extraStepAlwaysWhenEventsApplied", AgentStep.class, factory, AgentStepFactory::extraStepAlwaysWhenEventsApplied);
             }

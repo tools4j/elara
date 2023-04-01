@@ -39,7 +39,6 @@ import org.tools4j.elara.plugin.metrics.MetricsConfig;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.run.ElaraRunner;
-import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.CommandSender.SendingContext;
 import org.tools4j.elara.store.InMemoryStore;
 import org.tools4j.elara.time.TimeSource;
@@ -80,11 +79,10 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
 
     public static final int MESSAGE_LENGTH = 5 * Long.BYTES;
     public static final long NULL_VALUE = Long.MIN_VALUE;
-    public static final int DEFAULT_SOURCE = 42;
+    public static final int DEFAULT_SOURCE_ID = 42;
 
     public interface State {
         long hash();
-
         long count();
     }
 
@@ -148,13 +146,9 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
     }
 
     //@Override
-    public Ack publish(final Event event, final boolean replay, final int retry, final CommandSender loopback) {
+    public Ack publish(final Event event, final boolean replay, final int retry) {
         /* trigger capturing of output metrics approximately every second time */
         return (event.payload().getLong(0) & 0x1) == 0 ? Ack.COMMIT : Ack.IGNORED;
-    }
-
-    public static Input input(final AtomicLong input) {
-        return input(DEFAULT_SOURCE, input);
     }
 
     public static Input input(final int sourceId, final AtomicLong input) {
@@ -178,7 +172,7 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
 
     public static ElaraRunner inMemory(final ModifiableState state, final AtomicLong input) {
         return new HashApplication(state).launch(config -> config
-                .input(input(input))
+                .input(input(DEFAULT_SOURCE_ID, input))
                 .commandStore(new InMemoryStore())
                 .eventStore(new InMemoryStore())
         );
@@ -194,7 +188,7 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         return new HashApplication(state).launch(config -> config
-                .input(input(input))
+                .input(input(DEFAULT_SOURCE_ID, input))
                 .commandStore(new ChronicleMessageStore(cq))
                 .eventStore(new ChronicleMessageStore(eq))
         );
@@ -225,7 +219,7 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
                 .build();
 
         return new HashApplication(state).launch(config -> config
-                        .input(input(input))
+                        .input(input(DEFAULT_SOURCE_ID, input))
                         .commandStore(new ChronicleMessageStore(cq))
                         .eventStore(new ChronicleMessageStore(eq))
                         .timeSource(pseudoNanoClock)
@@ -236,7 +230,7 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
                                         .timeMetrics(INPUT_SENDING_TIME, INPUT_POLLING_TIME, PROCESSING_START_TIME, PROCESSING_END_TIME, ROUTING_START_TIME, APPLYING_START_TIME, APPLYING_END_TIME, ROUTING_END_TIME, OUTPUT_START_TIME, OUTPUT_END_TIME)
                                         .frequencyMetrics(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, EVENT_APPLIED_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY)
                                         .frequencyMetricInterval(100_000)//micros
-                                        .inputSendingTimeExtractor((sourceId, sequence, type, buffer, offset, length) -> pseudoNanoClock.currentTime() - 100_000)//for testing only
+                                        .inputSendingTimeExtractor((sourceId, sourceSeq, type, buffer, offset, length) -> pseudoNanoClock.currentTime() - 100_000)//for testing only
 //                    .metricsStore(new ChronicleMessageStore(mq))
                                         .timeMetricsStore(new ChronicleMessageStore(tq))
                                         .frequencyMetricsStore(new ChronicleMessageStore(fq))
@@ -263,7 +257,7 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
                 .build();
         return new HashApplication(state).launch(config -> config
                 .commandPollingMode(commandPollingMode)
-                .input(input(input))
+                .input(input(DEFAULT_SOURCE_ID, input))
                 .commandStore(commandPollingMode == NO_STORE ? null : new ChronicleMessageStore(cq))
                 .eventStore(new ChronicleMessageStore(eq))
                 .timeSource(pseudoNanoClock)

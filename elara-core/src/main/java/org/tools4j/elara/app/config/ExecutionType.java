@@ -27,10 +27,11 @@ package org.tools4j.elara.app.config;
  * Extra steps that are linked to the duty cycle loop
  */
 public enum ExecutionType {
-    /** Execute a single time when initialising the duty cycle loop */
-    INIT_ONCE_ONLY,
-    /** Always execute in the duty cycle loop but only if all events have are applied; application and plugin state are up-to-date */
+    /**
+     * Always execute in the duty cycle loop but only if all events have are applied; application and plugin state are
+     * up-to-date
+     */
     ALWAYS_WHEN_EVENTS_APPLIED,
-    /** Always execute in the duty cycle loop even if events are replayed */
+    /** Always execute in the duty cycle loop even if events are replayed and the state may not be up-to-date */
     ALWAYS
 }

@@ -35,8 +35,7 @@ import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_TIMEOU
 import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_TYPE_OFFSET;
 
 /**
- * Timer commands issued through {@link TimerTriggerInput} either when outputting an event through the
- * command loopback or when polling the timer trigger input.
+ * Timer commands issued through {@link TimerTriggerInput}.
  */
 public enum TimerCommands {
     ;

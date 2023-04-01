@@ -30,6 +30,7 @@ import org.tools4j.elara.output.CompositeOutput;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.plugin.boot.BootCommandInput;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,7 +67,22 @@ public class DefaultInOutFactory implements InOutFactory {
         for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
             allInputs.addAll(Arrays.asList(plugin.inputs(baseState)));
         }
-        return allInputs.toArray(NO_INPUTS);
+        return moveBootInputToStart(allInputs.toArray(NO_INPUTS));
+    }
+
+    //NOTE: we want boot plugin inputs at the start so that those commands get polled first of all
+    private static Input[] moveBootInputToStart(final Input[] inputs) {
+        int bootInputs = 0;
+        for (int i = inputs.length - 1; i >= 0; i--) {
+            if (inputs[i] instanceof BootCommandInput) {
+                bootInputs++;
+            } else if (bootInputs > 0) {
+                final Input nonBootInput = inputs[i];
+                System.arraycopy(inputs, i + 1, inputs, i, bootInputs);
+                inputs[i + bootInputs] = nonBootInput;
+            }
+        }
+        return inputs;
     }
 
     @Override

@@ -24,27 +24,14 @@
 package org.tools4j.elara.plugin.boot;
 
 import org.tools4j.elara.app.config.AppConfig;
-import org.tools4j.elara.app.config.ExecutionType;
-import org.tools4j.elara.app.factory.Interceptor;
-import org.tools4j.elara.app.factory.SequencerFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
-import org.tools4j.elara.input.SequenceGenerator;
-import org.tools4j.elara.input.SimpleSequenceGenerator;
-import org.tools4j.elara.output.Output;
-import org.tools4j.elara.output.Output.Ack;
+import org.tools4j.elara.input.Input;
 import org.tools4j.elara.plugin.api.Plugin.NullState;
 import org.tools4j.elara.plugin.api.ReservedPayloadType;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.elara.send.SenderSupplier;
-import org.tools4j.elara.step.AgentStep;
-
-import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.plugin.boot.BootCommands.SIGNAL_APP_INITIALISATION_COMPLETE;
-import static org.tools4j.elara.plugin.boot.BootCommands.SIGNAL_APP_INITIALISATION_START;
-import static org.tools4j.elara.plugin.boot.BootEvents.APP_INITIALISATION_STARTED;
 
 /**
  * A plugin that issues commands and events related to booting an elara application to indicate that the application has
@@ -52,15 +39,13 @@ import static org.tools4j.elara.plugin.boot.BootEvents.APP_INITIALISATION_STARTE
  */
 public class BootPlugin implements SystemPlugin<NullState> {
 
-    public static final int DEFAULT_COMMAND_SOURCE = -20;
-    public static final BootPlugin DEFAULT = new BootPlugin(DEFAULT_COMMAND_SOURCE, new SimpleSequenceGenerator(System.currentTimeMillis()));
+    public static final int DEFAULT_SOURCE_ID = -20;
+    public static final BootPlugin DEFAULT = new BootPlugin(DEFAULT_SOURCE_ID);
 
-    private final int commandSource;
-    private final SequenceGenerator sequenceGenerator;
+    private final int sourceId;
 
-    public BootPlugin(final int commandSource, final SequenceGenerator sequenceGenerator) {
-        this.commandSource = commandSource;
-        this.sequenceGenerator = requireNonNull(sequenceGenerator);
+    public BootPlugin(final int sourceId) {
+        this.sourceId = sourceId;
     }
 
     @Override
@@ -78,48 +63,10 @@ public class BootPlugin implements SystemPlugin<NullState> {
         requireNonNull(appConfig);
         requireNonNull(pluginState);
         return new Configuration.Default() {
-            SenderSupplier senderSupplier;
-
-            void sendBootCommand(final int type) {
-                if (senderSupplier == null) {
-                    throw new IllegalStateException("No factory available for sender supplier");
-                }
-                senderSupplier
-                        .senderFor(commandSource, sequenceGenerator.nextSequence())
-                        .sendCommandWithoutPayload(type);
-            }
-
             @Override
-            public Interceptor interceptor(final BaseState.Mutable baseState) {
-                return new Interceptor() {
-                    @Override
-                    public SequencerFactory sequencerFactory(final Supplier<? extends SequencerFactory> singletons) {
-                        senderSupplier = singletons.get().senderSupplier();
-                        return null;
-                    }
-                };
-            }
-
-            @Override
-            public AgentStep step(final BaseState baseState, final ExecutionType executionType) {
-                if (executionType == ExecutionType.INIT_ONCE_ONLY) {
-                    return () -> {
-                        sendBootCommand(SIGNAL_APP_INITIALISATION_START);
-                        return 1;
-                    };
-                }
-                return AgentStep.NOOP;
-            }
-
-            @Override
-            public Output output(final BaseState baseState) {
-                return (event, replay, retry) -> {
-                    if (!replay && retry == 0 && event.payloadType() == APP_INITIALISATION_STARTED) {
-                        sendBootCommand(SIGNAL_APP_INITIALISATION_COMPLETE);
-                        return Ack.COMMIT;
-                    }
-                    return Ack.IGNORED;
-                };
+            public Input[] inputs(final BaseState baseState) {
+                final long sourceSeq = 1 + baseState.lastAppliedCommandSequence(sourceId);
+                return new Input[]{new BootCommandInput(sourceId, sourceSeq, appConfig.timeSource())};
             }
 
             @Override

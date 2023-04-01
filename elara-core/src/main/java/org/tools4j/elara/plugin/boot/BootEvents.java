@@ -34,16 +34,9 @@ public enum BootEvents {
     ;
     /**
      * Event type signalling the start of the elara application.  The event is typically the first event after the
-     * replayed events and carries the timestamp when the application was started before replaying events.
+     * replayed events.
      */
-    public static final int APP_INITIALISATION_STARTED = -20;
-    /**
-     * Event type signalling the start of the elara application.  The event is one of the first events after
-     * {@link #APP_INITIALISATION_STARTED} but a few other non-replayed events may come before it due to racing.  The
-     * event carries a timestamp when event replaying was complete and can hence be significantly larger than the
-     * timestamp of {@link #APP_INITIALISATION_STARTED}.
-     */
-    public static final int APP_INITIALISATION_COMPLETED = -21;
+    public static final int BOOT_APP_STARTED = -20;
 
     public static boolean isBootEvent(final Event event) {
         return isBootEvent(event.payloadType());
@@ -54,13 +47,7 @@ public enum BootEvents {
     }
 
     public static boolean isBootEvent(final int payloadType) {
-        switch (payloadType) {
-            case APP_INITIALISATION_STARTED://fallthrough
-            case APP_INITIALISATION_COMPLETED://fallthrough
-                return true;
-            default:
-                return false;
-        }
+        return payloadType == BOOT_APP_STARTED;
     }
 
     public static String bootEventName(final Event event) {
@@ -72,11 +59,10 @@ public enum BootEvents {
     }
 
     public static String bootEventName(final int payloadType) {
+        //noinspection SwitchStatementWithTooFewBranches
         switch (payloadType) {
-            case APP_INITIALISATION_STARTED:
-                return "APP_INITIALISATION_STARTED";
-            case APP_INITIALISATION_COMPLETED:
-                return "APP_INITIALISATION_COMPLETED";
+            case BOOT_APP_STARTED:
+                return "BOOT_APP_STARTED";
             default:
                 throw new IllegalArgumentException("Not a boot event type: " + payloadType);
         }

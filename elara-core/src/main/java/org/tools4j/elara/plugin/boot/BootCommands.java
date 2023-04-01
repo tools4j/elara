@@ -35,16 +35,10 @@ import static org.tools4j.elara.flyweight.FrameType.COMMAND_TYPE;
 public enum BootCommands {
     ;
     /**
-     * Command added to the command store when an application is started;  the boot plugin command processor translates
-     * this command into an {@link BootEvents#APP_INITIALISATION_STARTED APP_INITIALISATION_STARTED} event.
+     * Command sent once when an application is started right after applying all replayed eents;  the boot plugin
+     * command processor translates this command into an {@link BootEvents#BOOT_APP_STARTED BOOT_APP_STARTED} event.
      */
-    public static final int SIGNAL_APP_INITIALISATION_START = -20;
-    /**
-     * Command enqueued to the command via loopback when the first non-replayed event observed;  the boot plugin command
-     * processor translates this command into an
-     * {@link BootEvents#APP_INITIALISATION_COMPLETED APP_INITIALISATION_COMPLETED} event.
-     */
-    public static final int SIGNAL_APP_INITIALISATION_COMPLETE = -21;
+    public static final int BOOT_NOTIFY_APP_START = -20;
 
     public static boolean isBootCommand(final Command command) {
         return isBootCommand(command.payloadType());
@@ -55,13 +49,7 @@ public enum BootCommands {
     }
 
     public static boolean isBootCommand(final int payloadType) {
-        switch (payloadType) {
-            case SIGNAL_APP_INITIALISATION_START://fallthrough
-            case SIGNAL_APP_INITIALISATION_COMPLETE://fallthrough
-                return true;
-            default:
-                return false;
-        }
+        return payloadType == BOOT_NOTIFY_APP_START;
     }
 
     public static String bootCommandName(final Command command) {
@@ -73,11 +61,10 @@ public enum BootCommands {
     }
 
     public static String bootCommandName(final int payloadType) {
+        //noinspection SwitchStatementWithTooFewBranches
         switch (payloadType) {
-            case SIGNAL_APP_INITIALISATION_START:
-                return "SIGNAL_APP_INITIALISATION_START";
-            case SIGNAL_APP_INITIALISATION_COMPLETE:
-                return "SIGNAL_APP_INITIALISATION_COMPLETE";
+            case BOOT_NOTIFY_APP_START:
+                return "BOOT_NOTIFY_APP_START";
             default:
                 throw new IllegalArgumentException("Not a boot command type: " + payloadType);
         }

@@ -36,7 +36,6 @@ import java.util.function.Supplier;
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.app.config.ExecutionType.ALWAYS;
 import static org.tools4j.elara.app.config.ExecutionType.ALWAYS_WHEN_EVENTS_APPLIED;
-import static org.tools4j.elara.app.config.ExecutionType.INIT_ONCE_ONLY;
 import static org.tools4j.elara.step.AgentStep.NOOP;
 
 public class DefaultAgentStepFactory implements AgentStepFactory {
@@ -48,11 +47,6 @@ public class DefaultAgentStepFactory implements AgentStepFactory {
                                    final Supplier<? extends PluginFactory> pluginSingletons) {
         this.config = requireNonNull(config);
         this.pluginSingletons = requireNonNull(pluginSingletons);
-    }
-
-    @Override
-    public Runnable initStep() {
-        return extraStep(INIT_ONCE_ONLY)::doWork;
     }
 
     @Override
