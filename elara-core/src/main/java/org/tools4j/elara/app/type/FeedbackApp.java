@@ -28,7 +28,6 @@ import org.tools4j.elara.event.Event;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.send.CommandSender;
-import org.tools4j.elara.send.EventContext;
 import org.tools4j.elara.send.InFlightState;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.stream.MessageReceiver;
@@ -40,7 +39,7 @@ import static java.util.Objects.requireNonNull;
 public interface FeedbackApp extends EventProcessor {
 
     @Override
-    Ack onEvent(Event event, EventContext context, InFlightState inFlightState, CommandSender sender);
+    void onEvent(Event event, InFlightState inFlightState, CommandSender sender);
 
     default ElaraRunner launch(final MessageStore messageStore) {
         requireNonNull(messageStore);

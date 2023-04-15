@@ -24,9 +24,9 @@
 package org.tools4j.elara.plugin.timer;
 
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.SequenceGenerator;
 import org.tools4j.elara.send.CommandSender.SendingContext;
 import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.sequence.SequenceGenerator;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;

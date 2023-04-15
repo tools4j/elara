@@ -26,6 +26,6 @@ package org.tools4j.elara.flyweight;
 public interface FrameVisitor {
     default void commandFrame(CommandFrame frame) {}
     default void eventFrame(EventFrame frame) {}
-    default void timeMetricsFrame(TimeMetricsFrame frame) {};
-    default void frequencyMetricsFrame(FrequencyMetricsFrame frame) {};
+    default void timeMetricsFrame(TimeMetricsFrame frame) {}
+    default void frequencyMetricsFrame(FrequencyMetricsFrame frame) {}
 }

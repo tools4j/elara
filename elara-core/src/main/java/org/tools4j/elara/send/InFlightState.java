@@ -23,151 +23,106 @@
  */
 package org.tools4j.elara.send;
 
-import org.tools4j.elara.app.handler.EventProcessor;
-import org.tools4j.elara.event.Event;
-import org.tools4j.elara.time.TimeSource;
+import org.tools4j.elara.command.Command;
+import org.tools4j.elara.flyweight.EventType;
+import org.tools4j.elara.route.EventRouter;
+import org.tools4j.elara.sequence.SequenceGenerator;
 
 /**
  * Application state that provides information about own commands that are still {@link #hasInFlightCommand() in-flight}.
- * A command is in-flight if the corresponding event has not been received back.  In this situation event
- * {@link EventProcessor#onEvent(Event, EventContext, InFlightState, CommandSender) processing}
- * may be
- * {@link EventProcessor.Ack#DEFERRED deferred} until all events have been received and
- * the applications state has been brought up-to-date.
- * <p>
- * See also {@link EventProcessor EventProcessor} and {@link EventContext} description for
- * more information.
+ * A command is in-flight if the corresponding event has not been received back.
  */
 public interface InFlightState {
-
     /**
-     * Value returned by {@link CommandSendingState#sequence()} if no command has been sent yet, and by
-     * {@link EventProcessingState#sequence()} if no event has been received yet that corresponds to a command sent by
-     * this application.
+     * Value returned by {@link CommandSendingState#sourceSequence()} if no command has been sent yet, and by
+     * {@link EventProcessingState#sourceSequence()} and {@link EventProcessingState#eventSequence()} if no event has
+     * been received yet that corresponds to a command sent by this application.
      */
-    long SEQUENCE_UNAVAILABLE = -1;
+    long NIL_SEQUENCE = SequenceGenerator.NIL_SEQUENCE;
 
     /**
      * Returns information about the command most recently sent by this application.
-     * @return information about the most recently sent command
+     * @return information about the last sent command
      */
-    CommandSendingState mostRecentlySentCommand();
+    CommandSendingState commandLastSent();
 
     /**
-     * Returns information about the command most recently processed event corresponding to a command sent by this
-     * application; this excludes the currently processed event.
-     * @return most recently received and processed event corresponding to an application command
+     * Returns information about the most recently processed event corresponding to a command sent by this application.
+     * Note that this includes the event currently processed if that is an event from a command sent by this
+     * application.
+     * @return  information about the event last received and processed, considering only events from commands sent by
+     *          this application
      */
-    EventProcessingState mostRecentlyProcessedEvent();
+    EventProcessingState eventLastProcessed();
 
     /**
      * True if commands are currently in-flight, that is, if at least one command has been sent whose commit event was
      * not yet processed.
      * <p>
-     * Note that commands when processed in the processor app can yield more than one event; the commit event is the
-     * last event that corresponds to the same command.
+     * Note that
+     * {@link org.tools4j.elara.app.handler.CommandProcessor#onCommand(Command, EventRouter) command processing}
+     * can yield more than one event. The commit event is the last event that corresponds to the same command.
+     * <p>
+     * This method returns false if no commands are currently in-flight, or if the currently processed event is the
+     * commit event of the last in-flight command.
      *
      * @return true if at least on command is in-flight whose commit event was not yet processed
      */
     boolean hasInFlightCommand();
 
-    /** Information about the {@link #mostRecentlySentCommand() most recently sent command} */
+    /**
+     * Information about the {@link #commandLastSent() command last sent} by this application
+     */
     interface CommandSendingState {
         /**
-         * Returns the sequence of the most recently sent command, or {@link #SEQUENCE_UNAVAILABLE} if no command was
+         * Returns the source sequence of the most recently sent command, or {@link #NIL_SEQUENCE} if no command was
          * ever sent yet.
-         * @return the sequence of the command, or {@link #SEQUENCE_UNAVAILABLE} if unavailable
+         * @return the source sequence of the command, or {@link #NIL_SEQUENCE} if unavailable
          */
-        long sequence();
+        long sourceSequence();
+
         /**
-         * Returns the time of the event that triggered processing of the command most recently sent, or
+         * Returns the sending time of the most recently sent command, or
          * {@link org.tools4j.elara.time.TimeSource#MIN_VALUE TimeSource.MIN_VALUE} if no command was ever sent yet.
-         * @return the time of the event that triggered the command
+         * @return the sending time of the command
          */
-        long time();
-
-        /** Returned by {@link #mostRecentlySentCommand()} if no command has been sent yet. */
-        CommandSendingState UNAVAILABLE = new CommandSendingState() {
-            @Override
-            public long sequence() {
-                return SEQUENCE_UNAVAILABLE;
-            }
-
-            @Override
-            public long time() {
-                return TimeSource.MIN_VALUE;
-            }
-        };
+        long sendingTime();
     }
 
-    /** Information about the {@link #mostRecentlyProcessedEvent() most recently processed event} of an own command */
+    /**
+     * Information about the {@link #eventLastProcessed() last processed event} from a command sent by this application
+     */
     interface EventProcessingState {
         /**
-         * Returns the sequence of the most recently processed event of an own command, or {@link #SEQUENCE_UNAVAILABLE}
+         * Returns the source sequence of the most recently processed event of an own command, or {@link #NIL_SEQUENCE}
          * if no event corresponding to an own command has been processed yet.
          *
-         * @return the sequence of the event, or {@link #SEQUENCE_UNAVAILABLE} if unavailable
+         * @return the source sequence of the event, or {@link #NIL_SEQUENCE} if unavailable
          */
-        long sequence();
+        long sourceSequence();
+
         /**
-         * Returns the time of the most recently processed event of an own command, or
-         * {@link org.tools4j.elara.time.TimeSource#MIN_VALUE TimeSource.MIN_VALUE} if no event corresponding to an own 
-         * command has been processed yet.
+         * Returns the event sequence of the most recently processed event of an own command, or {@link #NIL_SEQUENCE}
+         * if no event corresponding to an own command has been processed yet.
          *
-         * @return the time of the event
+         * @return the event sequence of the event, or {@link #NIL_SEQUENCE} if unavailable
          */
-        long time();
+        long eventSequence();
+
         /**
-         * Returns the index of the most recently processed event of an own command, or -1 if no event corresponding to
-         * an own command has been processed yet.
+         * Returns the event index of the most recently processed event of an own command, or -1 if no event
+         * corresponding to an own command has been processed yet.
          *
          * @return the event index, or -1 if unavailable
          */
-        int index();
+        int eventIndex();
+
         /**
-         * Returns true if the most recently processed event was a commit event, and false otherwise.
-         * <p>
-         * Note that commands when processed in the processor app can yield more than one event; the commit event is the
-         * last event that corresponds to the same command.
+         * Returns the event type of the most recently processed event of an own command, or null if no event
+         * corresponding to an own command has been processed yet.
          *
-         * @return true if a last processed event is available and is a commit event
+         * @return the event type, or null if unavailable
          */
-        boolean isCommit();
-
-        /** Returned by {@link #mostRecentlyProcessedEvent()} if no event corresponding to an own command has been processed yet. */
-        EventProcessingState UNAVAILABLE = new EventProcessingState() {
-            @Override
-            public long sequence() {
-                return SEQUENCE_UNAVAILABLE;
-            }
-
-            @Override
-            public long time() {
-                return TimeSource.MIN_VALUE;
-            }
-
-            @Override
-            public int index() {
-                return -1;
-            }
-
-            @Override
-            public boolean isCommit() {
-                return false;
-            }
-        };
-    }
-
-    /** Interface extension providing default implementations */
-    interface Default extends InFlightState {
-        @Override
-        default boolean hasInFlightCommand() {
-            final CommandSendingState command = mostRecentlySentCommand();
-            if (command == CommandSendingState.UNAVAILABLE) {
-                return false;
-            }
-            final EventProcessingState event = mostRecentlyProcessedEvent();
-            return command.sequence() > event.sequence() || !event.isCommit();
-        }
+        EventType eventType();
     }
 }

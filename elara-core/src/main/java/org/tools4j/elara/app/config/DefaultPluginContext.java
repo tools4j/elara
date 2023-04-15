@@ -86,7 +86,7 @@ public class DefaultPluginContext implements PluginContext {
         if (curBuilder == null || curBuilder == DEFAULT_BUILDER) {
             pluginBuilders.put(plugin, builder);
         } else {
-            if (builder != curBuilder) {
+            if (builder != DEFAULT_BUILDER && builder != curBuilder) {
                 throw new IllegalStateException("plugin " + plugin + " is already registered with a different state provider");
             }
         }

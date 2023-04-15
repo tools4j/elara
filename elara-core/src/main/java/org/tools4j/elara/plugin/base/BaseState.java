@@ -24,9 +24,10 @@
 package org.tools4j.elara.plugin.base;
 
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.sequence.SequenceGenerator;
 
 public interface BaseState {
-    long NIL_SEQUENCE = -1;
+    long NIL_SEQUENCE = SequenceGenerator.NIL_SEQUENCE;
 
     long lastAppliedCommandSequence(int sourceId);
     long lastAppliedEventSequence();

@@ -28,8 +28,7 @@ import org.tools4j.elara.plugin.api.ReservedPayloadType;
 /**
  * Contains static helper methods for command and event payload type.
  *
- * @see CommandFrame#payloadType()
- * @see EventFrame#payloadType()
+ * @see DataFrame#payloadType()
  */
 public enum PayloadType {
     ;

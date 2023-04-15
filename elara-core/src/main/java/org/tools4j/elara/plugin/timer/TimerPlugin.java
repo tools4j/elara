@@ -27,12 +27,12 @@ import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.SequenceGenerator;
-import org.tools4j.elara.input.SimpleSequenceGenerator;
 import org.tools4j.elara.plugin.api.ReservedPayloadType;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.timer.TimerState.Mutable;
+import org.tools4j.elara.sequence.SequenceGenerator;
+import org.tools4j.elara.sequence.SimpleSequenceGenerator;
 
 import java.util.Objects;
 

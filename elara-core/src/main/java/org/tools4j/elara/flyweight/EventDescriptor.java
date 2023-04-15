@@ -43,7 +43,7 @@ package org.tools4j.elara.flyweight;
     |                            Payload                            |
     |                             ...                               |
 
-    ET = 02-04, see {@link EventType#frameType()}
+    ET = 02-05, see {@link EventType#frameType()}
 
  * </pre>
  *
