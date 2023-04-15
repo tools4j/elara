@@ -19,19 +19,19 @@ defaultTasks 'clean', 'build'
 def projGroup = 'org.tools4j'
 def projVersion = file('version.txt').text.trim()
 
-def agronaVersion = '1.17.1'
-def aeronVersion = '1.40.0'
+def agronaVersion = '1.18.0'
+def aeronVersion = '1.41.0'
 //def chronicleVersion = '5.23ea23'//just under 3.0M/s
 //def chronicleVersion = '5.21.99'
-def chronicleVersion = '5.21.98'
+def chronicleVersion = '5.21.98'//fastest now??
 //def chronicleVersion = '5.20.123'
 //def chronicleVersion = '5.20.115' //now fastest ?!? (newest is 123), but still has the garbage!
 //def chronicleVersion = '5.20.109'
 //def chronicleVersion = '5.19.76'
-def kafkaVersion = '3.3.1'
-def slf4jVersion = '2.0.3'
-def junitVersion = '5.9.1'
-def mockitoVersion = '4.8.1'
+def kafkaVersion = '3.4.0'
+def slf4jVersion = '2.0.7'
+def junitVersion = '5.9.2'
+def mockitoVersion = '4.11.0'   //5.x requires Java 11
 def hamcrestVersion = '2.2'
 def hdrHistogramVersion = '2.1.12'
 
