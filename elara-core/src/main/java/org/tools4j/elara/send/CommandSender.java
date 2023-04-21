@@ -26,11 +26,12 @@ package org.tools4j.elara.send;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.flyweight.PayloadType;
+import org.tools4j.elara.input.Input;
+import org.tools4j.elara.input.SingleSourceInput;
 import org.tools4j.elara.stream.SendingResult;
 
 /**
- * Provides functions to encode and send commands through {@link SenderSupplier} when polling an
- * {@link org.tools4j.elara.input.Input input} source.
+ * Provides functions to encode and send commands when polling an {@link Input input} and {@link SingleSourceInput}.
  * <p>
  * Command sending can be done in two ways: already coded commands can be sent via one of the
  * {@link #sendCommand(DirectBuffer, int, int) sendCommand(..)} methods.  Alternatively the command can be encoded into

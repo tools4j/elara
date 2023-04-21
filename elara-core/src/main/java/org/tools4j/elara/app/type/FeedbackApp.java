@@ -28,7 +28,7 @@ import org.tools4j.elara.event.Event;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.send.CommandSender;
-import org.tools4j.elara.send.InFlightState;
+import org.tools4j.elara.source.InFlightState;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.stream.MessageReceiver;
 

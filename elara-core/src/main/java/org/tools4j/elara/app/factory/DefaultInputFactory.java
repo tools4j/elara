@@ -21,44 +21,37 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.sequence;
+package org.tools4j.elara.app.factory;
 
-final class SimpleSequenceGenerator implements SequenceGenerator {
+import org.tools4j.elara.app.config.InputConfig;
+import org.tools4j.elara.input.Input;
+import org.tools4j.elara.plugin.base.BaseState;
 
-    private long sequence;
+import java.util.function.Supplier;
 
-    public SimpleSequenceGenerator() {
-        this.sequence = MIN_SEQUENCE;
+import static java.util.Objects.requireNonNull;
+
+public class DefaultInputFactory implements InputFactory {
+    private final InputConfig inOutConfig;
+    private final Supplier<? extends PluginFactory> pluginSingletons;
+
+    public DefaultInputFactory(final InputConfig inOutConfig,
+                               final Supplier<? extends PluginFactory> pluginSingletons) {
+        this.inOutConfig = requireNonNull(inOutConfig);
+        this.pluginSingletons = requireNonNull(pluginSingletons);
     }
 
-    public SimpleSequenceGenerator(final long initialSequence) {
-        if (initialSequence < MIN_SEQUENCE) {
-            throw new IllegalArgumentException("Invalid initial sequence: " + initialSequence);
+    @Override
+    public Input input() {
+        Input input = inOutConfig.input();
+        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = pluginSingletons.get().plugins();
+        if (plugins.length == 0) {
+            return input;
         }
-        this.sequence = initialSequence;
-    }
-
-    @Override
-    public long sequence() {
-        return sequence;
-    }
-
-    @Override
-    public long nextSequence() {
-        return ++sequence;
-    }
-
-    @Override
-    public long nextSequence(final long minSequence) {
-        if (minSequence > sequence) {
-            sequence = minSequence;
+        final BaseState baseState = pluginSingletons.get().baseState();
+        for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
+            input = Input.roundRobin(input, plugin.input(baseState));
         }
-        return sequence;
-    }
-    @Override
-    public String toString() {
-        return "SimpleSequenceGenerator{" +
-                "sequence=" + sequence +
-                '}';
+        return input;
     }
 }

@@ -31,8 +31,8 @@ import org.tools4j.elara.app.factory.AgentStepFactory;
 import org.tools4j.elara.app.factory.AppFactory;
 import org.tools4j.elara.app.factory.ApplierFactory;
 import org.tools4j.elara.app.factory.CommandPollerFactory;
-import org.tools4j.elara.app.factory.InOutFactory;
 import org.tools4j.elara.app.factory.Interceptor;
+import org.tools4j.elara.app.factory.OutputFactory;
 import org.tools4j.elara.app.factory.ProcessorFactory;
 import org.tools4j.elara.app.factory.PublisherFactory;
 import org.tools4j.elara.app.factory.SequencerFactory;
@@ -43,7 +43,6 @@ import org.tools4j.elara.flyweight.PayloadType;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.handler.OutputHandler;
-import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.plugin.base.EventIdApplier;
@@ -52,7 +51,9 @@ import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.CommandSender.SendingContext;
-import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.source.InFlightState;
+import org.tools4j.elara.source.SourceContext;
+import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore.Handler.Result;
 import org.tools4j.elara.stream.SendingResult;
@@ -267,12 +268,12 @@ public class MetricsCapturingInterceptor implements Interceptor {
         ) {
             return new SequencerFactory() {
                 @Override
-                public SenderSupplier senderSupplier() {
-                    final SenderSupplier senderSupplier = singletons.get().senderSupplier();
+                public SourceContextProvider sourceContextProvider() {
+                    final SourceContextProvider sourceContextProvider = singletons.get().sourceContextProvider();
                     if (shouldCapture(INPUT_SENDING_TIME) || shouldCapture(INPUT_POLLING_TIME) || shouldCapture(COMMAND_APPENDING_TIME)) {
-                        return timedSenderSupplier(senderSupplier);
+                        return timedSourceContextProvider(sourceContextProvider);
                     }
-                    return senderSupplier;
+                    return sourceContextProvider;
                 }
 
                 @Override
@@ -360,9 +361,9 @@ public class MetricsCapturingInterceptor implements Interceptor {
                     if (shouldCapture(EVENT_APPLIED_FREQUENCY) || shouldCaptureAnyOf(EVENT)) {//includes APPLYING_START_TIME and APPLYING_END_TIME
                         if (eventApplier instanceof EventIdApplier) {
                             final EventIdApplier eventIdApplier = (EventIdApplier)eventApplier;
-                            return (EventIdApplier)(sourceId, sourceSeq, eventSeq, index) -> {
+                            return (EventIdApplier)(sourceId, sourceSeq, eventType, eventSeq, index) -> {
                                 captureTime(APPLYING_START_TIME);
-                                eventIdApplier.onEventId(sourceId, sourceSeq, eventSeq, index);
+                                eventIdApplier.onEventId(sourceId, sourceSeq, eventType, eventSeq, index);
                                 captureTime(APPLYING_END_TIME);
                                 captureCount(EVENT_APPLIED_FREQUENCY);
                                 if (timeMetricsWriter != null) {
@@ -405,39 +406,31 @@ public class MetricsCapturingInterceptor implements Interceptor {
     }
 
     @Override
-    public InOutFactory inOutFactory(final Supplier<? extends InOutFactory> singletons) {
+    public OutputFactory outputFactory(final Supplier<? extends OutputFactory> singletons) {
         requireNonNull(singletons);
         if (shouldCapture(OUTPUT_PUBLISHED_FREQUENCY) || shouldCaptureAnyOf(OUTPUT)) {
-            return new InOutFactory() {
-                @Override
-                public Input[] inputs() {
-                    return singletons.get().inputs();//TODO no interception here?
-                }
-
-                @Override
-                public Output output() {
-                    final Output output = singletons.get().output();
-                    if (output == Output.NOOP) {
-                        return output;
-                    }
-                    if (shouldCapture(OUTPUT_PUBLISHED_FREQUENCY) || shouldCaptureAnyOf(OUTPUT)) {
-                        return (event, replay, retry) -> {
-                            captureTime(OUTPUT_START_TIME);
-                            final Ack ack = output.publish(event, replay, retry);
-                            if (ack == Ack.IGNORED) {
-                                state.clear(OUTPUT_START_TIME);
-                            } else {
-                                captureTime(OUTPUT_END_TIME);
-                                captureCount(OUTPUT_PUBLISHED_FREQUENCY);
-                                if (timeMetricsWriter != null) {
-                                    timeMetricsWriter.writeMetrics(OUTPUT, event);
-                                }
-                            }
-                            return ack;
-                        };
-                    }
+            return () -> {
+                final Output output = singletons.get().output();
+                if (output == Output.NOOP) {
                     return output;
                 }
+                if (shouldCapture(OUTPUT_PUBLISHED_FREQUENCY) || shouldCaptureAnyOf(OUTPUT)) {
+                    return (event, replay, retry) -> {
+                        captureTime(OUTPUT_START_TIME);
+                        final Ack ack = output.publish(event, replay, retry);
+                        if (ack == Ack.IGNORED) {
+                            state.clear(OUTPUT_START_TIME);
+                        } else {
+                            captureTime(OUTPUT_END_TIME);
+                            captureCount(OUTPUT_PUBLISHED_FREQUENCY);
+                            if (timeMetricsWriter != null) {
+                                timeMetricsWriter.writeMetrics(OUTPUT, event);
+                            }
+                        }
+                        return ack;
+                    };
+                }
+                return output;
             };
         }
         return null;
@@ -556,20 +549,51 @@ public class MetricsCapturingInterceptor implements Interceptor {
         }
     }
 
-    private SenderSupplier timedSenderSupplier(final SenderSupplier senderSupplier) {
-        requireNonNull(senderSupplier);
-        return new SenderSupplier() {
-            final TimedCommandSender timedCommandSender = new TimedCommandSender();
+    private SourceContextProvider timedSourceContextProvider(final SourceContextProvider sourceContextProvider) {
+        requireNonNull(sourceContextProvider);
+        return new SourceContextProvider() {
+            final TimedSourceContext timedSourceContext = new TimedSourceContext();
+
             @Override
-            public CommandSender senderFor(final int sourceId) {
-                return timedCommandSender.init(senderSupplier.senderFor(sourceId));
+            public SourceContext sourceContext() {
+                return timedSourceContext.init(sourceContextProvider.sourceContext());
             }
 
             @Override
-            public CommandSender senderFor(final int sourceId, final long sourceSeq) {
-                return timedCommandSender.init(senderSupplier.senderFor(sourceId, sourceSeq));
+            public SourceContext sourceContext(final int sourceId) {
+                return timedSourceContext.init(sourceContextProvider.sourceContext(sourceId));
+            }
+
+            @Override
+            public SourceContext sourceContext(final int sourceId, final long nextSourceSequence) {
+                return timedSourceContext.init(sourceContextProvider.sourceContext(sourceId));
             }
         };
+    }
+
+    private final class TimedSourceContext implements SourceContext {
+        final TimedCommandSender timedCommandSender = new TimedCommandSender();
+        SourceContext sourceContext;
+
+        TimedSourceContext init(final SourceContext sourceContext) {
+            this.sourceContext = requireNonNull(sourceContext);
+            return this;
+        }
+
+        @Override
+        public int sourceId() {
+            return sourceContext.sourceId();
+        }
+
+        @Override
+        public CommandSender commandSender() {
+            return timedCommandSender.init(sourceContext.commandSender());
+        }
+
+        @Override
+        public InFlightState inFlightState() {
+            return sourceContext.inFlightState();
+        }
     }
 
     private final class TimedCommandSender implements CommandSender {

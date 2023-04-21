@@ -21,12 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.input;
+package org.tools4j.elara.source;
 
-import org.tools4j.elara.send.InFlightState;
-import org.tools4j.elara.send.SenderSupplier;
-
-@FunctionalInterface
-public interface StateAwareInput {
-    int poll(InFlightState inFlightState, SenderSupplier senderSupplier);
+public interface SourceContextProvider {
+    SourceContext sourceContext();
+    SourceContext sourceContext(int sourceId);
+    SourceContext sourceContext(int sourceId, long nextSourceSequence);
 }

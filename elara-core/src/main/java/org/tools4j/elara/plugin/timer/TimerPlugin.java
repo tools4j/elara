@@ -31,8 +31,6 @@ import org.tools4j.elara.plugin.api.ReservedPayloadType;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.timer.TimerState.Mutable;
-import org.tools4j.elara.sequence.SequenceGenerator;
-import org.tools4j.elara.sequence.SimpleSequenceGenerator;
 
 import java.util.Objects;
 
@@ -69,21 +67,17 @@ public class TimerPlugin implements SystemPlugin<TimerState.Mutable> {
         return new Configuration.Default() {
             TimerTriggerInput timerTriggerInput;
 
-            SequenceGenerator sourceSeqGenerator(final BaseState baseState) {
-                return new SimpleSequenceGenerator(1 + baseState.lastAppliedCommandSequence(sourceId));
-            }
-
             TimerTriggerInput timerTriggerInput(final BaseState baseState) {
                 if (timerTriggerInput == null) {
-                    timerTriggerInput = new TimerTriggerInput(sourceId, sourceSeqGenerator(baseState),
-                            appConfig.timeSource(), timerState);
+                    timerTriggerInput = new TimerTriggerInput(appConfig.timeSource(), timerState);
                 }
                 return timerTriggerInput;
             }
 
             @Override
-            public Input[] inputs(final BaseState baseState) {
-                return new Input[]{timerTriggerInput(baseState)};
+            public Input input(final BaseState baseState) {
+                final long sourceSeq = 1 + baseState.lastAppliedCommandSequence(sourceId);
+                return Input.single(sourceId, sourceSeq, timerTriggerInput(baseState));
             }
 
             @Override

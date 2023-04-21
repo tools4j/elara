@@ -24,7 +24,6 @@
 package org.tools4j.elara.app.config;
 
 import org.tools4j.elara.app.handler.EventProcessor;
-import org.tools4j.elara.output.Output;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.stream.MessageReceiver;
 
@@ -33,5 +32,4 @@ public interface EventStreamContext extends EventStreamConfig {
     EventStreamContext eventStore(MessageStore.Poller eventStorePoller);
     EventStreamContext eventReceiver(MessageReceiver eventReceiver);
     EventStreamContext eventProcessor(EventProcessor eventProcessor);
-    EventStreamContext output(Output output);
 }

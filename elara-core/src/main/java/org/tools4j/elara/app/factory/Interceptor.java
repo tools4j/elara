@@ -56,7 +56,11 @@ public interface Interceptor {
         return null;
     }
 
-    default InOutFactory inOutFactory(final Supplier<? extends InOutFactory> singletons) {
+    default InputFactory inputFactory(final Supplier<? extends InputFactory> singletons) {
+        return null;
+    }
+
+    default OutputFactory outputFactory(final Supplier<? extends OutputFactory> singletons) {
         return null;
     }
 
@@ -123,8 +127,13 @@ public interface Interceptor {
             }
 
             @Override
-            public InOutFactory inOutFactory(final Supplier<? extends InOutFactory> singletons) {
-                return next.inOutFactory(singletonOrIntercepted(singletons, first.inOutFactory(singletons), Singletons::create));
+            public InputFactory inputFactory(final Supplier<? extends InputFactory> singletons) {
+                return next.inputFactory(singletonOrIntercepted(singletons, first.inputFactory(singletons), Singletons::create));
+            }
+
+            @Override
+            public OutputFactory outputFactory(final Supplier<? extends OutputFactory> singletons) {
+                return next.outputFactory(singletonOrIntercepted(singletons, first.outputFactory(singletons), Singletons::create));
             }
 
             @Override
@@ -182,7 +191,12 @@ public interface Interceptor {
         }
 
         @Override
-        public final InOutFactory inOutFactory(final Supplier<? extends InOutFactory> singletons) {
+        public final InputFactory inputFactory(final Supplier<? extends InputFactory> singletons) {
+            return singletons.get();
+        }
+
+        @Override
+        public OutputFactory outputFactory(final Supplier<? extends OutputFactory> singletons) {
             return singletons.get();
         }
 

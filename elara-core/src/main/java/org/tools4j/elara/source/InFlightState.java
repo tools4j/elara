@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.send;
+package org.tools4j.elara.source;
 
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.EventType;

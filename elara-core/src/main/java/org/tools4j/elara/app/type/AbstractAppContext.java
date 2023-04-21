@@ -33,14 +33,17 @@ import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.exception.ExceptionLogger;
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.input.MultiSourceInput;
+import org.tools4j.elara.input.SingleSourceInput;
+import org.tools4j.elara.input.UniSourceInput;
 import org.tools4j.elara.logging.Logger.Factory;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.plugin.boot.BootCommandInput;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
@@ -53,7 +56,7 @@ import static org.tools4j.elara.logging.OutputStreamLogger.SYSTEM_FACTORY;
 
 abstract class AbstractAppContext<T extends AbstractAppContext<T>> implements AppContext, PluginContext {
 
-    private final List<Input> inputs = new ArrayList<>();
+    private Input input = Input.NOOP;
     private Output output = Output.NOOP;
     private TimeSource timeSource;
     private ExceptionHandler exceptionHandler = ExceptionHandler.systemDefault();
@@ -66,25 +69,32 @@ abstract class AbstractAppContext<T extends AbstractAppContext<T>> implements Ap
 
     abstract protected T self();
 
-    public List<Input> inputs() {
-        return inputs;
+    public Input input() {
+        return input;
     }
 
     public T input(final Input input) {
-        inputs.add(input);
+        return input(input, input instanceof BootCommandInput);
+    }
+
+    private T input(final Input input, final boolean isBoot) {
+        requireNonNull(input);
+        this.input = this.input == Input.NOOP ? input :
+                //we want boot input to be the first to be polled
+                isBoot ? Input.roundRobin(input, this.input) : Input.roundRobin(this.input, input);
         return self();
     }
 
-    public T inputs(final Input... inputs) {
-        for (final Input input : inputs) {
-            input(input);
-        }
-        return self();
+    public T input(final MultiSourceInput input) {
+        return input(Input.multi(input), false);
     }
 
-    public T inputs(final Collection<? extends Input> inputs) {
-        this.inputs.addAll(inputs);
-        return self();
+    public T input(final int sourceId, final UniSourceInput input) {
+        return input(Input.single(sourceId, input), input instanceof BootCommandInput);
+    }
+
+    public T input(final int sourceId, final SingleSourceInput input) {
+        return input(Input.single(sourceId, input), input instanceof BootCommandInput);
     }
 
     public Output output() {

@@ -32,7 +32,7 @@ import org.tools4j.elara.app.type.AllInOneApp;
 import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.input.Input;
+import org.tools4j.elara.input.SingleSourceInput;
 import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.plugin.metrics.MetricsConfig;
@@ -151,14 +151,12 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
         return (event.payload().getLong(0) & 0x1) == 0 ? Ack.COMMIT : Ack.IGNORED;
     }
 
-    public static Input input(final int sourceId, final AtomicLong input) {
+    public static SingleSourceInput input(final AtomicLong input) {
         requireNonNull(input);
-        final AtomicLong seqNo = new AtomicLong();
-        return senderSupplier -> {
+        return (sender, inFlightState) -> {
             final long value = input.getAndSet(NULL_VALUE);
             if (value != NULL_VALUE) {
-                final long seq = seqNo.incrementAndGet();
-                try (final SendingContext context = senderSupplier.senderFor(sourceId, seq).sendingCommand()) {
+                try (final SendingContext context = sender.sendingCommand()) {
                     for (int pos = 0; pos < MESSAGE_LENGTH; pos += Long.BYTES) {
                         context.buffer().putLong(pos, value);
                     }
@@ -172,7 +170,7 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
 
     public static ElaraRunner inMemory(final ModifiableState state, final AtomicLong input) {
         return new HashApplication(state).launch(config -> config
-                .input(input(DEFAULT_SOURCE_ID, input))
+                .input(DEFAULT_SOURCE_ID, input(input))
                 .commandStore(new InMemoryStore())
                 .eventStore(new InMemoryStore())
         );
@@ -188,7 +186,7 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         return new HashApplication(state).launch(config -> config
-                .input(input(DEFAULT_SOURCE_ID, input))
+                .input(DEFAULT_SOURCE_ID, input(input))
                 .commandStore(new ChronicleMessageStore(cq))
                 .eventStore(new ChronicleMessageStore(eq))
         );
@@ -219,7 +217,7 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
                 .build();
 
         return new HashApplication(state).launch(config -> config
-                        .input(input(DEFAULT_SOURCE_ID, input))
+                        .input(DEFAULT_SOURCE_ID, input(input))
                         .commandStore(new ChronicleMessageStore(cq))
                         .eventStore(new ChronicleMessageStore(eq))
                         .timeSource(pseudoNanoClock)
@@ -257,7 +255,7 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
                 .build();
         return new HashApplication(state).launch(config -> config
                 .commandPollingMode(commandPollingMode)
-                .input(input(DEFAULT_SOURCE_ID, input))
+                .input(DEFAULT_SOURCE_ID, input(input))
                 .commandStore(commandPollingMode == NO_STORE ? null : new ChronicleMessageStore(cq))
                 .eventStore(new ChronicleMessageStore(eq))
                 .timeSource(pseudoNanoClock)

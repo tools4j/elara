@@ -25,12 +25,11 @@ package org.tools4j.elara.agent;
 
 import org.agrona.concurrent.Agent;
 import org.tools4j.elara.step.AgentStep;
-import org.tools4j.elara.step.SequencerStep;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Agent for running {@link SequencerStep} and {@link ProcessorAgent processor agent} steps.
+ * Agent for running input sequencer, command processor and event applier step.
  */
 public class CoreAgent implements Agent {
 

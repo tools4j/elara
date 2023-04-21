@@ -25,6 +25,7 @@ package org.tools4j.elara.plugin.base;
 
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.flyweight.EventType;
 
 /**
  * A minimalistic event applier using only the event ID when applying an event.
@@ -34,9 +35,9 @@ public interface EventIdApplier extends EventApplier {
 
     //NOTE: this method may not be invoked at all, so do not override it!
     @Override
-    default void onEvent(final Event event) {
-        onEventId(event.sourceId(), event.sourceSequence(), event.eventSequence(), event.eventIndex());
+    default void onEvent(final Event evt) {
+        onEventId(evt.sourceId(), evt.sourceSequence(), evt.eventType(), evt.eventSequence(), evt.eventIndex());
     }
 
-    void onEventId(int sourceId, long sourceSeq, long eventSeq, int index);
+    void onEventId(int sourceId, long sourceSeq, EventType eventType, long eventSeq, int index);
 }

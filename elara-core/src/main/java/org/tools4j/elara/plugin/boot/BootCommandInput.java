@@ -23,35 +23,23 @@
  */
 package org.tools4j.elara.plugin.boot;
 
-import org.tools4j.elara.input.Input;
-import org.tools4j.elara.send.SenderSupplier;
-import org.tools4j.elara.time.TimeSource;
+import org.tools4j.elara.input.SingleSourceInput;
+import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.source.InFlightState;
 
-import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.boot.BootCommands.BOOT_NOTIFY_APP_START;
 import static org.tools4j.elara.stream.SendingResult.SENT;
 
-public final class BootCommandInput implements Input {
-
-    private final int sourceId;
-    private final long sourceSeq;
-    private final TimeSource timeSource;
+public final class BootCommandInput implements SingleSourceInput {
 
     private boolean commandSent;
 
-    public BootCommandInput(final int sourceId, final long sourceSeq, final TimeSource timeSource) {
-        this.sourceId = sourceId;
-        this.sourceSeq = sourceSeq;
-        this.timeSource = requireNonNull(timeSource);
-        this.commandSent = false;
-    }
-
     @Override
-    public int poll(final SenderSupplier senderSupplier) {
+    public int poll(final CommandSender sender, final InFlightState inFlightState) {
         if (commandSent) {
             return 0;
         }
-        if (SENT == senderSupplier.senderFor(sourceId, sourceSeq).sendCommandWithoutPayload(BOOT_NOTIFY_APP_START)) {
+        if (SENT == sender.sendCommandWithoutPayload(BOOT_NOTIFY_APP_START)) {
             commandSent = true;
         }
         return 1;

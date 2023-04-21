@@ -34,9 +34,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.PayloadType;
+import org.tools4j.elara.plugin.base.DefaultBaseState;
 import org.tools4j.elara.send.CommandAppendingSender;
-import org.tools4j.elara.send.DefaultSenderSupplier;
-import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.source.DefaultSourceContextProvider;
+import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.store.DirectAppender;
 import org.tools4j.elara.store.MessageStore.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
@@ -61,51 +62,52 @@ public class CommandAppendingSenderTest {
     private List<Command> commandStore;
 
     //under test
-    private SenderSupplier senderSupplier;
+    private SourceContextProvider sourceContextProvider;
 
     @BeforeEach
     public void init() {
         commandStore = new ArrayList<>();
-        senderSupplier = new DefaultSenderSupplier(new CommandAppendingSender(timeSource, new DirectAppender() {
-            @Override
-            public AppendingContext appending() {
-                return new AppendingContext() {
-                    MutableDirectBuffer buffer = new ExpandableArrayBuffer();
+        sourceContextProvider = new DefaultSourceContextProvider(new DefaultBaseState(),
+                new CommandAppendingSender(timeSource, new DirectAppender() {
                     @Override
-                    public MutableDirectBuffer buffer() {
-                        return buffer;
-                    }
+                    public AppendingContext appending() {
+                        return new AppendingContext() {
+                            MutableDirectBuffer buffer = new ExpandableArrayBuffer();
+                            @Override
+                            public MutableDirectBuffer buffer() {
+                                return buffer;
+                            }
 
-                    @Override
-                    public void abort() {
-                        buffer = null;
-                    }
+                            @Override
+                            public void abort() {
+                                buffer = null;
+                            }
 
-                    @Override
-                    public void commit(final int length) {
-                        if (buffer != null) {
-                            commandStore.add(new FlyweightCommand().wrap(buffer, 0));
-                            buffer = null;
-                        }
+                            @Override
+                            public void commit(final int length) {
+                                if (buffer != null) {
+                                    commandStore.add(new FlyweightCommand().wrap(buffer, 0));
+                                    buffer = null;
+                                }
+                            }
+
+                            @Override
+                            public boolean isClosed() {
+                                return buffer == null;
+                            }
+                        };
                     }
 
                     @Override
                     public boolean isClosed() {
-                        return buffer == null;
+                        return false;
                     }
-                };
-            }
 
-            @Override
-            public boolean isClosed() {
-                return false;
-            }
-
-            @Override
-            public void close() {
-                //no op
-            }
-        }));
+                    @Override
+                    public void close() {
+                        //no op
+                    }
+                }));
     }
 
     @Test
@@ -121,7 +123,9 @@ public class CommandAppendingSenderTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        senderSupplier.senderFor(sourceIdId, sourceIdSeq).sendCommand(message, offset, length);
+        sourceContextProvider.sourceContext(sourceIdId, sourceIdSeq)
+                .commandSender()
+                .sendCommand(message, offset, length);
 
         //then
         assertEquals(1, commandStore.size(), "commandStore.size");
@@ -142,7 +146,9 @@ public class CommandAppendingSenderTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        senderSupplier.senderFor(sourceId, seq).sendCommand(type, message, offset, length);
+        sourceContextProvider.sourceContext(sourceId, seq)
+                .commandSender()
+                .sendCommand(type, message, offset, length);
 
         //then
         assertCommand(sourceId, seq, commandTime, type, text, commandStore.get(0));

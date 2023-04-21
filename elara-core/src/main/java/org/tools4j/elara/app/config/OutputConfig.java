@@ -21,31 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.agent;
+package org.tools4j.elara.app.config;
 
-import org.agrona.concurrent.Agent;
-import org.tools4j.elara.step.SequencerStep;
+import org.tools4j.elara.output.Output;
 
-import static java.util.Objects.requireNonNull;
-
-/**
- * Agent to Poll all inputs and sequence received messages into the command log.
- */
-public class SequencerAgent implements Agent {
-
-    private final SequencerStep sequencerStep;
-
-    public SequencerAgent(final SequencerStep sequencerStep) {
-        this.sequencerStep = requireNonNull(sequencerStep);
-    }
-
-    @Override
-    public int doWork() throws Exception {
-        return sequencerStep.doWork();
-    }
-
-    @Override
-    public String roleName() {
-        return "elara-seq";
-    }
+public interface OutputConfig {
+    Output output();
 }

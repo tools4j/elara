@@ -24,13 +24,8 @@
 package org.tools4j.elara.plugin.heartbeat;
 
 import org.tools4j.elara.app.config.AppConfig;
-import org.tools4j.elara.app.handler.CommandProcessor;
-import org.tools4j.elara.app.handler.EventApplier;
-import org.tools4j.elara.input.Input;
-import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.api.Plugin.NullState;
-import org.tools4j.elara.plugin.base.BaseState;
 
 import static java.util.Objects.requireNonNull;
 
@@ -48,26 +43,6 @@ public class HeartbeatPlugin implements Plugin<NullState> {
     public Configuration configuration(final AppConfig appConfig, final NullState pluginState) {
         requireNonNull(appConfig);
         requireNonNull(pluginState);
-        return new Configuration.Default() {
-            @Override
-            public Input[] inputs(final BaseState baseState) {
-                return new Input[0];
-            }
-
-            @Override
-            public Output output(final BaseState baseState) {
-                return Output.NOOP;
-            }
-
-            @Override
-            public CommandProcessor commandProcessor(final BaseState baseState) {
-                return null;
-            }
-
-            @Override
-            public EventApplier eventApplier(final BaseState.Mutable baseState) {
-                return EventApplier.NOOP;
-            }
-        };
+        return new Configuration.Default() {};
     }
 }

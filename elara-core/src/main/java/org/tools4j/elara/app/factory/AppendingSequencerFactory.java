@@ -26,10 +26,9 @@ package org.tools4j.elara.app.factory;
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.CommandStoreConfig;
 import org.tools4j.elara.send.CommandAppendingSender;
-import org.tools4j.elara.send.DefaultSenderSupplier;
-import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.source.DefaultSourceContextProvider;
+import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.step.AgentStep;
-import org.tools4j.elara.step.SequencerStep;
 import org.tools4j.elara.store.MessageStore;
 
 import java.util.function.Supplier;
@@ -41,27 +40,31 @@ public class AppendingSequencerFactory implements SequencerFactory {
     private final AppConfig appConfig;
     private final CommandStoreConfig commandStoreConfig;
     private final Supplier<? extends SequencerFactory> sequencerSingletons;
-    private final Supplier<? extends InOutFactory> inOutSingletons;
+    private final Supplier<? extends InputFactory> inOutSingletons;
+    private final Supplier<? extends PluginFactory> pluginSingletons;
 
     public AppendingSequencerFactory(final AppConfig appConfig,
                                      final CommandStoreConfig commandStoreConfig,
                                      final Supplier<? extends SequencerFactory> sequencerSingletons,
-                                     final Supplier<? extends InOutFactory> inOutSingletons) {
+                                     final Supplier<? extends InputFactory> inOutSingletons,
+                                     final Supplier<? extends PluginFactory> pluginSingletons) {
         this.appConfig = requireNonNull(appConfig);
         this.commandStoreConfig = requireNonNull(commandStoreConfig);
         this.sequencerSingletons = requireNonNull(sequencerSingletons);
         this.inOutSingletons = requireNonNull(inOutSingletons);
+        this.pluginSingletons = requireNonNull(pluginSingletons);
     }
 
     @Override
-    public SenderSupplier senderSupplier() {
+    public SourceContextProvider sourceContextProvider() {
         final MessageStore.Appender commandAppender = commandStoreConfig.commandStore().appender();
-        return new DefaultSenderSupplier(new CommandAppendingSender(appConfig.timeSource(), commandAppender));
+        return new DefaultSourceContextProvider(pluginSingletons.get().baseState(),
+                new CommandAppendingSender(appConfig.timeSource(), commandAppender));
     }
 
     @Override
     public AgentStep sequencerStep() {
-        return new SequencerStep(sequencerSingletons.get().senderSupplier(), inOutSingletons.get().inputs());
+        return inOutSingletons.get().input().inputPollerStep(sequencerSingletons.get().sourceContextProvider());
     }
 
 }

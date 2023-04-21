@@ -26,10 +26,9 @@ package org.tools4j.elara.app.factory;
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.EventStoreConfig;
 import org.tools4j.elara.send.CommandPassthroughSender;
-import org.tools4j.elara.send.DefaultSenderSupplier;
-import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.source.DefaultSourceContextProvider;
+import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.step.AgentStep;
-import org.tools4j.elara.step.SequencerStep;
 
 import java.util.function.Supplier;
 
@@ -40,14 +39,14 @@ public class PassthroughSequencerFactory implements SequencerFactory {
     private final AppConfig appConfig;
     private final EventStoreConfig eventStoreConfig;
     private final Supplier<? extends SequencerFactory> sequencerSingletons;
-    private final Supplier<? extends InOutFactory> inOutSingletons;
+    private final Supplier<? extends InputFactory> inOutSingletons;
     private final Supplier<? extends ApplierFactory> applierSingletons;
     private final Supplier<? extends PluginFactory> pluginSingletons;
 
     public PassthroughSequencerFactory(final AppConfig appConfig,
                                        final EventStoreConfig eventStoreConfig,
                                        final Supplier<? extends SequencerFactory> sequencerSingletons,
-                                       final Supplier<? extends InOutFactory> inOutSingletons,
+                                       final Supplier<? extends InputFactory> inOutSingletons,
                                        final Supplier<? extends ApplierFactory> applierSingletons,
                                        final Supplier<? extends PluginFactory> pluginSingletons) {
         this.appConfig = requireNonNull(appConfig);
@@ -59,15 +58,15 @@ public class PassthroughSequencerFactory implements SequencerFactory {
     }
 
     @Override
-    public SenderSupplier senderSupplier() {
+    public SourceContextProvider sourceContextProvider() {
         final CommandPassthroughSender commandSender = new CommandPassthroughSender(
                 appConfig.timeSource(), pluginSingletons.get().baseState(), eventStoreConfig.eventStore().appender(),
                 applierSingletons.get().eventApplier(), appConfig.exceptionHandler(), eventStoreConfig.duplicateHandler());
-        return new DefaultSenderSupplier(commandSender);
+        return new DefaultSourceContextProvider(pluginSingletons.get().baseState(), commandSender);
     }
 
     @Override
     public AgentStep sequencerStep() {
-        return new SequencerStep(sequencerSingletons.get().senderSupplier(), inOutSingletons.get().inputs());
+        return inOutSingletons.get().input().inputPollerStep(sequencerSingletons.get().sourceContextProvider());
     }
 }

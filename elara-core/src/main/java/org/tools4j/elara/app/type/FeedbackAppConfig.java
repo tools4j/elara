@@ -26,10 +26,12 @@ package org.tools4j.elara.app.type;
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.CommandStreamConfig;
 import org.tools4j.elara.app.config.EventStreamConfig;
-import org.tools4j.elara.app.config.InOutConfig;
+import org.tools4j.elara.app.config.InputConfig;
+import org.tools4j.elara.app.config.OutputConfig;
 import org.tools4j.elara.app.config.PluginConfig;
 
-public interface FeedbackAppConfig extends AppConfig, EventStreamConfig, CommandStreamConfig, InOutConfig, PluginConfig {
+public interface FeedbackAppConfig extends AppConfig, EventStreamConfig, CommandStreamConfig, InputConfig, OutputConfig,
+        PluginConfig {
     static FeedbackAppContext configure() {
         return FeedbackAppContext.create();
     }

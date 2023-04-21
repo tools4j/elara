@@ -26,9 +26,7 @@ package org.tools4j.elara.app.config;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.stream.MessageSender;
 
-import java.util.List;
-
 public interface CommandStreamConfig {
     MessageSender commandSender();
-    List<Input> inputs();
+    Input input();
 }

@@ -64,9 +64,9 @@ public class BootPlugin implements SystemPlugin<NullState> {
         requireNonNull(pluginState);
         return new Configuration.Default() {
             @Override
-            public Input[] inputs(final BaseState baseState) {
+            public Input input(final BaseState baseState) {
                 final long sourceSeq = 1 + baseState.lastAppliedCommandSequence(sourceId);
-                return new Input[]{new BootCommandInput(sourceId, sourceSeq, appConfig.timeSource())};
+                return Input.single(sourceId, sourceSeq, new BootCommandInput());
             }
 
             @Override

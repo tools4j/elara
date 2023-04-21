@@ -34,7 +34,7 @@ import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.flyweight.FlyweightEvent;
-import org.tools4j.elara.input.Input;
+import org.tools4j.elara.input.SingleSourceInput;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.plugin.timer.SimpleTimerState;
 import org.tools4j.elara.plugin.timer.TimerCommands;
@@ -44,7 +44,8 @@ import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
-import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.source.InFlightState;
 import org.tools4j.elara.store.InMemoryStore;
 
 import java.time.Instant;
@@ -75,7 +76,7 @@ public class TimerApplication {
         return Elara.launch(AllInOneAppConfig.configure()
                 .commandProcessor(this::process)
                 .eventApplier(eventApplier(eventConsumer))
-                .input(new CommandInput(commandQueue))
+                .input(SOURCE_ID, new CommandInput(commandQueue))
                 .commandStore(new InMemoryStore())
                 .eventStore(new InMemoryStore())
                 .plugin(Plugins.timerPlugin(), timerStateSupplier)
@@ -97,7 +98,7 @@ public class TimerApplication {
         return Elara.launch(AllInOneAppConfig.configure()
                 .commandProcessor(this::process)
                 .eventApplier(eventApplier(eventConsumer))
-                .input(new CommandInput(commandQueue))
+                .input(SOURCE_ID, new CommandInput(commandQueue))
                 .commandStore(new ChronicleMessageStore(cq))
                 .eventStore(new ChronicleMessageStore(eq))
                 .plugin(Plugins.timerPlugin())
@@ -195,7 +196,7 @@ public class TimerApplication {
         return new FlyweightEvent().wrap(buffer, 0);
     }
 
-    private static class CommandInput implements Input {
+    private static class CommandInput implements SingleSourceInput {
         final Queue<DirectBuffer> commands;
 
         CommandInput(final Queue<DirectBuffer> commands) {
@@ -203,10 +204,10 @@ public class TimerApplication {
         }
 
         @Override
-        public int poll(final SenderSupplier senderSupplier) {
+        public int poll(final CommandSender sender, final InFlightState inFlightState) {
             final DirectBuffer command = commands.poll();
             if (command != null) {
-                senderSupplier.senderFor(SOURCE_ID).sendCommand(command, 0, command.capacity());
+                sender.sendCommand(command, 0, command.capacity());
                 return 1;
             }
             return 0;

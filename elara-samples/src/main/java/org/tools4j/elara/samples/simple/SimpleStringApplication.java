@@ -29,11 +29,12 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.app.type.AllInOneApp;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.input.Input;
+import org.tools4j.elara.input.SingleSourceInput;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.run.ElaraRunner;
-import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.source.InFlightState;
 import org.tools4j.elara.store.InMemoryStore;
 
 import java.util.Queue;
@@ -47,7 +48,7 @@ public class SimpleStringApplication implements AllInOneApp, Output {
 
     public ElaraRunner launch(final Queue<String> inputQueue) {
         return launch(config -> config
-                .input(new StringInput(inputQueue))
+                .input(SOURCE_ID, new StringInput(inputQueue))
                 .commandStore(new InMemoryStore())
                 .eventStore(new InMemoryStore())
         );
@@ -77,7 +78,7 @@ public class SimpleStringApplication implements AllInOneApp, Output {
         return "(unknown)";
     }
 
-    private static class StringInput implements Input {
+    private static class StringInput implements SingleSourceInput {
         final Queue<String> strings;
 
         StringInput(final Queue<String> strings) {
@@ -85,12 +86,12 @@ public class SimpleStringApplication implements AllInOneApp, Output {
         }
 
         @Override
-        public int poll(final SenderSupplier senderSupplier) {
+        public int poll(final CommandSender sender, final InFlightState inFlightState) {
             final String msg = strings.poll();
             if (msg != null) {
                 final MutableDirectBuffer buffer = new ExpandableArrayBuffer(msg.length() + 4);
                 final int length = buffer.putStringAscii(0, msg);
-                senderSupplier.senderFor(SOURCE_ID).sendCommand(TYPE_STRING, buffer, 0, length);
+                sender.sendCommand(TYPE_STRING, buffer, 0, length);
                 return 1;
             }
             return 0;

@@ -25,24 +25,17 @@ package org.tools4j.elara.app.factory;
 
 import org.agrona.concurrent.Agent;
 import org.tools4j.elara.agent.PublisherAgent;
-import org.tools4j.elara.app.config.InOutConfig;
 import org.tools4j.elara.app.type.PublisherAppConfig;
-import org.tools4j.elara.input.Input;
-import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.base.BaseState;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
-
-import static java.util.Objects.requireNonNull;
 
 public class PublisherAppFactory implements AppFactory {
 
     private final PluginFactory pluginSingletons;
-    private final InOutFactory inOutSingletons;
+    private final OutputFactory outputSingletons;
     private final PublisherFactory publisherSingletons;
     private final AppFactory appSingletons;
 
@@ -50,33 +43,18 @@ public class PublisherAppFactory implements AppFactory {
         this.pluginSingletons = Singletons.create(new DefaultPluginFactory(config, config, this::pluginSingletons));
 
         final Interceptor interceptor = interceptor(pluginSingletons);
-        this.inOutSingletons = interceptor.inOutFactory(singletonsSupplier(
-                (InOutFactory) new DefaultInOutFactory(config, inOutConfig(config), this::pluginSingletons),
+        this.outputSingletons = interceptor.outputFactory(singletonsSupplier(
+                (OutputFactory) new DefaultOutputFactory(config, config, this::pluginSingletons),
                 Singletons::create
         ));
         this.publisherSingletons = interceptor.publisherFactory(singletonsSupplier(
-                (PublisherFactory)new StreamPublisherFactory(config, config, this::publisherSingletons, this::inOutSingletons, this::pluginSingletons),
+                (PublisherFactory)new StreamPublisherFactory(config, config, this::publisherSingletons,
+                        this::outputSingletons, this::pluginSingletons),
                 Singletons::create
         ));
         this.appSingletons = interceptor.appFactory(singletonsSupplier(
                 appFactory(), Singletons::create
         ));
-    }
-
-    //FIXME don't use InOut if input is not supported
-    private static InOutConfig inOutConfig(final PublisherAppConfig config) {
-        requireNonNull(config);
-        return new InOutConfig() {
-            @Override
-            public List<Input> inputs() {
-                return Collections.emptyList();
-            }
-
-            @Override
-            public Output output() {
-                return config.output();
-            }
-        };
     }
 
     private static Interceptor interceptor(final PluginFactory pluginSingletons) {
@@ -93,8 +71,8 @@ public class PublisherAppFactory implements AppFactory {
         return () -> singletons;
     }
 
-    private InOutFactory inOutSingletons() {
-        return inOutSingletons;
+    private OutputFactory outputSingletons() {
+        return outputSingletons;
     }
 
     private PublisherFactory publisherSingletons() {

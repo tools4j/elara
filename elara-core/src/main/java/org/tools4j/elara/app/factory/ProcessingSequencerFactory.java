@@ -26,10 +26,9 @@ package org.tools4j.elara.app.factory;
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.send.CommandHandlingSender;
-import org.tools4j.elara.send.DefaultSenderSupplier;
-import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.source.DefaultSourceContextProvider;
+import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.step.AgentStep;
-import org.tools4j.elara.step.SequencerStep;
 
 import java.util.function.Supplier;
 
@@ -40,26 +39,30 @@ public class ProcessingSequencerFactory implements SequencerFactory {
     private final AppConfig appConfig;
     private final Supplier<? extends SequencerFactory> sequencerSingletons;
     private final Supplier<? extends ProcessorFactory> processorSingletons;
-    private final Supplier<? extends InOutFactory> inOutSingletons;
+    private final Supplier<? extends InputFactory> inOutSingletons;
+    private final Supplier<? extends PluginFactory> pluginSingletons;
 
     public ProcessingSequencerFactory(final AppConfig appConfig,
                                       final Supplier<? extends SequencerFactory> sequencerSingletons,
                                       final Supplier<? extends ProcessorFactory> processorSingletons,
-                                      final Supplier<? extends InOutFactory> inOutSingletons) {
+                                      final Supplier<? extends InputFactory> inOutSingletons,
+                                      final Supplier<? extends PluginFactory> pluginSingletons) {
         this.appConfig = requireNonNull(appConfig);
         this.sequencerSingletons = requireNonNull(sequencerSingletons);
         this.processorSingletons = requireNonNull(processorSingletons);
         this.inOutSingletons = requireNonNull(inOutSingletons);
+        this.pluginSingletons = requireNonNull(pluginSingletons);
     }
 
     @Override
-    public SenderSupplier senderSupplier() {
+    public SourceContextProvider sourceContextProvider() {
         final CommandHandler commandHandler = processorSingletons.get().commandHandler();
-        return new DefaultSenderSupplier(new CommandHandlingSender(4096, appConfig.timeSource(), commandHandler));
+        return new DefaultSourceContextProvider(pluginSingletons.get().baseState(),
+                new CommandHandlingSender(4096, appConfig.timeSource(), commandHandler));
     }
 
     @Override
     public AgentStep sequencerStep() {
-        return new SequencerStep(sequencerSingletons.get().senderSupplier(), inOutSingletons.get().inputs());
+        return inOutSingletons.get().input().inputPollerStep(sequencerSingletons.get().sourceContextProvider());
     }
 }

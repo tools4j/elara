@@ -21,33 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.step;
+package org.tools4j.elara.input;
 
-import org.agrona.concurrent.Agent;
+import org.tools4j.elara.source.SourceContextProvider;
+import org.tools4j.elara.step.AgentStep;
 
-/**
- * A step or part of an agent's {@link Agent#doWork()} method.
- */
 @FunctionalInterface
-public interface AgentStep {
-    /**
-     * An agent step should implement this method to do its work.
-     * <p>
-     * The return value is used for implementing a backoff strategy that can be employed when no work is
-     * currently available for the agent to process.
-     *
-     * @return 0 to indicate no work was currently available, a positive value otherwise.
-     */
-    int doWork();
-
-    /** Do-nothing step */
-    AgentStep NOOP = () -> 0;
-
-    static AgentStep composite(final AgentStep... steps) {
-        return CompositeStep.simplify(steps);
+public interface MultiSourceInput extends Input {
+    @Override
+    default AgentStep inputPollerStep(final SourceContextProvider sourceContextProvider) {
+        return Input.multi(this).inputPollerStep(sourceContextProvider);
     }
 
-    static AgentStep roundRobin(final AgentStep... steps) {
-        return RoundRobinStep.simplify(steps);
-    }
+    int poll(SourceContextProvider sourceContextProvider);
 }

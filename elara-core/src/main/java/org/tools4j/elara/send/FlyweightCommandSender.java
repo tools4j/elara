@@ -23,19 +23,24 @@
  */
 package org.tools4j.elara.send;
 
-abstract class FlyweightCommandSender implements CommandSender.Default {
+import org.tools4j.elara.sequence.SequenceGenerator;
+
+import static java.util.Objects.requireNonNull;
+
+abstract class FlyweightCommandSender implements CommandSender.Default, SenderSupplier {
 
     private int sourceId;
-    private long sourceSeq;
+    private SequenceGenerator sourceSequenceGenerator;
 
-    FlyweightCommandSender init(final int sourceId, final long sourceSeq) {
+    @Override
+    public CommandSender senderFor(final int sourceId, final SequenceGenerator sourceSequenceGenerator) {
         this.sourceId = sourceId;
-        this.sourceSeq = sourceSeq;
+        this.sourceSequenceGenerator = requireNonNull(sourceSequenceGenerator);
         return this;
     }
 
-    void incrementCommandSequence() {
-        sourceSeq++;
+    void notifySent() {
+        sourceSequenceGenerator.nextSequence();
     }
 
     @Override
@@ -45,6 +50,6 @@ abstract class FlyweightCommandSender implements CommandSender.Default {
 
     @Override
     public long nextCommandSequence() {
-        return sourceSeq;
+        return sourceSequenceGenerator.sequence();
     }
 }

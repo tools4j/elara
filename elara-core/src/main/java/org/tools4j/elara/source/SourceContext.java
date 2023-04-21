@@ -21,14 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.app.config;
+package org.tools4j.elara.source;
 
-import org.tools4j.elara.input.Input;
-import org.tools4j.elara.output.Output;
+import org.tools4j.elara.send.CommandSender;
 
-import java.util.List;
-
-public interface InOutConfig {
-    List<Input> inputs();
-    Output output();
+public interface SourceContext {
+    int sourceId();
+    CommandSender commandSender();
+    InFlightState inFlightState();
 }

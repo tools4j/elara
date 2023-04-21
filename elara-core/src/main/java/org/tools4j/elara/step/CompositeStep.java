@@ -21,38 +21,33 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.send;
-
-import org.agrona.collections.Long2LongCounterMap;
+package org.tools4j.elara.step;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.step.AgentStepMerger.merge;
 
-public class DefaultSenderSupplier implements SenderSupplier {
+/**
+ * An agent step that delegates to an array of steps invoking always all of them exactly once.
+ */
+public final class CompositeStep implements AgentStep {
 
-    public static final long INITIAL_SEQUENCE = 0;
+    private final AgentStep[] steps;
 
-    private final FlyweightCommandSender commandSender;
-    private final Long2LongCounterMap sequenceBySource;
-
-    public DefaultSenderSupplier(final FlyweightCommandSender commandSender) {
-        this.commandSender = requireNonNull(commandSender);
-        this.sequenceBySource = new Long2LongCounterMap(INITIAL_SEQUENCE);
+    public CompositeStep(final AgentStep... steps) {
+        this.steps = requireNonNull(steps);
     }
 
-    public DefaultSenderSupplier(final FlyweightCommandSender commandSender,
-                                 final int initialCapacity,
-                                 final float loadFactor ) {
-        this.commandSender = requireNonNull(commandSender);
-        this.sequenceBySource = new Long2LongCounterMap(initialCapacity, loadFactor, INITIAL_SEQUENCE);
-    }
-
-    @Override
-    public CommandSender senderFor(final int sourceId) {
-        return senderFor(sourceId, sequenceBySource.getAndIncrement(sourceId));
+    public static AgentStep simplify(final AgentStep... steps) {
+        return new CompositeStep(merge(step -> step instanceof CompositeStep ? ((CompositeStep)step).steps : null,
+                steps));
     }
 
     @Override
-    public CommandSender senderFor(final int sourceId, final long sourceSeq) {
-        return commandSender.init(sourceId, sourceSeq);
+    public int doWork() {
+        int workDone = 0;
+        for (final AgentStep step : steps) {
+            workDone += step.doWork();
+        }
+        return workDone;
     }
 }

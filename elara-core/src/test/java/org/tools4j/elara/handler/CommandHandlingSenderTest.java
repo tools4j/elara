@@ -33,9 +33,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.PayloadType;
+import org.tools4j.elara.plugin.base.DefaultBaseState;
 import org.tools4j.elara.send.CommandHandlingSender;
-import org.tools4j.elara.send.DefaultSenderSupplier;
-import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.source.DefaultSourceContextProvider;
+import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.store.MessageStore.Handler.Result;
 import org.tools4j.elara.time.TimeSource;
 
@@ -61,17 +62,18 @@ public class CommandHandlingSenderTest {
     private List<Command> commandStore;
 
     //under test
-    private SenderSupplier senderSupplier;
+    private SourceContextProvider sourceContextProvider;
 
     @BeforeEach
     public void init() {
         commandStore = new ArrayList<>();
-        senderSupplier = new DefaultSenderSupplier(new CommandHandlingSender(INITIAL_BUFFER_CAPACITY, timeSource, command -> {
-            final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer();
-            command.writeTo(buffer, 0);
-            commandStore.add(new FlyweightCommand().wrap(buffer, 0));
-            return Result.POLL;
-        }));
+        sourceContextProvider = new DefaultSourceContextProvider(new DefaultBaseState(),
+                new CommandHandlingSender(INITIAL_BUFFER_CAPACITY, timeSource, command -> {
+                    final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer();
+                    command.writeTo(buffer, 0);
+                    commandStore.add(new FlyweightCommand().wrap(buffer, 0));
+                    return Result.POLL;
+                }));
     }
 
     @Test
@@ -87,7 +89,9 @@ public class CommandHandlingSenderTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        senderSupplier.senderFor(sourceId, seq).sendCommand(message, offset, length);
+        sourceContextProvider.sourceContext(sourceId, seq)
+                .commandSender()
+                .sendCommand(message, offset, length);
 
         //then
         assertEquals(1, commandStore.size(), "commandStore.size");
@@ -108,7 +112,9 @@ public class CommandHandlingSenderTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        senderSupplier.senderFor(sourceId, seq).sendCommand(type, message, offset, length);
+        sourceContextProvider.sourceContext(sourceId, seq)
+                .commandSender()
+                .sendCommand(type, message, offset, length);
 
         //then
         assertCommand(sourceId, seq, commandTime, type, text, commandStore.get(0));
@@ -128,7 +134,9 @@ public class CommandHandlingSenderTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        senderSupplier.senderFor(sourceId, seq).sendCommand(type, message, offset, length);
+        sourceContextProvider.sourceContext(sourceId, seq)
+                .commandSender()
+                .sendCommand(type, message, offset, length);
 
         //then
         assertCommand(sourceId, seq, commandTime, type, text, commandStore.get(0));
@@ -144,7 +152,9 @@ public class CommandHandlingSenderTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        senderSupplier.senderFor(sourceId, seq).sendCommandWithoutPayload(type);
+        sourceContextProvider.sourceContext(sourceId, seq)
+                .commandSender()
+                .sendCommandWithoutPayload(type);
 
         //then
         assertCommand(sourceId, seq, commandTime, type, null, commandStore.get(0));

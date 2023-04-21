@@ -27,6 +27,7 @@ import org.agrona.concurrent.IdleStrategy;
 import org.tools4j.elara.app.config.AppContext;
 import org.tools4j.elara.app.config.EventStreamContext;
 import org.tools4j.elara.app.config.ExecutionType;
+import org.tools4j.elara.app.config.OutputContext;
 import org.tools4j.elara.app.config.PluginContext;
 import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.exception.ExceptionHandler;
@@ -42,7 +43,8 @@ import org.tools4j.elara.time.TimeSource;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public interface PublisherAppContext extends PublisherAppConfig, AppContext, EventStreamContext, PluginContext {
+public interface PublisherAppContext extends PublisherAppConfig, AppContext, EventStreamContext, OutputContext,
+        PluginContext {
 
     @Override
     PublisherAppContext eventStore(MessageStore eventStore);

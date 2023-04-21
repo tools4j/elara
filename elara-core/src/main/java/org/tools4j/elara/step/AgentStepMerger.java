@@ -23,31 +23,40 @@
  */
 package org.tools4j.elara.step;
 
-import org.agrona.concurrent.Agent;
+import java.util.function.Function;
 
-/**
- * A step or part of an agent's {@link Agent#doWork()} method.
- */
-@FunctionalInterface
-public interface AgentStep {
-    /**
-     * An agent step should implement this method to do its work.
-     * <p>
-     * The return value is used for implementing a backoff strategy that can be employed when no work is
-     * currently available for the agent to process.
-     *
-     * @return 0 to indicate no work was currently available, a positive value otherwise.
-     */
-    int doWork();
+enum AgentStepMerger {
+    ;
 
-    /** Do-nothing step */
-    AgentStep NOOP = () -> 0;
-
-    static AgentStep composite(final AgentStep... steps) {
-        return CompositeStep.simplify(steps);
+    static boolean isNoOp(final AgentStep step) {
+        return step == null || step == AgentStep.NOOP;
     }
 
-    static AgentStep roundRobin(final AgentStep... steps) {
-        return RoundRobinStep.simplify(steps);
+    static AgentStep[] merge(final Function<AgentStep, AgentStep[]> exploder,
+                             final AgentStep... steps) {
+        int increment = 0;
+        for (final AgentStep step : steps) {
+            final AgentStep[] exploded = exploder.apply(step);
+            increment += exploded == null ? isNoOp(step) ? -1 : 0 : exploded.length - 1;
+        }
+        if (increment == 0) {
+            return steps;
+        }
+        final AgentStep[] merged = new AgentStep[steps.length + increment];
+        int index = 0;
+        for (final AgentStep step : steps) {
+            final AgentStep[] exploded = exploder.apply(step);
+            if (exploded != null) {
+                for (final AgentStep explodedStep : exploded) {
+                    merged[index] = explodedStep;
+                    index++;
+                }
+            } else if (!isNoOp(step)) {
+                merged[index] = step;
+                index++;
+            }
+        }
+        assert index == merged.length;
+        return merged;
     }
 }

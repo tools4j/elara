@@ -23,35 +23,36 @@
  */
 package org.tools4j.elara.step;
 
-import org.tools4j.elara.input.Input;
-import org.tools4j.elara.send.SenderSupplier;
-
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.step.AgentStepMerger.merge;
 
 /**
- * Polls all inputs, sequences received messages and send them as commands using the command sender.
- * Depending on the command sender type, the command processor is either directly invoked, or the command is appended to
- * the command queue.
+ * An agent step that delegates to an array of steps invoking them in a round-robin fashion.  At each invocation the
+ * round-robin step iterates at most all delegate steps once and only until one step does some work.
  */
-public final class SequencerStep implements AgentStep {
+public final class RoundRobinStep implements AgentStep {
 
-    private final SenderSupplier senderSupplier;
-    private final Input[] inputs;
+    private final AgentStep[] steps;
 
     private int roundRobinIndex = 0;
 
-    public SequencerStep(final SenderSupplier senderSupplier, final Input... inputs) {
-        this.senderSupplier = requireNonNull(senderSupplier);
-        this.inputs = requireNonNull(inputs);
+    public RoundRobinStep(final AgentStep... steps) {
+        this.steps = requireNonNull(steps);
+    }
+
+    public static AgentStep simplify(final AgentStep... steps) {
+        return new RoundRobinStep(merge(step -> step instanceof RoundRobinStep ? ((RoundRobinStep)step).steps : null,
+                steps));
     }
 
     @Override
     public int doWork() {
-        final int count = inputs.length;
+        final int count = steps.length;
         for (int i = 0; i < count; i++) {
             final int index = getAndIncrementRoundRobinIndex(count);
-            if (inputs[index].poll(senderSupplier) > 0) {
-                return 1;
+            final int work = steps[index].doWork();
+            if (work > 0) {
+                return work;
             }
         }
         return 0;

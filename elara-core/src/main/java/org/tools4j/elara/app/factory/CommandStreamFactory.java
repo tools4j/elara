@@ -23,10 +23,10 @@
  */
 package org.tools4j.elara.app.factory;
 
-import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.step.AgentStep;
 
 public interface CommandStreamFactory {
-    SenderSupplier senderSupplier();
+    SourceContextProvider sourceContextProvider();
     AgentStep inputPollerStep();
 }

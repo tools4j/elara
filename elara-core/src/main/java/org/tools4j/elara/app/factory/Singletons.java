@@ -36,7 +36,7 @@ import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin.Configuration;
 import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.base.BaseState.Mutable;
-import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.stream.MessageStream;
 
@@ -78,8 +78,8 @@ final class Singletons {
         final Singletons singletons = new Singletons();
         return new SequencerFactory() {
             @Override
-            public SenderSupplier senderSupplier() {
-                return singletons.getOrCreate("senderSupplier", SenderSupplier.class, factory, SequencerFactory::senderSupplier);
+            public SourceContextProvider sourceContextProvider() {
+                return singletons.getOrCreate("sourceContextProvider", SourceContextProvider.class, factory, SequencerFactory::sourceContextProvider);
             }
 
             @Override
@@ -144,8 +144,8 @@ final class Singletons {
         //noinspection Convert2Lambda
         return new CommandStreamFactory() {
             @Override
-            public SenderSupplier senderSupplier() {
-                return singletons.getOrCreate("senderSupplier", SenderSupplier.class, factory, CommandStreamFactory::senderSupplier);
+            public SourceContextProvider sourceContextProvider() {
+                return singletons.getOrCreate("sourceContextProvider", SourceContextProvider.class, factory, CommandStreamFactory::sourceContextProvider);
             }
 
             @Override
@@ -193,20 +193,16 @@ final class Singletons {
         };
     }
 
-    static InOutFactory create(final InOutFactory factory) {
+    static InputFactory create(final InputFactory factory) {
         requireNonNull(factory);
         final Singletons singletons = new Singletons();
-        return new InOutFactory() {
-            @Override
-            public Input[] inputs() {
-                return singletons.getOrCreate("inputs", Input[].class, factory, InOutFactory::inputs);
-            }
+        return () -> singletons.getOrCreate("input", Input.class, factory, InputFactory::input);
+    }
 
-            @Override
-            public Output output() {
-                return singletons.getOrCreate("output", Output.class, factory, InOutFactory::output);
-            }
-        };
+    static OutputFactory create(final OutputFactory factory) {
+        requireNonNull(factory);
+        final Singletons singletons = new Singletons();
+        return () -> singletons.getOrCreate("output", Output.class, factory, OutputFactory::output);
     }
 
     static PublisherFactory create(final PublisherFactory factory) {

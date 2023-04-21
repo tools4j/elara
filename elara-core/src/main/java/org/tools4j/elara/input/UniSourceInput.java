@@ -21,12 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.app.factory;
+package org.tools4j.elara.input;
 
-import org.tools4j.elara.input.Input;
-import org.tools4j.elara.output.Output;
+import org.tools4j.elara.source.SourceContext;
+import org.tools4j.elara.source.SourceContextProvider;
+import org.tools4j.elara.step.AgentStep;
 
-public interface InOutFactory {
-    Input[] inputs();
-    Output output();
+@FunctionalInterface
+public interface UniSourceInput extends Input {
+    @Override
+    default AgentStep inputPollerStep(final SourceContextProvider sourceContextProvider) {
+        return Input.single(this).inputPollerStep(sourceContextProvider);
+    }
+    int poll(SourceContext sourceContext);
 }

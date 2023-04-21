@@ -23,9 +23,58 @@
  */
 package org.tools4j.elara.input;
 
-import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.source.SourceContextProvider;
+import org.tools4j.elara.step.AgentStep;
+
+import java.util.function.Function;
+
+import static java.util.Objects.requireNonNull;
 
 @FunctionalInterface
 public interface Input {
-    int poll(SenderSupplier senderSupplier);
+
+    AgentStep inputPollerStep(SourceContextProvider sourceContextProvider);
+
+    Input NOOP = sourceContextProvider -> AgentStep.NOOP;
+
+    static Input single(final UniSourceInput input) {
+        requireNonNull(input);
+        return sourceContextProvider -> () -> input.poll(sourceContextProvider.sourceContext());
+    }
+
+    static Input single(final int sourceId, final UniSourceInput input) {
+        requireNonNull(input);
+        return sourceContextProvider -> () -> input.poll(sourceContextProvider.sourceContext(sourceId));
+    }
+
+    static Input single(final int sourceId, final long initialSourceSequence, final UniSourceInput input) {
+        requireNonNull(input);
+        return sourceContextProvider -> () -> input.poll(sourceContextProvider.sourceContext(sourceId, initialSourceSequence));
+    }
+
+    static Input multi(final MultiSourceInput input) {
+        requireNonNull(input);
+        return sourceContextProvider -> () -> input.poll(sourceContextProvider);
+    }
+
+    static Input composite(final Input... inputs) {
+        return aggregate(AgentStep::composite, inputs);
+    }
+
+    static Input roundRobin(final Input... inputs) {
+        return aggregate(AgentStep::roundRobin, inputs);
+    }
+
+    static Input aggregate(final Function<? super AgentStep[], ? extends AgentStep> aggregator,
+                           final Input... inputs) {
+        requireNonNull(aggregator);
+        requireNonNull(inputs);
+        return sourceContextProvider -> {
+            final AgentStep[] steps = new AgentStep[inputs.length];
+            for (int i = 0; i < steps.length; i++) {
+                steps[i] = inputs[i].inputPollerStep(sourceContextProvider);
+            }
+            return aggregator.apply(steps);
+        };
+    }
 }

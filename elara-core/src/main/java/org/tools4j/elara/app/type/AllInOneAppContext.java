@@ -30,7 +30,8 @@ import org.tools4j.elara.app.config.CommandPollingMode;
 import org.tools4j.elara.app.config.CommandStoreContext;
 import org.tools4j.elara.app.config.EventStoreContext;
 import org.tools4j.elara.app.config.ExecutionType;
-import org.tools4j.elara.app.config.InOutContext;
+import org.tools4j.elara.app.config.InputContext;
+import org.tools4j.elara.app.config.OutputContext;
 import org.tools4j.elara.app.config.PluginContext;
 import org.tools4j.elara.app.config.ProcessorContext;
 import org.tools4j.elara.app.handler.CommandProcessor;
@@ -38,6 +39,9 @@ import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.input.MultiSourceInput;
+import org.tools4j.elara.input.SingleSourceInput;
+import org.tools4j.elara.input.UniSourceInput;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
@@ -45,17 +49,19 @@ import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.time.TimeSource;
 
-import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public interface AllInOneAppContext extends AllInOneAppConfig, AppContext, CommandStoreContext, EventStoreContext, ProcessorContext, ApplierContext, InOutContext, PluginContext {
+public interface AllInOneAppContext extends AllInOneAppConfig, AppContext, CommandStoreContext, EventStoreContext,
+        ProcessorContext, ApplierContext, InputContext, OutputContext, PluginContext {
     @Override
     AllInOneAppContext input(Input input);
     @Override
-    AllInOneAppContext inputs(Input... inputs);
+    AllInOneAppContext input(MultiSourceInput input);
     @Override
-    AllInOneAppContext inputs(Collection<? extends Input> inputs);
+    AllInOneAppContext input(int sourceId, UniSourceInput input);
+    @Override
+    AllInOneAppContext input(int sourceId, SingleSourceInput input);
     @Override
     AllInOneAppContext output(Output output);
     @Override

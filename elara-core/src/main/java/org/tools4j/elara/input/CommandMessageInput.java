@@ -27,20 +27,20 @@ import org.agrona.DirectBuffer;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.send.CommandSender;
-import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageReceiver.Handler;
 
 import static java.util.Objects.requireNonNull;
 
-public class CommandMessageInput implements Input {
+public class CommandMessageInput implements MultiSourceInput {
 
     private final MessageReceiver messageReceiver;
     private final ExceptionHandler exceptionHandler;
     private final Handler handler = this::onMessage;
     private final FlyweightCommand command = new FlyweightCommand();
 
-    private SenderSupplier senderSupplier;
+    private SourceContextProvider sourceContextProvider;
 
     public CommandMessageInput(final MessageReceiver messageReceiver, final ExceptionHandler exceptionHandler) {
         this.messageReceiver = requireNonNull(messageReceiver);
@@ -48,10 +48,10 @@ public class CommandMessageInput implements Input {
     }
 
     @Override
-    public int poll(final SenderSupplier senderSupplier) {
-        requireNonNull(senderSupplier);
-        if (this.senderSupplier != senderSupplier) {
-            this.senderSupplier = senderSupplier;
+    public int poll(final SourceContextProvider sourceContextProvider) {
+        requireNonNull(sourceContextProvider);
+        if (this.sourceContextProvider != sourceContextProvider) {
+            this.sourceContextProvider = sourceContextProvider;
         }
         return messageReceiver.poll(handler);
     }
@@ -59,7 +59,9 @@ public class CommandMessageInput implements Input {
     private void onMessage(final DirectBuffer message) {
         try {
             command.wrap(message, 0);
-            final CommandSender commandSender = senderSupplier.senderFor(command.sourceId(), command.sourceSequence());
+            final CommandSender commandSender = sourceContextProvider
+                    .sourceContext(command.sourceId(), command.sourceSequence())
+                    .commandSender();
             commandSender.sendCommand(command.payloadType(), command.payload(), 0, command.payload().capacity());
         } catch (final Exception e) {
             exceptionHandler.handleException("Unhandled exception when receiving command input message", null, e);

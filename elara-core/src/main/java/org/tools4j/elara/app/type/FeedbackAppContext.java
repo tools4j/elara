@@ -28,10 +28,15 @@ import org.tools4j.elara.app.config.AppContext;
 import org.tools4j.elara.app.config.CommandStreamContext;
 import org.tools4j.elara.app.config.EventStreamContext;
 import org.tools4j.elara.app.config.ExecutionType;
+import org.tools4j.elara.app.config.InputContext;
+import org.tools4j.elara.app.config.OutputContext;
 import org.tools4j.elara.app.config.PluginContext;
 import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.input.MultiSourceInput;
+import org.tools4j.elara.input.SingleSourceInput;
+import org.tools4j.elara.input.UniSourceInput;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
@@ -42,11 +47,11 @@ import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.time.TimeSource;
 
-import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public interface FeedbackAppContext extends FeedbackAppConfig, AppContext, EventStreamContext, CommandStreamContext, PluginContext {
+public interface FeedbackAppContext extends FeedbackAppConfig, AppContext, EventStreamContext, CommandStreamContext,
+        InputContext, OutputContext, PluginContext {
 
     @Override
     FeedbackAppContext eventStore(MessageStore eventStore);
@@ -64,9 +69,11 @@ public interface FeedbackAppContext extends FeedbackAppConfig, AppContext, Event
     @Override
     FeedbackAppContext input(Input input);
     @Override
-    FeedbackAppContext inputs(Input... inputs);
+    FeedbackAppContext input(MultiSourceInput input);
     @Override
-    FeedbackAppContext inputs(Collection<? extends Input> inputs);
+    FeedbackAppContext input(int sourceId, UniSourceInput input);
+    @Override
+    FeedbackAppContext input(int sourceId, SingleSourceInput input);
     @Override
     FeedbackAppContext output(Output output);
 

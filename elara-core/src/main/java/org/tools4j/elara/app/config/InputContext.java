@@ -24,13 +24,13 @@
 package org.tools4j.elara.app.config;
 
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.output.Output;
+import org.tools4j.elara.input.MultiSourceInput;
+import org.tools4j.elara.input.SingleSourceInput;
+import org.tools4j.elara.input.UniSourceInput;
 
-import java.util.Collection;
-
-public interface InOutContext extends InOutConfig {
-    InOutContext input(Input input);
-    InOutContext inputs(Input... inputs);
-    InOutContext inputs(Collection<? extends Input> inputs);
-    InOutContext output(Output output);
+public interface InputContext extends InputConfig {
+    InputContext input(Input input);
+    InputContext input(MultiSourceInput input);
+    InputContext input(int sourceId, UniSourceInput input);
+    InputContext input(int sourceId, SingleSourceInput input);
 }

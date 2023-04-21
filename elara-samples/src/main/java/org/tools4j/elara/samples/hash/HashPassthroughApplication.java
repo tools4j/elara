@@ -116,7 +116,7 @@ public class HashPassthroughApplication implements PassthroughApp {
                 .inputSendingTimeExtractor((sourceId, sequence, type, buffer, offset, length) -> pseudoNanoClock.currentTime() - 100_000)//for testing only
                 .timeMetricsStore(new ChronicleMessageStore(tq));
         return new HashPassthroughApplication().launch(context -> context
-                .input(HashApplication.input(SOURCE_ID, input))
+                .input(SOURCE_ID, HashApplication.input(input))
                 .eventStore(new ChronicleMessageStore(eq))
                 .timeSource(pseudoNanoClock)
                 .idleStrategy(BusySpinIdleStrategy.INSTANCE)

@@ -23,8 +23,19 @@
  */
 package org.tools4j.elara.sequence;
 
-@FunctionalInterface
 public interface SequenceGenerator {
     long NIL_SEQUENCE = -1;
+    long MIN_SEQUENCE = 0;
+    long MAX_SEQUENCE = Long.MAX_VALUE;
+    long sequence();
     long nextSequence();
+    long nextSequence(long sequence);
+
+    static SequenceGenerator create() {
+        return new SimpleSequenceGenerator();
+    }
+
+    static SequenceGenerator create(final long minSequence) {
+        return new SimpleSequenceGenerator(minSequence);
+    }
 }

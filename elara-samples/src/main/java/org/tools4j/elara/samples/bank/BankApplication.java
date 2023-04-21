@@ -28,7 +28,8 @@ import org.tools4j.elara.app.type.AllInOneApp;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.exception.DuplicateHandler;
-import org.tools4j.elara.input.Input;
+import org.tools4j.elara.input.SingleSourceInput;
+import org.tools4j.elara.input.UniSourceInput;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.route.EventRouter;
@@ -39,7 +40,8 @@ import org.tools4j.elara.samples.bank.command.BankCommand;
 import org.tools4j.elara.samples.bank.command.CommandType;
 import org.tools4j.elara.samples.bank.event.EventType;
 import org.tools4j.elara.samples.bank.state.Bank;
-import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.source.InFlightState;
 import org.tools4j.elara.store.InMemoryStore;
 import org.tools4j.elara.store.MessageStore;
 
@@ -73,11 +75,11 @@ public class BankApplication implements AllInOneApp, Output {
         return launch(new CommandInput(inputQueue), commandStore, eventStore);
     }
 
-    public ElaraRunner launch(final Input input,
+    public ElaraRunner launch(final UniSourceInput input,
                               final MessageStore commandStore,
                               final MessageStore eventStore) {
         return launch(config -> config
-                .input(input)
+                .input(SOURCE_ID, input)
                 .commandStore(commandStore)
                 .eventStore(eventStore)
                 .duplicateHandler(duplicateHandler)
@@ -130,7 +132,7 @@ public class BankApplication implements AllInOneApp, Output {
         return "(unknown)";
     }
 
-    private static class CommandInput implements Input {
+    private static class CommandInput implements SingleSourceInput {
         final Queue<BankCommand> commands;
 
         CommandInput(final Queue<BankCommand> commands) {
@@ -138,12 +140,12 @@ public class BankApplication implements AllInOneApp, Output {
         }
 
         @Override
-        public int poll(final SenderSupplier senderSupplier) {
+        public int poll(final CommandSender sender, final InFlightState inFlightState) {
             final BankCommand cmd = commands.poll();
             if (cmd != null) {
                 final int type = cmd.type().value;
                 final DirectBuffer encoded = cmd.encode();
-                senderSupplier.senderFor(SOURCE_ID).sendCommand(type, encoded, 0, encoded.capacity());
+                sender.sendCommand(type, encoded, 0, encoded.capacity());
                 return 1;
             }
             return 0;

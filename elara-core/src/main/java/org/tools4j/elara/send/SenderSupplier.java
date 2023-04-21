@@ -23,11 +23,9 @@
  */
 package org.tools4j.elara.send;
 
-/**
- * Provides a {@link CommandSender} for a given input source. A sender supplier is passed to the poll method of an
- * {@link org.tools4j.elara.input.Input Input}.
- */
+import org.tools4j.elara.sequence.SequenceGenerator;
+
+@FunctionalInterface
 public interface SenderSupplier {
-    CommandSender senderFor(int sourceId);
-    CommandSender senderFor(int sourceId, long sourceSeq);
+    CommandSender senderFor(int sourceId, SequenceGenerator sourceSequenceGenerator);
 }

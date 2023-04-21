@@ -43,7 +43,6 @@ import static java.util.Objects.requireNonNull;
  */
 public interface Plugin<P> {
 
-    Input[] NO_INPUTS = {};
     Plugin.Dependency<?>[] NO_DEPENDENCIES = {};
     Consumer<Object> STATE_UNAWARE = state -> {};
 
@@ -56,7 +55,7 @@ public interface Plugin<P> {
 
     interface Configuration {
         AgentStep step(BaseState baseState, ExecutionType executionType);
-        Input[] inputs(BaseState baseState);
+        Input input(BaseState baseState);
         Output output(BaseState baseState);
         CommandProcessor commandProcessor(BaseState baseState);
         EventApplier eventApplier(BaseState.Mutable baseState);
@@ -66,7 +65,7 @@ public interface Plugin<P> {
             @Override
             default AgentStep step(final BaseState baseState, final ExecutionType executionType) {return AgentStep.NOOP;}
             @Override
-            default Input[] inputs(final BaseState baseState) {return NO_INPUTS;}
+            default Input input(final BaseState baseState) {return Input.NOOP;}
             @Override
             default Output output(final BaseState baseState) {return Output.NOOP;}
             @Override

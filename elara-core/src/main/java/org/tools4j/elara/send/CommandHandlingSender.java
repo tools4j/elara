@@ -71,7 +71,7 @@ public final class CommandHandlingSender extends FlyweightCommandSender {
     public SendingResult sendCommand(final int payloadType, final DirectBuffer buffer, final int offset, final int length) {
         initHeader(sourceId(), nextCommandSequence(), payloadType, length);
         invokeCommandHandler(buffer, offset, length);//TODO handle result value here
-        incrementCommandSequence();
+        notifySent();
         return SendingResult.SENT;
     }
 
@@ -146,7 +146,7 @@ public final class CommandHandlingSender extends FlyweightCommandSender {
                     FlyweightCommand.writePayloadSize(length, header);
                 }
                 invokeCommandHandler(payload, 0, length);//TODO handler result value here
-                incrementCommandSequence();
+                notifySent();
                 return SendingResult.SENT;
             } finally {
                 command.reset();

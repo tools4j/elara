@@ -108,7 +108,7 @@ public final class CommandMessageSender extends FlyweightCommandSender {
                     FlyweightCommand.writePayloadSize(length, mc.buffer());
                 }
                 final SendingResult result = mc.send(HEADER_LENGTH + length);
-                incrementCommandSequence();
+                notifySent();
                 return result;
             } finally {
                 context = null;

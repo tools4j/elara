@@ -39,7 +39,8 @@ public class PassthroughAppFactory implements AppFactory {
     private final PluginFactory pluginSingletons;
     private final SequencerFactory sequencerSingletons;
     private final ApplierFactory applierSingletons;
-    private final InOutFactory inOutSingletons;
+    private final InputFactory inputSingletons;
+    private final OutputFactory outputSingletons;
     private final PublisherFactory publisherSingletons;
     private final AgentStepFactory agentStepSingletons;
     private final AppFactory appSingletons;
@@ -50,7 +51,7 @@ public class PassthroughAppFactory implements AppFactory {
         final Interceptor interceptor = interceptor(pluginSingletons);
         this.sequencerSingletons = interceptor.sequencerFactory(singletonsSupplier(
                 (SequencerFactory) new PassthroughSequencerFactory(
-                        config, config, this::sequencerSingletons, this::inOutSingletons, this::applierSingletons, this::pluginSingletons
+                        config, config, this::sequencerSingletons, this::inputSingletons, this::applierSingletons, this::pluginSingletons
                 ),
                 Singletons::create
         ));
@@ -58,12 +59,17 @@ public class PassthroughAppFactory implements AppFactory {
                 (ApplierFactory) new DefaultApplierFactory(config, applierConfig(), config, this::applierSingletons, this::pluginSingletons),
                 Singletons::create
         ));
-        this.inOutSingletons = interceptor.inOutFactory(singletonsSupplier(
-                (InOutFactory) new DefaultInOutFactory(config, config, this::pluginSingletons),
+        this.inputSingletons = interceptor.inputFactory(singletonsSupplier(
+                (InputFactory) new DefaultInputFactory(config, this::pluginSingletons),
+                Singletons::create
+        ));
+        this.outputSingletons = interceptor.outputFactory(singletonsSupplier(
+                (OutputFactory) new DefaultOutputFactory(config, config, this::pluginSingletons),
                 Singletons::create
         ));
         this.publisherSingletons = interceptor.publisherFactory(singletonsSupplier(
-                (PublisherFactory)new DefaultPublisherFactory(config, config, this::publisherSingletons, this::inOutSingletons, this::pluginSingletons),
+                (PublisherFactory)new DefaultPublisherFactory(config, config, this::publisherSingletons,
+                        this::outputSingletons, this::pluginSingletons),
                 Singletons::create
         ));
         this.agentStepSingletons = interceptor.agentStepFactory(singletonsSupplier(
@@ -85,7 +91,7 @@ public class PassthroughAppFactory implements AppFactory {
     }
 
     private ApplierConfig applierConfig() {
-        final EventIdApplier eventIdApplier = pluginSingletons().baseState()::applyEvent;
+        final EventIdApplier eventIdApplier = (sourceId, sourceSeq, eventType, eventSeq, index) -> pluginSingletons().baseState().applyEvent(sourceId, sourceSeq, eventSeq, index);
         return () -> eventIdApplier;
     }
 
@@ -98,8 +104,12 @@ public class PassthroughAppFactory implements AppFactory {
         return applierSingletons;
     }
 
-    private InOutFactory inOutSingletons() {
-        return inOutSingletons;
+    private InputFactory inputSingletons() {
+        return inputSingletons;
+    }
+
+    private OutputFactory outputSingletons() {
+        return outputSingletons;
     }
 
     private SequencerFactory sequencerSingletons() {

@@ -39,7 +39,8 @@ public class AllInOneAppFactory implements AppFactory {
     private final SequencerFactory sequencerSingletons;
     private final ProcessorFactory processorSingletons;
     private final ApplierFactory applierSingletons;
-    private final InOutFactory inOutSingletons;
+    private final InputFactory inputSingletons;
+    private final OutputFactory outputSingletons;
     private final CommandPollerFactory commandPollerSingletons;
     private final PublisherFactory publisherSingletons;
     private final AgentStepFactory agentStepSingletons;
@@ -51,8 +52,8 @@ public class AllInOneAppFactory implements AppFactory {
         final Interceptor interceptor = interceptor(pluginSingletons);
         this.sequencerSingletons = interceptor.sequencerFactory(singletonsSupplier(
                 config.commandPollingMode() == CommandPollingMode.NO_STORE ?
-                        new ProcessingSequencerFactory(config, this::sequencerSingletons, this::processorSingletons, this::inOutSingletons) :
-                        new AppendingSequencerFactory(config, config, this::sequencerSingletons, this::inOutSingletons),
+                        new ProcessingSequencerFactory(config, this::sequencerSingletons, this::processorSingletons, this::inputSingletons, this::pluginSingletons) :
+                        new AppendingSequencerFactory(config, config, this::sequencerSingletons, this::inputSingletons, this::pluginSingletons),
                 Singletons::create
         ));
         this.processorSingletons = interceptor.processorFactory(singletonsSupplier(
@@ -63,8 +64,12 @@ public class AllInOneAppFactory implements AppFactory {
                 (ApplierFactory) new DefaultApplierFactory(config, config, config, this::applierSingletons, this::pluginSingletons),
                 Singletons::create
         ));
-        this.inOutSingletons = interceptor.inOutFactory(singletonsSupplier(
-                (InOutFactory) new DefaultInOutFactory(config, config, this::pluginSingletons),
+        this.inputSingletons = interceptor.inputFactory(singletonsSupplier(
+                (InputFactory) new DefaultInputFactory(config, this::pluginSingletons),
+                Singletons::create
+        ));
+        this.outputSingletons = interceptor.outputFactory(singletonsSupplier(
+                (OutputFactory) new DefaultOutputFactory(config, config, this::pluginSingletons),
                 Singletons::create
         ));
         this.commandPollerSingletons = interceptor.commandPollerFactory(singletonsSupplier(
@@ -72,7 +77,8 @@ public class AllInOneAppFactory implements AppFactory {
                 Singletons::create
         ));
         this.publisherSingletons = interceptor.publisherFactory(singletonsSupplier(
-                (PublisherFactory)new DefaultPublisherFactory(config, config, this::publisherSingletons, this::inOutSingletons, this::pluginSingletons),
+                (PublisherFactory)new DefaultPublisherFactory(config, config, this::publisherSingletons,
+                        this::outputSingletons, this::pluginSingletons),
                 Singletons::create
         ));
         this.agentStepSingletons = interceptor.agentStepFactory(singletonsSupplier(
@@ -106,8 +112,12 @@ public class AllInOneAppFactory implements AppFactory {
         return applierSingletons;
     }
 
-    private InOutFactory inOutSingletons() {
-        return inOutSingletons;
+    private InputFactory inputSingletons() {
+        return inputSingletons;
+    }
+
+    private OutputFactory outputSingletons() {
+        return outputSingletons;
     }
 
     private SequencerFactory sequencerSingletons() {

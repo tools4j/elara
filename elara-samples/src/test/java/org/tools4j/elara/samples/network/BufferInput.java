@@ -23,25 +23,20 @@
  */
 package org.tools4j.elara.samples.network;
 
-import org.tools4j.elara.input.Input;
+import org.tools4j.elara.input.SingleSourceInput;
+import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.CommandSender.SendingContext;
-import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.source.InFlightState;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.samples.network.Buffer.CONSUMED_NOTHING;
 
-public class BufferInput implements Input {
+public class BufferInput implements SingleSourceInput {
 
-    private final int sourceId;
     private final Buffer buffer;
 
-    public BufferInput(final int sourceId, final Buffer buffer) {
-        this.sourceId = sourceId;
+    public BufferInput(final Buffer buffer) {
         this.buffer = requireNonNull(buffer);
-    }
-
-    public int sourceId() {
-        return sourceId;
     }
 
     public Buffer buffer() {
@@ -49,8 +44,8 @@ public class BufferInput implements Input {
     }
 
     @Override
-    public int poll(final SenderSupplier senderSupplier) {
-        try (final SendingContext context = senderSupplier.senderFor(sourceId).sendingCommand()) {
+    public int poll(final CommandSender sender, final InFlightState inFlightState) {
+        try (final SendingContext context = sender.sendingCommand()) {
             final int consumed = buffer.consume(context.buffer(), 0);
             if (consumed == CONSUMED_NOTHING) {
                 context.abort();

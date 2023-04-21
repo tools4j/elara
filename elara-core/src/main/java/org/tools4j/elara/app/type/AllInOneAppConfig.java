@@ -27,11 +27,13 @@ import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.ApplierConfig;
 import org.tools4j.elara.app.config.CommandStoreConfig;
 import org.tools4j.elara.app.config.EventStoreConfig;
-import org.tools4j.elara.app.config.InOutConfig;
+import org.tools4j.elara.app.config.InputConfig;
+import org.tools4j.elara.app.config.OutputConfig;
 import org.tools4j.elara.app.config.PluginConfig;
 import org.tools4j.elara.app.config.ProcessorConfig;
 
-public interface AllInOneAppConfig extends AppConfig, CommandStoreConfig, EventStoreConfig, ProcessorConfig, ApplierConfig, InOutConfig, PluginConfig {
+public interface AllInOneAppConfig extends AppConfig, CommandStoreConfig, EventStoreConfig, ProcessorConfig,
+        ApplierConfig, InputConfig, OutputConfig, PluginConfig {
     static AllInOneAppContext configure() {
         return AllInOneAppContext.create();
     }
