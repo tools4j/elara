@@ -23,35 +23,59 @@
  */
 package org.tools4j.elara.plugin.base;
 
-import org.agrona.collections.Long2LongHashMap;
+import org.tools4j.elara.event.Event;
 
-public class DefaultBaseState implements BaseState.Mutable {
+import static java.util.Objects.requireNonNull;
 
-    private final Long2LongHashMap sourceIdToSequence = new Long2LongHashMap(NIL_SEQUENCE);
-    private long lastAppliedEventSequence = NIL_SEQUENCE;
+/**
+ * Single event base state allows only one event per command.
+ */
+public class SingleEventBaseState implements MutableBaseState {
+
+    private final MutableBaseState delegate;
+
+    public SingleEventBaseState() {
+        this(new DefaultBaseState());
+    }
+
+    public SingleEventBaseState(final MutableBaseState delegate) {
+        this.delegate = requireNonNull(delegate);
+    }
+
+    public static SingleEventBaseState create() {
+        return new SingleEventBaseState();
+    }
 
     @Override
     public long lastAppliedCommandSequence(final int sourceId) {
-        return sourceIdToSequence.get(sourceId);
+        return delegate.lastAppliedCommandSequence(sourceId);
     }
 
     @Override
     public long lastAppliedEventSequence() {
-        return lastAppliedEventSequence;
+        return delegate.lastAppliedEventSequence();
     }
 
     @Override
-    public Mutable applyEvent(final int sourceId, final long sourceSeq, final long eventSeq, final int index) {
-        this.sourceIdToSequence.put(sourceId, sourceSeq);
-        this.lastAppliedEventSequence = eventSeq;
-        return this;
+    public boolean eventAppliedForCommand(final int sourceId, final long commandSeq) {
+        return delegate.eventAppliedForCommand(sourceId, commandSeq);
     }
 
     @Override
-    public String toString() {
-        return "DefaultBaseState{" +
-                "sourceIdToSequence=" + sourceIdToSequence +
-                ", lastAppliedEventSequence=" + lastAppliedEventSequence +
-                '}';
+    public boolean eventApplied(final long eventSeq) {
+        return delegate.eventApplied(eventSeq);
+    }
+
+    @Override
+    public MutableBaseState applyEvent(final Event event) {
+        return delegate.applyEvent(event);
+    }
+
+    @Override
+    public MutableBaseState applyEvent(final int sourceId, final long sourceSeq, final long eventSeq, final int index) {
+        if (index != 0) {
+            throw new IllegalArgumentException("Only event with index 0 is allowed");
+        }
+        return delegate.applyEvent(sourceId, sourceSeq, eventSeq, index);
     }
 }

@@ -30,7 +30,6 @@ import org.tools4j.elara.app.type.PassthroughAppConfig;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.plugin.api.ReservedPayloadType;
 import org.tools4j.elara.plugin.api.SystemPlugin;
-import org.tools4j.elara.plugin.base.BaseState.Mutable;
 import org.tools4j.elara.store.EventStoreRepairer;
 import org.tools4j.elara.store.MessageStore;
 
@@ -42,17 +41,17 @@ import static java.util.Objects.requireNonNull;
  * Default plugin to initialise {@link BaseState}.  Another plugin can be used to initialise the base state if it
  * returns an implementation of {@link BaseConfiguration}.
  */
-public enum BasePlugin implements SystemPlugin<Mutable> {
+public enum BasePlugin implements SystemPlugin<MutableBaseState> {
     INSTANCE;
 
     @Override
-    public Mutable defaultPluginState(final AppConfig appConfig) {
+    public MutableBaseState defaultPluginState(final AppConfig appConfig) {
         return BaseConfiguration.createDefaultBaseState(appConfig);
     }
 
     @Override
     public BaseConfiguration configuration(final AppConfig appConfig,
-                                           final Mutable baseState) {
+                                           final MutableBaseState baseState) {
         requireNonNull(appConfig);
         requireNonNull(baseState);
         if (appConfig instanceof EventStoreConfig) {
@@ -73,14 +72,14 @@ public enum BasePlugin implements SystemPlugin<Mutable> {
      */
     @FunctionalInterface
     public interface BaseConfiguration extends Configuration.Default {
-        static BaseState.Mutable createDefaultBaseState(final AppConfig appConfig) {
+        static MutableBaseState createDefaultBaseState(final AppConfig appConfig) {
             if (appConfig instanceof PassthroughAppConfig && !(appConfig instanceof ApplierConfig)) {
                 return new SingleEventBaseState();
             }
             return new DefaultBaseState();
         }
 
-        BaseState.Mutable baseState();
+        MutableBaseState baseState();
     }
 
     private void repairEventStoreIfNeeded(final MessageStore eventStore,

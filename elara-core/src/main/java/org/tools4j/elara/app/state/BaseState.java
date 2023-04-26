@@ -21,12 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.app.factory;
+package org.tools4j.elara.plugin.base;
 
-import org.tools4j.elara.plugin.api.Plugin.Configuration;
-import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.sequence.SequenceGenerator;
 
-public interface PluginFactory {
-    BaseState.Mutable baseState();
-    Configuration[] plugins();
+/**
+ * Base application state used by every elara applications type as a minimum requirement. Some application types require
+ * application specific extensions of the base state to store extra information.
+ */
+public interface BaseState {
+    long NIL_SEQUENCE = SequenceGenerator.NIL_SEQUENCE;
+
+    long lastAppliedCommandSequence(int sourceId);
+    long lastAppliedEventSequence();
+
+    default boolean eventAppliedForCommand(final int sourceId, final long commandSeq) {
+        return commandSeq <= lastAppliedCommandSequence(sourceId);
+    }
+    default boolean eventApplied(final long eventSeq) {
+        return eventSeq <= lastAppliedEventSequence();
+    }
+
 }

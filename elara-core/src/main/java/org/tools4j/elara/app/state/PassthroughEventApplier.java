@@ -21,29 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.base;
+package org.tools4j.elara.app.state;
 
+import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.sequence.SequenceGenerator;
+import org.tools4j.elara.flyweight.EventType;
+import org.tools4j.elara.send.CommandPassthroughSender;
 
-public interface BaseState {
-    long NIL_SEQUENCE = SequenceGenerator.NIL_SEQUENCE;
+/**
+ * A minimalistic event applier using only basic event header information when applying an event. It is used by
+ * {@link CommandPassthroughSender} as an optimisation if only the {@link BaseState} needs to be updated by events.
+ */
+@FunctionalInterface
+public interface EventIdApplier extends EventApplier {
 
-    long lastAppliedCommandSequence(int sourceId);
-    long lastAppliedEventSequence();
-
-    default boolean eventAppliedForCommand(final int sourceId, final long commandSeq) {
-        return commandSeq <= lastAppliedCommandSequence(sourceId);
+    //NOTE: this method may not be invoked at all, so do not override it!
+    @Override
+    default void onEvent(final Event evt) {
+        onEventId(evt.sourceId(), evt.sourceSequence(), evt.eventType(), evt.eventSequence(), evt.eventIndex());
     }
-    default boolean eventApplied(final long eventSeq) {
-        return eventSeq <= lastAppliedEventSequence();
-    }
 
-    interface Mutable extends BaseState {
-        default Mutable applyEvent(final Event event) {
-            return applyEvent(event.sourceId(), event.sourceSequence(), event.eventSequence(), event.eventIndex());
-        }
-
-        Mutable applyEvent(int sourceId, long sourceSeq, long eventSeq, int index);
-    }
+    void onEventId(int sourceId, long sourceSeq, EventType eventType, long eventSeq, int index);
 }

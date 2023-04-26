@@ -21,23 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.base;
+package org.tools4j.elara.app.state;
 
-import org.tools4j.elara.app.handler.EventApplier;
-import org.tools4j.elara.event.Event;
-import org.tools4j.elara.flyweight.EventType;
+import org.tools4j.elara.app.config.AppConfig;
 
-/**
- * A minimalistic event applier using only the event ID when applying an event.
- */
 @FunctionalInterface
-public interface EventIdApplier extends EventApplier {
-
-    //NOTE: this method may not be invoked at all, so do not override it!
-    @Override
-    default void onEvent(final Event evt) {
-        onEventId(evt.sourceId(), evt.sourceSequence(), evt.eventType(), evt.eventSequence(), evt.eventIndex());
-    }
-
-    void onEventId(int sourceId, long sourceSeq, EventType eventType, long eventSeq, int index);
+public interface BaseStateFactory {
+    BaseStateFactory DEFAULT = MutableBaseState::createDefault;
+    MutableBaseState createBaseState(AppConfig appConfig);
 }
