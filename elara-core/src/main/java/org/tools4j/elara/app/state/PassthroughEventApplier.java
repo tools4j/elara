@@ -24,22 +24,23 @@
 package org.tools4j.elara.app.state;
 
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.type.PassthroughApp;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.flyweight.EventType;
 import org.tools4j.elara.send.CommandPassthroughSender;
 
 /**
  * A minimalistic event applier using only basic event header information when applying an event. It is used by
- * {@link CommandPassthroughSender} as an optimisation if only the {@link BaseState} needs to be updated by events.
+ * {@link PassthroughApp} and {@link CommandPassthroughSender} as an optimisation if only the base
+ * {@link PassthroughState} needs to be updated by events.
  */
 @FunctionalInterface
-public interface EventIdApplier extends EventApplier {
+public interface PassthroughEventApplier extends EventApplier {
 
     //NOTE: this method may not be invoked at all, so do not override it!
     @Override
     default void onEvent(final Event evt) {
-        onEventId(evt.sourceId(), evt.sourceSequence(), evt.eventType(), evt.eventSequence(), evt.eventIndex());
+        onEvent(evt.sourceId(), evt.sourceSequence(), evt.eventSequence(), evt.eventIndex());
     }
 
-    void onEventId(int sourceId, long sourceSeq, EventType eventType, long eventSeq, int index);
+    void onEvent(int sourceId, long sourceSeq, long eventSeq, int index);
 }

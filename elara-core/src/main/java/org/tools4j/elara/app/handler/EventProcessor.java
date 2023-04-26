@@ -23,9 +23,9 @@
  */
 package org.tools4j.elara.app.handler;
 
+import org.tools4j.elara.app.state.InFlightState;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.send.CommandSender;
-import org.tools4j.elara.source.InFlightState;
 
 /**
  * Event processor called to process events in a feedback app.  Note that own commands from previous processing

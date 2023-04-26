@@ -23,8 +23,9 @@
  */
 package org.tools4j.elara.source;
 
+import org.tools4j.elara.app.state.BaseState;
+import org.tools4j.elara.app.state.InFlightState;
 import org.tools4j.elara.flyweight.EventType;
-import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;

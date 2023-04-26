@@ -29,6 +29,8 @@ import org.tools4j.elara.app.config.AppContext;
 import org.tools4j.elara.app.config.DefaultPluginContext;
 import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.config.PluginContext;
+import org.tools4j.elara.app.state.BaseStateProvider;
+import org.tools4j.elara.app.state.MutableBaseState;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.exception.ExceptionLogger;
@@ -56,6 +58,7 @@ import static org.tools4j.elara.logging.OutputStreamLogger.SYSTEM_FACTORY;
 
 abstract class AbstractAppContext<T extends AbstractAppContext<T>> implements AppContext, PluginContext {
 
+    private BaseStateProvider baseStateFactory;
     private Input input = Input.NOOP;
     private Output output = Output.NOOP;
     private TimeSource timeSource;
@@ -68,6 +71,17 @@ abstract class AbstractAppContext<T extends AbstractAppContext<T>> implements Ap
     private final DefaultPluginContext plugins = new DefaultPluginContext(this);
 
     abstract protected T self();
+
+    @Override
+    public MutableBaseState baseState() {
+        return (baseStateFactory != null ? baseStateFactory : BaseStateProvider.DEFAULT).createBaseState(this);
+    }
+
+    @Override
+    public T baseStateProvider(final BaseStateProvider baseStateFactory) {
+        this.baseStateFactory = requireNonNull(baseStateFactory);
+        return self();
+    }
 
     public Input input() {
         return input;

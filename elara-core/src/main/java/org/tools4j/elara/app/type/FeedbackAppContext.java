@@ -32,6 +32,7 @@ import org.tools4j.elara.app.config.InputContext;
 import org.tools4j.elara.app.config.OutputContext;
 import org.tools4j.elara.app.config.PluginContext;
 import org.tools4j.elara.app.handler.EventProcessor;
+import org.tools4j.elara.app.state.BaseStateProvider;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.MultiSourceInput;
@@ -53,6 +54,8 @@ import java.util.function.Supplier;
 public interface FeedbackAppContext extends FeedbackAppConfig, AppContext, EventStreamContext, CommandStreamContext,
         InputContext, OutputContext, PluginContext {
 
+    @Override
+    FeedbackAppContext baseStateProvider(BaseStateProvider baseStateFactory);
     @Override
     FeedbackAppContext eventStore(MessageStore eventStore);
     @Override

@@ -23,9 +23,9 @@
  */
 package org.tools4j.elara.format;
 
+import org.tools4j.elara.flyweight.BaseEvents;
 import org.tools4j.elara.flyweight.EventFrame;
 import org.tools4j.elara.flyweight.PayloadType;
-import org.tools4j.elara.plugin.base.BaseEvents;
 
 import static java.util.Objects.requireNonNull;
 

@@ -27,14 +27,13 @@ import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.wire.WireType;
 import org.agrona.IoUtil;
 import org.agrona.concurrent.BusySpinIdleStrategy;
+import org.tools4j.elara.app.state.SingleEventBaseState;
 import org.tools4j.elara.app.type.PassthroughApp;
 import org.tools4j.elara.app.type.PublisherApp;
 import org.tools4j.elara.app.type.PublisherAppContext;
 import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.plugin.api.Plugins;
-import org.tools4j.elara.plugin.base.BasePlugin;
-import org.tools4j.elara.plugin.base.SingleEventBaseState;
 import org.tools4j.elara.plugin.metrics.MetricsConfig;
 import org.tools4j.elara.plugin.metrics.MetricsContext;
 import org.tools4j.elara.run.ElaraRunner;
@@ -135,7 +134,7 @@ public class HashPassthroughApplication implements PassthroughApp {
                 .eventStore(new ChronicleMessageStore(eq))
                 .timeSource(pseudoNanoClock)
                 .idleStrategy(BusySpinIdleStrategy.INSTANCE)
-                .plugin(BasePlugin.INSTANCE, SingleEventBaseState::create)
+                .baseStateProvider(SingleEventBaseState.PROVIDER)
         );
     }
 }

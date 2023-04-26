@@ -36,6 +36,7 @@ import org.tools4j.elara.app.config.PluginContext;
 import org.tools4j.elara.app.config.ProcessorContext;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.state.BaseStateProvider;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.input.Input;
@@ -54,6 +55,8 @@ import java.util.function.Supplier;
 
 public interface AllInOneAppContext extends AllInOneAppConfig, AppContext, CommandStoreContext, EventStoreContext,
         ProcessorContext, ApplierContext, InputContext, OutputContext, PluginContext {
+    @Override
+    AllInOneAppContext baseStateProvider(BaseStateProvider baseStateFactory);
     @Override
     AllInOneAppContext input(Input input);
     @Override

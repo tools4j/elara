@@ -23,17 +23,17 @@
  */
 package org.tools4j.elara.plugin.api;
 
-import org.tools4j.elara.plugin.base.BasePlugin;
 import org.tools4j.elara.plugin.boot.BootPlugin;
 import org.tools4j.elara.plugin.metrics.MetricsConfig;
 import org.tools4j.elara.plugin.metrics.MetricsPlugin;
+import org.tools4j.elara.plugin.repair.RepairPlugin;
 import org.tools4j.elara.plugin.replication.ReplicationPlugin;
 import org.tools4j.elara.plugin.timer.TimerPlugin;
 
 public enum Plugins {
     ;
-    public static BasePlugin basePlugin() {
-        return BasePlugin.INSTANCE;
+    public static RepairPlugin repairPlugin() {
+        return RepairPlugin.INSTANCE;
     }
 
     public static TimerPlugin timerPlugin() {

@@ -32,13 +32,13 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.state.MutableBaseState;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.flyweight.EventType;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.flyweight.PayloadType;
-import org.tools4j.elara.plugin.base.BaseState;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
@@ -54,7 +54,7 @@ import static org.mockito.Mockito.when;
 public class DefaultEventHandlerTest {
 
     @Mock
-    private BaseState.Mutable baseState;
+    private MutableBaseState baseState;
     @Mock
     private EventApplier eventApplier;
     @Mock

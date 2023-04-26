@@ -30,6 +30,7 @@ import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.config.OutputContext;
 import org.tools4j.elara.app.config.PluginContext;
 import org.tools4j.elara.app.handler.EventProcessor;
+import org.tools4j.elara.app.state.BaseStateProvider;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.output.Output;
@@ -46,6 +47,8 @@ import java.util.function.Supplier;
 public interface PublisherAppContext extends PublisherAppConfig, AppContext, EventStreamContext, OutputContext,
         PluginContext {
 
+    @Override
+    PublisherAppContext baseStateProvider(BaseStateProvider baseStateFactory);
     @Override
     PublisherAppContext eventStore(MessageStore eventStore);
     @Override

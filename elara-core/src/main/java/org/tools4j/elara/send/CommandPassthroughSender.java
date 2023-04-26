@@ -26,6 +26,8 @@ package org.tools4j.elara.send;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.state.BaseState;
+import org.tools4j.elara.app.state.PassthroughEventApplier;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.flyweight.CommandDescriptor;
@@ -33,8 +35,6 @@ import org.tools4j.elara.flyweight.EventDescriptor;
 import org.tools4j.elara.flyweight.EventType;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FlyweightEvent;
-import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.elara.plugin.base.EventIdApplier;
 import org.tools4j.elara.store.ExpandableDirectBuffer;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.store.MessageStore.AppendingContext;
@@ -55,7 +55,7 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
     private final DuplicateHandler duplicateHandler;
     private final MessageStore.Appender eventStoreAppender;
     private final EventApplier eventApplier;
-    private final EventIdApplier eventIdApplierOrNull;
+    private final PassthroughEventApplier passthroughApplierOrNull;
     private final SendingContext sendingContext = new SendingContext();
     private final FlyweightCommand skippedCommand = new FlyweightCommand();
     private final FlyweightEvent appliedEvent = new FlyweightEvent();
@@ -70,7 +70,7 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
         this.baseState = requireNonNull(baseState);
         this.eventStoreAppender = requireNonNull(eventStoreAppender);
         this.eventApplier = requireNonNull(eventApplier);
-        this.eventIdApplierOrNull = eventApplier instanceof EventIdApplier ? (EventIdApplier)eventApplier : null;
+        this.passthroughApplierOrNull = eventApplier instanceof PassthroughEventApplier ? (PassthroughEventApplier)eventApplier : null;
         this.exceptionHandler = requireNonNull(exceptionHandler);
         this.duplicateHandler = requireNonNull(duplicateHandler);
     }
@@ -176,8 +176,8 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
         }
 
         private void applyEvent(final DirectBuffer buffer, final int length) {
-            if (eventIdApplierOrNull != null) {
-                eventIdApplierOrNull.onEventId(sourceId(), sourceSequence(), EventType.APP_COMMIT, eventSequence(), INDEX_0);
+            if (passthroughApplierOrNull != null) {
+                passthroughApplierOrNull.onEvent(sourceId(), sourceSequence(), eventSequence(), INDEX_0);
                 return;
             }
             appliedEvent.wrapSilently(buffer, EventDescriptor.HEADER_OFFSET);

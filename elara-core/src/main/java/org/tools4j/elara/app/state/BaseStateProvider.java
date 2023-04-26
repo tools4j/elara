@@ -26,7 +26,7 @@ package org.tools4j.elara.app.state;
 import org.tools4j.elara.app.config.AppConfig;
 
 @FunctionalInterface
-public interface BaseStateFactory {
-    BaseStateFactory DEFAULT = MutableBaseState::createDefault;
+public interface BaseStateProvider {
+    BaseStateProvider DEFAULT = MutableBaseState::createDefault;
     MutableBaseState createBaseState(AppConfig appConfig);
 }

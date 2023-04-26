@@ -28,14 +28,12 @@ import org.agrona.concurrent.Agent;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.app.handler.EventProcessor;
+import org.tools4j.elara.app.state.MutableBaseState;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
-import org.tools4j.elara.plugin.api.Plugin.Configuration;
-import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.elara.plugin.base.BaseState.Mutable;
 import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.stream.MessageStream;
@@ -59,6 +57,18 @@ final class Singletons {
             instanceByName.put(name, value = factoryMethod.apply(factoryInstance));
         }
         return type.cast(value);
+    }
+
+    static StateFactory create(final StateFactory factory) {
+        requireNonNull(factory);
+        final Singletons singletons = new Singletons();
+        //noinspection Convert2Lambda
+        return new StateFactory() {
+            @Override
+            public MutableBaseState baseState() {
+                return singletons.getOrCreate("baseState", MutableBaseState.class, factory, StateFactory::baseState);
+            }
+        };
     }
 
     static AppFactory create(final AppFactory factory) {
@@ -196,13 +206,25 @@ final class Singletons {
     static InputFactory create(final InputFactory factory) {
         requireNonNull(factory);
         final Singletons singletons = new Singletons();
-        return () -> singletons.getOrCreate("input", Input.class, factory, InputFactory::input);
+        //noinspection Convert2Lambda
+        return new InputFactory() {
+            @Override
+            public Input input() {
+                return singletons.getOrCreate("input", Input.class, factory, InputFactory::input);
+            }
+        };
     }
 
     static OutputFactory create(final OutputFactory factory) {
         requireNonNull(factory);
         final Singletons singletons = new Singletons();
-        return () -> singletons.getOrCreate("output", Output.class, factory, OutputFactory::output);
+        //noinspection Convert2Lambda
+        return new OutputFactory() {
+            @Override
+            public Output output() {
+                return singletons.getOrCreate("output", Output.class, factory, OutputFactory::output);
+            }
+        };
     }
 
     static PublisherFactory create(final PublisherFactory factory) {
@@ -220,21 +242,4 @@ final class Singletons {
             }
         };
     }
-
-    static PluginFactory create(final PluginFactory factory) {
-        requireNonNull(factory);
-        final Singletons singletons = new Singletons();
-        return new PluginFactory() {
-            @Override
-            public Mutable baseState() {
-                return singletons.getOrCreate("baseState", BaseState.Mutable.class, factory, PluginFactory::baseState);
-            }
-
-            @Override
-            public Configuration[] plugins() {
-                return singletons.getOrCreate("plugins", Configuration[].class, factory, PluginFactory::plugins);
-            }
-        };
-    }
-
 }

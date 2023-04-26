@@ -26,6 +26,7 @@ package org.tools4j.elara.samples.simple;
 import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.app.state.InFlightState;
 import org.tools4j.elara.app.type.AllInOneApp;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
@@ -34,7 +35,6 @@ import org.tools4j.elara.output.Output;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.send.CommandSender;
-import org.tools4j.elara.source.InFlightState;
 import org.tools4j.elara.store.InMemoryStore;
 
 import java.util.Queue;

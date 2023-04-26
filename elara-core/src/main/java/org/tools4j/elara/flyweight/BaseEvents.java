@@ -21,14 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.base;
+package org.tools4j.elara.flyweight;
 
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.flyweight.DataFrame;
-import org.tools4j.elara.flyweight.EventType;
-import org.tools4j.elara.flyweight.FlyweightEvent;
-import org.tools4j.elara.flyweight.FrameType;
 
 import static org.tools4j.elara.flyweight.FrameType.AUTO_COMMIT_EVENT_TYPE;
 import static org.tools4j.elara.flyweight.FrameType.ROLLBACK_EVENT_TYPE;

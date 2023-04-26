@@ -24,31 +24,28 @@
 package org.tools4j.elara.app.factory;
 
 import org.tools4j.elara.app.config.InputConfig;
+import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.plugin.base.BaseState;
-
-import java.util.function.Supplier;
+import org.tools4j.elara.plugin.api.Plugin;
 
 import static java.util.Objects.requireNonNull;
 
 public class DefaultInputFactory implements InputFactory {
     private final InputConfig inOutConfig;
-    private final Supplier<? extends PluginFactory> pluginSingletons;
+    private final BaseState baseState;
+    private final Plugin.Configuration[] plugins;
 
     public DefaultInputFactory(final InputConfig inOutConfig,
-                               final Supplier<? extends PluginFactory> pluginSingletons) {
+                               final BaseState baseState,
+                               final Plugin.Configuration[] plugins) {
         this.inOutConfig = requireNonNull(inOutConfig);
-        this.pluginSingletons = requireNonNull(pluginSingletons);
+        this.baseState = requireNonNull(baseState);
+        this.plugins = requireNonNull(plugins);
     }
 
     @Override
     public Input input() {
         Input input = inOutConfig.input();
-        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = pluginSingletons.get().plugins();
-        if (plugins.length == 0) {
-            return input;
-        }
-        final BaseState baseState = pluginSingletons.get().baseState();
         for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
             input = Input.roundRobin(input, plugin.input(baseState));
         }

@@ -27,11 +27,13 @@ import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.EventStoreConfig;
 import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.factory.Interceptor;
+import org.tools4j.elara.app.factory.StateFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.state.BaseState;
+import org.tools4j.elara.app.state.MutableBaseState;
 import org.tools4j.elara.plugin.api.ReservedPayloadType;
 import org.tools4j.elara.plugin.api.SystemPlugin;
-import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.replication.Connection.Handler;
 import org.tools4j.elara.plugin.replication.ReplicationState.Mutable;
 import org.tools4j.elara.step.AgentStep;
@@ -107,13 +109,13 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
             }
 
             @Override
-            public EventApplier eventApplier(final BaseState.Mutable baseState) {
+            public EventApplier eventApplier(final MutableBaseState baseState) {
                 return new ReplicationEventApplier(appConfig.loggerFactory(), configuration, replicationState);
             }
 
             @Override
-            public Interceptor interceptor(final BaseState.Mutable baseState) {
-                return new ReplicationInterceptor(appConfig, eventStoreConfig, configuration, baseState, replicationState);
+            public Interceptor interceptor(final StateFactory stateFactory) {
+                return new ReplicationInterceptor(appConfig, eventStoreConfig, configuration, stateFactory, replicationState);
             }
         };
     }

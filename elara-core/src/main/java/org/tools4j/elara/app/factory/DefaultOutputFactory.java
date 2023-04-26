@@ -25,13 +25,12 @@ package org.tools4j.elara.app.factory;
 
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.OutputConfig;
+import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.output.CompositeOutput;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
-import org.tools4j.elara.plugin.base.BaseState;
 
 import java.util.Arrays;
-import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -39,23 +38,24 @@ public class DefaultOutputFactory implements OutputFactory {
 
     private final AppConfig appConfig;
     private final OutputConfig outputConfig;
-    private final Supplier<? extends PluginFactory> pluginSingletons;
+    private final BaseState baseState;
+    private final Plugin.Configuration[] plugins;
 
     public DefaultOutputFactory(final AppConfig appConfig,
                                 final OutputConfig outputConfig,
-                                final Supplier<? extends PluginFactory> pluginSingletons) {
+                                final BaseState baseState,
+                                final Plugin.Configuration[] plugins) {
         this.appConfig = requireNonNull(appConfig);
         this.outputConfig = requireNonNull(outputConfig);
-        this.pluginSingletons = requireNonNull(pluginSingletons);
+        this.baseState = requireNonNull(baseState);
+        this.plugins = requireNonNull(plugins);
     }
 
     @Override
     public Output output() {
-        final Plugin.Configuration[] plugins = pluginSingletons.get().plugins();
         if (plugins.length == 0) {
             return outputConfig.output();
         }
-        final BaseState baseState = pluginSingletons.get().baseState();
         final Output[] outputs = new Output[plugins.length + 1];
         int count = 0;
         for (final Plugin.Configuration plugin : plugins) {

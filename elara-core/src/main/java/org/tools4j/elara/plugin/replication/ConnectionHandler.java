@@ -26,11 +26,11 @@ package org.tools4j.elara.plugin.replication;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
+import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.logging.ElaraLogger;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.logging.Logger.Level;
-import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.replication.Connection.Publisher;
 import org.tools4j.elara.store.MessageStore.Appender;
 

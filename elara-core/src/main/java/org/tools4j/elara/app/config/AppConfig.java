@@ -25,6 +25,7 @@ package org.tools4j.elara.app.config;
 
 import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.IdleStrategy;
+import org.tools4j.elara.app.state.MutableBaseState;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.step.AgentStep;
@@ -40,5 +41,6 @@ public interface AppConfig {
     List<AgentStep> dutyCycleExtraSteps(ExecutionType executionType);
 
     void validate();
+    MutableBaseState baseState();
     Agent createAgent();
 }

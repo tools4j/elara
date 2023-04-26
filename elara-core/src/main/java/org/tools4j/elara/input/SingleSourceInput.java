@@ -23,8 +23,8 @@
  */
 package org.tools4j.elara.input;
 
+import org.tools4j.elara.app.state.InFlightState;
 import org.tools4j.elara.send.CommandSender;
-import org.tools4j.elara.source.InFlightState;
 import org.tools4j.elara.source.SourceContext;
 
 @FunctionalInterface

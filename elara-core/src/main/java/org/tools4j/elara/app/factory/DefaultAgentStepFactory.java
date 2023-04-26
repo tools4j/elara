@@ -25,13 +25,12 @@ package org.tools4j.elara.app.factory;
 
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.ExecutionType;
+import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.plugin.api.Plugin;
-import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.step.AgentStep;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.app.config.ExecutionType.ALWAYS;
@@ -41,12 +40,15 @@ import static org.tools4j.elara.step.AgentStep.NOOP;
 public class DefaultAgentStepFactory implements AgentStepFactory {
 
     private final AppConfig config;
-    private final Supplier<? extends PluginFactory> pluginSingletons;
+    private final BaseState baseState;
+    private final Plugin.Configuration[] plugins;
 
     public DefaultAgentStepFactory(final AppConfig config,
-                                   final Supplier<? extends PluginFactory> pluginSingletons) {
+                                   final BaseState baseState,
+                                   final Plugin.Configuration[] plugins) {
         this.config = requireNonNull(config);
-        this.pluginSingletons = requireNonNull(pluginSingletons);
+        this.baseState = requireNonNull(baseState);
+        this.plugins = requireNonNull(plugins);
     }
 
     @Override
@@ -60,13 +62,11 @@ public class DefaultAgentStepFactory implements AgentStepFactory {
     }
 
     private AgentStep extraStep(final ExecutionType executionType) {
-        final Plugin.Configuration[] plugins = pluginSingletons.get().plugins();
         final List<AgentStep> dutyCycleExtraSteps = config.dutyCycleExtraSteps(executionType);
         if (plugins.length == 0 && dutyCycleExtraSteps.isEmpty()) {
             return NOOP;
         }
         final List<AgentStep> extraSteps = new ArrayList<>(plugins.length + dutyCycleExtraSteps.size());
-        final BaseState baseState = pluginSingletons.get().baseState();
         for (final Plugin.Configuration plugin : plugins) {
             extraSteps.add(plugin.step(baseState, executionType));
         }

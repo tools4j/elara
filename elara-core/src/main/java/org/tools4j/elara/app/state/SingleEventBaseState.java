@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.base;
+package org.tools4j.elara.app.state;
 
 import org.tools4j.elara.event.Event;
 
@@ -30,15 +30,16 @@ import static java.util.Objects.requireNonNull;
 /**
  * Single event base state allows only one event per command.
  */
-public class SingleEventBaseState implements MutableBaseState {
+public class SingleEventBaseState implements PassthroughState {
+    public static final BaseStateProvider PROVIDER = appConfig -> new SingleEventBaseState();
 
-    private final MutableBaseState delegate;
+    private final PassthroughState delegate;
 
     public SingleEventBaseState() {
         this(new DefaultBaseState());
     }
 
-    public SingleEventBaseState(final MutableBaseState delegate) {
+    public SingleEventBaseState(final PassthroughState delegate) {
         this.delegate = requireNonNull(delegate);
     }
 
@@ -67,15 +68,18 @@ public class SingleEventBaseState implements MutableBaseState {
     }
 
     @Override
-    public MutableBaseState applyEvent(final Event event) {
-        return delegate.applyEvent(event);
+    public void applyEvent(final Event event) {
+        if (event.eventIndex() != 0) {
+            throw new IllegalArgumentException("Only event with index 0 is allowed");
+        }
+        delegate.applyEvent(event);
     }
 
     @Override
-    public MutableBaseState applyEvent(final int sourceId, final long sourceSeq, final long eventSeq, final int index) {
+    public void applyEvent(final int sourceId, final long sourceSeq, final long eventSeq, final int index) {
         if (index != 0) {
             throw new IllegalArgumentException("Only event with index 0 is allowed");
         }
-        return delegate.applyEvent(sourceId, sourceSeq, eventSeq, index);
+        delegate.applyEvent(sourceId, sourceSeq, eventSeq, index);
     }
 }

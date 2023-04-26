@@ -28,11 +28,11 @@ import org.tools4j.elara.app.config.EventStoreConfig;
 import org.tools4j.elara.app.factory.ApplierFactory;
 import org.tools4j.elara.app.factory.Interceptor;
 import org.tools4j.elara.app.factory.ProcessorFactory;
+import org.tools4j.elara.app.factory.StateFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.EventHandler;
-import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.route.DefaultEventRouter;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.step.EventPollerStep;
@@ -46,7 +46,7 @@ class ReplicationInterceptor implements Interceptor {
     private final AppConfig appConfig;
     private final EventStoreConfig eventStoreConfig;
     private final Configuration pluginConfig;
-    private final BaseState.Mutable baseState;
+    private final StateFactory stateFactory;
     private final ReplicationState replicationState;
 
     private Supplier<? extends ApplierFactory> eventApplierSingletons;
@@ -54,12 +54,12 @@ class ReplicationInterceptor implements Interceptor {
     public ReplicationInterceptor(final AppConfig appConfig,
                                   final EventStoreConfig eventStoreConfig,
                                   final Configuration pluginConfig,
-                                  final BaseState.Mutable baseState,
+                                  final StateFactory stateFactory,
                                   final ReplicationState replicationState) {
         this.appConfig = requireNonNull(appConfig);
         this.eventStoreConfig = requireNonNull(eventStoreConfig);
         this.pluginConfig = requireNonNull(pluginConfig);
-        this.baseState = requireNonNull(baseState);
+        this.stateFactory = requireNonNull(stateFactory);
         this.replicationState = requireNonNull(replicationState);
     }
 
@@ -100,11 +100,11 @@ class ReplicationInterceptor implements Interceptor {
                 return new ReplicationCommandHandler(
                         appConfig.timeSource(),
                         pluginConfig,
-                        baseState,
+                        stateFactory.baseState(),
                         replicationState,
                         new DefaultEventRouter(
                                 appConfig.timeSource(),
-                                baseState,
+                                stateFactory.baseState(),
                                 eventStoreConfig.eventStore().appender(),
                                 eventApplierSingletons.get().eventHandler()
                         ),

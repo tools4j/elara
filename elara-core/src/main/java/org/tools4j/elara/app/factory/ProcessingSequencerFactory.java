@@ -24,6 +24,7 @@
 package org.tools4j.elara.app.factory;
 
 import org.tools4j.elara.app.config.AppConfig;
+import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.send.CommandHandlingSender;
 import org.tools4j.elara.source.DefaultSourceContextProvider;
@@ -37,27 +38,28 @@ import static java.util.Objects.requireNonNull;
 public class ProcessingSequencerFactory implements SequencerFactory {
 
     private final AppConfig appConfig;
+    private final BaseState baseState;
     private final Supplier<? extends SequencerFactory> sequencerSingletons;
     private final Supplier<? extends ProcessorFactory> processorSingletons;
     private final Supplier<? extends InputFactory> inOutSingletons;
-    private final Supplier<? extends PluginFactory> pluginSingletons;
 
     public ProcessingSequencerFactory(final AppConfig appConfig,
+                                      final BaseState baseState,
                                       final Supplier<? extends SequencerFactory> sequencerSingletons,
                                       final Supplier<? extends ProcessorFactory> processorSingletons,
-                                      final Supplier<? extends InputFactory> inOutSingletons,
-                                      final Supplier<? extends PluginFactory> pluginSingletons) {
+                                      final Supplier<? extends InputFactory> inOutSingletons) {
         this.appConfig = requireNonNull(appConfig);
+        this.baseState = requireNonNull(baseState);
         this.sequencerSingletons = requireNonNull(sequencerSingletons);
         this.processorSingletons = requireNonNull(processorSingletons);
         this.inOutSingletons = requireNonNull(inOutSingletons);
-        this.pluginSingletons = requireNonNull(pluginSingletons);
+
     }
 
     @Override
     public SourceContextProvider sourceContextProvider() {
         final CommandHandler commandHandler = processorSingletons.get().commandHandler();
-        return new DefaultSourceContextProvider(pluginSingletons.get().baseState(),
+        return new DefaultSourceContextProvider(baseState,
                 new CommandHandlingSender(4096, appConfig.timeSource(), commandHandler));
     }
 

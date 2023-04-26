@@ -26,44 +26,31 @@ package org.tools4j.elara.app.factory;
 import org.agrona.concurrent.Agent;
 import org.tools4j.elara.agent.PublisherAgent;
 import org.tools4j.elara.app.type.PublisherAppConfig;
-import org.tools4j.elara.plugin.api.Plugin;
-import org.tools4j.elara.plugin.base.BaseState;
 
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
-public class PublisherAppFactory implements AppFactory {
+import static org.tools4j.elara.app.factory.Bootstrap.bootstrap;
 
-    private final PluginFactory pluginSingletons;
+public class PublisherAppFactory implements AppFactory {
     private final OutputFactory outputSingletons;
     private final PublisherFactory publisherSingletons;
     private final AppFactory appSingletons;
 
     public PublisherAppFactory(final PublisherAppConfig config) {
-        this.pluginSingletons = Singletons.create(new DefaultPluginFactory(config, config, this::pluginSingletons));
-
-        final Interceptor interceptor = interceptor(pluginSingletons);
+        final Bootstrap bootstrap = bootstrap(config, config);
+        final Interceptor interceptor = bootstrap.interceptor();
         this.outputSingletons = interceptor.outputFactory(singletonsSupplier(
-                (OutputFactory) new DefaultOutputFactory(config, config, this::pluginSingletons),
+                (OutputFactory) new DefaultOutputFactory(config, config, bootstrap.baseState(), bootstrap.plugins()),
                 Singletons::create
         ));
         this.publisherSingletons = interceptor.publisherFactory(singletonsSupplier(
-                (PublisherFactory)new StreamPublisherFactory(config, config, this::publisherSingletons,
-                        this::outputSingletons, this::pluginSingletons),
+                (PublisherFactory)new StreamPublisherFactory(config, config, this::publisherSingletons, this::outputSingletons),
                 Singletons::create
         ));
         this.appSingletons = interceptor.appFactory(singletonsSupplier(
                 appFactory(), Singletons::create
         ));
-    }
-
-    private static Interceptor interceptor(final PluginFactory pluginSingletons) {
-        final BaseState.Mutable baseState = pluginSingletons.baseState();
-        Interceptor interceptor = Interceptor.NOOP;
-        for (final Plugin.Configuration pluginConfig : pluginSingletons.plugins()) {
-            interceptor = interceptor.andThen(pluginConfig.interceptor(baseState));
-        }
-        return interceptor.thenYield();
     }
 
     private <T> Supplier<T> singletonsSupplier(final T factory, final UnaryOperator<T> singletonOp) {
@@ -77,10 +64,6 @@ public class PublisherAppFactory implements AppFactory {
 
     private PublisherFactory publisherSingletons() {
         return publisherSingletons;
-    }
-
-    private PluginFactory pluginSingletons() {
-        return pluginSingletons;
     }
 
     private AppFactory appFactory() {

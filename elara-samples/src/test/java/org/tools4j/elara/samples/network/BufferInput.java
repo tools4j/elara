@@ -23,10 +23,10 @@
  */
 package org.tools4j.elara.samples.network;
 
+import org.tools4j.elara.app.state.InFlightState;
 import org.tools4j.elara.input.SingleSourceInput;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.CommandSender.SendingContext;
-import org.tools4j.elara.source.InFlightState;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.samples.network.Buffer.CONSUMED_NOTHING;

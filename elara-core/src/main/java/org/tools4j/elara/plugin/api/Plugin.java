@@ -26,11 +26,14 @@ package org.tools4j.elara.plugin.api;
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.factory.Interceptor;
+import org.tools4j.elara.app.factory.StateFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.state.BaseState;
+import org.tools4j.elara.app.state.MutableBaseState;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
-import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.plugin.api.Plugin.Configuration.Default;
 import org.tools4j.elara.step.AgentStep;
 
 import java.util.function.Consumer;
@@ -43,6 +46,7 @@ import static java.util.Objects.requireNonNull;
  */
 public interface Plugin<P> {
 
+    Configuration NO_CONFIGURATION = new Default() {};
     Plugin.Dependency<?>[] NO_DEPENDENCIES = {};
     Consumer<Object> STATE_UNAWARE = state -> {};
 
@@ -58,8 +62,8 @@ public interface Plugin<P> {
         Input input(BaseState baseState);
         Output output(BaseState baseState);
         CommandProcessor commandProcessor(BaseState baseState);
-        EventApplier eventApplier(BaseState.Mutable baseState);
-        Interceptor interceptor(BaseState.Mutable baseState);
+        EventApplier eventApplier(MutableBaseState baseState);
+        Interceptor interceptor(StateFactory stateFactory);
 
         interface Default extends Configuration {
             @Override
@@ -71,9 +75,9 @@ public interface Plugin<P> {
             @Override
             default CommandProcessor commandProcessor(final BaseState baseState) {return CommandProcessor.NOOP;}
             @Override
-            default EventApplier eventApplier(final BaseState.Mutable baseState) {return EventApplier.NOOP;}
+            default EventApplier eventApplier(final MutableBaseState baseState) {return EventApplier.NOOP;}
             @Override
-            default Interceptor interceptor(final BaseState.Mutable baseState) {return Interceptor.NOOP;}
+            default Interceptor interceptor(final StateFactory stateFactory) {return Interceptor.NOOP;}
         }
     }
 

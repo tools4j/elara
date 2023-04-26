@@ -24,6 +24,7 @@
 package org.tools4j.elara.samples.bank;
 
 import org.agrona.DirectBuffer;
+import org.tools4j.elara.app.state.InFlightState;
 import org.tools4j.elara.app.type.AllInOneApp;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
@@ -41,7 +42,6 @@ import org.tools4j.elara.samples.bank.command.CommandType;
 import org.tools4j.elara.samples.bank.event.EventType;
 import org.tools4j.elara.samples.bank.state.Bank;
 import org.tools4j.elara.send.CommandSender;
-import org.tools4j.elara.source.InFlightState;
 import org.tools4j.elara.store.InMemoryStore;
 import org.tools4j.elara.store.MessageStore;
 

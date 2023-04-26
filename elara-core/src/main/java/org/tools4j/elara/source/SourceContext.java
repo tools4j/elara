@@ -23,6 +23,7 @@
  */
 package org.tools4j.elara.source;
 
+import org.tools4j.elara.app.state.InFlightState;
 import org.tools4j.elara.send.CommandSender;
 
 public interface SourceContext {

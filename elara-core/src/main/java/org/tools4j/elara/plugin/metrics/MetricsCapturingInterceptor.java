@@ -38,6 +38,8 @@ import org.tools4j.elara.app.factory.PublisherFactory;
 import org.tools4j.elara.app.factory.SequencerFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.state.InFlightState;
+import org.tools4j.elara.app.state.PassthroughEventApplier;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.PayloadType;
 import org.tools4j.elara.handler.CommandHandler;
@@ -45,13 +47,11 @@ import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.output.Output.Ack;
-import org.tools4j.elara.plugin.base.EventIdApplier;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.CommandSender.SendingContext;
-import org.tools4j.elara.source.InFlightState;
 import org.tools4j.elara.source.SourceContext;
 import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.step.AgentStep;
@@ -359,11 +359,11 @@ public class MetricsCapturingInterceptor implements Interceptor {
                 public EventApplier eventApplier() {
                     final EventApplier eventApplier = singletons.get().eventApplier();
                     if (shouldCapture(EVENT_APPLIED_FREQUENCY) || shouldCaptureAnyOf(EVENT)) {//includes APPLYING_START_TIME and APPLYING_END_TIME
-                        if (eventApplier instanceof EventIdApplier) {
-                            final EventIdApplier eventIdApplier = (EventIdApplier)eventApplier;
-                            return (EventIdApplier)(sourceId, sourceSeq, eventType, eventSeq, index) -> {
+                        if (eventApplier instanceof PassthroughEventApplier) {
+                            final PassthroughEventApplier passthroughApplier = (PassthroughEventApplier)eventApplier;
+                            return (PassthroughEventApplier)(sourceId, sourceSeq, eventSeq, index) -> {
                                 captureTime(APPLYING_START_TIME);
-                                eventIdApplier.onEventId(sourceId, sourceSeq, eventType, eventSeq, index);
+                                passthroughApplier.onEvent(sourceId, sourceSeq, eventSeq, index);
                                 captureTime(APPLYING_END_TIME);
                                 captureCount(EVENT_APPLIED_FREQUENCY);
                                 if (timeMetricsWriter != null) {

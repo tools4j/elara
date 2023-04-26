@@ -23,9 +23,9 @@
  */
 package org.tools4j.elara.plugin.boot;
 
+import org.tools4j.elara.app.state.InFlightState;
 import org.tools4j.elara.input.SingleSourceInput;
 import org.tools4j.elara.send.CommandSender;
-import org.tools4j.elara.source.InFlightState;
 
 import static org.tools4j.elara.plugin.boot.BootCommands.BOOT_NOTIFY_APP_START;
 import static org.tools4j.elara.stream.SendingResult.SENT;

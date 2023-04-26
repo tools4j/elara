@@ -23,20 +23,33 @@
  */
 package org.tools4j.elara.plugin.api;
 
+import org.tools4j.elara.flyweight.BaseEvents;
+import org.tools4j.elara.plugin.boot.BootPlugin;
+import org.tools4j.elara.plugin.replication.ReplicationPlugin;
+import org.tools4j.elara.plugin.timer.TimerPlugin;
+
 /**
- * Reserved payload type ranges for commands and events used by {@link SystemPlugin system plugins}.
+ * Reserved payload type ranges for commands and events used by elara and by {@link SystemPlugin system plugins}.
  */
 public enum ReservedPayloadType {
+    /** Used by system plugins that do not reserve a payload range */
+    NONE(0, 0),
+    /** Payload types reserved for {@link BaseEvents} */
     BASE(-1, -9),
+    /** Payload types reserved for {@link TimerPlugin} */
     TIMER(-10, -19),
+    /** Payload types reserved for {@link BootPlugin} */
     BOOT(-20, -29),
 //    LIVELINESS(-30, -39),
 //    HEARTBEAT(-40, -49),
 //    CONTROL(-50, -59),
     //..
+    /** Payload types reserved for {@link ReplicationPlugin} */
     REPLICATION(-90, -99);
 
+    /** Maximum payload type value reserved by system plugins */
     public static final int MAX_RESERVED_TYPE = -1;
+    /** Minimum payload type value reserved by system plugins */
     public static final int MIN_RESERVED_TYPE = -1000;
 
     private final int maxType;

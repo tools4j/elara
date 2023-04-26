@@ -21,11 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.base;
+package org.tools4j.elara.app.state;
 
 import org.agrona.collections.Long2LongHashMap;
 
-public class DefaultBaseState implements MutableBaseState {
+public class DefaultBaseState implements PassthroughState {
+    public static final BaseStateProvider PROVIDER = appConfig -> new DefaultBaseState();
 
     private final Long2LongHashMap sourceIdToSequence = new Long2LongHashMap(NIL_SEQUENCE);
     private long lastAppliedEventSequence = NIL_SEQUENCE;
@@ -41,10 +42,9 @@ public class DefaultBaseState implements MutableBaseState {
     }
 
     @Override
-    public MutableBaseState applyEvent(final int sourceId, final long sourceSeq, final long eventSeq, final int index) {
+    public void applyEvent(final int sourceId, final long sourceSeq, final long eventSeq, final int index) {
         this.sourceIdToSequence.put(sourceId, sourceSeq);
         this.lastAppliedEventSequence = eventSeq;
-        return this;
     }
 
     @Override

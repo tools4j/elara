@@ -28,11 +28,10 @@ import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.tools4j.elara.app.state.DefaultBaseState;
+import org.tools4j.elara.app.state.MutableBaseState;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.plugin.base.BaseEvents;
-import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.elara.plugin.base.DefaultBaseState;
 import org.tools4j.elara.route.DefaultEventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.store.InMemoryStore;
@@ -56,7 +55,7 @@ import static org.tools4j.elara.flyweight.EventType.INTERMEDIARY;
  */
 public class DefaultEventRouterTest {
 
-    private BaseState.Mutable baseState;
+    private MutableBaseState baseState;
     private MessageStore messageStore;
     private List<Event> routed;
     private FlyweightCommand command;

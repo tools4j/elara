@@ -25,6 +25,7 @@ package org.tools4j.elara.app.factory;
 
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.EventStoreConfig;
+import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.send.CommandPassthroughSender;
 import org.tools4j.elara.source.DefaultSourceContextProvider;
 import org.tools4j.elara.source.SourceContextProvider;
@@ -38,31 +39,31 @@ public class PassthroughSequencerFactory implements SequencerFactory {
 
     private final AppConfig appConfig;
     private final EventStoreConfig eventStoreConfig;
+    private final BaseState baseState;
     private final Supplier<? extends SequencerFactory> sequencerSingletons;
     private final Supplier<? extends InputFactory> inOutSingletons;
     private final Supplier<? extends ApplierFactory> applierSingletons;
-    private final Supplier<? extends PluginFactory> pluginSingletons;
 
     public PassthroughSequencerFactory(final AppConfig appConfig,
                                        final EventStoreConfig eventStoreConfig,
+                                       final BaseState baseState,
                                        final Supplier<? extends SequencerFactory> sequencerSingletons,
                                        final Supplier<? extends InputFactory> inOutSingletons,
-                                       final Supplier<? extends ApplierFactory> applierSingletons,
-                                       final Supplier<? extends PluginFactory> pluginSingletons) {
+                                       final Supplier<? extends ApplierFactory> applierSingletons) {
         this.appConfig = requireNonNull(appConfig);
         this.eventStoreConfig = requireNonNull(eventStoreConfig);
+        this.baseState = requireNonNull(baseState);
         this.sequencerSingletons = requireNonNull(sequencerSingletons);
         this.inOutSingletons = requireNonNull(inOutSingletons);
         this.applierSingletons = requireNonNull(applierSingletons);
-        this.pluginSingletons = requireNonNull(pluginSingletons);
     }
 
     @Override
     public SourceContextProvider sourceContextProvider() {
         final CommandPassthroughSender commandSender = new CommandPassthroughSender(
-                appConfig.timeSource(), pluginSingletons.get().baseState(), eventStoreConfig.eventStore().appender(),
+                appConfig.timeSource(), baseState, eventStoreConfig.eventStore().appender(),
                 applierSingletons.get().eventApplier(), appConfig.exceptionHandler(), eventStoreConfig.duplicateHandler());
-        return new DefaultSourceContextProvider(pluginSingletons.get().baseState(), commandSender);
+        return new DefaultSourceContextProvider(baseState, commandSender);
     }
 
     @Override

@@ -58,13 +58,15 @@ so that they can be easily distinguished from non-negative application types.
 
 Elara provides the following default plugins:
 
-* **base:** a plugin that is implicitly added and defines the base state required for all elara applications
 * **boot:** a plugin that issues commands and events indicating that an elara application has been started and initialised
 * **timer:** a plugin that allows routing of events to start and stop simple and periodic timers;  the plugin injects
              commands to fire or expire timers which are then removed from the timer state through an event 
              (see samples section for examples) 
 * **metrics:** plugin to capture time and frequency metrics of the running application;  a running application 
                efficiently captures metrics in a message store file that can be inspected with the store printer tool  
+* **repair:** a plugin that attempts to repair a corrupted event store on startup if the last event in the store is not 
+              committed, for instance after a crash when processing of the last command did not finish properly;  the
+              repair operation appends a rollback event for the last command in this case 
 * **replication:** *[experimental]* plugin to replicate events from a leader elara instance to follower instances that 
                    are applying events but do not process commands;  follower instances have identical state as the 
                    leader (after applying all events and assuming deterministic application logic);  together with the

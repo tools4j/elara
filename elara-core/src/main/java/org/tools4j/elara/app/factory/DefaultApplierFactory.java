@@ -27,11 +27,12 @@ import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.ApplierConfig;
 import org.tools4j.elara.app.config.EventStoreConfig;
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.state.MutableBaseState;
+import org.tools4j.elara.app.state.SingleEventBaseState;
 import org.tools4j.elara.event.CompositeEventApplier;
 import org.tools4j.elara.handler.DefaultEventHandler;
 import org.tools4j.elara.handler.EventHandler;
-import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.elara.plugin.base.SingleEventBaseState;
+import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.step.EventReplayStep;
 
@@ -41,33 +42,33 @@ import java.util.function.Supplier;
 import static java.util.Objects.requireNonNull;
 
 public class DefaultApplierFactory implements ApplierFactory {
-
     private final AppConfig appConfig;
     private final ApplierConfig applierConfig;
     private final EventStoreConfig eventStoreConfig;
+    private final MutableBaseState baseState;
+    private final Plugin.Configuration[] plugins;
     private final Supplier<? extends ApplierFactory> applierSingletons;
-    private final Supplier<? extends PluginFactory> pluginSingletons;
 
     public DefaultApplierFactory(final AppConfig appConfig,
                                  final ApplierConfig applierConfig,
                                  final EventStoreConfig eventStoreConfig,
-                                 final Supplier<? extends ApplierFactory> applierSingletons,
-                                 final Supplier<? extends PluginFactory> pluginSingletons) {
+                                 final MutableBaseState baseState,
+                                 final Plugin.Configuration[] plugins,
+                                 final Supplier<? extends ApplierFactory> applierSingletons) {
         this.appConfig = requireNonNull(appConfig);
         this.applierConfig = requireNonNull(applierConfig);
         this.eventStoreConfig = requireNonNull(eventStoreConfig);
+        this.baseState = requireNonNull(baseState);
+        this.plugins = requireNonNull(plugins);
         this.applierSingletons = requireNonNull(applierSingletons);
-        this.pluginSingletons = requireNonNull(pluginSingletons);
     }
 
     @Override
     public EventApplier eventApplier() {
         final EventApplier eventApplier = applierConfig.eventApplier();
-        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = pluginSingletons.get().plugins();
         if (plugins.length == 0) {
             return eventApplier;
         }
-        final BaseState.Mutable baseState = pluginSingletons.get().baseState();
         final EventApplier[] appliers = new EventApplier[plugins.length + 1];
         int count = 0;
         for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
@@ -88,7 +89,7 @@ public class DefaultApplierFactory implements ApplierFactory {
     @Override
     public EventHandler eventHandler() {
         return new DefaultEventHandler(
-                pluginSingletons.get().baseState(),
+                baseState,
                 applierSingletons.get().eventApplier(),
                 appConfig.exceptionHandler(),
                 eventStoreConfig.duplicateHandler()
@@ -98,7 +99,7 @@ public class DefaultApplierFactory implements ApplierFactory {
     @Override
     public AgentStep eventPollerStep() {
         final EventHandler eventHandler = applierSingletons.get().eventHandler();
-        if (pluginSingletons.get().baseState() instanceof SingleEventBaseState) {
+        if (baseState instanceof SingleEventBaseState) {
             return EventReplayStep.replayAllEvents(eventStoreConfig.eventStore(), eventHandler);
         }
         return EventReplayStep.replayNonAbortedEvents(eventStoreConfig.eventStore(), eventHandler);

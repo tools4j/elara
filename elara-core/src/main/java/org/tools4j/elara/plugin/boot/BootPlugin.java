@@ -25,11 +25,11 @@ package org.tools4j.elara.plugin.boot;
 
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.handler.CommandProcessor;
+import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.plugin.api.Plugin.NullState;
 import org.tools4j.elara.plugin.api.ReservedPayloadType;
 import org.tools4j.elara.plugin.api.SystemPlugin;
-import org.tools4j.elara.plugin.base.BaseState;
 
 import static java.util.Objects.requireNonNull;
 

@@ -21,13 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.base;
+package org.tools4j.elara.plugin.repair;
 
 import org.tools4j.elara.app.config.AppConfig;
-import org.tools4j.elara.app.config.ApplierConfig;
 import org.tools4j.elara.app.config.EventStoreConfig;
-import org.tools4j.elara.app.type.PassthroughAppConfig;
 import org.tools4j.elara.exception.ExceptionHandler;
+import org.tools4j.elara.plugin.api.Plugin.NullState;
 import org.tools4j.elara.plugin.api.ReservedPayloadType;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.store.EventStoreRepairer;
@@ -35,51 +34,29 @@ import org.tools4j.elara.store.MessageStore;
 
 import java.io.IOException;
 
-import static java.util.Objects.requireNonNull;
-
 /**
- * Default plugin to initialise {@link BaseState}.  Another plugin can be used to initialise the base state if it
- * returns an implementation of {@link BaseConfiguration}.
+ * Plugin that repairs an event store on startup if necessary by appending a rollback event if an uncommitted command is
+ * detected at the end of the store.
  */
-public enum BasePlugin implements SystemPlugin<MutableBaseState> {
+public enum RepairPlugin implements SystemPlugin<NullState> {
     INSTANCE;
 
     @Override
-    public MutableBaseState defaultPluginState(final AppConfig appConfig) {
-        return BaseConfiguration.createDefaultBaseState(appConfig);
+    public NullState defaultPluginState(final AppConfig appConfig) {
+        return NullState.NULL;
     }
 
     @Override
-    public BaseConfiguration configuration(final AppConfig appConfig,
-                                           final MutableBaseState baseState) {
-        requireNonNull(appConfig);
-        requireNonNull(baseState);
+    public Configuration configuration(final AppConfig appConfig, final NullState pluginState) {
         if (appConfig instanceof EventStoreConfig) {
             repairEventStoreIfNeeded(((EventStoreConfig) appConfig).eventStore(), appConfig.exceptionHandler());
         }
-        return () -> baseState;
+        return NO_CONFIGURATION;
     }
 
     @Override
     public ReservedPayloadType reservedPayloadType() {
-        return ReservedPayloadType.BASE;
-    }
-
-    /**
-     * Base context to initialise base state.  Other plugins can implement this
-     * context if they want to replace the default base plugin and extend the base
-     * state.
-     */
-    @FunctionalInterface
-    public interface BaseConfiguration extends Configuration.Default {
-        static MutableBaseState createDefaultBaseState(final AppConfig appConfig) {
-            if (appConfig instanceof PassthroughAppConfig && !(appConfig instanceof ApplierConfig)) {
-                return new SingleEventBaseState();
-            }
-            return new DefaultBaseState();
-        }
-
-        MutableBaseState baseState();
+        return ReservedPayloadType.NONE;
     }
 
     private void repairEventStoreIfNeeded(final MessageStore eventStore,

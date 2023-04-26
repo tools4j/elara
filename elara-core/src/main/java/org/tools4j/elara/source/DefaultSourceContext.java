@@ -23,7 +23,8 @@
  */
 package org.tools4j.elara.source;
 
-import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.app.state.BaseState;
+import org.tools4j.elara.app.state.InFlightState;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.sequence.SequenceGenerator;

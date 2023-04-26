@@ -23,8 +23,8 @@
  */
 package org.tools4j.elara.app.factory;
 
-import org.tools4j.elara.step.AgentStep;
+import org.tools4j.elara.app.state.MutableBaseState;
 
-public interface CommandPollerFactory {
-    AgentStep commandPollerStep();
+public interface StateFactory {
+    MutableBaseState baseState();
 }

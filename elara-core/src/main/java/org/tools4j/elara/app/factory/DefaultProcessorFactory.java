@@ -27,10 +27,11 @@ import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.EventStoreConfig;
 import org.tools4j.elara.app.config.ProcessorConfig;
 import org.tools4j.elara.app.handler.CommandProcessor;
+import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.command.CompositeCommandProcessor;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.DefaultCommandHandler;
-import org.tools4j.elara.plugin.base.BaseState;
+import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.route.DefaultEventRouter;
 
 import java.util.Arrays;
@@ -43,32 +44,33 @@ public class DefaultProcessorFactory implements ProcessorFactory {
     private final AppConfig appConfig;
     private final ProcessorConfig processorConfig;
     private final EventStoreConfig eventStoreConfig;
+    private final BaseState baseState;
+    private final Plugin.Configuration[] plugins;
     private final Supplier<? extends ProcessorFactory> processorSingletons;
     private final Supplier<? extends ApplierFactory> applierSingletons;
-    private final Supplier<? extends PluginFactory> pluginSingletons;
 
     public DefaultProcessorFactory(final AppConfig appConfig,
                                    final ProcessorConfig processorConfig,
                                    final EventStoreConfig eventStoreConfig,
+                                   final BaseState baseState,
+                                   final Plugin.Configuration[] plugins,
                                    final Supplier<? extends ProcessorFactory> processorSingletons,
-                                   final Supplier<? extends ApplierFactory> applierSingletons,
-                                   final Supplier<? extends PluginFactory> pluginSingletons) {
+                                   final Supplier<? extends ApplierFactory> applierSingletons) {
         this.appConfig = requireNonNull(appConfig);
         this.processorConfig = requireNonNull(processorConfig);
         this.eventStoreConfig = requireNonNull(eventStoreConfig);
+        this.baseState = requireNonNull(baseState);
+        this.plugins = requireNonNull(plugins);
         this.processorSingletons = requireNonNull(processorSingletons);
         this.applierSingletons = requireNonNull(applierSingletons);
-        this.pluginSingletons = requireNonNull(pluginSingletons);
     }
 
     @Override
     public CommandProcessor commandProcessor() {
         final CommandProcessor commandProcessor = processorConfig.commandProcessor();
-        final org.tools4j.elara.plugin.api.Plugin.Configuration[] plugins = pluginSingletons.get().plugins();
         if (plugins.length == 0) {
             return commandProcessor;
         }
-        final BaseState baseState = pluginSingletons.get().baseState();
         final CommandProcessor[] processors = new CommandProcessor[plugins.length + 1];
         int count = 1;
         for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
@@ -89,10 +91,10 @@ public class DefaultProcessorFactory implements ProcessorFactory {
     @Override
     public CommandHandler commandHandler() {
         return new DefaultCommandHandler(
-                pluginSingletons.get().baseState(),
+                baseState,
                 new DefaultEventRouter(
                         appConfig.timeSource(),
-                        pluginSingletons.get().baseState(),
+                        baseState,
                         eventStoreConfig.eventStore().appender(),
                         applierSingletons.get().eventHandler()
                 ),

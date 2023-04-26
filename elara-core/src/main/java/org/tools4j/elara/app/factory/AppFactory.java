@@ -25,6 +25,7 @@ package org.tools4j.elara.app.factory;
 
 import org.agrona.concurrent.Agent;
 
+@FunctionalInterface
 public interface AppFactory {
     Agent agent();
 }

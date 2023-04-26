@@ -26,10 +26,11 @@ package org.tools4j.elara.plugin.timer;
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.state.BaseState;
+import org.tools4j.elara.app.state.MutableBaseState;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.plugin.api.ReservedPayloadType;
 import org.tools4j.elara.plugin.api.SystemPlugin;
-import org.tools4j.elara.plugin.base.BaseState;
 import org.tools4j.elara.plugin.timer.TimerState.Mutable;
 
 import java.util.Objects;
@@ -86,7 +87,7 @@ public class TimerPlugin implements SystemPlugin<TimerState.Mutable> {
             }
 
             @Override
-            public EventApplier eventApplier(final BaseState.Mutable baseState) {
+            public EventApplier eventApplier(final MutableBaseState baseState) {
                 return new TimerEventApplier(timerState, timerTriggerInput(baseState));
             }
         };

@@ -24,21 +24,21 @@
 package org.tools4j.elara.handler;
 
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.state.MutableBaseState;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
-import org.tools4j.elara.plugin.base.BaseState;
 
 import static java.util.Objects.requireNonNull;
 
 public class DefaultEventHandler implements EventHandler {
 
-    private final BaseState.Mutable baseState;
+    private final MutableBaseState baseState;
     private final EventApplier eventApplier;
     private final ExceptionHandler exceptionHandler;
     private final DuplicateHandler duplicateHandler;
 
-    public DefaultEventHandler(final BaseState.Mutable baseState,
+    public DefaultEventHandler(final MutableBaseState baseState,
                                final EventApplier eventApplier,
                                final ExceptionHandler exceptionHandler,
                                final DuplicateHandler duplicateHandler) {

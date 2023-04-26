@@ -29,6 +29,7 @@ import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.state.InFlightState;
 import org.tools4j.elara.app.type.AllInOneAppConfig;
 import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.command.Command;
@@ -45,7 +46,6 @@ import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.send.CommandSender;
-import org.tools4j.elara.source.InFlightState;
 import org.tools4j.elara.store.InMemoryStore;
 
 import java.time.Instant;

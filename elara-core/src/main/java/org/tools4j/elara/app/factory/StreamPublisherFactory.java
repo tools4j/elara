@@ -42,18 +42,15 @@ public class StreamPublisherFactory implements PublisherFactory {
     private final EventStreamConfig eventStreamConfig;
     private final Supplier<? extends PublisherFactory> publisherSingletons;
     private final Supplier<? extends OutputFactory> outputSingletons;
-    private final Supplier<? extends PluginFactory> pluginSingletons;
 
     public StreamPublisherFactory(final AppConfig appConfig,
                                   final EventStreamConfig eventStreamConfig,
                                   final Supplier<? extends PublisherFactory> publisherSingletons,
-                                  final Supplier<? extends OutputFactory> outputSingletons,
-                                  final Supplier<? extends PluginFactory> pluginSingletons) {
+                                  final Supplier<? extends OutputFactory> outputSingletons) {
         this.appConfig = requireNonNull(appConfig);
         this.eventStreamConfig = requireNonNull(eventStreamConfig);
         this.publisherSingletons = requireNonNull(publisherSingletons);
         this.outputSingletons = requireNonNull(outputSingletons);
-        this.pluginSingletons = requireNonNull(pluginSingletons);
     }
 
     @Override

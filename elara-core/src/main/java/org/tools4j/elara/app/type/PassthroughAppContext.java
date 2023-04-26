@@ -30,6 +30,7 @@ import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.config.InputContext;
 import org.tools4j.elara.app.config.OutputContext;
 import org.tools4j.elara.app.config.PluginContext;
+import org.tools4j.elara.app.state.BaseStateProvider;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.input.Input;
@@ -48,6 +49,8 @@ import java.util.function.Supplier;
 
 public interface PassthroughAppContext extends PassthroughAppConfig, AppContext, EventStoreContext, InputContext,
         OutputContext, PluginContext {
+    @Override
+    PassthroughAppContext baseStateProvider(BaseStateProvider baseStateFactory);
     @Override
     PassthroughAppContext input(Input input);
     @Override

@@ -25,11 +25,11 @@ package org.tools4j.elara.app.factory;
 
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.EventStoreConfig;
+import org.tools4j.elara.app.state.BaseState;
+import org.tools4j.elara.app.state.SingleEventBaseState;
 import org.tools4j.elara.handler.DefaultOutputHandler;
 import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.output.Output;
-import org.tools4j.elara.plugin.base.BaseState;
-import org.tools4j.elara.plugin.base.SingleEventBaseState;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.step.PollerPublisherStep;
 import org.tools4j.elara.store.MessageStore;
@@ -42,20 +42,20 @@ import static org.tools4j.elara.step.AgentStep.NOOP;
 public class DefaultPublisherFactory implements PublisherFactory {
     private final AppConfig appConfig;
     private final EventStoreConfig eventStoreConfig;
+    private final BaseState baseState;
     private final Supplier<? extends PublisherFactory> publisherSingletons;
     private final Supplier<? extends OutputFactory> outputSingletons;
-    private final Supplier<? extends PluginFactory> pluginSingletons;
 
     public DefaultPublisherFactory(final AppConfig appConfig,
                                    final EventStoreConfig eventStoreConfig,
+                                   final BaseState baseState,
                                    final Supplier<? extends PublisherFactory> publisherSingletons,
-                                   final Supplier<? extends OutputFactory> outputSingletons,
-                                   final Supplier<? extends PluginFactory> pluginSingletons) {
+                                   final Supplier<? extends OutputFactory> outputSingletons) {
         this.appConfig = requireNonNull(appConfig);
         this.eventStoreConfig = requireNonNull(eventStoreConfig);
+        this.baseState = requireNonNull(baseState);
         this.publisherSingletons = requireNonNull(publisherSingletons);
         this.outputSingletons = requireNonNull(outputSingletons);
-        this.pluginSingletons = requireNonNull(pluginSingletons);
     }
 
     @Override
@@ -70,7 +70,6 @@ public class DefaultPublisherFactory implements PublisherFactory {
         }
         final MessageStore eventStore = eventStoreConfig.eventStore();
         final OutputHandler outputHandler = publisherSingletons.get().outputHandler();
-        final BaseState baseState = pluginSingletons.get().baseState();
         if (baseState instanceof SingleEventBaseState) {
             return PollerPublisherStep.allEventsPoller(outputHandler, eventStore);
         }
