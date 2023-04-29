@@ -26,12 +26,8 @@ package org.tools4j.elara.plugin.timer;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.route.EventRouter;
-import org.tools4j.elara.route.EventRouter.RoutingContext;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.plugin.timer.TimerEvents.timerExpired;
-import static org.tools4j.elara.plugin.timer.TimerEvents.timerFired;
-import static org.tools4j.elara.plugin.timer.TimerState.REPETITION_SINGLE;
 
 public class TimerCommandProcessor implements CommandProcessor {
 
@@ -43,21 +39,16 @@ public class TimerCommandProcessor implements CommandProcessor {
 
     @Override
     public void onCommand(final Command command, final EventRouter router) {
-        if (command.payloadType() == TimerCommands.TRIGGER_TIMER) {
-            final long timerId = TimerCommands.timerId(command);
-            if (timerState.hasTimer(timerId)) {
-                final int repetition = TimerCommands.timerRepetition(command);
-                if (repetition == REPETITION_SINGLE) {
-                    try (final RoutingContext context = router.routingEvent(TimerEvents.TIMER_EXPIRED)) {
-                        final int length = timerExpired(context.buffer(), 0, command);
-                        context.route(length);
-                    }
-                } else {
-                    try (final RoutingContext context = router.routingEvent(TimerEvents.TIMER_FIRED)) {
-                        final int length = timerFired(context.buffer(), 0, command);
-                        context.route(length);
-                    }
-                }
+        if (TimerCommands.isTimerCommand(command)) {
+            final long timerId = FlyweightTimerPayload.timerId(command.payload(), 0);
+            if (command.payloadType() == TimerCommands.START_TIMER) {
+                if (!timerState.hasTimer(command.sourceId(), timerId)) {
+                    router.routeEventWithCommandPayload();
+                }//else: TODO log warning ?
+            } else {
+                if (timerState.hasTimer(command.sourceId(), timerId)) {
+                    router.routeEventWithCommandPayload();
+                }//else: TODO log warning ?
             }
         }
     }

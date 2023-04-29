@@ -31,7 +31,7 @@ import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.command.CompositeCommandProcessor;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.DefaultCommandHandler;
-import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.plugin.api.PluginSpecification.Installer;
 import org.tools4j.elara.route.DefaultEventRouter;
 
 import java.util.Arrays;
@@ -45,7 +45,7 @@ public class DefaultProcessorFactory implements ProcessorFactory {
     private final ProcessorConfig processorConfig;
     private final EventStoreConfig eventStoreConfig;
     private final BaseState baseState;
-    private final Plugin.Configuration[] plugins;
+    private final Installer[] plugins;
     private final Supplier<? extends ProcessorFactory> processorSingletons;
     private final Supplier<? extends ApplierFactory> applierSingletons;
 
@@ -53,7 +53,7 @@ public class DefaultProcessorFactory implements ProcessorFactory {
                                    final ProcessorConfig processorConfig,
                                    final EventStoreConfig eventStoreConfig,
                                    final BaseState baseState,
-                                   final Plugin.Configuration[] plugins,
+                                   final Installer[] plugins,
                                    final Supplier<? extends ProcessorFactory> processorSingletons,
                                    final Supplier<? extends ApplierFactory> applierSingletons) {
         this.appConfig = requireNonNull(appConfig);
@@ -73,7 +73,7 @@ public class DefaultProcessorFactory implements ProcessorFactory {
         }
         final CommandProcessor[] processors = new CommandProcessor[plugins.length + 1];
         int count = 1;
-        for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
+        for (final Installer plugin : plugins) {
             processors[count] = plugin.commandProcessor(baseState);
             if (processors[count] != CommandProcessor.NOOP) {
                 count++;

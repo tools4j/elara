@@ -21,17 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.samples.hash;
+package org.tools4j.elara.plugin.timer;
 
-import org.tools4j.elara.time.TimeSource;
+public enum TimerPayloadTypes {
+    ;
+    /** Payload type used to start a timer*/
+    public static final int START_TIMER = -10;
+    /** Payload type used to cancel a timer*/
+    public static final int CANCEL_TIMER = -11;
+    /** Payload type used to signal when a timer expires or triggers */
+    public static final int SIGNAL_TIMER = -12;
 
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
-
-public class PseudoMicroClock implements TimeSource {
-    private final PseudoNanoClock nanoClock = new PseudoNanoClock();
-
-    @Override
-    public long currentTime() {
-        return NANOSECONDS.toMicros(nanoClock.currentTime());
+    public static boolean isTimerPayloadType(final int payloadType) {
+        switch (payloadType) {
+            case START_TIMER:
+            case CANCEL_TIMER:
+            case SIGNAL_TIMER:
+                return true;
+            default:
+                return false;
+        }
     }
 }

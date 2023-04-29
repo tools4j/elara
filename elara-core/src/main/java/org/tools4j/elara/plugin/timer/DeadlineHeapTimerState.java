@@ -23,225 +23,223 @@
  */
 package org.tools4j.elara.plugin.timer;
 
-import org.agrona.collections.Long2LongHashMap;
+import org.agrona.collections.Int2IntHashMap;
+import org.agrona.collections.IntArrayList;
+import org.tools4j.elara.plugin.timer.Timer.Style;
+import org.tools4j.elara.plugin.timer.TimerStore.MutableTimerStore;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import static java.util.Objects.requireNonNull;
 import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
 
 /**
- * A timer state optimisation to efficiently find the next triggering timer.  Orders timer IDs by deadline
+ * A timer state optimisation to efficiently find the timer with the next deadline.  Timers are ordered by deadline
  * in a heap data structure leading to<pre>
- *     - constant polling time via indexOfNextDeadline()
+ *     - constant polling time when invoking {@link #indexOfNextDeadline()}
  *     - log(n) time to add or remove a timer
- *     - log(n) time to change the repetition of a timer
+ *     - log(n) time to update the repetition of a periodic timer
  * </pre>
- * The data structure is very similar to that used by {@link java.util.PriorityQueue}.
+ * The data structure is very similar to the one used by {@link java.util.PriorityQueue}.
  */
 public class DeadlineHeapTimerState implements TimerState.Mutable {
+    private static final int NULL_INT = -1;
 
-    public static final int DEFAULT_INITIAL_CAPACITY = 64;
-
-    private final Long2LongHashMap idToIndex;
-    private final List<Timer> timerHeapByDeadline;
-    private final List<Timer> unused;
-
-    private static final class Timer {
-        long id;
-        int type;
-        int repetition;
-        long time;
-        long timeout;
-        final int nextRepetition() {
-            return Static.nextRepetition(repetition);
-        }
-        final long deadline() {
-            return Static.deadline(time, timeout, nextRepetition());
-        }
-        final Timer init(final long id, final int type, final int repetition, final long time, final long timeout) {
-            this.id = id;
-            this.type = type;
-            this.repetition = repetition;
-            this.time = time;
-            this.timeout = timeout;
-            return this;
-        }
-        final Timer reset() {
-            return init(0, 0, 0, 0, 0);
-        }
-    }
+    private final Int2IntHashMap storeIndexToHeapIndex;
+    private final IntArrayList deadlineHeapToStoreIndex;
+    private final MutableTimerStore timerStore;
 
     public DeadlineHeapTimerState() {
-        this(DEFAULT_INITIAL_CAPACITY);
+        this(DirectTimerStore.DEFAULT_TIMER_CAPACITY, new DirectTimerStore());
     }
 
-    public DeadlineHeapTimerState(final int initialCapacity) {
-        this.idToIndex = new Long2LongHashMap(2 * initialCapacity, DEFAULT_LOAD_FACTOR, -1);
-        this.timerHeapByDeadline = new ArrayList<>(initialCapacity);
-        this.unused = new ArrayList<>(initialCapacity);
-        for (int i = 0; i < initialCapacity; i++) {
-            unused.add(new Timer());
-        }
+    public DeadlineHeapTimerState(final int initialSourceCapacity, final int initialTimerCapacity) {
+        this(initialTimerCapacity, new DirectTimerStore(initialSourceCapacity, initialTimerCapacity));
+    }
+    public DeadlineHeapTimerState(final int initialTimerCapacity, final MutableTimerStore timerStore) {
+        this.storeIndexToHeapIndex = new Int2IntHashMap(2 * initialTimerCapacity, DEFAULT_LOAD_FACTOR, -1);
+        this.deadlineHeapToStoreIndex = new IntArrayList(initialTimerCapacity, -1);
+        this.timerStore = requireNonNull(timerStore);
     }
 
     @Override
     public int count() {
-        return timerHeapByDeadline.size();
+        return timerStore.count();
+    }
+
+    private int storeIndexToHeapIndex(final int index) {
+        return storeIndexToHeapIndex.get(index);
+    }
+
+    private int heapIndexToStoreIndex(final int index) {
+        return deadlineHeapToStoreIndex.getInt(index);
     }
 
     @Override
-    public int indexById(final long id) {
-        return (int)idToIndex.get(id);
+    public boolean hasTimer(final int sourceId, final long timerId) {
+        return timerStore.hasTimer(sourceId, timerId);
     }
 
     @Override
-    public long id(final int index) {
-        return timerHeapByDeadline.get(index).id;
+    public int index(final int sourceId, final long timerId) {
+        final int storeIndex = timerStore.index(sourceId, timerId);
+        return storeIndex < 0 ? -1 : storeIndexToHeapIndex(storeIndex);
+    }
+
+
+    @Override
+    public int indexOfNextDeadline() {
+        return deadlineHeapToStoreIndex.isEmpty() ? -1 : 0;
     }
 
     @Override
-    public int type(final int index) {
-        return timerHeapByDeadline.get(index).type;
+    public int sourceId(final int index) {
+        return timerStore.sourceId(heapIndexToStoreIndex(index));
+    }
+
+    @Override
+    public long timerId(final int index) {
+        return timerStore.timerId(heapIndexToStoreIndex(index));
+    }
+
+    @Override
+    public Style style(final int index) {
+        return timerStore.style(heapIndexToStoreIndex(index));
     }
 
     @Override
     public int repetition(final int index) {
-        return timerHeapByDeadline.get(index).repetition;
+        return timerStore.repetition(heapIndexToStoreIndex(index));
     }
 
     @Override
-    public long time(final int index) {
-        return timerHeapByDeadline.get(index).time;
+    public long startTime(final int index) {
+        return timerStore.startTime(heapIndexToStoreIndex(index));
     }
 
     @Override
     public long timeout(final int index) {
-        return timerHeapByDeadline.get(index).timeout;
+        return timerStore.timeout(heapIndexToStoreIndex(index));
+    }
+
+    @Override
+    public int timerType(final int index) {
+        return timerStore.timerType(heapIndexToStoreIndex(index));
+    }
+
+    @Override
+    public long contextId(final int index) {
+        return timerStore.contextId(heapIndexToStoreIndex(index));
     }
 
     @Override
     public long deadline(final int index) {
-        return timerHeapByDeadline.get(index).deadline();
+        return timerStore.deadline(heapIndexToStoreIndex(index));
     }
 
     @Override
-    public int nextRepetition(final int index) {
-        return timerHeapByDeadline.get(index).nextRepetition();
-    }
-
-    @Override
-    public boolean hasTimer(final long id) {
-        return idToIndex.containsKey(id);
-    }
-
-    @Override
-    public int indexOfNextDeadline() {
-        return timerHeapByDeadline.isEmpty() ? -1 : 0;
-    }
-
-    @Override
-    public boolean add(final long id, final int type, final int repetition, final long time, final long timeout) {
-        if (!hasTimer(id)) {
-            add(acquire().init(id, type, repetition, time, timeout));
+    public boolean add(final int sourceId, final long timerId, final Style style, final int repetition, final long startTime, final long timeout, final int timerType, final long contextId) {
+        final int storeIndex = timerStore.count();//NOTE: we know the store adds a new entry at the end
+        if (timerStore.add(sourceId, timerId, style, repetition, startTime, timeout, timerType, contextId)) {
+            add(storeIndex);
             return true;
         }
         return false;
     }
 
-    private void add(final Timer timer) {
-        final int index = timerHeapByDeadline.size();
-        if (index == 0) {
-            timerHeapByDeadline.add(timer);
-            idToIndex.put(timer.id, index);
+    private void add(final int storeIndex) {
+        final int heapIndex = deadlineHeapToStoreIndex.size();
+        if (heapIndex == 0) {
+            deadlineHeapToStoreIndex.addInt(storeIndex);
+            storeIndexToHeapIndex.put(storeIndex, heapIndex);
         } else {
-            timerHeapByDeadline.add(null);
-            siftUp(index, timer);
+            deadlineHeapToStoreIndex.addInt(-1);
+            siftUp(heapIndex, storeIndex);
         }
     }
 
-    private void siftUp(final int index, final Timer timer) {
+    private void siftUp(final int heapIndex, final int storeIndex) {
         //see PriorityQueue.siftUp(..)
-        final long deadline = timer.deadline();
-        int k = index;
+        final long deadline = timerStore.deadline(storeIndex);
+        int k = heapIndex;
         while (k > 0) {
             final int parent = (k - 1) >>> 1;
-            final Timer p = timerHeapByDeadline.get(parent);
-            if (deadline >= p.deadline()) {
+            final int p = deadlineHeapToStoreIndex.getInt(parent);
+            if (deadline >= timerStore.deadline(p)) {
                 break;
             }
             set(k, p);
             k = parent;
         }
-        set(k, timer);
+        set(k, storeIndex);
     }
 
-    private void siftDown(final int index, final Timer timer) {
+    private void siftDown(final int heapIndex, final int storeIndex) {
         //see PriorityQueue.siftDown(..)
-        final long deadline = timer.deadline();
-        final int size = timerHeapByDeadline.size();
-        int k = index;
+        final long deadline = timerStore.deadline(storeIndex);
+        final int size = deadlineHeapToStoreIndex.size();
+        int k = heapIndex;
 
         int half = size >>> 1;
         while (k < half) {
             int child = (k << 1) + 1;
             int right = child + 1;
-            Timer c = timerHeapByDeadline.get(child);
+            int c = deadlineHeapToStoreIndex.getInt(child);
             if (right < size) {
-                final Timer r = timerHeapByDeadline.get(right);
-                if (c.deadline() > r.deadline()) {
+                final int r = deadlineHeapToStoreIndex.getInt(right);
+                if (timerStore.deadline(c) > timerStore.deadline(r)) {
                     child = right;
                     c = r;
                 }
             }
-            if (deadline <= c.deadline()) {
+            if (deadline <= timerStore.deadline(c)) {
                 break;
             }
             set(k, c);
             k = child;
         }
-        set(k, timer);
+        set(k, storeIndex);
     }
 
-    private Timer set(final int index, final Timer timer) {
-        idToIndex.put(timer.id, index);
-        return timerHeapByDeadline.set(index, timer);
+    private void set(final int heapIndex, final int storeIndex) {
+        storeIndexToHeapIndex.put(storeIndex, heapIndex);
+        deadlineHeapToStoreIndex.setInt(heapIndex, storeIndex);
     }
 
     @Override
     public void remove(final int index) {
-        final Timer timer = timerHeapByDeadline.set(index, null);
-        idToIndex.remove(timer.id);
-        final int s = timerHeapByDeadline.size() - 1;
-        final Timer moved = timerHeapByDeadline.remove(s);
+        final int storeIndex = deadlineHeapToStoreIndex.setInt(index, -1);
+        storeIndexToHeapIndex.remove(storeIndex);
+        final int s = deadlineHeapToStoreIndex.size() - 1;
+        final int movedStoreIndex = deadlineHeapToStoreIndex.removeAt(s);
         if (s != index) {
-            siftDown(index, moved);
+            siftDown(index, movedStoreIndex);
         }
-        release(timer);
+        //NOTE: we know that removing timerStore[storeIndex] from the store will swap the last element into its place
+        timerStore.remove(storeIndex);
+        final int swappedStoreIndex = timerStore.count();
+        if (storeIndex != swappedStoreIndex) {
+            final int heapIndex = storeIndexToHeapIndex.remove(swappedStoreIndex);
+            storeIndexToHeapIndex.put(storeIndex, heapIndex);
+            deadlineHeapToStoreIndex.setInt(heapIndex, storeIndex);
+        }
     }
 
     @Override
-    public void repetition(final int index, final int repetition) {
-        final Timer timer = timerHeapByDeadline.get(index);
-        final int prevRepetition = timer.repetition;
-        if (timer.repetition == repetition) {
+    public void updateRepetitionById(final int sourceId, final long timerId, final int repetition) {
+        final int storeIndex = timerStore.index(sourceId, timerId);
+        if (storeIndex < 0) {
             return;
         }
-        timer.repetition = repetition;
-        if (repetition > prevRepetition) {
-            siftDown(index, timer);
-        } else {
-            siftUp(index, timer);
+        final int prevRepetition = timerStore.repetition(storeIndex);
+        if (prevRepetition == repetition) {
+            return;
         }
-    }
-
-    private Timer acquire() {
-        final int last = unused.size() - 1;
-        return last >= 0 ? unused.remove(last) : new Timer();
-    }
-
-    private void release(final Timer timer) {
-        unused.add(timer.reset());
+        timerStore.updateRepetition(storeIndex, repetition);
+        final int heapIndex = storeIndexToHeapIndex(storeIndex);
+        if (repetition > prevRepetition) {
+            siftDown(heapIndex, storeIndex);
+        } else {
+            siftUp(heapIndex, storeIndex);
+        }
     }
 
     @Override
@@ -249,8 +247,6 @@ public class DeadlineHeapTimerState implements TimerState.Mutable {
         if (count() == 0) {
             return "DeadlineHeapTimerState{}";
         }
-        return "DeadlineHeapTimerState{" +
-                "next=" + id(indexOfNextDeadline()) +
-                ", ids=" + idToIndex.keySet() + "}";
+        return "DeadlineHeapTimerState{next=" + timerId(indexOfNextDeadline()) + ", timers=" + timerStore + "}";
     }
 }

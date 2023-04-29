@@ -40,11 +40,11 @@ import static org.tools4j.elara.store.MessageStore.Handler.Result.POLL;
 public class ReplicationCommandHandler extends DefaultCommandHandler {
 
     private final TimeSource timeSource;
-    private final Configuration configuration;
+    private final ReplicationConfig configuration;
     private final ReplicationState state;
 
     public ReplicationCommandHandler(final TimeSource timeSource,
-                                     final Configuration configuration,
+                                     final ReplicationConfig configuration,
                                      final BaseState baseState,
                                      final ReplicationState state,
                                      final DefaultEventRouter eventRouter,

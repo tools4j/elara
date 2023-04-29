@@ -27,7 +27,8 @@ import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.plugin.api.Plugin.NullState;
+import org.tools4j.elara.plugin.api.PluginStateProvider;
+import org.tools4j.elara.plugin.api.PluginStateProvider.NullState;
 import org.tools4j.elara.plugin.api.ReservedPayloadType;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 
@@ -43,37 +44,61 @@ public class BootPlugin implements SystemPlugin<NullState> {
     public static final BootPlugin DEFAULT = new BootPlugin(DEFAULT_SOURCE_ID);
 
     private final int sourceId;
+    private final Specification specification = new Specification();
 
     public BootPlugin(final int sourceId) {
         this.sourceId = sourceId;
     }
 
-    @Override
-    public ReservedPayloadType reservedPayloadType() {
-        return ReservedPayloadType.BOOT;
+    public int sourceId() {
+        return sourceId;
     }
 
     @Override
-    public NullState defaultPluginState(final AppConfig appConfig) {
-        return NullState.NULL;
+    public SystemPluginSpecification<NullState> specification() {
+        return specification;
     }
 
     @Override
-    public Configuration configuration(final AppConfig appConfig, final NullState pluginState) {
-        requireNonNull(appConfig);
-        requireNonNull(pluginState);
-        return new Configuration.Default() {
-            @Override
-            public Input input(final BaseState baseState) {
-                final long sourceSeq = 1 + baseState.lastAppliedCommandSequence(sourceId);
-                return Input.single(sourceId, sourceSeq, new BootCommandInput());
-            }
-
-            @Override
-            public CommandProcessor commandProcessor(final BaseState baseState) {
-                return new BootCommandProcessor();
-            }
-        };
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final BootPlugin that = (BootPlugin) o;
+        return sourceId == that.sourceId;
     }
 
+    @Override
+    public int hashCode() {
+        return 31 * getClass().hashCode() + sourceId;
+    }
+
+    private final class Specification implements SystemPluginSpecification<NullState> {
+        @Override
+        public PluginStateProvider<NullState> defaultPluginStateProvider() {
+            return PluginStateProvider.NULL_STATE_PROVIDER;
+        }
+
+        @Override
+        public ReservedPayloadType reservedPayloadType() {
+            return ReservedPayloadType.BOOT;
+        }
+
+        @Override
+        public Installer installer(final AppConfig appConfig, final NullState pluginState) {
+            requireNonNull(appConfig);
+            requireNonNull(pluginState);
+            return new Installer.Default() {
+                @Override
+                public Input input(final BaseState baseState) {
+                    final long sourceSeq = 1 + baseState.lastAppliedCommandSequence(sourceId);
+                    return Input.single(sourceId, sourceSeq, new BootCommandInput());
+                }
+
+                @Override
+                public CommandProcessor commandProcessor(final BaseState baseState) {
+                    return new BootCommandProcessor();
+                }
+            };
+        }
+    }
 }

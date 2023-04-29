@@ -26,10 +26,9 @@ package org.tools4j.elara.plugin.timer;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.plugin.timer.Timer.Style;
 
-public interface TimerState {
+public interface TimerStore {
     int count();
     int index(int sourceId, long timerId);
-    int indexOfNextDeadline();
     int sourceId(int index);
     long timerId(int index);
     Style style(int index);
@@ -44,14 +43,24 @@ public interface TimerState {
         return index(sourceId, timerId) >= 0;
     }
 
-    interface Mutable extends TimerState {
+    interface MutableTimerStore extends TimerStore {
         default boolean add(final Event event, final Timer timer) {
             return add(event.sourceId(), timer.timerId(), timer.style(), timer.repetition(), event.eventTime(),
                     timer.timeout(), timer.timerType(), timer.contextId());
         }
-        boolean add(int sourceId, long timerId, final Style style, int repetition, long startTime, long timeout, int timerType, final long contextId);
+        boolean add(int sourceId, long timerId, Style style, int repetition, long startTime, long timeout,
+                    int timerType, long contextId);
+
         void remove(int index);
-        void updateRepetitionById(int sourceId, long timerId, int repetition);
+        void updateRepetition(int index, int repetition);
+        default boolean updateRepetitionById(final int sourceId, final long timerId, final int repetition) {
+            final int index = index(sourceId, timerId);
+            if (index >= 0) {
+                updateRepetition(index, repetition);
+                return true;
+            }
+            return false;
+        }
 
         default boolean removeById(final int sourceId, final long timerId) {
             final int index = index(sourceId, timerId);

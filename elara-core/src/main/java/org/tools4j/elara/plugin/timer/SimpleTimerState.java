@@ -23,113 +23,117 @@
  */
 package org.tools4j.elara.plugin.timer;
 
-import org.agrona.collections.IntArrayList;
-import org.agrona.collections.Long2LongHashMap;
-import org.agrona.collections.LongArrayList;
+import org.tools4j.elara.event.Event;
+import org.tools4j.elara.plugin.timer.Timer.Style;
+import org.tools4j.elara.plugin.timer.TimerStore.MutableTimerStore;
 import org.tools4j.elara.time.TimeSource;
 
-import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
+import static java.util.Objects.requireNonNull;
 
 /**
- * A very simple implementation of {@link TimerState} keeping timers in simple lists.
+ * A simple implementation of {@link TimerState} that iterates through all timers in order to find the one with the next
+ * deadline.
  * <p>
  * Note that this timer state implementation is not recommended for larger numbers of concurrent timers as it takes
  * O(n) time to find the timer with the next deadline!
  */
 public class SimpleTimerState implements TimerState.Mutable {
 
-    public static final int DEFAULT_INITIAL_CAPACITY = 64;
-
-    private final Long2LongHashMap idToIndex;
-    private final LongArrayList ids;
-    private final IntArrayList types;
-    private final IntArrayList repetitions;
-    private final LongArrayList times;
-    private final LongArrayList timeouts;
+    private final MutableTimerStore timers;
 
     public SimpleTimerState() {
-        this(DEFAULT_INITIAL_CAPACITY);
+        this(new DirectTimerStore());
     }
 
-    public SimpleTimerState(final int initialCapacity) {
-        this.idToIndex = new Long2LongHashMap(2 * initialCapacity, DEFAULT_LOAD_FACTOR, -1);
-        this.ids = new LongArrayList(initialCapacity, 0);
-        this.types = new IntArrayList(initialCapacity, 0);
-        this.repetitions = new IntArrayList(initialCapacity, 0);
-        this.times = new LongArrayList(initialCapacity, 0);
-        this.timeouts = new LongArrayList(initialCapacity, 0);
+    public SimpleTimerState(final MutableTimerStore timers) {
+        this.timers = requireNonNull(timers);
     }
 
     @Override
     public int count() {
-        return ids.size();
+        return timers.count();
     }
 
     @Override
-    public boolean hasTimer(final long id) {
-        return idToIndex.containsKey(id);
+    public int index(final int sourceId, final long timerId) {
+        return timers.index(sourceId, timerId);
+    }
+
+
+    @Override
+    public boolean hasTimer(final int sourceId, final long timerId) {
+        return timers.hasTimer(sourceId, timerId);
     }
 
     @Override
-    public long id(final int index) {
-        return ids.getLong(index);
+    public int sourceId(final int index) {
+        return timers.sourceId(index);
     }
 
     @Override
-    public int type(final int index) {
-        return types.getInt(index);
+    public long timerId(final int index) {
+        return timers.timerId(index);
+    }
+
+    @Override
+    public Style style(final int index) {
+        return timers.style(index);
     }
 
     @Override
     public int repetition(final int index) {
-        return repetitions.getInt(index);
+        return timers.repetition(index);
     }
 
     @Override
-    public long time(final int index) {
-        return times.getLong(index);
+    public long startTime(final int index) {
+        return timers.startTime(index);
     }
 
     @Override
     public long timeout(final int index) {
-        return timeouts.getLong(index);
+        return timers.timeout(index);
     }
 
     @Override
-    public int indexById(final long id) {
-        return (int)idToIndex.get(id);
+    public int timerType(final int index) {
+        return timers.timerType(index);
+    }
+
+    @Override
+    public long contextId(final int index) {
+        return timers.contextId(index);
+    }
+
+    @Override
+    public long deadline(final int index) {
+        return timers.deadline(index);
+    }
+
+    @Override
+    public boolean removeById(final int sourceId, final long timerId) {
+        return timers.removeById(sourceId, timerId);
     }
 
     @Override
     public void remove(final int index) {
-        final long id = ids.fastUnorderedRemove(index);
-        idToIndex.remove(id);
-        types.fastUnorderedRemove(index);
-        repetitions.fastUnorderedRemove(index);
-        times.fastUnorderedRemove(index);
-        timeouts.fastUnorderedRemove(index);
-        if (index < ids.size()) {
-            idToIndex.put(ids.get(index), index);
-        }
+        timers.remove(index);
     }
 
     @Override
-    public boolean add(final long id, final int type, final int repetition, final long time, final long timeout) {
-        if (!hasTimer(id) && timeout >= 0) {
-            idToIndex.put(id, ids.size());
-            ids.addLong(id);
-            types.addInt(type);
-            repetitions.addInt(repetition);
-            times.addLong(time);
-            timeouts.addLong(timeout);
-            return true;
-        }
-        return false;
+    public boolean add(final Event event, final Timer timer) {
+        return timers.add(event, timer);
     }
 
     @Override
-    public void repetition(final int index, final int repetition) {
-        repetitions.setInt(index, repetition);
+    public boolean add(final int sourceId, final long timerId, final Style style, final int repetition,
+                       final long startTime, final long timeout, final int timerType, final long contextId) {
+        return timers.add(sourceId, timerId, style, repetition, startTime, timeout, timerType, contextId);
+    }
+
+    @Override
+    public void updateRepetitionById(final int sourceId, final long timerId, final int repetition) {
+        timers.updateRepetitionById(sourceId, timerId, repetition);
     }
 
     @Override
@@ -152,8 +156,6 @@ public class SimpleTimerState implements TimerState.Mutable {
         if (count() == 0) {
             return "SimpleTimerState{}";
         }
-        return "SimpleTimerState{" +
-                "next=" + id(indexOfNextDeadline()) +
-                ", ids=[" + ids + "]}";
+        return "SimpleTimerState{next=" + timerId(indexOfNextDeadline()) + ", timers=" + timers + "}";
     }
 }

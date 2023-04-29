@@ -44,7 +44,7 @@ public class ReplicationPluginStep implements AgentStep {
     private final EnforceLeaderInput enforceLeaderInput;
     private final Connection.Poller[] connectionPollers;
 
-    public ReplicationPluginStep(final Configuration configuration,
+    public ReplicationPluginStep(final ReplicationConfig configuration,
                                  final ReplicationState.Volatile replicationState,
                                  final EnforcedLeaderEventReceiver enforcedLeaderEventReceiver,
                                  final Handler connectionHandler,
@@ -116,7 +116,7 @@ public class ReplicationPluginStep implements AgentStep {
         return serverId == replicationState.leaderId();
     }
 
-    private Poller[] initPollers(final Configuration configuration) {
+    private Poller[] initPollers(final ReplicationConfig configuration) {
         final Set<Connection> connections = new LinkedHashSet<>();
         for (int i = 0; i < serverIds.length; i++) {
             connections.add(configuration.connection(serverIds[i]));

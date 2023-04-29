@@ -41,12 +41,12 @@ import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;
 public class ReplicationCommandProcessor implements CommandProcessor {
 
     private final ElaraLogger logger;
-    private final Configuration configuration;
+    private final ReplicationConfig configuration;
     private final IntHashSet serverIds;
     private final ReplicationState replicationState;
 
     public ReplicationCommandProcessor(final Logger.Factory loggerFactory,
-                                       final Configuration configuration,
+                                       final ReplicationConfig configuration,
                                        final ReplicationState replicationState) {
         this.logger = ElaraLogger.create(loggerFactory, getClass());
         this.configuration = requireNonNull(configuration);

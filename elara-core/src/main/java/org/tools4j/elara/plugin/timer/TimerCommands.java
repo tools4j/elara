@@ -23,53 +23,22 @@
  */
 package org.tools4j.elara.plugin.timer;
 
-import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.DataFrame;
 
 import static org.tools4j.elara.flyweight.FrameType.COMMAND_TYPE;
-import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.PAYLOAD_SIZE;
-import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_ID_OFFSET;
-import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_REPETITION_OFFSET;
-import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_TIMEOUT_OFFSET;
-import static org.tools4j.elara.plugin.timer.TimerPayloadDescriptor.TIMER_TYPE_OFFSET;
 
 /**
- * Timer commands issued through {@link TimerTriggerInput}.
+ * Timer commands sent by {@link TimerSignalInput} and {@link TimerController}.
  */
 public enum TimerCommands {
     ;
-    /** Command issued by {@link TimerTriggerInput}; its processing subsequently triggers a {@link TimerEvents#TIMER_EXPIRED} event.*/
-    public static final int TRIGGER_TIMER = -10;
-
-    public static int triggerTimer(final MutableDirectBuffer buffer,
-                                   final int offset,
-                                   final long timerId,
-                                   final int timerType,
-                                   final int repetition,
-                                   final long timeout) {
-        buffer.putLong(offset + TIMER_ID_OFFSET, timerId);
-        buffer.putInt(offset + TIMER_TYPE_OFFSET, timerType);
-        buffer.putInt(offset + TIMER_REPETITION_OFFSET, repetition);
-        buffer.putLong(offset + TIMER_TIMEOUT_OFFSET, timeout);
-        return PAYLOAD_SIZE;
-    }
-
-    public static long timerId(final Command command) {
-        return TimerPayloadDescriptor.timerId(command.payload());
-    }
-
-    public static int timerType(final Command command) {
-        return TimerPayloadDescriptor.timerType(command.payload());
-    }
-
-    public static int timerRepetition(final Command command) {
-        return TimerPayloadDescriptor.timerRepetition(command.payload());
-    }
-
-    public static long timerTimeout(final Command command) {
-        return TimerPayloadDescriptor.timerTimeout(command.payload());
-    }
+    /** Payload type for command to start a timer.*/
+    public static final int START_TIMER = TimerPayloadTypes.START_TIMER;
+    /** Payload type for command to cancel a timer.*/
+    public static final int CANCEL_TIMER = TimerPayloadTypes.CANCEL_TIMER;
+    /** Payload type for command to signal that a timer should trigger or be expired.*/
+    public static final int SIGNAL_TIMER = TimerPayloadTypes.SIGNAL_TIMER;
 
     public static boolean isTimerCommand(final Command command) {
         return isTimerCommand(command.payloadType());
@@ -80,12 +49,7 @@ public enum TimerCommands {
     }
 
     public static boolean isTimerCommand(final int payloadType) {
-        switch (payloadType) {
-            case TRIGGER_TIMER:
-                return true;
-            default:
-                return false;
-        }
+        return TimerPayloadTypes.isTimerPayloadType(payloadType);
     }
 
     public static String timerCommandName(final Command command) {
@@ -98,8 +62,12 @@ public enum TimerCommands {
 
     public static String timerCommandName(final int payloadType) {
         switch (payloadType) {
-            case TRIGGER_TIMER:
-                return "TRIGGER_TIMER";
+            case START_TIMER:
+                return "START_TIMER";
+            case CANCEL_TIMER:
+                return "CANCEL_TIMER";
+            case SIGNAL_TIMER:
+                return "SIGNAL_TIMER";
             default:
                 throw new IllegalArgumentException("Not a timer command type: " + payloadType);
         }

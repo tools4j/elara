@@ -32,7 +32,7 @@ import org.tools4j.elara.app.state.SingleEventBaseState;
 import org.tools4j.elara.event.CompositeEventApplier;
 import org.tools4j.elara.handler.DefaultEventHandler;
 import org.tools4j.elara.handler.EventHandler;
-import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.plugin.api.PluginSpecification.Installer;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.step.EventReplayStep;
 
@@ -46,14 +46,14 @@ public class DefaultApplierFactory implements ApplierFactory {
     private final ApplierConfig applierConfig;
     private final EventStoreConfig eventStoreConfig;
     private final MutableBaseState baseState;
-    private final Plugin.Configuration[] plugins;
+    private final Installer[] plugins;
     private final Supplier<? extends ApplierFactory> applierSingletons;
 
     public DefaultApplierFactory(final AppConfig appConfig,
                                  final ApplierConfig applierConfig,
                                  final EventStoreConfig eventStoreConfig,
                                  final MutableBaseState baseState,
-                                 final Plugin.Configuration[] plugins,
+                                 final Installer[] plugins,
                                  final Supplier<? extends ApplierFactory> applierSingletons) {
         this.appConfig = requireNonNull(appConfig);
         this.applierConfig = requireNonNull(applierConfig);
@@ -71,7 +71,7 @@ public class DefaultApplierFactory implements ApplierFactory {
         }
         final EventApplier[] appliers = new EventApplier[plugins.length + 1];
         int count = 0;
-        for (final org.tools4j.elara.plugin.api.Plugin.Configuration plugin : plugins) {
+        for (final Installer plugin : plugins) {
             appliers[count] = plugin.eventApplier(baseState);
             if (appliers[count] != EventApplier.NOOP) {
                 count++;

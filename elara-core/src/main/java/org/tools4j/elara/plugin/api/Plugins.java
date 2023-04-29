@@ -27,6 +27,7 @@ import org.tools4j.elara.plugin.boot.BootPlugin;
 import org.tools4j.elara.plugin.metrics.MetricsConfig;
 import org.tools4j.elara.plugin.metrics.MetricsPlugin;
 import org.tools4j.elara.plugin.repair.RepairPlugin;
+import org.tools4j.elara.plugin.replication.ReplicationConfig;
 import org.tools4j.elara.plugin.replication.ReplicationPlugin;
 import org.tools4j.elara.plugin.timer.TimerPlugin;
 
@@ -37,24 +38,27 @@ public enum Plugins {
     }
 
     public static TimerPlugin timerPlugin() {
-        return TimerPlugin.DEFAULT;
+        return new TimerPlugin();
     }
     public static TimerPlugin timerPlugin(final int sourceId) {
         return new TimerPlugin(sourceId);
+    }
+    public static TimerPlugin timerPlugin(final int sourceId, final boolean useInterceptor, final int signalInputSkip) {
+        return new TimerPlugin(sourceId, useInterceptor, signalInputSkip);
     }
 
     public static BootPlugin bootPlugin() {
         return BootPlugin.DEFAULT;
     }
-    public static BootPlugin bootPlugin(final int commandSource) {
-        return new BootPlugin(commandSource);
+    public static BootPlugin bootPlugin(final int sourceId) {
+        return new BootPlugin(sourceId);
     }
 
-    public static MetricsPlugin metricsPlugin(final MetricsConfig configuration) {
-        return new MetricsPlugin(configuration);
+    public static MetricsPlugin metricsPlugin(final MetricsConfig config) {
+        return new MetricsPlugin(config);
     }
 
-    public static ReplicationPlugin replicationPlugin(final org.tools4j.elara.plugin.replication.Configuration configuration) {
-        return new ReplicationPlugin(configuration);
+    public static ReplicationPlugin replicationPlugin(final ReplicationConfig config) {
+        return new ReplicationPlugin(config);
     }
 }

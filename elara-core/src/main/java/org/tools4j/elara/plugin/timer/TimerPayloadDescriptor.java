@@ -23,10 +23,10 @@
  */
 package org.tools4j.elara.plugin.timer;
 
-import org.agrona.DirectBuffer;
-
 /**
- * Descriptor of payload layout for timer commands and events in a byte buffer.
+ * Descriptor of payload data for timer commands and events in a byte buffer.
+ * <p>
+ * <br>
  * <pre>
 
  0         1         2         3         4         5         6
@@ -34,9 +34,11 @@ import org.agrona.DirectBuffer;
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  |                           Timer ID                            |
  +-------+-------+-------+-------+-------+-------+-------+-------+
- |          Timer Type           |           Repetition          |
- +-------+-------+-------+-------+-------+-------+-------+-------+
  |                            Timeout                            |
+ +-------+-------+-------+-------+-------+-------+-------+-------+
+ |          Timer Type           |PA         Repetition          |
+ +-------+-------+-------+-------+-------+-------+-------+-------+
+ |                          Context ID                           |
  +-------+-------+-------+-------+-------+-------+-------+-------+
 
  * </pre>
@@ -44,30 +46,20 @@ import org.agrona.DirectBuffer;
 public enum TimerPayloadDescriptor {
     ;
 
+    public static final int FLAG_PERIODIC = 0x80000000;
+    public static final int FLAG_ALARM = 0x40000000;
+    public static final int FLAG_NONE = 0x00000000;
+
     public static final int TIMER_ID_OFFSET = 0;
     public static final int TIMER_ID_LENGTH = Long.BYTES;
-    public static final int TIMER_TYPE_OFFSET = TIMER_ID_OFFSET + TIMER_ID_LENGTH;
+    public static final int TIMEOUT_OFFSET = TIMER_ID_OFFSET + TIMER_ID_LENGTH;
+    public static final int TIMEOUT_LENGTH = Long.BYTES;
+    public static final int TIMER_TYPE_OFFSET = TIMEOUT_OFFSET + TIMEOUT_LENGTH;
     public static final int TIMER_TYPE_LENGTH = Integer.BYTES;
-    public static final int TIMER_REPETITION_OFFSET = TIMER_TYPE_OFFSET + TIMER_TYPE_LENGTH;
-    public static final int TIMER_REPETITION_LENGTH = Integer.BYTES;
-    public static final int TIMER_TIMEOUT_OFFSET = TIMER_REPETITION_OFFSET + TIMER_REPETITION_LENGTH;
-    public static final int TIMER_TIMEOUT_LENGTH = Long.BYTES;
+    public static final int REPETITION_OFFSET = TIMER_TYPE_OFFSET + TIMER_TYPE_LENGTH;
+    public static final int REPETITION_LENGTH = Integer.BYTES;
+    public static final int CONTEXT_ID_OFFSET = REPETITION_OFFSET + REPETITION_LENGTH;
+    public static final int CONTEXT_ID_LENGTH = Long.BYTES;
 
-    public static final int PAYLOAD_SIZE = TIMER_TIMEOUT_OFFSET + TIMER_TIMEOUT_LENGTH;
-
-    public static long timerId(final DirectBuffer payload) {
-        return payload.getLong(TIMER_ID_OFFSET);
-    }
-
-    public static int timerType(final DirectBuffer payload) {
-        return payload.getInt(TIMER_TYPE_OFFSET);
-    }
-
-    public static int timerRepetition(final DirectBuffer payload) {
-        return payload.getInt(TIMER_REPETITION_OFFSET);
-    }
-
-    public static long timerTimeout(final DirectBuffer payload) {
-        return payload.getLong(TIMER_TIMEOUT_OFFSET);
-    }
+    public static final int PAYLOAD_SIZE = CONTEXT_ID_OFFSET + CONTEXT_ID_LENGTH;
 }

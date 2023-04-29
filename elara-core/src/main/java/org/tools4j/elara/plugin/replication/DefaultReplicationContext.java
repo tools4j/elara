@@ -30,7 +30,7 @@ import org.agrona.collections.IntHashSet;
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.replication.ReplicationState.NULL_SERVER;
 
-final class DefaultContext implements Context {
+final class DefaultReplicationContext implements ReplicationContext {
     public static final int DEFAULT_INITIAL_SEND_BUFFER_CAPACITY = 1024;
     public static final long DEFAULT_HEARTBEAT_INTERVAL = 10000;//10s if millis
     public static final long DEFAULT_LEADER_TIMEOUT = 20000;//20s if millis
@@ -57,12 +57,12 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Context serverId(final int serverId) {
+    public ReplicationContext serverId(final int serverId) {
         return serverId(serverId, true);
     }
 
     @Override
-    public Context serverId(final int serverId, final boolean local) {
+    public ReplicationContext serverId(final int serverId, final boolean local) {
         this.serverIds.addInt(serverId);
         if (local) {
             this.serverId = serverId;
@@ -71,7 +71,7 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Context serverIds(final int... serverIds) {
+    public ReplicationContext serverIds(final int... serverIds) {
         for (final int serverId : serverIds) {
             serverId(serverId, false);
         }
@@ -84,7 +84,7 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Context enforceLeaderInput(final EnforceLeaderInput input) {
+    public ReplicationContext enforceLeaderInput(final EnforceLeaderInput input) {
         this.enforceLeaderInput = requireNonNull(input);
         return this;
     }
@@ -95,7 +95,7 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Context connection(final int serverId, final Connection connection) {
+    public ReplicationContext connection(final int serverId, final Connection connection) {
         connectionByServerId.put(serverId, connection);
         return this;
     }
@@ -106,7 +106,7 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Context heartbeatInterval(final long interval) {
+    public ReplicationContext heartbeatInterval(final long interval) {
         if (interval < 0) {
             throw new IllegalArgumentException("Heartbeat interval cannot be negative: " + interval);
         }
@@ -120,7 +120,7 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Context leaderTimeout(final long timeout) {
+    public ReplicationContext leaderTimeout(final long timeout) {
         if (timeout < 0) {
             throw new IllegalArgumentException("Leader timeout cannot be negative: " + timeout);
         }
@@ -134,7 +134,7 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Context serverReplyTimeout(final long timeout) {
+    public ReplicationContext serverReplyTimeout(final long timeout) {
         if (timeout < 0) {
             throw new IllegalArgumentException("Server replay timeout cannot be negative: " + timeout);
         }
@@ -148,7 +148,7 @@ final class DefaultContext implements Context {
     }
 
     @Override
-    public Context initialSendBufferCapacity(final int capacity) {
+    public ReplicationContext initialSendBufferCapacity(final int capacity) {
         if (capacity < 0) {
             throw new IllegalArgumentException("Initial buffer capacity cannot be negative: " + capacity);
         }
@@ -156,7 +156,7 @@ final class DefaultContext implements Context {
         return this;
     }
 
-    static Configuration validate(final Configuration configuration) {
+    static ReplicationConfig validate(final ReplicationConfig configuration) {
         final int localServerId = configuration.serverId();
         final IntHashSet serverIds = new IntHashSet(NULL_SERVER);
         for (final int serverId : configuration.serverIds()) {

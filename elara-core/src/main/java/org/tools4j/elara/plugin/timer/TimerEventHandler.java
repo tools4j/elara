@@ -21,13 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.api;
+package org.tools4j.elara.plugin.timer;
 
-/**
- * API implemented by Elara plugins.
- *
- * @param <P> the plugin state type
- */
-public interface Plugin<P> {
-    PluginSpecification<P> specification();
+import org.tools4j.elara.event.Event;
+
+@FunctionalInterface
+public interface TimerEventHandler {
+    TimerEventHandler NOOP = (event, timer) -> {};
+
+    default void onTimerEvent(final Event event, final Timer timer) {
+        if (event.payloadType() == TimerPayloadTypes.SIGNAL_TIMER) {
+            onTimerSignal(event, timer);
+        }
+    }
+
+    void onTimerSignal(Event event, Timer timer);
 }

@@ -54,7 +54,7 @@ final class EnforcedLeaderEventReceiver implements EnforceLeaderReceiver {
 
     EnforcedLeaderEventReceiver(final Factory loggerFactory,
                                 final TimeSource timeSource,
-                                final Configuration configuration,
+                                final ReplicationConfig configuration,
                                 final ReplicationState state,
                                 final Appender eventStoreAppender) {
         this.logger = ElaraLogger.create(loggerFactory, getClass());

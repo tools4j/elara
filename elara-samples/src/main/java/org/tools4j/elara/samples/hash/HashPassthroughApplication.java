@@ -38,6 +38,7 @@ import org.tools4j.elara.plugin.metrics.MetricsConfig;
 import org.tools4j.elara.plugin.metrics.MetricsContext;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.samples.hash.HashApplication.ModifiableState;
+import org.tools4j.elara.samples.time.PseudoMicroClock;
 import org.tools4j.elara.time.TimeSource;
 
 import java.io.File;

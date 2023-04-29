@@ -28,7 +28,7 @@ import org.tools4j.elara.app.config.OutputConfig;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.output.CompositeOutput;
 import org.tools4j.elara.output.Output;
-import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.plugin.api.PluginSpecification.Installer;
 
 import java.util.Arrays;
 
@@ -39,12 +39,12 @@ public class DefaultOutputFactory implements OutputFactory {
     private final AppConfig appConfig;
     private final OutputConfig outputConfig;
     private final BaseState baseState;
-    private final Plugin.Configuration[] plugins;
+    private final Installer[] plugins;
 
     public DefaultOutputFactory(final AppConfig appConfig,
                                 final OutputConfig outputConfig,
                                 final BaseState baseState,
-                                final Plugin.Configuration[] plugins) {
+                                final Installer[] plugins) {
         this.appConfig = requireNonNull(appConfig);
         this.outputConfig = requireNonNull(outputConfig);
         this.baseState = requireNonNull(baseState);
@@ -58,7 +58,7 @@ public class DefaultOutputFactory implements OutputFactory {
         }
         final Output[] outputs = new Output[plugins.length + 1];
         int count = 0;
-        for (final Plugin.Configuration plugin : plugins) {
+        for (final Installer plugin : plugins) {
             outputs[count] = plugin.output(baseState);
             if (outputs[count] != Output.NOOP) {
                 count++;

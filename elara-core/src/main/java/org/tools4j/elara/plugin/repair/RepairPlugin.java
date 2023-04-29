@@ -26,7 +26,8 @@ package org.tools4j.elara.plugin.repair;
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.EventStoreConfig;
 import org.tools4j.elara.exception.ExceptionHandler;
-import org.tools4j.elara.plugin.api.Plugin.NullState;
+import org.tools4j.elara.plugin.api.PluginStateProvider;
+import org.tools4j.elara.plugin.api.PluginStateProvider.NullState;
 import org.tools4j.elara.plugin.api.ReservedPayloadType;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.store.EventStoreRepairer;
@@ -42,24 +43,32 @@ public enum RepairPlugin implements SystemPlugin<NullState> {
     INSTANCE;
 
     @Override
-    public NullState defaultPluginState(final AppConfig appConfig) {
-        return NullState.NULL;
+    public SystemPluginSpecification<NullState> specification() {
+        return Specification.INSTANCE;
     }
 
-    @Override
-    public Configuration configuration(final AppConfig appConfig, final NullState pluginState) {
-        if (appConfig instanceof EventStoreConfig) {
-            repairEventStoreIfNeeded(((EventStoreConfig) appConfig).eventStore(), appConfig.exceptionHandler());
+    private enum Specification implements SystemPluginSpecification<NullState> {
+        INSTANCE;
+
+        @Override
+        public PluginStateProvider<NullState> defaultPluginStateProvider() {
+            return PluginStateProvider.NULL_STATE_PROVIDER;
         }
-        return NO_CONFIGURATION;
+
+        @Override
+        public ReservedPayloadType reservedPayloadType() {
+            return ReservedPayloadType.NONE;
+        }
+        @Override
+        public Installer installer(final AppConfig appConfig, final NullState pluginState) {
+            if (appConfig instanceof EventStoreConfig) {
+                repairEventStoreIfNeeded(((EventStoreConfig) appConfig).eventStore(), appConfig.exceptionHandler());
+            }
+            return Installer.NOOP_INSTALLER;
+        }
     }
 
-    @Override
-    public ReservedPayloadType reservedPayloadType() {
-        return ReservedPayloadType.NONE;
-    }
-
-    private void repairEventStoreIfNeeded(final MessageStore eventStore,
+    private static void repairEventStoreIfNeeded(final MessageStore eventStore,
                                           final ExceptionHandler exceptionHandler) {
         final EventStoreRepairer eventStoreRepairer = new EventStoreRepairer(eventStore);
         if (eventStoreRepairer.isCorrupted()) {

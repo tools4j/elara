@@ -21,13 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.api;
+package org.tools4j.elara.plugin.replication;
 
-/**
- * API implemented by Elara plugins.
- *
- * @param <P> the plugin state type
- */
-public interface Plugin<P> {
-    PluginSpecification<P> specification();
+public interface ReplicationConfig {
+    int serverId();
+    int[] serverIds();
+    EnforceLeaderInput enforceLeaderInput();
+    Connection connection(int serverId);
+
+    long heartbeatInterval();
+    long leaderTimeout();
+    long serverReplyTimeout();
+
+    int initialSendBufferCapacity();
+
+    static ReplicationContext configure() {
+        return ReplicationContext.create();
+    }
+
+    static ReplicationConfig validate(final ReplicationConfig configuration) {
+        return DefaultReplicationContext.validate(configuration);
+    }
 }

@@ -39,6 +39,7 @@ import org.tools4j.elara.plugin.metrics.MetricsConfig;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.run.ElaraRunner;
+import org.tools4j.elara.samples.time.PseudoMicroClock;
 import org.tools4j.elara.send.CommandSender.SendingContext;
 import org.tools4j.elara.store.InMemoryStore;
 import org.tools4j.elara.time.TimeSource;

@@ -23,11 +23,16 @@
  */
 package org.tools4j.elara.plugin.api;
 
-/**
- * API implemented by Elara plugins.
- *
- * @param <P> the plugin state type
- */
-public interface Plugin<P> {
-    PluginSpecification<P> specification();
+import org.tools4j.elara.app.config.AppConfig;
+
+@FunctionalInterface
+public
+interface PluginStateProvider<P> {
+    PluginStateProvider<NullState> NULL_STATE_PROVIDER = appConfig -> NullState.NULL;
+
+    P createPluginState(AppConfig appConfig);
+
+    enum NullState {
+        NULL
+    }
 }

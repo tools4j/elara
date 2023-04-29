@@ -32,6 +32,7 @@ import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.app.state.MutableBaseState;
+import org.tools4j.elara.plugin.api.PluginStateProvider;
 import org.tools4j.elara.plugin.api.ReservedPayloadType;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.replication.Connection.Handler;
@@ -48,75 +49,88 @@ import static java.util.Objects.requireNonNull;
  */
 public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable> {
 
-    private final org.tools4j.elara.plugin.replication.Configuration configuration;
+    private final ReplicationConfig configuration;
+    private final Specification specification = new Specification();
 
-    public ReplicationPlugin(final org.tools4j.elara.plugin.replication.Configuration configuration) {
-        this.configuration = org.tools4j.elara.plugin.replication.Configuration.validate(configuration);
+    public ReplicationPlugin(final ReplicationConfig configuration) {
+        this.configuration = ReplicationConfig.validate(configuration);
     }
 
-    public static Context configure() {
-        return Context.create();
-    }
-
-    @Override
-    public ReservedPayloadType reservedPayloadType() {
-        return ReservedPayloadType.REPLICATION;
+    public ReplicationConfig configuration() {
+        return configuration;
     }
 
     @Override
-    public ReplicationState.Mutable defaultPluginState(final AppConfig appConfig) {
-        return new DefaultReplicationState();
+    public SystemPluginSpecification<Mutable> specification() {
+        return specification;
     }
 
-    @Override
-    public Configuration configuration(final AppConfig appConfig,
-                                       final Mutable replicationState) {
-        requireNonNull(appConfig);
-        requireNonNull(replicationState);
-        if (!(appConfig instanceof EventStoreConfig)) {
-            throw new IllegalArgumentException("Plugin requires EventStoreConfig but found " + appConfig.getClass());
+    public static ReplicationContext configure() {
+        return ReplicationContext.create();
+    }
+
+    private final class Specification implements SystemPluginSpecification<ReplicationState.Mutable> {
+        @Override
+        public PluginStateProvider<Mutable> defaultPluginStateProvider() {
+            return appConfig -> new DefaultReplicationState();
         }
-        final EventStoreConfig eventStoreConfig = (EventStoreConfig) appConfig;
-        final MessageStore eventStore = eventStoreConfig.eventStore();
-        final Appender eventStoreAppender = eventStore.appender();
-        final EnforcedLeaderEventReceiver enforcedLeaderEventReceiver = new EnforcedLeaderEventReceiver(
-                appConfig.loggerFactory(), appConfig.timeSource(), configuration, replicationState, eventStoreAppender
-        );
-        final DispatchingPublisher dispatchingPublisher = new DispatchingPublisher(configuration);
-        final EventSender eventSender = new DefaultEventSender(configuration, replicationState, eventStore,
-                dispatchingPublisher);
 
-        return new Configuration.Default() {
-            @Override
-            public AgentStep step(final BaseState baseState, final ExecutionType executionType) {
-                //noinspection SwitchStatementWithTooFewBranches
-                switch (executionType) {
-                    case ALWAYS_WHEN_EVENTS_APPLIED:
-                        final Handler connectionHandler = new ConnectionHandler(
-                                appConfig.loggerFactory(), configuration, baseState, replicationState, eventStoreAppender, dispatchingPublisher
-                        );
-                        return new ReplicationPluginStep(
-                                configuration, replicationState, enforcedLeaderEventReceiver, connectionHandler, eventSender
-                        );
-                    default:
-                        return AgentStep.NOOP;
+        @Override
+        public ReservedPayloadType reservedPayloadType() {
+            return ReservedPayloadType.REPLICATION;
+        }
+
+
+        @Override
+        public Installer installer(final AppConfig appConfig,
+                                   final Mutable replicationState) {
+            requireNonNull(appConfig);
+            requireNonNull(replicationState);
+            if (!(appConfig instanceof EventStoreConfig)) {
+                throw new IllegalArgumentException("Plugin requires EventStoreConfig but found " + appConfig.getClass());
+            }
+            final EventStoreConfig eventStoreConfig = (EventStoreConfig) appConfig;
+            final MessageStore eventStore = eventStoreConfig.eventStore();
+            final Appender eventStoreAppender = eventStore.appender();
+            final EnforcedLeaderEventReceiver enforcedLeaderEventReceiver = new EnforcedLeaderEventReceiver(
+                    appConfig.loggerFactory(), appConfig.timeSource(), configuration, replicationState, eventStoreAppender
+            );
+            final DispatchingPublisher dispatchingPublisher = new DispatchingPublisher(configuration);
+            final EventSender eventSender = new DefaultEventSender(configuration, replicationState, eventStore,
+                    dispatchingPublisher);
+
+            return new Installer.Default() {
+                @Override
+                public AgentStep step(final BaseState baseState, final ExecutionType executionType) {
+                    //noinspection SwitchStatementWithTooFewBranches
+                    switch (executionType) {
+                        case ALWAYS_WHEN_EVENTS_APPLIED:
+                            final Handler connectionHandler = new ConnectionHandler(
+                                    appConfig.loggerFactory(), configuration, baseState, replicationState, eventStoreAppender, dispatchingPublisher
+                            );
+                            return new ReplicationPluginStep(
+                                    configuration, replicationState, enforcedLeaderEventReceiver, connectionHandler, eventSender
+                            );
+                        default:
+                            return AgentStep.NOOP;
+                    }
                 }
-            }
 
-            @Override
-            public CommandProcessor commandProcessor(final BaseState baseState) {
-                return new ReplicationCommandProcessor(appConfig.loggerFactory(), configuration, replicationState);
-            }
+                @Override
+                public CommandProcessor commandProcessor(final BaseState baseState) {
+                    return new ReplicationCommandProcessor(appConfig.loggerFactory(), configuration, replicationState);
+                }
 
-            @Override
-            public EventApplier eventApplier(final MutableBaseState baseState) {
-                return new ReplicationEventApplier(appConfig.loggerFactory(), configuration, replicationState);
-            }
+                @Override
+                public EventApplier eventApplier(final MutableBaseState baseState) {
+                    return new ReplicationEventApplier(appConfig.loggerFactory(), configuration, replicationState);
+                }
 
-            @Override
-            public Interceptor interceptor(final StateFactory stateFactory) {
-                return new ReplicationInterceptor(appConfig, eventStoreConfig, configuration, stateFactory, replicationState);
-            }
-        };
+                @Override
+                public Interceptor interceptor(final StateFactory stateFactory) {
+                    return new ReplicationInterceptor(appConfig, eventStoreConfig, configuration, stateFactory, replicationState);
+                }
+            };
+        }
     }
 }

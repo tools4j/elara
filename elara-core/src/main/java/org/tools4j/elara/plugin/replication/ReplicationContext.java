@@ -23,18 +23,18 @@
  */
 package org.tools4j.elara.plugin.replication;
 
-public interface Context extends Configuration {
-    Context serverId(int serverId);
-    Context serverId(int serverId, boolean local);
-    Context serverIds(int... serverIds);
-    Context enforceLeaderInput(EnforceLeaderInput input);
-    Context connection(int serverId, Connection connection);
-    Context heartbeatInterval(long interval);
-    Context leaderTimeout(long timeout);
-    Context serverReplyTimeout(long timeout);
-    Context initialSendBufferCapacity(int capacity);
+public interface ReplicationContext extends ReplicationConfig {
+    ReplicationContext serverId(int serverId);
+    ReplicationContext serverId(int serverId, boolean local);
+    ReplicationContext serverIds(int... serverIds);
+    ReplicationContext enforceLeaderInput(EnforceLeaderInput input);
+    ReplicationContext connection(int serverId, Connection connection);
+    ReplicationContext heartbeatInterval(long interval);
+    ReplicationContext leaderTimeout(long timeout);
+    ReplicationContext serverReplyTimeout(long timeout);
+    ReplicationContext initialSendBufferCapacity(int capacity);
 
-    static Context create() {
-        return new DefaultContext();
+    static ReplicationContext create() {
+        return new DefaultReplicationContext();
     }
 }

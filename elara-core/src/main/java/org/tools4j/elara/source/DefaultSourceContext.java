@@ -33,9 +33,10 @@ import static java.util.Objects.requireNonNull;
 
 public class DefaultSourceContext implements SourceContext {
 
-    private final BaseState baseState;
-    private final SenderSupplier senderSupplier;
     private final int sourceId;
+    private final BaseState baseState;
+    private final CommandSender commandSender;
+    private final InFlightState inFlightState = new InFlightStateImpl();
 
     private final SequenceGenerator sourceSequenceGenerator;
 
@@ -49,9 +50,9 @@ public class DefaultSourceContext implements SourceContext {
                                 final BaseState baseState,
                                 final SenderSupplier senderSupplier,
                                 final SequenceGenerator sourceSequenceGenerator) {
-        this.baseState = requireNonNull(baseState);
-        this.senderSupplier = requireNonNull(senderSupplier);
         this.sourceId = sourceId;
+        this.baseState = requireNonNull(baseState);
+        this.commandSender = senderSupplier.senderFor(sourceId, sourceSequenceGenerator);
         this.sourceSequenceGenerator = requireNonNull(sourceSequenceGenerator);
     }
 
@@ -66,12 +67,12 @@ public class DefaultSourceContext implements SourceContext {
 
     @Override
     public CommandSender commandSender() {
-        return senderSupplier.senderFor(sourceId, sourceSequenceGenerator);
+        return commandSender;
     }
 
     @Override
     public InFlightState inFlightState() {
-        return null;//FIXME implement
+        return inFlightState;
     }
 
     @Override
@@ -80,5 +81,23 @@ public class DefaultSourceContext implements SourceContext {
                 "sourceId=" + sourceId +
                 "|sourceSequence=" + sourceSequenceGenerator.sequence() +
                 '}';
+    }
+
+    private class InFlightStateImpl implements InFlightState {
+
+        @Override
+        public CommandSendingState commandLastSent() {
+            return null;//FIXME
+        }
+
+        @Override
+        public EventProcessingState eventLastProcessed() {
+            return null;//FIXME
+        }
+
+        @Override
+        public boolean hasInFlightCommand() {
+            return baseState.lastAppliedCommandSequence(sourceId) < sourceSequenceGenerator.sequence() - 1;
+        }
     }
 }

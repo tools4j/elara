@@ -21,28 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.heartbeat;
+package org.tools4j.elara.plugin.timer;
 
-import org.tools4j.elara.app.config.AppConfig;
-import org.tools4j.elara.plugin.api.Plugin;
-import org.tools4j.elara.plugin.api.Plugin.NullState;
+public interface Timer {
+    long timerId();
+    Style style();
+    long timeout();
+    int repetition();
+    int timerType();
+    long contextId();
 
-import static java.util.Objects.requireNonNull;
-
-/**
- * A plugin that issues heartbeat commands and optionally events that can be reacted upon.
- */
-public class HeartbeatPlugin implements Plugin<NullState> {
-
-    @Override
-    public NullState defaultPluginState(final AppConfig appConfig) {
-        return NullState.NULL;
-    }
-
-    @Override
-    public Configuration configuration(final AppConfig appConfig, final NullState pluginState) {
-        requireNonNull(appConfig);
-        requireNonNull(pluginState);
-        return new Configuration.Default() {};
+    enum Style {
+        ALARM,
+        TIMER,
+        PERIODIC
     }
 }

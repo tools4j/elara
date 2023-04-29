@@ -25,8 +25,14 @@ package org.tools4j.elara.plugin.api;
 
 /**
  * Elara system plugin with a reserved payload type range.
+ *
  * @param <P> the plugin state type
  */
 public interface SystemPlugin<P> extends Plugin<P> {
-    ReservedPayloadType reservedPayloadType();
+    @Override
+    SystemPluginSpecification<P> specification();
+
+    interface SystemPluginSpecification<P> extends PluginSpecification<P> {
+        ReservedPayloadType reservedPayloadType();
+    }
 }

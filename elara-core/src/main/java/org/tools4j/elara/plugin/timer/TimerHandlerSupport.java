@@ -21,26 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.samples.hash;
+package org.tools4j.elara.plugin.timer;
 
-import org.tools4j.elara.time.TimeSource;
+public interface TimerHandlerSupport {
+    void addTimerEventHandler(TimerEventHandler handler);
+    void addTimerEventHandler(long contextId, TimerEventHandler handler);
+    void addTimerEventHandler(long contextId, int timerType, TimerEventHandler handler);
+    void addTimerEventHandler(int timerType, TimerEventHandler handler);
+    void addTimerEventHandler(int sourceId, long timerId, TimerEventHandler handler);
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-
-/**
- * Pseudo nano-precision clock used for tests --- not really accurate at all but gives the impression of high precision
- * timestamps.
- */
-public class PseudoNanoClock implements TimeSource {
-
-    private long offsetNanos;
-
-    public PseudoNanoClock() {
-        offsetNanos = MILLISECONDS.toNanos(System.currentTimeMillis()) - System.nanoTime();
-    }
-
-    @Override
-    public long currentTime() {
-        return offsetNanos + System.nanoTime();
-    }
+    void removeTimerEventHandler(TimerEventHandler handler);
+    void removeTimerEventHandler(long contextId, TimerEventHandler handler);
+    void removeTimerEventHandler(long contextId, int timerType, TimerEventHandler handler);
+    void removeTimerEventHandler(int timerType, TimerEventHandler handler);
+    void removeTimerEventHandler(int sourceId, long timerId, TimerEventHandler handler);
 }

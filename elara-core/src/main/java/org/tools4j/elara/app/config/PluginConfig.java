@@ -23,10 +23,10 @@
  */
 package org.tools4j.elara.app.config;
 
-import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.plugin.api.PluginSpecification.Installer;
 
 import java.util.List;
 
 public interface PluginConfig {
-    List<Plugin.Configuration> plugins();
+    List<Installer> plugins();
 }

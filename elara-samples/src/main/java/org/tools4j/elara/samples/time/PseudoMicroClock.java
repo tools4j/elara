@@ -21,12 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.timer;
+package org.tools4j.elara.samples.time;
 
-import org.tools4j.elara.route.EventRouter;
+import org.tools4j.elara.time.TimeSource;
 
-public interface TimerControl {
-    boolean startTimer(long id, int type, long timeout, EventRouter eventRouter);
-    boolean startPeriodic(long id, int type, long timeout, EventRouter eventRouter);
-    boolean stopTimer(long id, EventRouter eventRouter);
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+
+public class PseudoMicroClock implements TimeSource {
+    private final PseudoNanoClock nanoClock = new PseudoNanoClock();
+
+    @Override
+    public long currentTime() {
+        return NANOSECONDS.toMicros(nanoClock.currentTime());
+    }
 }

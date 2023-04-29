@@ -25,45 +25,64 @@ package org.tools4j.elara.plugin.timer;
 
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.plugin.timer.Timer.Style;
+import org.tools4j.elara.sequence.SequenceGenerator;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.plugin.timer.TimerEvents.timerId;
-import static org.tools4j.elara.plugin.timer.TimerEvents.timerRepetition;
-import static org.tools4j.elara.plugin.timer.TimerEvents.timerTimeout;
-import static org.tools4j.elara.plugin.timer.TimerEvents.timerType;
 
 public class TimerEventApplier implements EventApplier {
 
+    private final TimerPlugin timerPlugin;
     private final TimerState.Mutable timerState;
-    private final TimerTriggerInput timerTriggerInput;
+    private final SequenceGenerator timerIdGenerator;
+    private final FlyweightTimerPayload timer = new FlyweightTimerPayload();
 
-    public TimerEventApplier(final TimerState.Mutable timerState, final TimerTriggerInput timerTriggerInput) {
+    public TimerEventApplier(final TimerPlugin timerPlugin,
+                             final TimerState.Mutable timerState,
+                             final SequenceGenerator timerIdGenerator) {
+        this.timerPlugin = requireNonNull(timerPlugin);
         this.timerState = requireNonNull(timerState);
-        this.timerTriggerInput = requireNonNull(timerTriggerInput);
+        this.timerIdGenerator = requireNonNull(timerIdGenerator);
     }
 
     @Override
     public void onEvent(final Event event) {
         switch (event.payloadType()) {
             case TimerEvents.TIMER_STARTED:
-                if (timerState.add(
-                        timerId(event), timerType(event), timerRepetition(event), event.eventTime(), timerTimeout(event)
-                )) {
-                    timerTriggerInput.timerEventApplied();
-                }
+                timer.wrap(event.payload(), 0);
+                timerState.add(event, timer.wrap(event.payload(), 0));
+                updateTimerIdSequence(timer.timerId());
+                notifyTimerEvent(event);
                 break;
-            case TimerEvents.TIMER_FIRED: {
-                final int index = timerState.indexById(timerId(event));
-                timerState.repetition(index, timerState.repetition(index) + 1);
-                timerTriggerInput.timerEventApplied();
+            case TimerEvents.TIMER_CANCELLED:
+                timer.wrap(event.payload(), 0);
+                timerState.removeById(event.sourceId(), timer.timerId());
+                notifyTimerEvent(event);
+                break;
+            case TimerEvents.TIMER_SIGNALLED: {
+                timer.wrap(event.payload(), 0);
+                if (timer.style() == Style.PERIODIC) {
+                    final int index = timerState.index(event.sourceId(), timer.timerId());
+                    System.out.println(timer.timerId() + ":repetition=" + timerState.repetition(index));
+                    timerState.updateRepetitionById(event.sourceId(), timer.timerId(), timer.repetition());
+                } else {
+                    timerState.removeById(event.sourceId(), timer.timerId());
+                }
+                notifyTimerEvent(event);
                 break;
             }
-            case TimerEvents.TIMER_EXPIRED://fall through
-            case TimerEvents.TIMER_STOPPED:
-                if (timerState.removeById(timerId(event))) {
-                    timerTriggerInput.timerEventApplied();
-                }
-                break;
+        }
+    }
+
+    private void updateTimerIdSequence(final long timerId) {
+        timerIdGenerator.nextSequence(timerId + 1);
+    }
+
+    private void notifyTimerEvent(final Event event) {
+        try {
+            timerPlugin.timerEventHandler().onTimerEvent(event, timer);
+        } finally {
+            timer.reset();
         }
     }
 }

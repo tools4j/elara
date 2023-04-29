@@ -45,7 +45,7 @@ class ReplicationInterceptor implements Interceptor {
 
     private final AppConfig appConfig;
     private final EventStoreConfig eventStoreConfig;
-    private final Configuration pluginConfig;
+    private final ReplicationConfig pluginConfig;
     private final StateFactory stateFactory;
     private final ReplicationState replicationState;
 
@@ -53,7 +53,7 @@ class ReplicationInterceptor implements Interceptor {
 
     public ReplicationInterceptor(final AppConfig appConfig,
                                   final EventStoreConfig eventStoreConfig,
-                                  final Configuration pluginConfig,
+                                  final ReplicationConfig pluginConfig,
                                   final StateFactory stateFactory,
                                   final ReplicationState replicationState) {
         this.appConfig = requireNonNull(appConfig);

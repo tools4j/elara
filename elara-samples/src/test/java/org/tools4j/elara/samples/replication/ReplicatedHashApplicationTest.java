@@ -37,9 +37,10 @@ import org.tools4j.elara.input.UniSourceInput;
 import org.tools4j.elara.logging.Logger.Level;
 import org.tools4j.elara.logging.OutputStreamLogger;
 import org.tools4j.elara.plugin.api.Plugins;
-import org.tools4j.elara.plugin.replication.Configuration;
+import org.tools4j.elara.plugin.replication.ReplicationConfig;
 import org.tools4j.elara.plugin.replication.Connection;
 import org.tools4j.elara.plugin.replication.EnforceLeaderInput;
+import org.tools4j.elara.plugin.replication.ReplicationContext;
 import org.tools4j.elara.plugin.replication.ReplicationPlugin;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
@@ -233,13 +234,13 @@ public class ReplicatedHashApplicationTest {
         return Plugins.replicationPlugin(replicationConfig(server, serverIds, serverTopology, enforceLeaderInput));
     }
 
-    private Configuration replicationConfig(final int server,
-                                            final IdMapping serverIds,
-                                            final ServerTopology serverTopology,
-                                            final EnforceLeaderInput enforceLeaderInput) {
+    private ReplicationConfig replicationConfig(final int server,
+                                                final IdMapping serverIds,
+                                                final ServerTopology serverTopology,
+                                                final EnforceLeaderInput enforceLeaderInput) {
         final int curServerId = serverIds.idByIndex(server);
         final Connection connection = connection(curServerId, serverIds, serverTopology);
-        final org.tools4j.elara.plugin.replication.Context context = ReplicationPlugin.configure();
+        final ReplicationContext context = ReplicationPlugin.configure();
         for (int i = 0; i < serverIds.count(); i++) {
             final int serverId = serverIds.idByIndex(i);
             context.serverId(serverId, i == server)

@@ -23,6 +23,7 @@
  */
 package org.tools4j.elara.input;
 
+import org.tools4j.elara.source.SourceContext;
 import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.step.AgentStep;
 
@@ -39,17 +40,26 @@ public interface Input {
 
     static Input single(final UniSourceInput input) {
         requireNonNull(input);
-        return sourceContextProvider -> () -> input.poll(sourceContextProvider.sourceContext());
+        return sourceContextProvider -> {
+            final SourceContext sourceContext = sourceContextProvider.sourceContext();
+            return () -> input.poll(sourceContext);
+        };
     }
 
     static Input single(final int sourceId, final UniSourceInput input) {
         requireNonNull(input);
-        return sourceContextProvider -> () -> input.poll(sourceContextProvider.sourceContext(sourceId));
+        return sourceContextProvider -> {
+            final SourceContext sourceContext = sourceContextProvider.sourceContext(sourceId);
+            return () -> input.poll(sourceContext);
+        };
     }
 
     static Input single(final int sourceId, final long initialSourceSequence, final UniSourceInput input) {
         requireNonNull(input);
-        return sourceContextProvider -> () -> input.poll(sourceContextProvider.sourceContext(sourceId, initialSourceSequence));
+        return sourceContextProvider -> {
+            final SourceContext sourceContext = sourceContextProvider.sourceContext(sourceId, initialSourceSequence);
+            return () -> input.poll(sourceContext);
+        };
     }
 
     static Input multi(final MultiSourceInput input) {

@@ -26,21 +26,20 @@ package org.tools4j.elara.app.factory;
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.PluginConfig;
 import org.tools4j.elara.app.state.MutableBaseState;
-import org.tools4j.elara.plugin.api.Plugin;
-import org.tools4j.elara.plugin.api.Plugin.Configuration;
+import org.tools4j.elara.plugin.api.PluginSpecification.Installer;
 
 import static java.util.Objects.requireNonNull;
 
 interface Bootstrap {
     MutableBaseState baseState();
-    Plugin.Configuration[] plugins();
+    Installer[] plugins();
     Interceptor interceptor();
 
     static Bootstrap bootstrap(final AppConfig appConfig, final PluginConfig pluginConfig) {
-        final Plugin.Configuration[] plugins = pluginConfig.plugins().toArray(new Configuration[0]);
+        final Installer[] plugins = pluginConfig.plugins().toArray(new Installer[0]);
         final BootstrapStateFactory interceptorStateFactory = new BootstrapStateFactory();
         Interceptor interceptor = Interceptor.NOOP;
-        for (final Plugin.Configuration plugin : plugins) {
+        for (final Installer plugin : plugins) {
             interceptor = Interceptors.concat(interceptor, plugin.interceptor(interceptorStateFactory));
         }
         interceptor = Interceptors.conclude(interceptor);
@@ -57,7 +56,7 @@ interface Bootstrap {
             throw new IllegalStateException("Base state is not available during bootstrap: StateFactory.baseState() can only be called after completion of Plugin.interceptor(..) invocation.");
         }
 
-        Bootstrap conclude(final Interceptor interceptor, final AppConfig appConfig, final Configuration[] plugins) {
+        Bootstrap conclude(final Interceptor interceptor, final AppConfig appConfig, final Installer[] plugins) {
             requireNonNull(interceptor);
             requireNonNull(appConfig);
             requireNonNull(plugins);
@@ -68,7 +67,7 @@ interface Bootstrap {
                     return baseState;
                 }
                 @Override
-                public Configuration[] plugins() {
+                public Installer[] plugins() {
                     return plugins;
                 }
                 @Override

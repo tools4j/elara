@@ -64,7 +64,7 @@ final class ConnectionHandler implements Connection.Handler {
     private final MutableDirectBuffer sendBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect(HEADER_LENGTH));
 
     ConnectionHandler(final Logger.Factory loggerFactory,
-                      final Configuration configuration,
+                      final ReplicationConfig configuration,
                       final BaseState baseState,
                       final ReplicationState.Volatile state,
                       final Appender eventStoreAppender,

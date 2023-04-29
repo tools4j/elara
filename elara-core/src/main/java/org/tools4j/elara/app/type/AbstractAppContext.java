@@ -41,6 +41,7 @@ import org.tools4j.elara.input.UniSourceInput;
 import org.tools4j.elara.logging.Logger.Factory;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.plugin.api.PluginSpecification.Installer;
 import org.tools4j.elara.plugin.boot.BootCommandInput;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.time.TimeSource;
@@ -218,7 +219,7 @@ abstract class AbstractAppContext<T extends AbstractAppContext<T>> implements Ap
     }
 
     @Override
-    public List<Plugin.Configuration> plugins() {
+    public List<Installer> plugins() {
         return plugins.plugins();
     }
 

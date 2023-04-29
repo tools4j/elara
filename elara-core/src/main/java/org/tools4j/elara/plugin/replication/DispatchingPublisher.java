@@ -31,7 +31,7 @@ public class DispatchingPublisher implements Publisher {
 
     private final Int2ObjectHashMap<Publisher> publisherByServerId = new Int2ObjectHashMap<>();
 
-    public DispatchingPublisher(final Configuration configuration) {
+    public DispatchingPublisher(final ReplicationConfig configuration) {
         final int currentServerId = configuration.serverId();
         for (final int serverId : configuration.serverIds()) {
             if (serverId != currentServerId) {

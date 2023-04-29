@@ -23,30 +23,30 @@
  */
 package org.tools4j.elara.samples.timer;
 
-import org.agrona.DirectBuffer;
 import org.junit.jupiter.api.Test;
+import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.input.SingleSourceInput;
 import org.tools4j.elara.plugin.timer.DeadlineHeapTimerState;
+import org.tools4j.elara.plugin.timer.FlyweightTimerPayload;
 import org.tools4j.elara.plugin.timer.SimpleTimerState;
+import org.tools4j.elara.plugin.timer.Timer.Style;
+import org.tools4j.elara.plugin.timer.TimerController.ControlContext;
 import org.tools4j.elara.plugin.timer.TimerEvents;
 import org.tools4j.elara.plugin.timer.TimerState;
 import org.tools4j.elara.run.ElaraRunner;
 
 import java.time.Instant;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.tools4j.elara.plugin.timer.TimerEvents.timerId;
-import static org.tools4j.elara.plugin.timer.TimerEvents.timerTimeout;
-import static org.tools4j.elara.plugin.timer.TimerEvents.timerType;
 import static org.tools4j.elara.samples.timer.TimerApplication.PERIODIC_REPETITIONS;
-import static org.tools4j.elara.samples.timer.TimerApplication.TIMER_TYPE_PERIODIC;
-import static org.tools4j.elara.samples.timer.TimerApplication.TIMER_TYPE_SINGLE;
+import static org.tools4j.elara.samples.timer.TimerApplication.oneTimeInput;
 
 /**
  * Unit test for {@link TimerApplication}.
@@ -70,64 +70,87 @@ class TimerApplicationTest {
 
     private void singleTimers(final boolean persisted, final boolean simpleState) {
         //given
-        final int[] timeouts = {200, 500, 800, 1000};
+        final int[] microTimeouts = {200_000, 500_000, 800_000, 1000_000};
+        final int[] types = {101, 102, 103, 104};
+        final long[] contextIds = {100000000001L, 100000000002L, 100000000003L, 100000000004L};
         final TimerApplication app = new TimerApplication();
         final Supplier<? extends TimerState.Mutable> timerStateSupplier = simpleState ?
                 SimpleTimerState::new : DeadlineHeapTimerState::new;
-        final Queue<DirectBuffer> commands = new ConcurrentLinkedQueue<>();
-        commands.add(TimerApplication.startTimer(1001, timeouts[0]));
-        commands.add(TimerApplication.startTimer(1002, timeouts[1]));
-        commands.add(TimerApplication.startTimer(1003, timeouts[2]));
-        commands.add(TimerApplication.startTimer(1004, timeouts[3]));
-        final Queue<DirectBuffer> cmdClone = new ConcurrentLinkedQueue<>(commands);
+        final long[] startTimePtr = {0};//NOTE: if we initialize this here, ALARM timers may go off out of sequence
+        final SingleSourceInput input = (sender, inFlightState) -> {
+            try (final ControlContext timerControl = app.timerPlugin.controller(sender)) {
+                if (startTimePtr[0] == 0) {
+                    startTimePtr[0] = timerControl.currentTime();
+                }
+                timerControl.startTimer(microTimeouts[0], types[0], contextIds[0]);
+                timerControl.startTimer(microTimeouts[1], types[1], contextIds[1]);
+                timerControl.startAlarm(startTimePtr[0] + microTimeouts[2], types[2], contextIds[2]);
+                timerControl.startAlarm(startTimePtr[0] + microTimeouts[3], types[3], contextIds[3]);
+            }
+            return 4;
+        };
         final List<Event> events = new ArrayList<>();
 
         //when
         try (final ElaraRunner runner = persisted ?
-                app.chronicleQueue(commands, "single", events::add) :
-                app.inMemory(commands, events::add, timerStateSupplier)) {
-            while (!commands.isEmpty()) {
-                runner.join(20);
-            }
+                app.chronicleQueue(oneTimeInput(input), "single", events::add) :
+                app.inMemory(oneTimeInput(input), events::add, timerStateSupplier)) {
             runner.join(3000);
         }
 
         //then
-        final Consumer<List<Event>> asserter = evts -> {
+        final FlyweightTimerPayload timer = new FlyweightTimerPayload();
+        final BiConsumer<String, List<Event>> asserter = (name, evts) -> {
             System.out.println("===========================================================");
-            System.out.println("asserting events at " + Instant.now());
+            System.out.println("asserting " + name + " events at " + Instant.now());
             assertEquals(8, evts.size(), "events.size");
-            for (int i = 0; i < timeouts.length; i++) {
+            for (int i = 0; i < microTimeouts.length; i++) {
                 final int iStarted = i;
-                final int iExpired = i + 4;
+                final int iSignalled = i + 4;
                 final Event started = evts.get(iStarted);
-                final Event expired = evts.get(iExpired);
-                assertEquals(TimerEvents.TIMER_STARTED, started.payloadType(), "events[" + iStarted + "].type");
-                assertEquals(1000 + (i + 1), timerId(started), "events[" + iStarted + "].timerId");
-                assertEquals(TIMER_TYPE_SINGLE, timerType(started), "events[" + iStarted + "].timerType");
-                assertEquals(timeouts[i], timerTimeout(started), "events[" + iStarted + "].timerTimeout");
+                timer.wrap(started.payload(), 0);
+                assertEquals(TimerEvents.TIMER_STARTED, started.payloadType(), "events[" + iStarted + "].payloadType");
+                assertEquals((i + 1), timer.timerId(), "events[" + iStarted + "].timerId");
+                assertEquals(types[i], timer.timerType(), "events[" + iStarted + "].timerType");
+                assertEquals(contextIds[i], timer.contextId(), "events[" + iStarted + "].contextId");
+                if (i < 2) {
+                    assertEquals(Style.TIMER, timer.style(), "events[" + iStarted + "].style");
+                    assertEquals(microTimeouts[i], timer.timeout(), "events[" + iStarted + "].timeout");
+                } else {
+                    assertEquals(Style.ALARM, timer.style(), "events[" + iStarted + "].style");
+                    assertEquals(startTimePtr[0] + microTimeouts[i], timer.timeout(), "events[" + iStarted + "].timeout");
+                }
 
-                assertEquals(TimerEvents.TIMER_EXPIRED, expired.payloadType(), "events[" + iExpired + "].type");
-                assertEquals(1000 + (i + 1), timerId(expired), "events[" + iExpired + "].timerId");
-                assertEquals(TIMER_TYPE_SINGLE, timerType(expired), "events[" + iExpired + "].timerType");
-                assertEquals(timeouts[i], timerTimeout(expired), "events[" + iExpired + "].timerTimeout");
+                final Event signalled = evts.get(iSignalled);
+                timer.wrap(signalled.payload(), 0);
+                assertEquals(TimerEvents.TIMER_SIGNALLED, signalled.payloadType(), "events[" + iSignalled + "].payloadType");
+                assertEquals((i + 1), timer.timerId(), "events[" + iSignalled + "].timerId");
+                assertEquals(types[i], timer.timerType(), "events[" + iSignalled + "].timerType");
+                assertEquals(contextIds[i], timer.contextId(), "events[" + iSignalled + "].contextId");
+                if (i < 2) {
+                    assertEquals(Style.TIMER, timer.style(), "events[" + iSignalled + "].style");
+                    assertEquals(microTimeouts[i], timer.timeout(), "events[" + iSignalled + "].timeout");
+                } else {
+                    assertEquals(Style.ALARM, timer.style(), "events[" + iSignalled + "].style");
+                    assertEquals(startTimePtr[0] + microTimeouts[i], timer.timeout(), "events[" + iSignalled + "].timeout");
+                }
             }
         };
-        asserter.accept(events);
+        asserter.accept("original", events);
         System.out.println(events.size() + " events asserted");
 
         if (persisted) {
+            System.out.println("-----------------------------------------------------------");
+            System.out.println("starting replay");
+
             //when
             final List<Event> replay = new ArrayList<>();
-            try (final ElaraRunner runner = app.chronicleQueue(cmdClone, "single", replay::add)) {
-                while (!cmdClone.isEmpty()) {
-                    runner.join(20);
-                }
-                runner.join(100);
+            try (final ElaraRunner runner = app.chronicleQueue(oneTimeInput(input), "single", replay::add)) {
+                runner.join(3000);
             }
 
             //then
-            asserter.accept(replay);
+            asserter.accept("replay", replay);
             for (int i = 0; i < events.size(); i++) {
                 assertEquals(events.get(i).eventTime(), replay.get(i).eventTime(), "events[" + i + "].time == replay[" + i + "].time");
             }
@@ -152,66 +175,85 @@ class TimerApplicationTest {
 
     private void periodicTimer(final boolean persisted, final boolean simpleState) {
         //given
-        final int timerId = 666666666;
+        final int timerId = 1;
+        final int timerType = 12345;
+        final long contextId = 6666666666666L;
         final long periodMillis = 500;
+        final long periodMicros = periodMillis * 1000;
         final TimerApplication app = new TimerApplication();
         final Supplier<? extends TimerState.Mutable> timerStateSupplier = simpleState ?
                 SimpleTimerState::new : DeadlineHeapTimerState::new;
-        final Queue<DirectBuffer> commands = new ConcurrentLinkedQueue<>();
+        final Queue<Command> commands = new ArrayDeque<>();
         final List<Event> events = new ArrayList<>();
 
         //when
-        commands.add(TimerApplication.startPeriodic(timerId, periodMillis));
+        final SingleSourceInput input = (sender, inFlightState) -> {
+            try (final ControlContext timerControl = app.timerPlugin.controller(sender)) {
+                timerControl.startPeriodic(periodMicros, timerType, contextId);
+            }
+            return 1;
+        };
+
         try (final ElaraRunner runner = persisted ?
-                app.chronicleQueue(commands, "periodic", events::add) :
-                app.inMemory(commands, events::add, timerStateSupplier)) {
+                app.chronicleQueue(oneTimeInput(input), "periodic", events::add) :
+                app.inMemory(oneTimeInput(input), events::add, timerStateSupplier)) {
 
             //then
             runner.join(100 + periodMillis * (PERIODIC_REPETITIONS + 1));
         }
 
         //then
-        final Consumer<List<Event>> asserter = evts -> {
+        final FlyweightTimerPayload timer = new FlyweightTimerPayload();
+        final BiConsumer<String, List<Event>> asserter = (name, evts) -> {
             System.out.println("===========================================================");
-            System.out.println("asserting events at " + Instant.now());
+            System.out.println("asserting " + name + " events at " + Instant.now());
             assertEquals(PERIODIC_REPETITIONS + 2, evts.size(), "events.size");
 
             final int iStarted = 0;
             final Event started = evts.get(iStarted);
-            assertEquals(TimerEvents.TIMER_STARTED, started.payloadType(), "events[" + iStarted + "].type");
-            assertEquals(timerId, timerId(started), "events[" + iStarted + "].timerId");
-            assertEquals(TIMER_TYPE_PERIODIC, timerType(started), "events[" + iStarted + "].timerType");
-            assertEquals(periodMillis, timerTimeout(started), "events[" + iStarted + "].timerTimeout");
-            for (int i = 0; i < PERIODIC_REPETITIONS; i++) {
-                final int iFired = i + 1;
-                final Event fired = evts.get(iFired);
-                assertEquals(TimerEvents.TIMER_FIRED, fired.payloadType(), "events[" + iFired + "].type");
-                assertEquals(timerId, timerId(fired), "events[" + iFired + "].timerId");
-                assertEquals(TIMER_TYPE_PERIODIC, timerType(fired), "events[" + iFired + "].timerType");
-                assertEquals(periodMillis, timerTimeout(fired), "events[" + iFired + "].timerTimeout");
+            timer.wrap(started.payload(), 0);
+            assertEquals(TimerEvents.TIMER_STARTED, started.payloadType(), "events[" + iStarted + "].payloadType");
+            assertEquals(timerId, timer.timerId(), "events[" + iStarted + "].timerId");
+            assertEquals(0, timer.repetition(), "events[" + iStarted + "].repetition");
+            assertEquals(periodMicros, timer.timeout(), "events[" + iStarted + "].timeout");
+            assertEquals(timerType, timer.timerType(), "events[" + iStarted + "].timerType");
+            assertEquals(contextId, timer.contextId(), "events[" + iStarted + "].contextId");
+            for (int repetition = 1; repetition <= PERIODIC_REPETITIONS; repetition++) {
+                final int iSignalled = repetition;
+                final Event signalled = evts.get(iSignalled);
+                timer.wrap(signalled.payload(), 0);
+                assertEquals(TimerEvents.TIMER_SIGNALLED, signalled.payloadType(), "events[" + iSignalled + "].payloadType");
+                assertEquals(timerId, timer.timerId(), "events[" + iSignalled + "].timerId");
+                assertEquals(periodMicros, timer.timeout(), "events[" + iSignalled + "].timeout");
+                assertEquals(repetition, timer.repetition(), "events[" + iSignalled + "].repetition");
+                assertEquals(timerType, timer.timerType(), "events[" + iSignalled + "].timerType");
+                assertEquals(contextId, timer.contextId(), "events[" + iSignalled + "].contextId");
             }
-            final int iStopped = 1 + PERIODIC_REPETITIONS;
-            final Event stopped = evts.get(iStopped);
-            assertEquals(TimerEvents.TIMER_STOPPED, stopped.payloadType(), "events[" + iStopped + "].type");
-            assertEquals(timerId, timerId(stopped), "events[" + iStopped + "].timerId");
-            assertEquals(TIMER_TYPE_PERIODIC, timerType(stopped), "events[" + iStopped + "].timerType");
-            assertEquals(periodMillis, timerTimeout(stopped), "events[" + iStopped + "].timerTimeout");
+            final int iCancelled = 1 + PERIODIC_REPETITIONS;
+            final Event cancelled = evts.get(iCancelled);
+            timer.wrap(cancelled.payload(), 0);
+            assertEquals(TimerEvents.TIMER_CANCELLED, cancelled.payloadType(), "events[" + iCancelled + "].type");
+            assertEquals(timerId, timer.timerId(), "events[" + iCancelled + "].timerId");
+            assertEquals(PERIODIC_REPETITIONS, timer.repetition(), "events[" + iCancelled + "].repetition");
+            assertEquals(timerType, timer.timerType(), "events[" + iCancelled + "].timerType");
+            assertEquals(contextId, timer.contextId(), "events[" + iCancelled + "].contextId");
+            assertEquals(periodMicros, timer.timeout(), "events[" + iCancelled + "].timeout");
         };
-        asserter.accept(events);
+        asserter.accept("original", events);
         System.out.println(events.size() + " events asserted");
 
         if (persisted) {
+            System.out.println("-----------------------------------------------------------");
+            System.out.println("starting replay");
+
             //when
             final List<Event> replay = new ArrayList<>();
-            try (final ElaraRunner runner = app.chronicleQueue(commands, "periodic", replay::add)) {
-                while (!commands.isEmpty()) {
-                    runner.join(20);
-                }
-                runner.join(100);
+            try (final ElaraRunner runner = app.chronicleQueue(oneTimeInput(input), "periodic", replay::add)) {
+                runner.join(500);
             }
 
             //then
-            asserter.accept(replay);
+            asserter.accept("replay", replay);
             for (int i = 0; i < events.size(); i++) {
                 assertEquals(events.get(i).eventTime(), replay.get(i).eventTime(), "events[" + i + "].time == replay[" + i + "].time");
             }

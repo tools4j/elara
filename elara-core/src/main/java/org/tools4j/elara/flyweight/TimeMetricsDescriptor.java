@@ -53,9 +53,6 @@ package org.tools4j.elara.flyweight;
  */
 public enum TimeMetricsDescriptor {
     ;
-
-    static final byte FLAGS_NONE = 0;
-
     public static final int EVENT_INDEX_OFFSET = FrameDescriptor.RESERVED_OFFSET;
 
     public static final int EVENT_INDEX_LENGTH = FrameDescriptor.RESERVED_LENGTH;

@@ -44,7 +44,7 @@ final class DefaultEventSender implements EventSender {
     private final Int2ObjectHashMap<IndexTrackingPoller> pollerByServerId = new Int2ObjectHashMap<>();
     private final PublishingHandler publishingHandler = new PublishingHandler();
 
-    DefaultEventSender(final Configuration configuration,
+    DefaultEventSender(final ReplicationConfig configuration,
                        final ReplicationState state,
                        final MessageStore messageStore,
                        final Publisher publisher) {

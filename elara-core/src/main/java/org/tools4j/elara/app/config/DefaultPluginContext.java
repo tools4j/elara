@@ -25,7 +25,8 @@ package org.tools4j.elara.app.config;
 
 import org.agrona.collections.Object2ObjectHashMap;
 import org.tools4j.elara.plugin.api.Plugin;
-import org.tools4j.elara.plugin.api.Plugin.Dependency;
+import org.tools4j.elara.plugin.api.PluginSpecification;
+import org.tools4j.elara.plugin.api.PluginSpecification.Installer;
 
 import java.util.List;
 import java.util.Map;
@@ -34,18 +35,18 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.plugin.api.Plugin.STATE_UNAWARE;
 
 public class DefaultPluginContext implements PluginContext {
 
-    private static final PluginBuilder<?> DEFAULT_BUILDER = defaultBuilder();
+    private static final Consumer<Object> STATE_UNAWARE = state -> {};
+    private static final PluginInstaller<?> DEFAULT_INSTALLER = defaultInstaller();
 
     private final AppConfig appConfig;
-    private final Map<Plugin<?>, PluginBuilder<?>> pluginBuilders = new Object2ObjectHashMap<>();
+    private final Map<Plugin<?>, PluginInstaller<?>> pluginInstallers = new Object2ObjectHashMap<>();
     private final Map<Plugin<?>, Consumer<?>> pluginStateAwares = new Object2ObjectHashMap<>();
 
-    private interface PluginBuilder<P> {
-        Plugin.Configuration build(Plugin<P> plugin, AppConfig appConfig, Consumer<? super P> pluginStateAware);
+    private interface PluginInstaller<P> {
+        Installer install(Plugin<P> plugin, AppConfig appConfig, Consumer<? super P> pluginStateAware);
     }
 
     public DefaultPluginContext(final AppConfig appConfig) {
@@ -53,8 +54,8 @@ public class DefaultPluginContext implements PluginContext {
     }
 
     @Override
-    public List<Plugin.Configuration> plugins() {
-        return configurations(appConfig);
+    public List<Installer> plugins() {
+        return installers(appConfig);
     }
 
     @Override
@@ -69,84 +70,75 @@ public class DefaultPluginContext implements PluginContext {
 
     @Override
     public <P> PluginContext plugin(final Plugin<P> plugin, final Consumer<? super P> pluginStateAware) {
-        register(plugin, defaultBuilder(), pluginStateAware);
+        register(plugin, defaultInstaller(), pluginStateAware);
         return this;
     }
 
     @Override
     public <P> PluginContext plugin(final Plugin<P> plugin, final Supplier<? extends P> pluginStateProvider, final Consumer<? super P> pluginStateAware) {
-        register(plugin, builder(plugin, pluginStateProvider), pluginStateAware);
+        register(plugin, installer(plugin, pluginStateProvider), pluginStateAware);
         return this;
     }
 
     private <P> void register(final Plugin<P> plugin,
-                              final PluginBuilder<P> builder,
+                              final PluginInstaller<P> installer,
                               final Consumer<? super P> pluginStateAware) {
-        final PluginBuilder<?> curBuilder = pluginBuilders.get(plugin);
-        if (curBuilder == null || curBuilder == DEFAULT_BUILDER) {
-            pluginBuilders.put(plugin, builder);
+        final PluginInstaller<?> curInstaller = pluginInstallers.get(plugin);
+        if (curInstaller == null || curInstaller == DEFAULT_INSTALLER) {
+            pluginInstallers.put(plugin, installer);
         } else {
-            if (builder != DEFAULT_BUILDER && builder != curBuilder) {
+            if (installer != DEFAULT_INSTALLER && installer != curInstaller) {
                 throw new IllegalStateException("plugin " + plugin + " is already registered with a different state provider");
             }
         }
         if (pluginStateAware != STATE_UNAWARE) {
             @SuppressWarnings("unchecked")//safe because we know what we added can consume <P>
-            final Consumer<P> consumer = (Consumer<P>)pluginStateAwares.getOrDefault(plugin, STATE_UNAWARE);
-            pluginStateAwares.put(plugin, consumer.andThen(pluginStateAware));
-        }
-        if (curBuilder == null) {
-            //only register dependencies if the plugin was not already registered before
-            for (final Dependency<?> dependency : plugin.dependencies()) {
-                register(dependency);
-            }
+            final Consumer<P> consumer = (Consumer<P>) this.pluginStateAwares.getOrDefault(plugin, STATE_UNAWARE);
+            this.pluginStateAwares.put(plugin, consumer.andThen(pluginStateAware));
         }
     }
 
-    private <P> void register(final Dependency<P> dependency) {
-        plugin(dependency.plugin(), dependency.pluginStateAware());
-    }
-
-    private static <P> Plugin.Configuration build(final Plugin<P> plugin,
-                                                  final AppConfig appConfig,
-                                                  final Consumer<? super P> pluginStateAware) {
-        final P pluginState = plugin.defaultPluginState(appConfig);
+    private static <P> Installer install(final Plugin<P> plugin,
+                                         final AppConfig appConfig,
+                                         final Consumer<? super P> pluginStateAware) {
+        final PluginSpecification<P> spec = plugin.specification();
+        final P pluginState = spec.defaultPluginStateProvider().createPluginState(appConfig);
         pluginStateAware.accept(pluginState);
-        return plugin.configuration(appConfig, pluginState);
+        return spec.installer(appConfig, pluginState);
     }
 
-    private static <P> PluginBuilder<P> defaultBuilder() {
-        final PluginBuilder<P> builder = DefaultPluginContext::build;
-        assert builder == DEFAULT_BUILDER || DEFAULT_BUILDER == null;
-        return builder;
+    private static <P> PluginInstaller<P> defaultInstaller() {
+        final PluginInstaller<P> installer = DefaultPluginContext::install;
+        assert installer == DEFAULT_INSTALLER || DEFAULT_INSTALLER == null;
+        return installer;
     }
 
-    private static <P> PluginBuilder<P> builder(final Plugin<P> plugin, final Supplier<? extends P> pluginStateProvider) {
+    private static <P> PluginInstaller<P> installer(final Plugin<P> plugin, final Supplier<? extends P> pluginStateProvider) {
         requireNonNull(plugin);
         requireNonNull(pluginStateProvider);
         return (p,c,a) -> {
             assert p == plugin;
             final P pluginState = pluginStateProvider.get();
             a.accept(pluginState);
-            return plugin.configuration(c, pluginState);
+            return plugin.specification().installer(c, pluginState);
         };
     }
 
-    private <P> Plugin.Configuration configuration(final Plugin<P> plugin,
-                                                   final AppConfig appConfig,
-                                                   final PluginBuilder<?> builder) {
-        @SuppressWarnings("unchecked")//safe because register method taking a builder enforces this
-        final PluginBuilder<P> pluginBuilder = (PluginBuilder<P>)builder;
+    private <P> Installer installer(final Plugin<P> plugin,
+                                    final AppConfig appConfig,
+                                    final PluginInstaller<?> installer) {
+        @SuppressWarnings("unchecked")//safe because register method taking a installer enforces this
+        final PluginInstaller<P> pluginInstaller = (PluginInstaller<P>)installer;
         @SuppressWarnings("unchecked")//safe because register method taking a consumer enforces this
-        final Consumer<? super P> pluginStateAware = (Consumer<? super P>)pluginStateAwares.getOrDefault(plugin, STATE_UNAWARE);
-        return pluginBuilder.build(plugin, appConfig, pluginStateAware);
+        final Consumer<? super P> pluginStateAware = (Consumer<? super P>) this.pluginStateAwares.getOrDefault(plugin, STATE_UNAWARE);
+        return pluginInstaller.install(plugin, appConfig, pluginStateAware);
     }
 
 
-    List<Plugin.Configuration> configurations(final AppConfig appConfig) {
+    List<Installer> installers(final AppConfig appConfig) {
         requireNonNull(appConfig);
-        return pluginBuilders.entrySet().stream()
-                .map(e -> configuration(e.getKey(), appConfig, e.getValue()))
+        return pluginInstallers.entrySet().stream()
+                .map(e -> installer(e.getKey(), appConfig, e.getValue()))
                 .collect(Collectors.toList());
     }
 }

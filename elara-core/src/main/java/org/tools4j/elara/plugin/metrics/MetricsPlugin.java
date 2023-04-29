@@ -28,7 +28,9 @@ import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.factory.Interceptor;
 import org.tools4j.elara.app.factory.StateFactory;
 import org.tools4j.elara.app.state.BaseState;
-import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.plugin.api.PluginStateProvider;
+import org.tools4j.elara.plugin.api.ReservedPayloadType;
+import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.step.AgentStep;
 
 import static java.util.Objects.requireNonNull;
@@ -36,36 +38,58 @@ import static java.util.Objects.requireNonNull;
 /**
  * A plugin that captures configurable measurements such as latencies or counts/frequencies.
  */
-public class MetricsPlugin implements Plugin<MetricsState> {
+public class MetricsPlugin implements SystemPlugin<MetricsState> {
 
-    private final MetricsConfig configuration;
+    private final MetricsConfig config;
+    private final Specification specification = new Specification();
 
-    public MetricsPlugin(final MetricsConfig configuration) {
-        this.configuration = MetricsConfig.validate(configuration);
+    public MetricsPlugin(final MetricsConfig config) {
+        this.config = MetricsConfig.validate(config);
+    }
+
+    public MetricsConfig config() {
+        return config;
     }
 
     @Override
-    public MetricsState defaultPluginState(final AppConfig appConfig) {
-        return new DefaultMetricsState();
+    public SystemPluginSpecification<MetricsState> specification() {
+        return specification;
     }
 
-    @Override
-    public Configuration configuration(final AppConfig appConfig, final MetricsState pluginState) {
-        requireNonNull(appConfig);
-        requireNonNull(pluginState);
-        return new Configuration.Default() {
-            @Override
-            public AgentStep step(final BaseState baseState, final ExecutionType executionType) {
-                if (configuration.frequencyMetrics().isEmpty() || executionType != ExecutionType.ALWAYS) {
-                    return AgentStep.NOOP;
+    public static MetricsContext configure() {
+        return MetricsConfig.configure();
+    }
+
+    private final class Specification implements SystemPluginSpecification<MetricsState> {
+
+        @Override
+        public PluginStateProvider<MetricsState> defaultPluginStateProvider() {
+            return appConfig -> new DefaultMetricsState();
+        }
+
+        @Override
+        public ReservedPayloadType reservedPayloadType() {
+            return ReservedPayloadType.NONE;
+        }
+
+        @Override
+        public Installer installer(final AppConfig appConfig, final MetricsState pluginState) {
+            requireNonNull(appConfig);
+            requireNonNull(pluginState);
+            return new Installer.Default() {
+                @Override
+                public AgentStep step(final BaseState baseState, final ExecutionType executionType) {
+                    if (config.frequencyMetrics().isEmpty() || executionType != ExecutionType.ALWAYS) {
+                        return AgentStep.NOOP;
+                    }
+                    return new FrequencyMetricsWriterStep(appConfig.timeSource(), config, pluginState);
                 }
-                return new FrequencyMetricsWriterStep(appConfig.timeSource(), configuration, pluginState);
-            }
 
-            @Override
-            public Interceptor interceptor(final StateFactory stateFactory) {
-                return new MetricsCapturingInterceptor(appConfig.timeSource(), configuration, pluginState);
-            }
-        };
+                @Override
+                public Interceptor interceptor(final StateFactory stateFactory) {
+                    return new MetricsCapturingInterceptor(appConfig.timeSource(), config, pluginState);
+                }
+            };
+        }
     }
 }

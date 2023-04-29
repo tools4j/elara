@@ -25,33 +25,31 @@ package org.tools4j.elara.samples.timer;
 
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.wire.WireType;
-import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.app.handler.EventApplier;
-import org.tools4j.elara.app.state.InFlightState;
 import org.tools4j.elara.app.type.AllInOneAppConfig;
 import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.flyweight.FlyweightEvent;
+import org.tools4j.elara.format.TimeFormatter.MicroTimeFormatter;
 import org.tools4j.elara.input.SingleSourceInput;
 import org.tools4j.elara.plugin.api.Plugins;
+import org.tools4j.elara.plugin.timer.FlyweightTimerPayload;
 import org.tools4j.elara.plugin.timer.SimpleTimerState;
+import org.tools4j.elara.plugin.timer.Timer.Style;
 import org.tools4j.elara.plugin.timer.TimerCommands;
+import org.tools4j.elara.plugin.timer.TimerController.ControlContext;
 import org.tools4j.elara.plugin.timer.TimerEvents;
+import org.tools4j.elara.plugin.timer.TimerPlugin;
 import org.tools4j.elara.plugin.timer.TimerState;
 import org.tools4j.elara.route.EventRouter;
-import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
-import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.samples.time.PseudoMicroClock;
 import org.tools4j.elara.store.InMemoryStore;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.Queue;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -60,31 +58,31 @@ import static java.util.Objects.requireNonNull;
 public class TimerApplication {
 
     private static final int SOURCE_ID = 777;
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss:SSS");
-    public static final int TIMER_TYPE_SINGLE = 1;
-    public static final int TIMER_TYPE_PERIODIC = 2;
     public static final int PERIODIC_REPETITIONS = 5;
 
-    public ElaraRunner inMemory(final Queue<DirectBuffer> commandQueue,
+    public final TimerPlugin timerPlugin = Plugins.timerPlugin();
+
+    public ElaraRunner inMemory(final SingleSourceInput input,
                                 final Consumer<? super Event> eventConsumer) {
-        return inMemory(commandQueue, eventConsumer, SimpleTimerState::new);
+        return inMemory(input, eventConsumer, SimpleTimerState::new);
     }
 
-    public ElaraRunner inMemory(final Queue<DirectBuffer> commandQueue,
+    public ElaraRunner inMemory(final SingleSourceInput input,
                                 final Consumer<? super Event> eventConsumer,
                                 final Supplier<? extends TimerState.Mutable> timerStateSupplier) {
         return Elara.launch(AllInOneAppConfig.configure()
                 .commandProcessor(this::process)
                 .eventApplier(eventApplier(eventConsumer))
-                .input(SOURCE_ID, new CommandInput(commandQueue))
+                .input(SOURCE_ID, input)
                 .commandStore(new InMemoryStore())
                 .eventStore(new InMemoryStore())
-                .plugin(Plugins.timerPlugin(), timerStateSupplier)
+                .timeSource(new PseudoMicroClock())
+                .plugin(timerPlugin, timerStateSupplier)
                 .populateDefaults()
         );
     }
 
-    public ElaraRunner chronicleQueue(final Queue<DirectBuffer> commandQueue,
+    public ElaraRunner chronicleQueue(final SingleSourceInput input,
                                       final String queueName,
                                       final Consumer<? super Event> eventConsumer) {
         final ChronicleQueue cq = ChronicleQueue.singleBuilder()
@@ -98,10 +96,11 @@ public class TimerApplication {
         return Elara.launch(AllInOneAppConfig.configure()
                 .commandProcessor(this::process)
                 .eventApplier(eventApplier(eventConsumer))
-                .input(SOURCE_ID, new CommandInput(commandQueue))
+                .input(SOURCE_ID, input)
                 .commandStore(new ChronicleMessageStore(cq))
                 .eventStore(new ChronicleMessageStore(eq))
-                .plugin(Plugins.timerPlugin())
+                .timeSource(new PseudoMicroClock())
+                .plugin(timerPlugin)
                 .populateDefaults()
         );
     }
@@ -114,51 +113,17 @@ public class TimerApplication {
         };
     }
 
-    public static DirectBuffer startTimer(final long timerId, final long timeoutMillis) {
-        return startTimerCommand(TIMER_TYPE_SINGLE, timerId, timeoutMillis);
-    }
-
-    public static DirectBuffer startPeriodic(final long timerId, final long periodMillis) {
-        return startTimerCommand(TIMER_TYPE_PERIODIC, timerId, periodMillis);
-    }
-
-    private static DirectBuffer startTimerCommand(final int timerType,
-                                                  final long timerId,
-                                                  final long timeout) {
-        final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer(Integer.BYTES + Long.BYTES + Long.BYTES);
-        buffer.putInt(0, timerType);
-        buffer.putLong(4, timerId);
-        buffer.putLong(12, timeout);
-        return buffer;
-    }
 
     private void process(final Command command, final EventRouter router) {
         System.out.println("-----------------------------------------------------------");
 //        System.out.println("processing: " + command + ", payload=" + payloadFor(command.type(), command.payload()));
-        if (command.isApplication()) {
-            System.out.println("...COMMAND: new timer: " + command + ", payload=" + payloadFor(command.payloadType(), command.payload()) + ", time=" + formatTime(command.commandTime()));
-            final int timerType = command.payload().getInt(0);
-            final long timerId = command.payload().getInt(4);
-            final long timeout = command.payload().getLong(12);
-            try (final RoutingContext context = router.routingEvent(TimerEvents.TIMER_STARTED)) {
-                final int length;
-                if (timerType == TIMER_TYPE_PERIODIC) {
-                    length = TimerEvents.periodicStarted(context.buffer(), 0, timerId, timerType, timeout);
-                } else {
-                    length = TimerEvents.timerStarted(context.buffer(), 0, timerId, timerType, timeout);
-                }
-                context.route(length);
-            }
-        } else if (command.payloadType() == TimerCommands.TRIGGER_TIMER) {
-            final long timerId = TimerCommands.timerId(command);
-            final int timerType = TimerCommands.timerType(command);
-            final int repetition = TimerCommands.timerRepetition(command);
-            final long timeout = TimerCommands.timerTimeout(command);
-            System.out.println("...COMMAND: trigger timer: timerId=" + timerId + ", timerType=" + timerType + ", repetition=" + repetition + ", timeout=" + timeout + ", time=" + formatTime(command.commandTime()));
-            if (TimerCommands.timerRepetition(command) >= PERIODIC_REPETITIONS) {
-                try (final RoutingContext context = router.routingEvent(TimerEvents.TIMER_STOPPED)) {
-                    final int length = TimerEvents.timerStopped(context.buffer(), 0, timerId, timerType, repetition, timeout);
-                    context.route(length);
+        if (TimerCommands.isTimerCommand(command)) {
+            final String name = TimerCommands.timerCommandName(command);
+            final FlyweightTimerPayload timer = new FlyweightTimerPayload().wrap(command.payload(), 0);
+            System.out.println("...COMMAND: " + name + ": timer=" + timer + ", command=" + formatCommand(command));
+            if (timer.style() == Style.PERIODIC && timer.repetition() > PERIODIC_REPETITIONS) {
+                try (ControlContext timerControl = timerPlugin.controller()) {
+                    timerControl.cancelTimer(timer.timerId());
                 }
             }
         }
@@ -168,26 +133,24 @@ public class TimerApplication {
 //        System.out.println("applied: " + event + ", payload=" + payloadFor(event.type(), event.payload()));
         if (TimerEvents.isTimerEvent(event)) {
             final String name = TimerEvents.timerEventName(event);
-            final long timerId = TimerEvents.timerId(event);
-            final int timerType = TimerEvents.timerType(event);
-            final int repetition = TimerEvents.timerRepetition(event);
-            final long timeout = TimerEvents.timerTimeout(event);
-            System.out.println("...EVENT: " + name + ": timerId=" + timerId + ", timerType=" + timerType + ", repetition=" + repetition + ", timeout=" + timeout + ", time=" + formatTime(event.eventTime()));
+            final FlyweightTimerPayload timer = new FlyweightTimerPayload().wrap(event.payload(), 0);
+            System.out.println("...EVENT: " + name + ": timer=" + timer + ", event=" + formatEvent(event));
         }
+    }
+
+    private static String formatCommand(final Command command) {
+        return "Command{source-id=" + command.sourceId() + "|source-seq=" + command.sourceSequence() +
+                "|payload-type=" + command.payloadType() + "|command-time=" + formatTime(command.commandTime()) + "}";
+    }
+
+    private static String formatEvent(final Event event) {
+        return "Command{source-id=" + event.sourceId() + "|source-seq=" + event.sourceSequence() +
+                "|event-seq=" + event.eventSequence() + "|payload-type=" + event.payloadType() +
+                "|event-time=" + formatTime(event.eventTime()) + "}";
     }
 
     private static String formatTime(final long time) {
-        return Instant.ofEpochMilli(time).atZone(ZoneId.systemDefault()).format(TIME_FORMATTER);
-    }
-
-    private String payloadFor(final int type, final DirectBuffer payload) {
-        if (type == 0) {
-            final int timerType = payload.getInt(0);
-            final long timerId = payload.getLong(4);
-            final long timeout = payload.getLong(12);
-            return "timer-type=" + timerType + ", timerId=" + timerId + ", timeout=" + timeout;
-        }
-        return "(unknown)";
+        return MicroTimeFormatter.DEFAULT.formatTime(time);
     }
 
     private static Event cloneEvent(final Event event) {
@@ -196,21 +159,15 @@ public class TimerApplication {
         return new FlyweightEvent().wrap(buffer, 0);
     }
 
-    private static class CommandInput implements SingleSourceInput {
-        final Queue<DirectBuffer> commands;
-
-        CommandInput(final Queue<DirectBuffer> commands) {
-            this.commands = requireNonNull(commands);
-        }
-
-        @Override
-        public int poll(final CommandSender sender, final InFlightState inFlightState) {
-            final DirectBuffer command = commands.poll();
-            if (command != null) {
-                sender.sendCommand(command, 0, command.capacity());
-                return 1;
+    public static SingleSourceInput oneTimeInput(final SingleSourceInput input) {
+        final boolean[] inputPolled = {false};
+        return (sender, inFlightState) -> {
+            if (!inputPolled[0]) {
+                final int result = input.poll(sender, inFlightState);
+                inputPolled[0] = true;
+                return result;
             }
             return 0;
-        }
+        };
     }
 }

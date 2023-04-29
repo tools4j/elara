@@ -21,25 +21,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.replication;
+package org.tools4j.elara.samples.time;
 
-public interface Configuration {
-    int serverId();
-    int[] serverIds();
-    EnforceLeaderInput enforceLeaderInput();
-    Connection connection(int serverId);
+import org.tools4j.elara.time.TimeSource;
 
-    long heartbeatInterval();
-    long leaderTimeout();
-    long serverReplyTimeout();
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-    int initialSendBufferCapacity();
+/**
+ * Pseudo nano-precision clock used for tests --- not really accurate at all but gives the impression of high precision
+ * timestamps.
+ */
+public class PseudoNanoClock implements TimeSource {
 
-    static Context configure() {
-        return Context.create();
+    private long offsetNanos;
+
+    public PseudoNanoClock() {
+        offsetNanos = MILLISECONDS.toNanos(System.currentTimeMillis()) - System.nanoTime();
     }
 
-    static Configuration validate(final Configuration configuration) {
-        return DefaultContext.validate(configuration);
+    @Override
+    public long currentTime() {
+        return offsetNanos + System.nanoTime();
     }
 }

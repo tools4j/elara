@@ -34,11 +34,11 @@ import static org.tools4j.elara.plugin.replication.ReplicationEvents.replication
 public class ReplicationEventApplier implements EventApplier {
 
     private final ElaraLogger logger;
-    private final Configuration configuration;
+    private final ReplicationConfig configuration;
     private final ReplicationState.Mutable replicationState;
 
     public ReplicationEventApplier(final Logger.Factory loggerFactory,
-                                   final Configuration configuration,
+                                   final ReplicationConfig configuration,
                                    final ReplicationState.Mutable replicationState) {
         this.logger = ElaraLogger.create(loggerFactory, getClass());
         this.configuration = requireNonNull(configuration);

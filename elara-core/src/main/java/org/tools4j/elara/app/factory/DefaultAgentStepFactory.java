@@ -26,7 +26,7 @@ package org.tools4j.elara.app.factory;
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.state.BaseState;
-import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.plugin.api.PluginSpecification.Installer;
 import org.tools4j.elara.step.AgentStep;
 
 import java.util.ArrayList;
@@ -41,11 +41,11 @@ public class DefaultAgentStepFactory implements AgentStepFactory {
 
     private final AppConfig config;
     private final BaseState baseState;
-    private final Plugin.Configuration[] plugins;
+    private final Installer[] plugins;
 
     public DefaultAgentStepFactory(final AppConfig config,
                                    final BaseState baseState,
-                                   final Plugin.Configuration[] plugins) {
+                                   final Installer[] plugins) {
         this.config = requireNonNull(config);
         this.baseState = requireNonNull(baseState);
         this.plugins = requireNonNull(plugins);
@@ -67,7 +67,7 @@ public class DefaultAgentStepFactory implements AgentStepFactory {
             return NOOP;
         }
         final List<AgentStep> extraSteps = new ArrayList<>(plugins.length + dutyCycleExtraSteps.size());
-        for (final Plugin.Configuration plugin : plugins) {
+        for (final Installer plugin : plugins) {
             extraSteps.add(plugin.step(baseState, executionType));
         }
         for (int i = 0; i < dutyCycleExtraSteps.size(); i++) {
