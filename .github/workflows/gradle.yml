@@ -5,11 +5,13 @@ on:
   push:
     branches:
       - master
+      - feature/**
       - release/**
   pull_request:
     types: [opened, synchronize]
     branches:
       - master
+      - feature/**
       - release/**
 
 concurrency:
