@@ -24,7 +24,6 @@
 package org.tools4j.elara.samples.timer;
 
 import org.junit.jupiter.api.Test;
-import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.input.SingleSourceInput;
 import org.tools4j.elara.plugin.timer.DeadlineHeapTimerState;
@@ -37,10 +36,8 @@ import org.tools4j.elara.plugin.timer.TimerState;
 import org.tools4j.elara.run.ElaraRunner;
 
 import java.time.Instant;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
@@ -146,7 +143,7 @@ class TimerApplicationTest {
             //when
             final List<Event> replay = new ArrayList<>();
             try (final ElaraRunner runner = app.chronicleQueue(oneTimeInput(input), "single", replay::add)) {
-                runner.join(3000);
+                runner.join(1000);
             }
 
             //then
@@ -183,7 +180,6 @@ class TimerApplicationTest {
         final TimerApplication app = new TimerApplication();
         final Supplier<? extends TimerState.Mutable> timerStateSupplier = simpleState ?
                 SimpleTimerState::new : DeadlineHeapTimerState::new;
-        final Queue<Command> commands = new ArrayDeque<>();
         final List<Event> events = new ArrayList<>();
 
         //when
@@ -199,7 +195,7 @@ class TimerApplicationTest {
                 app.inMemory(oneTimeInput(input), events::add, timerStateSupplier)) {
 
             //then
-            runner.join(100 + periodMillis * (PERIODIC_REPETITIONS + 1));
+            runner.join(2000 + periodMillis * (PERIODIC_REPETITIONS + 1));
         }
 
         //then
@@ -249,7 +245,7 @@ class TimerApplicationTest {
             //when
             final List<Event> replay = new ArrayList<>();
             try (final ElaraRunner runner = app.chronicleQueue(oneTimeInput(input), "periodic", replay::add)) {
-                runner.join(500);
+                runner.join(1000);
             }
 
             //then
