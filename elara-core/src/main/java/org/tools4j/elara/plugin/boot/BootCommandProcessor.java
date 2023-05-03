@@ -30,7 +30,7 @@ import org.tools4j.elara.route.EventRouter;
 import static org.tools4j.elara.plugin.boot.BootCommands.BOOT_NOTIFY_APP_START;
 import static org.tools4j.elara.plugin.boot.BootEvents.BOOT_APP_STARTED;
 
-public class BootCommandProcessor implements CommandProcessor {
+public final class BootCommandProcessor implements CommandProcessor {
 
     @Override
     public void onCommand(final Command command, final EventRouter router) {

@@ -42,11 +42,11 @@ public class TimerCommandProcessor implements CommandProcessor {
         if (TimerCommands.isTimerCommand(command)) {
             final long timerId = FlyweightTimerPayload.timerId(command.payload(), 0);
             if (command.payloadType() == TimerCommands.START_TIMER) {
-                if (!timerState.hasTimer(command.sourceId(), timerId)) {
+                if (!timerState.hasTimer(timerId)) {
                     router.routeEventWithCommandPayload();
                 }//else: TODO log warning ?
             } else {
-                if (timerState.hasTimer(command.sourceId(), timerId)) {
+                if (timerState.hasTimer(timerId)) {
                     router.routeEventWithCommandPayload();
                 }//else: TODO log warning ?
             }

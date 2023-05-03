@@ -68,7 +68,7 @@ public final class CommandAppendingSender extends FlyweightCommandSender {
             this.context = requireNonNull(context);
             this.buffer.wrap(context.buffer(), PAYLOAD_OFFSET);
             FlyweightCommand.writeHeader(
-                    sourceId, sequence, timeSource.currentTime(), payloadType, 0,
+                    sourceId, sequence, TimeSource.MIN_VALUE, payloadType, 0,
                     context.buffer(), HEADER_OFFSET
             );
             return this;
@@ -105,11 +105,14 @@ public final class CommandAppendingSender extends FlyweightCommandSender {
             }
             buffer.unwrap();
             try (final AppendingContext ac = unclosedContext()) {
+                final MutableDirectBuffer buf = ac.buffer();
                 if (length > 0) {
-                    FlyweightCommand.writePayloadSize(length, ac.buffer());
+                    FlyweightCommand.writePayloadSize(length, buf);
                 }
+                final long time = timeSource.currentTime();
+                FlyweightCommand.writeCommandTime(time, buf);
                 ac.commit(HEADER_LENGTH + length);
-                notifySent();
+                notifySent(time);
                 return SendingResult.SENT;
             } finally {
                 context = null;

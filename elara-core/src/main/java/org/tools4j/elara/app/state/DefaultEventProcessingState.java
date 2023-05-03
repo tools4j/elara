@@ -23,18 +23,20 @@
  */
 package org.tools4j.elara.app.state;
 
-import org.agrona.collections.Long2LongHashMap;
+import org.agrona.collections.Int2ObjectHashMap;
+import org.tools4j.elara.app.state.EventProcessingState.MutableEventProcessingState;
 import org.tools4j.elara.flyweight.EventType;
 
-public class DefaultBaseState implements PassthroughState {
-    public static final BaseStateProvider PROVIDER = appConfig -> new DefaultBaseState();
+public class DefaultEventProcessingState implements MutableEventProcessingState, PassthroughState {
+    public static final BaseStateProvider PROVIDER = appConfig -> new DefaultEventProcessingState();
 
-    private final Long2LongHashMap sourceIdToSequence = new Long2LongHashMap(NIL_SEQUENCE);
+    private final Int2ObjectHashMap<DefaultEventState> sourceIdToEventState = new Int2ObjectHashMap<>();
     private long lastAppliedEventSequence = NIL_SEQUENCE;
 
     @Override
     public long lastAppliedCommandSequence(final int sourceId) {
-        return sourceIdToSequence.get(sourceId);
+        final EventState eventState = lastProcessedEvent(sourceId);
+        return eventState != null ? eventState.sourceSequence() : NIL_SEQUENCE;
     }
 
     @Override
@@ -43,17 +45,26 @@ public class DefaultBaseState implements PassthroughState {
     }
 
     @Override
+    public EventState lastProcessedEvent(final int sourceId) {
+        return sourceIdToEventState.get(sourceId);
+    }
+
+    @Override
+    public DefaultEventState lastProcessedEventCreateIfAbsent(final int sourceId) {
+        return sourceIdToEventState.computeIfAbsent(sourceId, DefaultEventState::new);
+    }
+
+    @Override
     public void applyEvent(final int srcId, final long srcSeq, final long evtSeq, final int evtIndex,
                            final EventType evtType, final long evtTime, final int payloadType) {
-        this.sourceIdToSequence.put(srcId, srcSeq);
-        this.lastAppliedEventSequence = evtSeq;
+        lastProcessedEventCreateIfAbsent(srcId).applyEvent(srcSeq, evtSeq, evtIndex, evtType, evtTime, payloadType);
     }
 
     @Override
     public String toString() {
-        return "DefaultBaseState{" +
-                "sourceIdToSequence=" + sourceIdToSequence +
-                ", lastAppliedEventSequence=" + lastAppliedEventSequence +
+        return "DefaultEventProcessingState{" +
+                "sourceIdToEventState=" + sourceIdToEventState +
+                "|lastAppliedEventSequence=" + lastAppliedEventSequence +
                 '}';
     }
 }

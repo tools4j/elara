@@ -28,11 +28,12 @@ import org.tools4j.elara.event.Event;
 import org.tools4j.elara.input.SingleSourceInput;
 import org.tools4j.elara.plugin.timer.DeadlineHeapTimerState;
 import org.tools4j.elara.plugin.timer.FlyweightTimerPayload;
+import org.tools4j.elara.plugin.timer.MutableTimerState;
 import org.tools4j.elara.plugin.timer.SimpleTimerState;
 import org.tools4j.elara.plugin.timer.Timer.Style;
 import org.tools4j.elara.plugin.timer.TimerController.ControlContext;
 import org.tools4j.elara.plugin.timer.TimerEvents;
-import org.tools4j.elara.plugin.timer.TimerState;
+import org.tools4j.elara.plugin.timer.TimerIdGenerator;
 import org.tools4j.elara.run.ElaraRunner;
 
 import java.time.Instant;
@@ -65,16 +66,20 @@ class TimerApplicationTest {
         singleTimers(true, true);
     }
 
+    private static long timerId(final int index) {
+        return TimerIdGenerator.timerId(TimerApplication.SOURCE_ID, index);
+    }
+
     private void singleTimers(final boolean persisted, final boolean simpleState) {
         //given
         final int[] microTimeouts = {200_000, 500_000, 800_000, 1000_000};
         final int[] types = {101, 102, 103, 104};
         final long[] contextIds = {100000000001L, 100000000002L, 100000000003L, 100000000004L};
         final TimerApplication app = new TimerApplication();
-        final Supplier<? extends TimerState.Mutable> timerStateSupplier = simpleState ?
+        final Supplier<? extends MutableTimerState> timerStateSupplier = simpleState ?
                 SimpleTimerState::new : DeadlineHeapTimerState::new;
         final long[] startTimePtr = {0};//NOTE: if we initialize this here, ALARM timers may go off out of sequence
-        final SingleSourceInput input = (sender, inFlightState) -> {
+        final SingleSourceInput input = (sender, commandTracker) -> {
             try (final ControlContext timerControl = app.timerPlugin.controller(sender)) {
                 if (startTimePtr[0] == 0) {
                     startTimePtr[0] = timerControl.currentTime();
@@ -107,7 +112,7 @@ class TimerApplicationTest {
                 final Event started = evts.get(iStarted);
                 timer.wrap(started.payload(), 0);
                 assertEquals(TimerEvents.TIMER_STARTED, started.payloadType(), "events[" + iStarted + "].payloadType");
-                assertEquals((i + 1), timer.timerId(), "events[" + iStarted + "].timerId");
+                assertEquals(timerId(i + 1), timer.timerId(), "events[" + iStarted + "].timerId");
                 assertEquals(types[i], timer.timerType(), "events[" + iStarted + "].timerType");
                 assertEquals(contextIds[i], timer.contextId(), "events[" + iStarted + "].contextId");
                 if (i < 2) {
@@ -121,7 +126,7 @@ class TimerApplicationTest {
                 final Event signalled = evts.get(iSignalled);
                 timer.wrap(signalled.payload(), 0);
                 assertEquals(TimerEvents.TIMER_SIGNALLED, signalled.payloadType(), "events[" + iSignalled + "].payloadType");
-                assertEquals((i + 1), timer.timerId(), "events[" + iSignalled + "].timerId");
+                assertEquals(timerId(i + 1), timer.timerId(), "events[" + iSignalled + "].timerId");
                 assertEquals(types[i], timer.timerType(), "events[" + iSignalled + "].timerType");
                 assertEquals(contextIds[i], timer.contextId(), "events[" + iSignalled + "].contextId");
                 if (i < 2) {
@@ -172,18 +177,18 @@ class TimerApplicationTest {
 
     private void periodicTimer(final boolean persisted, final boolean simpleState) {
         //given
-        final int timerId = 1;
+        final long timerId = timerId(1);
         final int timerType = 12345;
         final long contextId = 6666666666666L;
         final long periodMillis = 500;
         final long periodMicros = periodMillis * 1000;
         final TimerApplication app = new TimerApplication();
-        final Supplier<? extends TimerState.Mutable> timerStateSupplier = simpleState ?
+        final Supplier<? extends MutableTimerState> timerStateSupplier = simpleState ?
                 SimpleTimerState::new : DeadlineHeapTimerState::new;
         final List<Event> events = new ArrayList<>();
 
         //when
-        final SingleSourceInput input = (sender, inFlightState) -> {
+        final SingleSourceInput input = (sender, commandTracker) -> {
             try (final ControlContext timerControl = app.timerPlugin.controller(sender)) {
                 timerControl.startPeriodic(periodMicros, timerType, contextId);
             }

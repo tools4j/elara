@@ -37,13 +37,13 @@ import org.tools4j.elara.format.TimeFormatter.MicroTimeFormatter;
 import org.tools4j.elara.input.SingleSourceInput;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.plugin.timer.FlyweightTimerPayload;
+import org.tools4j.elara.plugin.timer.MutableTimerState;
 import org.tools4j.elara.plugin.timer.SimpleTimerState;
 import org.tools4j.elara.plugin.timer.Timer.Style;
 import org.tools4j.elara.plugin.timer.TimerCommands;
 import org.tools4j.elara.plugin.timer.TimerController.ControlContext;
 import org.tools4j.elara.plugin.timer.TimerEvents;
 import org.tools4j.elara.plugin.timer.TimerPlugin;
-import org.tools4j.elara.plugin.timer.TimerState;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
@@ -57,7 +57,7 @@ import static java.util.Objects.requireNonNull;
 
 public class TimerApplication {
 
-    private static final int SOURCE_ID = 777;
+    public static final int SOURCE_ID = 777;
     public static final int PERIODIC_REPETITIONS = 5;
 
     public final TimerPlugin timerPlugin = Plugins.timerPlugin();
@@ -69,7 +69,7 @@ public class TimerApplication {
 
     public ElaraRunner inMemory(final SingleSourceInput input,
                                 final Consumer<? super Event> eventConsumer,
-                                final Supplier<? extends TimerState.Mutable> timerStateSupplier) {
+                                final Supplier<? extends MutableTimerState> timerStateSupplier) {
         return Elara.launch(AllInOneAppConfig.configure()
                 .commandProcessor(this::process)
                 .eventApplier(eventApplier(eventConsumer))
@@ -161,9 +161,9 @@ public class TimerApplication {
 
     public static SingleSourceInput oneTimeInput(final SingleSourceInput input) {
         final boolean[] inputPolled = {false};
-        return (sender, inFlightState) -> {
+        return (sender, commandTracker) -> {
             if (!inputPolled[0]) {
-                final int result = input.poll(sender, inFlightState);
+                final int result = input.poll(sender, commandTracker);
                 inputPolled[0] = true;
                 return result;
             }

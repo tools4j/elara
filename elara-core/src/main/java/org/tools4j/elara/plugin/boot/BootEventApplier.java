@@ -21,7 +21,36 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.app.state;
+package org.tools4j.elara.plugin.boot;
 
-public interface FeedbackState extends BaseState {
+import org.tools4j.elara.app.handler.CommandTracker;
+import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.handler.EventProcessor;
+import org.tools4j.elara.event.Event;
+import org.tools4j.elara.send.CommandSender;
+
+import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.plugin.boot.BootEvents.BOOT_APP_STARTED;
+
+final class BootEventApplier implements EventApplier, EventProcessor {
+
+    private final BootPlugin bootPlugin;
+
+    BootEventApplier(final BootPlugin bootPlugin) {
+        this.bootPlugin = requireNonNull(bootPlugin);
+    }
+
+    @Override
+    public void onEvent(final Event event) {
+        if (event.payloadType() == BOOT_APP_STARTED) {
+            if (event.sourceId() == bootPlugin.sourceId() && bootPlugin.bootCommandSourceSequence() == event.sourceSequence()) {
+                bootPlugin.notifyEventReceived(event);
+            }
+        }
+    }
+
+    @Override
+    public void onEvent(final Event event, final CommandTracker commandTracker, final CommandSender sender) {
+        onEvent(event);
+    }
 }

@@ -49,12 +49,14 @@ final class SimpleSequenceGenerator implements SequenceGenerator {
     }
 
     @Override
-    public long nextSequence(final long minSequence) {
+    public boolean nextSequence(final long minSequence) {
         if (minSequence > sequence) {
             sequence = minSequence;
+            return true;
         }
-        return sequence;
+        return sequence == minSequence;
     }
+
     @Override
     public String toString() {
         return "SimpleSequenceGenerator{" +

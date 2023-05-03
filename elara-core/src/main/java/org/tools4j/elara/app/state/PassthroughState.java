@@ -24,6 +24,7 @@
 package org.tools4j.elara.app.state;
 
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.flyweight.EventType;
 
 /**
  * Base state version that supports minimalistic updating as per {@link PassthroughEventApplier}.
@@ -31,8 +32,9 @@ import org.tools4j.elara.event.Event;
 public interface PassthroughState extends MutableBaseState {
     BaseStateProvider PROVIDER = BaseStateProvider.DEFAULT;
     default void applyEvent(final Event event) {
-        applyEvent(event.sourceId(), event.sourceSequence(), event.eventSequence(), event.eventIndex());
+        applyEvent(event.sourceId(), event.sourceSequence(), event.eventSequence(), event.eventIndex(),
+                event.eventType(), event.eventTime(), event.payloadType());
     }
 
-    void applyEvent(int sourceId, long sourceSeq, long eventSeq, int index);
+    void applyEvent(int srcId, long srcSeq, long evtSeq, int evtIndex, EventType evtType, long evtTime, int payloadType);
 }

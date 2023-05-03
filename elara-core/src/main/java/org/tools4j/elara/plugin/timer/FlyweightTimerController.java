@@ -31,7 +31,6 @@ import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.CommandSender.SendingContext;
-import org.tools4j.elara.sequence.SequenceGenerator;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
@@ -49,13 +48,17 @@ final class FlyweightTimerController implements ControlContext {
     private final EventTimerController eventController = new EventTimerController();
 
     private TimeSource timeSource;
-    private SequenceGenerator timerIdGenerator;
+    private TimerIdGenerator timerIdGenerator;
     private TimerState timerState;
 
-    void init(final TimeSource timeSource, final SequenceGenerator timerIdGenerator, final TimerState timerState) {
+    void init(final TimeSource timeSource, final TimerIdGenerator timerIdGenerator, final TimerState timerState) {
         this.timeSource = requireNonNull(timeSource);
         this.timerIdGenerator = requireNonNull(timerIdGenerator);
         this.timerState = requireNonNull(timerState);
+    }
+
+    TimerState timerState() {
+        return timerState;
     }
 
     private void checkInitialized() {
@@ -188,42 +191,46 @@ final class FlyweightTimerController implements ControlContext {
 
         @Override
         public long startAlarm(final long time, final int type, final long contextId) {
-            final long timerId = timerIdGenerator.sequence();
-            try (final RoutingContext context = eventRouter().routingEvent(TIMER_STARTED)) {
+            final EventRouter router = eventRouter();
+            final int sourceId = router.command().sourceId();
+            final long timerId = timerIdGenerator.current(sourceId);
+            try (final RoutingContext context = eventRouter.routingEvent(TIMER_STARTED)) {
                 final int length = writeAlarm(timerId, time, type, contextId, context.buffer(), 0);
                 context.route(length);
             }
-            timerIdGenerator.nextSequence(timerId + 1);
+            timerIdGenerator.next(timerId + 1);
             return timerId;
         }
 
         @Override
         public long startTimer(final long timeout, final int type, final long contextId) {
-            final long timerId = timerIdGenerator.sequence();
-            try (final RoutingContext context = eventRouter().routingEvent(TIMER_STARTED)) {
+            final EventRouter router = eventRouter();
+            final int sourceId = router.command().sourceId();
+            final long timerId = timerIdGenerator.current(sourceId);
+            try (final RoutingContext context = eventRouter.routingEvent(TIMER_STARTED)) {
                 final int length = writeTimer(timerId, timeout, type, contextId, context.buffer(), 0);
                 context.route(length);
             }
-            timerIdGenerator.nextSequence(timerId + 1);
+            timerIdGenerator.next(timerId + 1);
             return timerId;
         }
 
         @Override
         public long startPeriodic(final long timeout, final int type, final long contextId) {
-            final long timerId = timerIdGenerator.sequence();
-            try (final RoutingContext context = eventRouter().routingEvent(TIMER_STARTED)) {
+            final EventRouter router = eventRouter();
+            final int sourceId = router.command().sourceId();
+            final long timerId = timerIdGenerator.current(sourceId);
+            try (final RoutingContext context = eventRouter.routingEvent(TIMER_STARTED)) {
                 final int length = writePeriodic(timerId, timeout, 0, type, contextId, context.buffer(), 0);
                 context.route(length);
             }
-            timerIdGenerator.nextSequence(timerId + 1);
+            timerIdGenerator.next(timerId + 1);
             return timerId;
         }
 
         @Override
         public boolean cancelTimer(final long id) {
-            final EventRouter router = eventRouter();
-            final int sourceId = router.command().sourceId();
-            final int timerIndex = timerState.index(sourceId, id);
+            final int timerIndex = timerState.index(id);
             if (timerIndex >= 0) {
                 try (final RoutingContext context = eventRouter().routingEvent(TIMER_CANCELLED)) {
                     final int length = writeCancelPayload(id, timerIndex, context.buffer(), 0);
@@ -264,43 +271,45 @@ final class FlyweightTimerController implements ControlContext {
 
         @Override
         public long startAlarm(final long time, final int type, final long contextId) {
-            final long timerId = timerIdGenerator.sequence();
-            try (final SendingContext context = commandSender().sendingCommand(START_TIMER)) {
+            final CommandSender commandSender = commandSender();
+            final long timerId = timerIdGenerator.current(commandSender.sourceId());
+            try (final SendingContext context = commandSender.sendingCommand(START_TIMER)) {
                 final int length = writeAlarm(timerId, time, type, contextId, context.buffer(), 0);
                 context.send(length);
             }
-            timerIdGenerator.nextSequence(timerId + 1);
+            timerIdGenerator.next(timerId + 1);
             return timerId;
         }
 
         @Override
         public long startTimer(final long timeout, final int type, final long contextId) {
-            final long timerId = timerIdGenerator.sequence();
-            try (final SendingContext context = commandSender().sendingCommand(START_TIMER)) {
+            final CommandSender commandSender = commandSender();
+            final long timerId = timerIdGenerator.current(commandSender.sourceId());
+            try (final SendingContext context = commandSender.sendingCommand(START_TIMER)) {
                 final int length = writeTimer(timerId, timeout, type, contextId, context.buffer(), 0);
                 context.send(length);
             }
-            timerIdGenerator.nextSequence(timerId + 1);
+            timerIdGenerator.next(timerId + 1);
             return timerId;
         }
 
         @Override
         public long startPeriodic(final long timeout, final int type, final long contextId) {
-            final long timerId = timerIdGenerator.sequence();
-            try (final SendingContext context = commandSender().sendingCommand(START_TIMER)) {
+            final CommandSender commandSender = commandSender();
+            final long timerId = timerIdGenerator.current(commandSender.sourceId());
+            try (final SendingContext context = commandSender.sendingCommand(START_TIMER)) {
                 final int length = writePeriodic(timerId, timeout, 0, type, contextId, context.buffer(), 0);
                 context.send(length);
             }
-            timerIdGenerator.nextSequence(timerId + 1);
+            timerIdGenerator.next(timerId + 1);
             return timerId;
         }
 
         @Override
         public boolean cancelTimer(final long id) {
-            final CommandSender sender = commandSender();
-            final int timerIndex = timerState.index(sender.sourceId(), id);
+            final int timerIndex = timerState.index(id);
             if (timerIndex >= 0) {
-                try (final SendingContext context = sender.sendingCommand(CANCEL_TIMER)) {
+                try (final SendingContext context = commandSender().sendingCommand(CANCEL_TIMER)) {
                     final int length = writeCancelPayload(id, timerIndex, context.buffer(), 0);
                     context.send(length);
                 }

@@ -160,11 +160,11 @@ public class HashApplicationTest {
         printRuntimeArgs();
         //given
 //        final int n = 5_000_000;
-//        final int n = 50_000_000;
-        final int n = 100_000_000;
+        final int n = 50_000_000;
+//        final int n = 100_000_000;
 //        final long expected = -4253299023651259134L;//5_000_000
-//        final long expected = 8536806003277137281L;//50_000_000
-        final long expected = -2816473282704185408L;//100_000_000
+        final long expected = 8536806003277137281L;//50_000_000
+//        final long expected = -2816473282704185408L;//100_000_000
 
         //when
         final long result = passthroughWithMetrics("hash-metrics", n, false);

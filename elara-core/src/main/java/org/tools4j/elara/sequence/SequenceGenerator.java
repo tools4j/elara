@@ -29,7 +29,7 @@ public interface SequenceGenerator {
     long MAX_SEQUENCE = Long.MAX_VALUE;
     long sequence();
     long nextSequence();
-    long nextSequence(long sequence);
+    boolean nextSequence(long sequence);
 
     static SequenceGenerator create() {
         return new SimpleSequenceGenerator();

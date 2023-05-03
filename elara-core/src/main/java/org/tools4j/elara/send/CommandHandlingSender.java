@@ -69,16 +69,16 @@ public final class CommandHandlingSender extends FlyweightCommandSender {
 
     @Override
     public SendingResult sendCommand(final int payloadType, final DirectBuffer buffer, final int offset, final int length) {
-        initHeader(sourceId(), nextCommandSequence(), payloadType, length);
+        final long time = timeSource.currentTime();
+        initHeader(sourceId(), nextCommandSequence(), time, payloadType, length);
         invokeCommandHandler(buffer, offset, length);//TODO handle result value here
-        notifySent();
+        notifySent(time);
         return SendingResult.SENT;
     }
 
-    private void initHeader(final int sourceId, final long sourceSeq, final int payloadType, final int payloadSize) {
+    private void initHeader(final int sourceId, final long sourceSeq, final long commandTime, final int payloadType, final int payloadSize) {
         FlyweightCommand.writeHeader(
-                sourceId, sourceSeq, timeSource.currentTime(), payloadType, payloadSize,
-                header, HEADER_OFFSET
+                sourceId, sourceSeq, commandTime, payloadType, payloadSize, header, HEADER_OFFSET
         );
     }
 
@@ -106,7 +106,7 @@ public final class CommandHandlingSender extends FlyweightCommandSender {
                 abort();
                 throw new IllegalStateException("Sending context not closed");
             }
-            initHeader(sourceId, sourceSeq, type, 0);
+            initHeader(sourceId, sourceSeq, TimeSource.MIN_VALUE, type, 0);
             closed = false;
             return this;
         }
@@ -145,8 +145,10 @@ public final class CommandHandlingSender extends FlyweightCommandSender {
                 if (length > 0) {
                     FlyweightCommand.writePayloadSize(length, header);
                 }
+                final long time = timeSource.currentTime();
+                FlyweightCommand.writeCommandTime(time, header);
                 invokeCommandHandler(payload, 0, length);//TODO handler result value here
-                notifySent();
+                notifySent(time);
                 return SendingResult.SENT;
             } finally {
                 command.reset();

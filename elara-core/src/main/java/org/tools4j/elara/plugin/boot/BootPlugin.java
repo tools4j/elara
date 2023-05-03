@@ -23,16 +23,12 @@
  */
 package org.tools4j.elara.plugin.boot;
 
-import org.tools4j.elara.app.config.AppConfig;
-import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.state.BaseState;
-import org.tools4j.elara.input.Input;
-import org.tools4j.elara.plugin.api.PluginStateProvider;
+import org.tools4j.elara.app.state.TransientCommandState;
+import org.tools4j.elara.event.Event;
 import org.tools4j.elara.plugin.api.PluginStateProvider.NullState;
-import org.tools4j.elara.plugin.api.ReservedPayloadType;
 import org.tools4j.elara.plugin.api.SystemPlugin;
-
-import static java.util.Objects.requireNonNull;
+import org.tools4j.elara.time.TimeSource;
 
 /**
  * A plugin that issues commands and events related to booting an elara application to indicate that the application has
@@ -44,14 +40,50 @@ public class BootPlugin implements SystemPlugin<NullState> {
     public static final BootPlugin DEFAULT = new BootPlugin(DEFAULT_SOURCE_ID);
 
     private final int sourceId;
-    private final Specification specification = new Specification();
+    private final BootPluginSpecification specification = new BootPluginSpecification(this);
+
+    private long bootCommandSourceSequence = BaseState.NIL_SEQUENCE;
+    private long bootCommandSendingTime = TimeSource.MIN_VALUE;
+    private long bootEventSequence = BaseState.NIL_SEQUENCE;
+    private long bootEventTime = TimeSource.MIN_VALUE;
 
     public BootPlugin(final int sourceId) {
         this.sourceId = sourceId;
     }
 
+    void notifyCommandSent(final TransientCommandState transientCommandState) {
+        this.bootCommandSourceSequence = transientCommandState.sourceSequenceOfLastSentCommand();
+        this.bootCommandSendingTime = transientCommandState.sendingTimeOfLastSentCommand();
+    }
+
+    void notifyEventReceived(final Event event) {
+        this.bootEventSequence = event.eventSequence();
+        this.bootCommandSendingTime = event.eventTime();
+    }
+
     public int sourceId() {
         return sourceId;
+    }
+
+    public long bootCommandSourceSequence() {
+        return bootCommandSourceSequence;
+
+    }
+
+    public long bootCommandSendingTime() {
+        return bootCommandSendingTime;
+    }
+
+    public long bootEventSequence() {
+        return bootEventSequence;
+    }
+
+    public long bootEventTime() {
+        return bootEventTime;
+    }
+
+    public boolean isBootComplete() {
+        return bootEventSequence != BaseState.NIL_SEQUENCE;
     }
 
     @Override
@@ -72,33 +104,15 @@ public class BootPlugin implements SystemPlugin<NullState> {
         return 31 * getClass().hashCode() + sourceId;
     }
 
-    private final class Specification implements SystemPluginSpecification<NullState> {
-        @Override
-        public PluginStateProvider<NullState> defaultPluginStateProvider() {
-            return PluginStateProvider.NULL_STATE_PROVIDER;
-        }
-
-        @Override
-        public ReservedPayloadType reservedPayloadType() {
-            return ReservedPayloadType.BOOT;
-        }
-
-        @Override
-        public Installer installer(final AppConfig appConfig, final NullState pluginState) {
-            requireNonNull(appConfig);
-            requireNonNull(pluginState);
-            return new Installer.Default() {
-                @Override
-                public Input input(final BaseState baseState) {
-                    final long sourceSeq = 1 + baseState.lastAppliedCommandSequence(sourceId);
-                    return Input.single(sourceId, sourceSeq, new BootCommandInput());
-                }
-
-                @Override
-                public CommandProcessor commandProcessor(final BaseState baseState) {
-                    return new BootCommandProcessor();
-                }
-            };
-        }
+    @Override
+    public String toString() {
+        return "BootPlugin{" +
+                "sourceId=" + sourceId +
+                "|bootCommandSourceSequence=" + bootCommandSourceSequence +
+                "|bootCommandSendingTime=" + bootCommandSendingTime +
+                "|bootEventSequence=" + bootEventSequence +
+                "|bootEventTime=" + bootEventTime +
+                "|bootComplete=" + isBootComplete() +
+                '}';
     }
 }

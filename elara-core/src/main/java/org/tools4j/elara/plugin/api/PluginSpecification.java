@@ -39,7 +39,8 @@ import org.tools4j.elara.step.AgentStep;
 /**
  * The plugin specification defines the plugin's behaviour through {@link #defaultPluginStateProvider()} and
  * {@link #installer(AppConfig, Object) installer(..)}.
- * @param <P>
+ *
+ * @param <P> the plugin state type
  */
 public interface PluginSpecification<P> {
     /**

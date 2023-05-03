@@ -26,6 +26,7 @@ package org.tools4j.elara.app.state;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.app.type.PassthroughApp;
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.flyweight.EventType;
 import org.tools4j.elara.send.CommandPassthroughSender;
 
 /**
@@ -39,8 +40,9 @@ public interface PassthroughEventApplier extends EventApplier {
     //NOTE: this method may not be invoked at all, so do not override it!
     @Override
     default void onEvent(final Event evt) {
-        onEvent(evt.sourceId(), evt.sourceSequence(), evt.eventSequence(), evt.eventIndex());
+        onEvent(evt.sourceId(), evt.sourceSequence(), evt.eventSequence(), evt.eventIndex(), evt.eventType(),
+                evt.eventTime(), evt.payloadType());
     }
 
-    void onEvent(int sourceId, long sourceSeq, long eventSeq, int index);
+    void onEvent(int srcId, long srcSeq, long evtSeq, int index, EventType evtType, long evtTime, int payloadType);
 }

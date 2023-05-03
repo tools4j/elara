@@ -31,15 +31,20 @@ abstract class FlyweightCommandSender implements CommandSender.Default, SenderSu
 
     private int sourceId;
     private SequenceGenerator sourceSequenceGenerator;
+    private SentListener sentListener;
 
     @Override
-    public CommandSender senderFor(final int sourceId, final SequenceGenerator sourceSequenceGenerator) {
+    public CommandSender senderFor(final int sourceId,
+                                   final SequenceGenerator sourceSequenceGenerator,
+                                   final SentListener sentListener) {
         this.sourceId = sourceId;
         this.sourceSequenceGenerator = requireNonNull(sourceSequenceGenerator);
+        this.sentListener = requireNonNull(sentListener);
         return this;
     }
 
-    void notifySent() {
+    void notifySent(final long commandTime) {
+        sentListener.onSent(sourceSequenceGenerator.sequence(), commandTime);
         sourceSequenceGenerator.nextSequence();
     }
 

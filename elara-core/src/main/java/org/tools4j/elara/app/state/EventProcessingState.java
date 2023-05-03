@@ -21,25 +21,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.timer;
+package org.tools4j.elara.app.state;
 
-import org.tools4j.elara.plugin.timer.Timer.Style;
+/**
+ * Extended version of {@link BaseState} providing information about the last processed event for any given source ID.
+ */
+public interface EventProcessingState extends BaseState {
+    /**
+     * Returns the event state for the given source ID, or null if no events from this source have been processed yet.
+     *
+     * @param sourceId the source ID for events
+     * @return the event state for the given source ID, or null if unavailable
+     */
+    EventState lastProcessedEvent(int sourceId);
 
-public interface TimerState {
-    int count();
-    int index(long timerId);
-    int indexOfNextDeadline();
-    long timerId(int index);
-    Style style(int index);
-    int repetition(int index);
-    long startTime(int index);
-    long timeout(int index);
-    int timerType(int index);
-    long contextId(int index);
-    long deadline(int index);
-
-    default boolean hasTimer(final long timerId) {
-        return index(timerId) >= 0;
+    interface MutableEventProcessingState extends EventProcessingState, MutableBaseState {
+        EventState lastProcessedEventCreateIfAbsent(int sourceId);
     }
-
 }

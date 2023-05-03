@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.input;
 
-import org.tools4j.elara.app.state.InFlightState;
+import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.source.SourceContext;
 
@@ -31,8 +31,8 @@ import org.tools4j.elara.source.SourceContext;
 public interface SingleSourceInput extends UniSourceInput {
     @Override
     default int poll(final SourceContext sourceContext) {
-        return poll(sourceContext.commandSender(), sourceContext.inFlightState());
+        return poll(sourceContext.commandSender(), sourceContext.commandTracker());
     }
 
-    int poll(CommandSender sender, InFlightState inFlightState);
+    int poll(CommandSender sender, CommandTracker commandTracker);
 }

@@ -44,6 +44,7 @@ public class DefaultSourceContextProvider implements SourceContextProvider {
                                         final SenderSupplier senderSupplier) {
         this(DEFAULT_INITIAL_CAPACITY, baseState, senderSupplier, sourceId -> SequenceGenerator.create());
     }
+
     public DefaultSourceContextProvider(final int initialCapacity,
                                         final BaseState baseState,
                                         final SenderSupplier senderSupplier,
@@ -70,9 +71,9 @@ public class DefaultSourceContextProvider implements SourceContextProvider {
     }
 
     @Override
-    public SourceContext sourceContext(final int sourceId, final long nextSourceSequence) {
-        final DefaultSourceContext context = contextBySourceId.computeIfAbsent(sourceId, sourceContextFactory);
-        context.sourceSequenceGenerator().nextSequence(nextSourceSequence);
+    public SourceContext sourceContext(final int sourceId, final long minSourceSeq) {
+        final SourceContext context = sourceContext(sourceId);
+        context.commandTracker().transientCommandState().sourceSequenceGenerator().nextSequence(minSourceSeq);
         return context;
     }
 }

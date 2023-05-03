@@ -24,7 +24,7 @@
 package org.tools4j.elara.samples.bank;
 
 import org.agrona.DirectBuffer;
-import org.tools4j.elara.app.state.InFlightState;
+import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.app.type.AllInOneApp;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
@@ -140,7 +140,7 @@ public class BankApplication implements AllInOneApp, Output {
         }
 
         @Override
-        public int poll(final CommandSender sender, final InFlightState inFlightState) {
+        public int poll(final CommandSender sender, final CommandTracker commandTracker) {
             final BankCommand cmd = commands.poll();
             if (cmd != null) {
                 final int type = cmd.type().value;

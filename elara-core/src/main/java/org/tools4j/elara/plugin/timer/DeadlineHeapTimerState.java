@@ -40,23 +40,22 @@ import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
  * </pre>
  * The data structure is very similar to the one used by {@link java.util.PriorityQueue}.
  */
-public class DeadlineHeapTimerState implements TimerState.Mutable {
-    private static final int NULL_INT = -1;
-
+public class DeadlineHeapTimerState implements MutableTimerState {
     private final Int2IntHashMap storeIndexToHeapIndex;
     private final IntArrayList deadlineHeapToStoreIndex;
     private final MutableTimerStore timerStore;
 
     public DeadlineHeapTimerState() {
-        this(DirectTimerStore.DEFAULT_TIMER_CAPACITY, new DirectTimerStore());
+        this(DirectTimerStore.DEFAULT_CAPACITY, new DirectTimerStore());
     }
 
-    public DeadlineHeapTimerState(final int initialSourceCapacity, final int initialTimerCapacity) {
-        this(initialTimerCapacity, new DirectTimerStore(initialSourceCapacity, initialTimerCapacity));
+    public DeadlineHeapTimerState(final int initialCapacity) {
+        this(initialCapacity, new DirectTimerStore(initialCapacity));
     }
-    public DeadlineHeapTimerState(final int initialTimerCapacity, final MutableTimerStore timerStore) {
-        this.storeIndexToHeapIndex = new Int2IntHashMap(2 * initialTimerCapacity, DEFAULT_LOAD_FACTOR, -1);
-        this.deadlineHeapToStoreIndex = new IntArrayList(initialTimerCapacity, -1);
+
+    public DeadlineHeapTimerState(final int initialCapacity, final MutableTimerStore timerStore) {
+        this.storeIndexToHeapIndex = new Int2IntHashMap(2 * initialCapacity, DEFAULT_LOAD_FACTOR, -1);
+        this.deadlineHeapToStoreIndex = new IntArrayList(initialCapacity, -1);
         this.timerStore = requireNonNull(timerStore);
     }
 
@@ -74,13 +73,13 @@ public class DeadlineHeapTimerState implements TimerState.Mutable {
     }
 
     @Override
-    public boolean hasTimer(final int sourceId, final long timerId) {
-        return timerStore.hasTimer(sourceId, timerId);
+    public boolean hasTimer(final long timerId) {
+        return timerStore.hasTimer(timerId);
     }
 
     @Override
-    public int index(final int sourceId, final long timerId) {
-        final int storeIndex = timerStore.index(sourceId, timerId);
+    public int index(final long timerId) {
+        final int storeIndex = timerStore.index(timerId);
         return storeIndex < 0 ? -1 : storeIndexToHeapIndex(storeIndex);
     }
 
@@ -88,11 +87,6 @@ public class DeadlineHeapTimerState implements TimerState.Mutable {
     @Override
     public int indexOfNextDeadline() {
         return deadlineHeapToStoreIndex.isEmpty() ? -1 : 0;
-    }
-
-    @Override
-    public int sourceId(final int index) {
-        return timerStore.sourceId(heapIndexToStoreIndex(index));
     }
 
     @Override
@@ -136,9 +130,9 @@ public class DeadlineHeapTimerState implements TimerState.Mutable {
     }
 
     @Override
-    public boolean add(final int sourceId, final long timerId, final Style style, final int repetition, final long startTime, final long timeout, final int timerType, final long contextId) {
+    public boolean add(final long timerId, final Style style, final int repetition, final long startTime, final long timeout, final int timerType, final long contextId) {
         final int storeIndex = timerStore.count();//NOTE: we know the store adds a new entry at the end
-        if (timerStore.add(sourceId, timerId, style, repetition, startTime, timeout, timerType, contextId)) {
+        if (timerStore.add(timerId, style, repetition, startTime, timeout, timerType, contextId)) {
             add(storeIndex);
             return true;
         }
@@ -224,8 +218,8 @@ public class DeadlineHeapTimerState implements TimerState.Mutable {
     }
 
     @Override
-    public void updateRepetitionById(final int sourceId, final long timerId, final int repetition) {
-        final int storeIndex = timerStore.index(sourceId, timerId);
+    public void updateRepetitionById(final long timerId, final int repetition) {
+        final int storeIndex = timerStore.index(timerId);
         if (storeIndex < 0) {
             return;
         }

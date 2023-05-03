@@ -23,11 +23,11 @@
  */
 package org.tools4j.elara.source;
 
-import org.tools4j.elara.app.state.InFlightState;
+import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.send.CommandSender;
 
 public interface SourceContext {
     int sourceId();
+    CommandTracker commandTracker();
     CommandSender commandSender();
-    InFlightState inFlightState();
 }

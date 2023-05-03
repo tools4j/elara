@@ -23,8 +23,8 @@
  */
 package org.tools4j.elara.app.type;
 
+import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.app.handler.EventProcessor;
-import org.tools4j.elara.app.state.InFlightState;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
@@ -39,7 +39,7 @@ import static java.util.Objects.requireNonNull;
 public interface FeedbackApp extends EventProcessor {
 
     @Override
-    void onEvent(Event event, InFlightState inFlightState, CommandSender sender);
+    void onEvent(Event event, CommandTracker commandTracker, CommandSender sender);
 
     default ElaraRunner launch(final MessageStore messageStore) {
         requireNonNull(messageStore);

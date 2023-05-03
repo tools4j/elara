@@ -25,12 +25,8 @@ package org.tools4j.elara.plugin.timer;
 
 import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.agrona.collections.Int2IntHashMap;
 import org.agrona.collections.Long2LongHashMap;
 import org.tools4j.elara.plugin.timer.Timer.Style;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static java.util.Objects.requireNonNull;
@@ -43,33 +39,26 @@ import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
  */
 public class DirectTimerStore implements TimerStore.MutableTimerStore {
 
-    public static final int DEFAULT_SOURCE_CAPACITY = 64;
-    public static final int DEFAULT_TIMER_CAPACITY = 64;
+    public static final int DEFAULT_CAPACITY = 64;
     private static final int START_TIME_OFFSET = 0;
     private static final int START_TIME_LENGTH = Long.BYTES;
     private static final int TIMER_PAYLOAD_OFFSET = START_TIME_OFFSET + START_TIME_LENGTH;
     private static final int TIMER_PAYLOAD_LENGTH = TimerPayloadDescriptor.PAYLOAD_SIZE;
-    private static final int SOURCE_ID_OFFSET = TIMER_PAYLOAD_OFFSET + TIMER_PAYLOAD_LENGTH;
-    private static final int SOURCE_ID_LENGTH = Integer.BYTES;
-    private static final int ENTRY_SIZE = SOURCE_ID_OFFSET + SOURCE_ID_LENGTH;
+    private static final int ENTRY_SIZE = TIMER_PAYLOAD_OFFSET + TIMER_PAYLOAD_LENGTH;
 
-    private final int initialTimerCapacityPerSource;
-    private final Int2IntHashMap sourceIdToIdMapIndex;
-    private final List<Long2LongHashMap> timerIdToTimerIndex;
+    private final Long2LongHashMap timerIdToTimerIndex;
     private final MutableDirectBuffer buffer;
     private int count;
 
     public DirectTimerStore() {
-        this(DEFAULT_SOURCE_CAPACITY, DEFAULT_TIMER_CAPACITY);
+        this(DEFAULT_CAPACITY);
     }
 
-    public DirectTimerStore(final int initialSourceCapacity, final int initialTimerCapacity) {
-        this(initialSourceCapacity, initialTimerCapacity, new ExpandableDirectByteBuffer(initialTimerCapacity * ENTRY_SIZE));
+    public DirectTimerStore(final int initialCapacity) {
+        this(initialCapacity, new ExpandableDirectByteBuffer(initialCapacity * ENTRY_SIZE));
     }
-    public DirectTimerStore(final int initialSourceCapacity, final int initialTimerCapacityPerSource, final MutableDirectBuffer buffer) {
-        this.initialTimerCapacityPerSource = initialTimerCapacityPerSource;
-        this.sourceIdToIdMapIndex = new Int2IntHashMap(2 * initialSourceCapacity, DEFAULT_LOAD_FACTOR, -1);
-        this.timerIdToTimerIndex = new ArrayList<>(initialSourceCapacity);
+    public DirectTimerStore(final int initialCapacity, final MutableDirectBuffer buffer) {
+        this.timerIdToTimerIndex = new Long2LongHashMap(2 * initialCapacity, DEFAULT_LOAD_FACTOR, -1);
         this.buffer = requireNonNull(buffer);
     }
 
@@ -79,15 +68,13 @@ public class DirectTimerStore implements TimerStore.MutableTimerStore {
     }
 
     @Override
-    public boolean hasTimer(final int sourceId, final long timerId) {
-        final int idMapIndex = sourceIdToIdMapIndex.get(sourceId);
-        return idMapIndex >= 0 && timerIdToTimerIndex.get(idMapIndex).containsKey(timerId);
+    public boolean hasTimer(final long timerId) {
+        return timerIdToTimerIndex.containsKey(timerId);
     }
 
     @Override
-    public int index(final int sourceId, final long timerId) {
-        final int idMapIndex = sourceIdToIdMapIndex.get(sourceId);
-        return idMapIndex >= 0 ? (int)timerIdToTimerIndex.get(idMapIndex).get(timerId) : -1;
+    public int index(final long timerId) {
+        return (int)timerIdToTimerIndex.get(timerId);
     }
 
     private int offset(final int index) {
@@ -102,17 +89,8 @@ public class DirectTimerStore implements TimerStore.MutableTimerStore {
         return fieldOffset(index, TIMER_PAYLOAD_OFFSET);
     }
 
-    private int getInt(final int offset) {
-        return buffer.getInt(offset, LITTLE_ENDIAN);
-    }
-
     private long getLong(final int offset) {
         return buffer.getLong(offset, LITTLE_ENDIAN);
-    }
-
-    @Override
-    public int sourceId(final int index) {
-        return getInt(fieldOffset(index, SOURCE_ID_OFFSET));
     }
 
     @Override
@@ -169,23 +147,14 @@ public class DirectTimerStore implements TimerStore.MutableTimerStore {
     }
 
     @Override
-    public boolean add(final int sourceId, final long timerId, final Style style, final int repetition, final long startTime, final long timeout, final int timerType, final long contextId) {
-        final int idMapIndex = sourceIdToIdMapIndex.get(sourceId);
-        if (idMapIndex >= 0) {
-            if (timerIdToTimerIndex.get(idMapIndex).putIfAbsent(timerId, count) >= 0) {
-                //timer with (sourceId/timerId) is already present
-                return false;
-            }
-        } else {
-            final Long2LongHashMap timerIdToTimerIndexMap = new Long2LongHashMap(2 * initialTimerCapacityPerSource, DEFAULT_LOAD_FACTOR, -1);
-            sourceIdToIdMapIndex.put(sourceId, timerIdToTimerIndexMap.size());
-            timerIdToTimerIndex.add(timerIdToTimerIndexMap);
-            timerIdToTimerIndexMap.put(timerId, count);
+    public boolean add(final long timerId, final Style style, final int repetition, final long startTime, final long timeout, final int timerType, final long contextId) {
+        if (timerIdToTimerIndex.putIfAbsent(timerId, count) >= 0) {
+            //timer with timerId is already present
+            return false;
         }
         final int offset = offset(count);
         final int payloadOffset = offset + TIMER_PAYLOAD_OFFSET;
         buffer.putLong(offset + START_TIME_OFFSET, startTime, LITTLE_ENDIAN);
-        buffer.putInt(offset + SOURCE_ID_OFFSET, sourceId, LITTLE_ENDIAN);
         switch (style) {
             case ALARM:
                 FlyweightTimerPayload.writeAlarm(timerId, timeout, timerType, contextId, buffer, payloadOffset);
@@ -212,20 +181,16 @@ public class DirectTimerStore implements TimerStore.MutableTimerStore {
         validateIndex(index);
         final int curOffset = offset(index);
         final int lastOffset = offset(count - 1);
-        final int curSourceId = buffer.getInt(curOffset + SOURCE_ID_OFFSET, LITTLE_ENDIAN);
         final long curTimerId = FlyweightTimerPayload.timerId(buffer, curOffset + TIMER_PAYLOAD_OFFSET);
 
         //move last to current
         if (curOffset != lastOffset) {
-            final int lastSourceId = buffer.getInt(lastOffset + SOURCE_ID_OFFSET, LITTLE_ENDIAN);
             final long lastTimerId = FlyweightTimerPayload.timerId(buffer, lastOffset + TIMER_PAYLOAD_OFFSET);
             buffer.putBytes(curOffset, buffer, lastOffset, ENTRY_SIZE);
-            final int idMapIndex = sourceIdToIdMapIndex.get(lastSourceId);
-            timerIdToTimerIndex.get(idMapIndex).put(lastTimerId, index);
+            timerIdToTimerIndex.put(lastTimerId, index);
         }
         //now remove last
-        final int idMapIndex = sourceIdToIdMapIndex.get(curSourceId);
-        timerIdToTimerIndex.get(idMapIndex).remove(curTimerId);
+        timerIdToTimerIndex.remove(curTimerId);
         count--;
     }
 
@@ -242,7 +207,6 @@ public class DirectTimerStore implements TimerStore.MutableTimerStore {
         for (int i = 0; i < count; i++) {
             builder.append(i == 0 ? "" : "|");
             builder.append("timer[").append(i).append("]={");
-            builder.append("|source-id=").append(sourceId(i));
             builder.append("|timer-id=").append(timerId(i));
             builder.append("|style=").append(style(i));
             builder.append("|repetition=").append(repetition(i));

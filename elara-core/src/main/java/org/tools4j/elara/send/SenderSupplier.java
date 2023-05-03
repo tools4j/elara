@@ -27,5 +27,11 @@ import org.tools4j.elara.sequence.SequenceGenerator;
 
 @FunctionalInterface
 public interface SenderSupplier {
-    CommandSender senderFor(int sourceId, SequenceGenerator sourceSequenceGenerator);
+    CommandSender senderFor(int sourceId, SequenceGenerator sourceSequenceGenerator, SentListener sentListener);
+
+    @FunctionalInterface
+    interface SentListener {
+        void onSent(long sourceSequence, long commandTime);
+    }
+
 }

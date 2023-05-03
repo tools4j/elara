@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.samples.network;
 
-import org.tools4j.elara.app.state.InFlightState;
+import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.input.SingleSourceInput;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.CommandSender.SendingContext;
@@ -44,7 +44,7 @@ public class BufferInput implements SingleSourceInput {
     }
 
     @Override
-    public int poll(final CommandSender sender, final InFlightState inFlightState) {
+    public int poll(final CommandSender sender, final CommandTracker commandTracker) {
         try (final SendingContext context = sender.sendingCommand()) {
             final int consumed = buffer.consume(context.buffer(), 0);
             if (consumed == CONSUMED_NOTHING) {

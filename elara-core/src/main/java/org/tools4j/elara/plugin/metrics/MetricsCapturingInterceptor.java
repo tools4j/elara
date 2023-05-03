@@ -37,8 +37,8 @@ import org.tools4j.elara.app.factory.ProcessorFactory;
 import org.tools4j.elara.app.factory.PublisherFactory;
 import org.tools4j.elara.app.factory.SequencerFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
+import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.app.handler.EventApplier;
-import org.tools4j.elara.app.state.InFlightState;
 import org.tools4j.elara.app.state.PassthroughEventApplier;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.PayloadType;
@@ -361,13 +361,13 @@ public class MetricsCapturingInterceptor implements Interceptor {
                     if (shouldCapture(EVENT_APPLIED_FREQUENCY) || shouldCaptureAnyOf(EVENT)) {//includes APPLYING_START_TIME and APPLYING_END_TIME
                         if (eventApplier instanceof PassthroughEventApplier) {
                             final PassthroughEventApplier passthroughApplier = (PassthroughEventApplier)eventApplier;
-                            return (PassthroughEventApplier)(sourceId, sourceSeq, eventSeq, index) -> {
+                            return (PassthroughEventApplier)(srcId, srcSeq, evtSeq, evtIndex, evtType, evtTime, plType) -> {
                                 captureTime(APPLYING_START_TIME);
-                                passthroughApplier.onEvent(sourceId, sourceSeq, eventSeq, index);
+                                passthroughApplier.onEvent(srcId, srcSeq, evtSeq, evtIndex, evtType, evtTime, plType);
                                 captureTime(APPLYING_END_TIME);
                                 captureCount(EVENT_APPLIED_FREQUENCY);
                                 if (timeMetricsWriter != null) {
-                                    timeMetricsWriter.writeMetrics(EVENT, sourceId, sourceSeq, (short)index, eventSeq);
+                                    timeMetricsWriter.writeMetrics(EVENT, srcId, srcSeq, (short)evtIndex, evtSeq);
                                 }
                             };
                         }
@@ -591,8 +591,8 @@ public class MetricsCapturingInterceptor implements Interceptor {
         }
 
         @Override
-        public InFlightState inFlightState() {
-            return sourceContext.inFlightState();
+        public CommandTracker commandTracker() {
+            return sourceContext.commandTracker();
         }
     }
 

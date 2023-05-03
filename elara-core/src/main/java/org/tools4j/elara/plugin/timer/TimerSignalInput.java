@@ -24,7 +24,7 @@
 package org.tools4j.elara.plugin.timer;
 
 import org.agrona.BitUtil;
-import org.tools4j.elara.app.state.InFlightState;
+import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.input.SingleSourceInput;
 import org.tools4j.elara.plugin.timer.Timer.Style;
 import org.tools4j.elara.send.CommandSender;
@@ -54,12 +54,12 @@ public final class TimerSignalInput implements SingleSourceInput {
     }
 
     @Override
-    public int poll(final CommandSender sender, final InFlightState inFlightState) {
+    public int poll(final CommandSender sender, final CommandTracker commandTracker) {
         if ((counter & signalInputSkipMask) != 0) {
             counter++;
             return 0;
         }
-        if (inFlightState.hasInFlightCommand()) {
+        if (commandTracker.hasInFlightCommand()) {
             return 0;
         }
         counter++;

@@ -54,56 +54,56 @@ public enum EventType {
         this.frameType = frameType;
     }
 
-    public byte frameType() {
+    public final byte frameType() {
         return frameType;
     }
 
     /**
      * @return true if this is {@link #APP_COMMIT} or {@link #AUTO_COMMIT}
      */
-    public boolean isCommit() {
+    public final boolean isCommit() {
         return this == APP_COMMIT || this == AUTO_COMMIT;
     }
 
     /**
      * @return true if this is {@link #APP_COMMIT}
      */
-    public boolean isAppCommit() {
+    public final boolean isAppCommit() {
         return this == APP_COMMIT;
     }
 
     /**
      * @return true if this is {@link #AUTO_COMMIT}
      */
-    public boolean isAutoCommit() {
+    public final boolean isAutoCommit() {
         return this == AUTO_COMMIT;
     }
 
     /**
      * @return true if this is {@link #ROLLBACK}
      */
-    public boolean isRollback() {
+    public final boolean isRollback() {
         return this == ROLLBACK;
     }
 
     /**
      * @return true if this is {@link #INTERMEDIARY}
      */
-    public boolean isIntermediary() {
+    public final boolean isIntermediary() {
         return this == INTERMEDIARY;
     }
 
     /**
      * @return true if commit or rollback is true
      */
-    public boolean isLast() {
+    public final boolean isLast() {
         return isCommit() || isRollback();
     }
 
     /**
      * @return true if this is {@link #INTERMEDIARY} or {@link #APP_COMMIT}
      */
-    public boolean isAppRouted() {
+    public final boolean isAppRouted() {
         return this == INTERMEDIARY || this == APP_COMMIT;
     }
 

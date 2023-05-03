@@ -24,31 +24,21 @@
 package org.tools4j.elara.plugin.timer;
 
 import org.agrona.BitUtil;
-import org.tools4j.elara.app.config.AppConfig;
-import org.tools4j.elara.app.factory.Interceptor;
-import org.tools4j.elara.app.factory.StateFactory;
-import org.tools4j.elara.app.handler.CommandProcessor;
-import org.tools4j.elara.app.handler.EventApplier;
-import org.tools4j.elara.app.state.BaseState;
-import org.tools4j.elara.app.state.MutableBaseState;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.plugin.api.PluginStateProvider;
-import org.tools4j.elara.plugin.api.ReservedPayloadType;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.timer.TimerController.ControlContext;
-import org.tools4j.elara.plugin.timer.TimerState.Mutable;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.send.CommandSender;
-import org.tools4j.elara.sequence.SequenceGenerator;
 import org.tools4j.elara.source.SourceContext;
+import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
 
 /**
  * Timer plugin to support timers; timers can be started and cancelled through the timer {@link #controller()}.
  */
-public class TimerPlugin implements SystemPlugin<TimerState.Mutable> {
+public class TimerPlugin implements SystemPlugin<MutableTimerState> {
     public static final int DEFAULT_SOURCE_ID = -10;
     public static final boolean DEFAULT_USE_INTERCEPTOR = true;
     public static final int DEFAULT_SIGNAL_INPUT_SKIP = 16;
@@ -56,7 +46,7 @@ public class TimerPlugin implements SystemPlugin<TimerState.Mutable> {
     private final int sourceId;
     private final boolean useInterceptor;
     private final int signalInputSkip;
-    private final Specification specification = new Specification();
+    private final TimerPluginSpecification specification = new TimerPluginSpecification(this);
     private final FlyweightTimerController controller = new FlyweightTimerController();
     private TimerEventHandler timerEventHandler = TimerEventHandler.NOOP;
 
@@ -74,6 +64,10 @@ public class TimerPlugin implements SystemPlugin<TimerState.Mutable> {
         this.sourceId = sourceId;
         this.useInterceptor = useInterceptor;
         this.signalInputSkip = signalInputSkip;
+    }
+
+    void init(final TimeSource timeSource, final TimerIdGenerator timerIdGenerator, final MutableTimerState timerState) {
+        controller.init(timeSource, timerIdGenerator, timerState);
     }
 
     public int sourceId() {
@@ -105,7 +99,7 @@ public class TimerPlugin implements SystemPlugin<TimerState.Mutable> {
     /**
      * Returns a controller to start and cancel timers. Depending on the scope from which the controller is accessed,
      * this will be done either by sending commands or by routing events.
-     * <p></p>
+     * <p>
      * To auto-reset the controller after use, it is recommended to use it inside a try-resource loop:
      * <pre>
      *     try (final ControlContext timerControl = timerPlugin.controller()) {
@@ -127,7 +121,7 @@ public class TimerPlugin implements SystemPlugin<TimerState.Mutable> {
     /**
      * Returns a controller to start and cancel timers. Timer control operations will result in timer commands sent
      * under the provided source context.
-     * <p></p>
+     * <p>
      * To auto-reset the controller after use, it is recommended to use it inside a try-resource loop:
      * <pre>
      *     try (final ControlContext timerControl = timerPlugin.controller(sourceContext)) {
@@ -145,7 +139,7 @@ public class TimerPlugin implements SystemPlugin<TimerState.Mutable> {
     /**
      * Returns a controller to start and cancel timers. Timer control operations will result in timer commands sent
      * under the provided source context.
-     * <p></p>
+     * <p>
      * To auto-reset the controller after use, it is recommended to use it inside a try-resource loop:
      * <pre>
      *     try (final ControlContext timerControl = timerPlugin.controller(input, commandSender)) {
@@ -164,7 +158,7 @@ public class TimerPlugin implements SystemPlugin<TimerState.Mutable> {
      * Returns a controller to start and cancel timers. Timer control operations will result in timer commands sent
      * using the provided command sender.  The controller's {@link TimerController#currentTime() currentTime()} method
      * will return the event time of the provided event.
-     * <p></p>
+     * <p>
      * To auto-reset the controller after use, it is recommended to use it inside a try-resource loop:
      * <pre>
      *     try (final ControlContext timerControl = timerPlugin.controller(event, commandSender)) {
@@ -183,7 +177,7 @@ public class TimerPlugin implements SystemPlugin<TimerState.Mutable> {
     /**
      * Returns a controller to start and cancel timers. Timer control operations will result in timer events routed
      * using the provided event router.
-     * <p></p>
+     * <p>
      * To auto-reset the controller after use, it is recommended to use it inside a try-resource loop:
      * <pre>
      *     try (final ControlContext timerControl = timerPlugin.controller(eventRouter)) {
@@ -207,7 +201,7 @@ public class TimerPlugin implements SystemPlugin<TimerState.Mutable> {
     }
 
     @Override
-    public SystemPluginSpecification<TimerState.Mutable> specification() {
+    public SystemPluginSpecification<MutableTimerState> specification() {
         return specification;
     }
 
@@ -224,47 +218,14 @@ public class TimerPlugin implements SystemPlugin<TimerState.Mutable> {
         return 31 * getClass().hashCode() + sourceId;
     }
 
-    private final class Specification implements SystemPluginSpecification<TimerState.Mutable> {
-        @Override
-        public PluginStateProvider<Mutable> defaultPluginStateProvider() {
-            return appConfig -> new SimpleTimerState();
-        }
-
-        @Override
-        public ReservedPayloadType reservedPayloadType() {
-            return ReservedPayloadType.TIMER;
-        }
-
-        @Override
-        public Installer installer(final AppConfig appConfig, final TimerState.Mutable timerState) {
-            requireNonNull(appConfig);
-            requireNonNull(timerState);
-            final SequenceGenerator timerIdGenerator = SequenceGenerator.create(1);
-            controller.init(appConfig.timeSource(), timerIdGenerator, timerState);
-            return new Installer.Default() {
-
-                @Override
-                public Input input(final BaseState baseState) {
-                    final long sourceSeq = 1 + baseState.lastAppliedCommandSequence(sourceId);
-                    return Input.single(sourceId, sourceSeq, new TimerSignalInput(appConfig.timeSource(), timerState,
-                            TimerPlugin.this.signalInputSkip));
-                }
-
-                @Override
-                public CommandProcessor commandProcessor(final BaseState baseState) {
-                    return new TimerCommandProcessor(timerState);
-                }
-
-                @Override
-                public EventApplier eventApplier(final MutableBaseState baseState) {
-                    return new TimerEventApplier(TimerPlugin.this, timerState, timerIdGenerator);
-                }
-
-                @Override
-                public Interceptor interceptor(final StateFactory stateFactory) {
-                    return useInterceptor ? new TimerPluginInterceptor(TimerPlugin.this) : Interceptor.NOOP;
-                }
-            };
-        }
+    @Override
+    public String toString() {
+        final TimerState timerState = controller.timerState();;
+        return "TimerPlugin{" +
+                "sourceId=" + sourceId +
+                ", useInterceptor=" + useInterceptor +
+                ", signalInputSkip=" + signalInputSkip +
+                ", timerState=" + (timerState != null ? timerState : "(not initialized)") +
+                '}';
     }
 }

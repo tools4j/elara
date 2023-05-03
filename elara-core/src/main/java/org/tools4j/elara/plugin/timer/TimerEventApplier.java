@@ -26,20 +26,19 @@ package org.tools4j.elara.plugin.timer;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.plugin.timer.Timer.Style;
-import org.tools4j.elara.sequence.SequenceGenerator;
 
 import static java.util.Objects.requireNonNull;
 
 public class TimerEventApplier implements EventApplier {
 
     private final TimerPlugin timerPlugin;
-    private final TimerState.Mutable timerState;
-    private final SequenceGenerator timerIdGenerator;
+    private final MutableTimerState timerState;
+    private final TimerIdGenerator timerIdGenerator;
     private final FlyweightTimerPayload timer = new FlyweightTimerPayload();
 
     public TimerEventApplier(final TimerPlugin timerPlugin,
-                             final TimerState.Mutable timerState,
-                             final SequenceGenerator timerIdGenerator) {
+                             final MutableTimerState timerState,
+                             final TimerIdGenerator timerIdGenerator) {
         this.timerPlugin = requireNonNull(timerPlugin);
         this.timerState = requireNonNull(timerState);
         this.timerIdGenerator = requireNonNull(timerIdGenerator);
@@ -56,17 +55,15 @@ public class TimerEventApplier implements EventApplier {
                 break;
             case TimerEvents.TIMER_CANCELLED:
                 timer.wrap(event.payload(), 0);
-                timerState.removeById(event.sourceId(), timer.timerId());
+                timerState.removeById(timer.timerId());
                 notifyTimerEvent(event);
                 break;
             case TimerEvents.TIMER_SIGNALLED: {
                 timer.wrap(event.payload(), 0);
                 if (timer.style() == Style.PERIODIC) {
-                    final int index = timerState.index(event.sourceId(), timer.timerId());
-                    System.out.println(timer.timerId() + ":repetition=" + timerState.repetition(index));
-                    timerState.updateRepetitionById(event.sourceId(), timer.timerId(), timer.repetition());
+                    timerState.updateRepetitionById(timer.timerId(), timer.repetition());
                 } else {
-                    timerState.removeById(event.sourceId(), timer.timerId());
+                    timerState.removeById(timer.timerId());
                 }
                 notifyTimerEvent(event);
                 break;
@@ -75,7 +72,7 @@ public class TimerEventApplier implements EventApplier {
     }
 
     private void updateTimerIdSequence(final long timerId) {
-        timerIdGenerator.nextSequence(timerId + 1);
+        timerIdGenerator.next(timerId + 1);
     }
 
     private void notifyTimerEvent(final Event event) {

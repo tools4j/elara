@@ -23,23 +23,24 @@
  */
 package org.tools4j.elara.plugin.timer;
 
+import org.tools4j.elara.event.Event;
 import org.tools4j.elara.plugin.timer.Timer.Style;
 
-public interface TimerState {
-    int count();
-    int index(long timerId);
-    int indexOfNextDeadline();
-    long timerId(int index);
-    Style style(int index);
-    int repetition(int index);
-    long startTime(int index);
-    long timeout(int index);
-    int timerType(int index);
-    long contextId(int index);
-    long deadline(int index);
-
-    default boolean hasTimer(final long timerId) {
-        return index(timerId) >= 0;
+public interface MutableTimerState extends TimerState {
+    default boolean add(final Event event, final Timer timer) {
+        return add(timer.timerId(), timer.style(), timer.repetition(), event.eventTime(), timer.timeout(),
+                timer.timerType(), timer.contextId());
     }
+    boolean add(long timerId, final Style style, int repetition, long startTime, long timeout, int timerType, final long contextId);
+    void remove(int index);
+    void updateRepetitionById(long timerId, int repetition);
 
+    default boolean removeById(final long timerId) {
+        final int index = index(timerId);
+        if (index >= 0) {
+            remove(index);
+            return true;
+        }
+        return false;
+    }
 }

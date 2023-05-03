@@ -185,6 +185,10 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFr
         FlyweightHeader.writeFrameSize(HEADER_LENGTH + payloadSize, dst);
     }
 
+    public static void writeEventTime(final long commandTime, final MutableDirectBuffer dst) {
+        dst.putLong(EVENT_TIME_OFFSET, commandTime, LITTLE_ENDIAN);
+    }
+
     @Override
     public void accept(final FrameVisitor visitor) {
         visitor.eventFrame(this);

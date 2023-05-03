@@ -37,7 +37,7 @@ import static java.util.Objects.requireNonNull;
  * Note that this timer state implementation is not recommended for larger numbers of concurrent timers as it takes
  * O(n) time to find the timer with the next deadline!
  */
-public class SimpleTimerState implements TimerState.Mutable {
+public class SimpleTimerState implements MutableTimerState {
 
     private final MutableTimerStore timers;
 
@@ -55,19 +55,14 @@ public class SimpleTimerState implements TimerState.Mutable {
     }
 
     @Override
-    public int index(final int sourceId, final long timerId) {
-        return timers.index(sourceId, timerId);
+    public int index(final long timerId) {
+        return timers.index(timerId);
     }
 
 
     @Override
-    public boolean hasTimer(final int sourceId, final long timerId) {
-        return timers.hasTimer(sourceId, timerId);
-    }
-
-    @Override
-    public int sourceId(final int index) {
-        return timers.sourceId(index);
+    public boolean hasTimer(final long timerId) {
+        return timers.hasTimer(timerId);
     }
 
     @Override
@@ -111,8 +106,8 @@ public class SimpleTimerState implements TimerState.Mutable {
     }
 
     @Override
-    public boolean removeById(final int sourceId, final long timerId) {
-        return timers.removeById(sourceId, timerId);
+    public boolean removeById(final long timerId) {
+        return timers.removeById(timerId);
     }
 
     @Override
@@ -126,14 +121,14 @@ public class SimpleTimerState implements TimerState.Mutable {
     }
 
     @Override
-    public boolean add(final int sourceId, final long timerId, final Style style, final int repetition,
-                       final long startTime, final long timeout, final int timerType, final long contextId) {
-        return timers.add(sourceId, timerId, style, repetition, startTime, timeout, timerType, contextId);
+    public boolean add(final long timerId, final Style style, final int repetition, final long startTime,
+                       final long timeout, final int timerType, final long contextId) {
+        return timers.add(timerId, style, repetition, startTime, timeout, timerType, contextId);
     }
 
     @Override
-    public void updateRepetitionById(final int sourceId, final long timerId, final int repetition) {
-        timers.updateRepetitionById(sourceId, timerId, repetition);
+    public void updateRepetitionById(long timerId, final int repetition) {
+        timers.updateRepetitionById(timerId, repetition);
     }
 
     @Override

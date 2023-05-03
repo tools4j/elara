@@ -154,7 +154,7 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
 
     public static SingleSourceInput input(final AtomicLong input) {
         requireNonNull(input);
-        return (sender, inFlightState) -> {
+        return (sender, commandTracker) -> {
             final long value = input.getAndSet(NULL_VALUE);
             if (value != NULL_VALUE) {
                 try (final SendingContext context = sender.sendingCommand()) {

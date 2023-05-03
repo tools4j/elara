@@ -28,8 +28,7 @@ import org.tools4j.elara.plugin.timer.Timer.Style;
 
 public interface TimerStore {
     int count();
-    int index(int sourceId, long timerId);
-    int sourceId(int index);
+    int index(long timerId);
     long timerId(int index);
     Style style(int index);
     int repetition(int index);
@@ -39,22 +38,21 @@ public interface TimerStore {
     long contextId(int index);
     long deadline(int index);
 
-    default boolean hasTimer(final int sourceId, final long timerId) {
-        return index(sourceId, timerId) >= 0;
+    default boolean hasTimer(final long timerId) {
+        return index(timerId) >= 0;
     }
 
     interface MutableTimerStore extends TimerStore {
         default boolean add(final Event event, final Timer timer) {
-            return add(event.sourceId(), timer.timerId(), timer.style(), timer.repetition(), event.eventTime(),
-                    timer.timeout(), timer.timerType(), timer.contextId());
+            return add(timer.timerId(), timer.style(), timer.repetition(), event.eventTime(), timer.timeout(),
+                    timer.timerType(), timer.contextId());
         }
-        boolean add(int sourceId, long timerId, Style style, int repetition, long startTime, long timeout,
-                    int timerType, long contextId);
+        boolean add(long timerId, Style style, int repetition, long startTime, long timeout, int timerType, long contextId);
 
         void remove(int index);
         void updateRepetition(int index, int repetition);
-        default boolean updateRepetitionById(final int sourceId, final long timerId, final int repetition) {
-            final int index = index(sourceId, timerId);
+        default boolean updateRepetitionById(final long timerId, final int repetition) {
+            final int index = index(timerId);
             if (index >= 0) {
                 updateRepetition(index, repetition);
                 return true;
@@ -62,8 +60,8 @@ public interface TimerStore {
             return false;
         }
 
-        default boolean removeById(final int sourceId, final long timerId) {
-            final int index = index(sourceId, timerId);
+        default boolean removeById(final long timerId) {
+            final int index = index(timerId);
             if (index >= 0) {
                 remove(index);
                 return true;

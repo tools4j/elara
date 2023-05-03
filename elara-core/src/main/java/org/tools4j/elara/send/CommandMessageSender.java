@@ -104,11 +104,16 @@ public final class CommandMessageSender extends FlyweightCommandSender {
             }
             buffer.unwrap();
             try (final MessageSender.SendingContext mc = unclosedContext()) {
+                final MutableDirectBuffer buf = mc.buffer();
                 if (length > 0) {
-                    FlyweightCommand.writePayloadSize(length, mc.buffer());
+                    FlyweightCommand.writePayloadSize(length, buf);
                 }
+                final long time = timeSource.currentTime();
+                FlyweightCommand.writeCommandTime(time, buf);
                 final SendingResult result = mc.send(HEADER_LENGTH + length);
-                notifySent();
+                if (result == SendingResult.SENT) {
+                    notifySent(time);
+                }
                 return result;
             } finally {
                 context = null;

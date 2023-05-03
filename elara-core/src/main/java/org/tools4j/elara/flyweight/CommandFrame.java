@@ -34,7 +34,6 @@ public interface CommandFrame extends DataFrame {
     default int headerLength() {
         return CommandDescriptor.HEADER_LENGTH;
     }
-
     long commandTime();
     @Override
     default int payloadSize() {

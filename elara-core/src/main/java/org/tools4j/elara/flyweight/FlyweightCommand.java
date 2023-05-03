@@ -180,6 +180,10 @@ public final class FlyweightCommand implements Flyweight<FlyweightCommand>, Comm
         FlyweightHeader.writeFrameSize(HEADER_LENGTH + payloadSize, dst);
     }
 
+    public static void writeCommandTime(final long commandTime, final MutableDirectBuffer dst) {
+        dst.putLong(COMMAND_TIME_OFFSET, commandTime, LITTLE_ENDIAN);
+    }
+
     @Override
     public void accept(final FrameVisitor visitor) {
         visitor.commandFrame(this);

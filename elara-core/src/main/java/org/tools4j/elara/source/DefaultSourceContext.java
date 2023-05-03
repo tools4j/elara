@@ -23,10 +23,11 @@
  */
 package org.tools4j.elara.source;
 
+import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.app.state.BaseState;
-import org.tools4j.elara.app.state.InFlightState;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.send.SenderSupplier.SentListener;
 import org.tools4j.elara.sequence.SequenceGenerator;
 
 import static java.util.Objects.requireNonNull;
@@ -34,11 +35,10 @@ import static java.util.Objects.requireNonNull;
 public class DefaultSourceContext implements SourceContext {
 
     private final int sourceId;
-    private final BaseState baseState;
-    private final CommandSender commandSender;
-    private final InFlightState inFlightState = new InFlightStateImpl();
-
-    private final SequenceGenerator sourceSequenceGenerator;
+    private final SenderSupplier senderSupplier;
+    private final CommandTracker commandTracker;
+    private final SequenceGenerator sequenceGenerator;
+    private final SentListener sentListener;
 
     public DefaultSourceContext(final int sourceId,
                                 final BaseState baseState,
@@ -51,9 +51,10 @@ public class DefaultSourceContext implements SourceContext {
                                 final SenderSupplier senderSupplier,
                                 final SequenceGenerator sourceSequenceGenerator) {
         this.sourceId = sourceId;
-        this.baseState = requireNonNull(baseState);
-        this.commandSender = senderSupplier.senderFor(sourceId, sourceSequenceGenerator);
-        this.sourceSequenceGenerator = requireNonNull(sourceSequenceGenerator);
+        this.senderSupplier = requireNonNull(senderSupplier);
+        this.commandTracker = new DefaultCommandTracker(this, sourceSequenceGenerator, baseState);
+        this.sequenceGenerator = commandTracker.transientCommandState().sourceSequenceGenerator();
+        this.sentListener = ((DefaultCommandTracker)commandTracker)::notifyCommandSent;
     }
 
     @Override
@@ -61,43 +62,21 @@ public class DefaultSourceContext implements SourceContext {
         return sourceId;
     }
 
-    SequenceGenerator sourceSequenceGenerator() {
-        return sourceSequenceGenerator;
+    @Override
+    public CommandTracker commandTracker() {
+        return commandTracker;
     }
 
     @Override
     public CommandSender commandSender() {
-        return commandSender;
-    }
-
-    @Override
-    public InFlightState inFlightState() {
-        return inFlightState;
+        return senderSupplier.senderFor(sourceId, sequenceGenerator, sentListener);
     }
 
     @Override
     public String toString() {
         return "DefaultSourceContext{" +
                 "sourceId=" + sourceId +
-                "|sourceSequence=" + sourceSequenceGenerator.sequence() +
+                "|commandTracker=" + commandTracker +
                 '}';
-    }
-
-    private class InFlightStateImpl implements InFlightState {
-
-        @Override
-        public CommandSendingState commandLastSent() {
-            return null;//FIXME
-        }
-
-        @Override
-        public EventProcessingState eventLastProcessed() {
-            return null;//FIXME
-        }
-
-        @Override
-        public boolean hasInFlightCommand() {
-            return baseState.lastAppliedCommandSequence(sourceId) < sourceSequenceGenerator.sequence() - 1;
-        }
     }
 }

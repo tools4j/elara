@@ -32,7 +32,6 @@ import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.flyweight.CommandDescriptor;
 import org.tools4j.elara.flyweight.EventDescriptor;
-import org.tools4j.elara.flyweight.EventType;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.store.ExpandableDirectBuffer;
@@ -42,6 +41,7 @@ import org.tools4j.elara.stream.SendingResult;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.flyweight.EventType.APP_COMMIT;
 
 /**
  * A command sender that directly invokes the passthrough command handler without persisting the command, instead
@@ -99,7 +99,7 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
             this.context = requireNonNull(context);
             this.buffer.wrap(context.buffer(), EventDescriptor.PAYLOAD_OFFSET);
             FlyweightEvent.writeHeader(
-                    EventType.APP_COMMIT, sourceId, sourceSeq, INDEX_0, eventSeq, timeSource.currentTime(), payloadType, 0,
+                    APP_COMMIT, sourceId, sourceSeq, INDEX_0, eventSeq, TimeSource.MIN_VALUE, payloadType, 0,
                     context.buffer(), EventDescriptor.HEADER_OFFSET
             );
             return this;
@@ -114,16 +114,20 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
 
         @Override
         public int sourceId() {
-            return FlyweightEvent.sourceId(unclosedContext().buffer());
+            return sourceId(unclosedContext().buffer());
+        }
+
+        private int sourceId(final DirectBuffer buffer) {
+            return FlyweightEvent.sourceId(buffer);
         }
 
         @Override
         public long sourceSequence() {
-            return FlyweightEvent.sourceSequence(unclosedContext().buffer());
+            return sourceSequence(unclosedContext().buffer());
         }
 
-        private long eventSequence() {
-            return FlyweightEvent.sourceSequence(unclosedContext().buffer());
+        private long sourceSequence(final DirectBuffer buffer) {
+            return FlyweightEvent.sourceSequence(buffer);
         }
 
         @Override
@@ -140,16 +144,19 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
             }
             buffer.unwrap();
             try (final AppendingContext ac = unclosedContext()) {
+                final MutableDirectBuffer buf = ac.buffer();
                 if (length > 0) {
-                    FlyweightEvent.writePayloadSize(length, ac.buffer());
+                    FlyweightEvent.writePayloadSize(length, buf);
                 }
-                if (baseState.eventAppliedForCommand(sourceId(), sourceSequence())) {
-                    skipCommand(ac.buffer(), length);
+                final long time = timeSource.currentTime();
+                FlyweightEvent.writeEventTime(time, buf);
+                if (baseState.eventAppliedForCommand(sourceId(buf), sourceSequence(buf))) {
+                    skipCommand(buf, length);
                 } else {
-                    applyEvent(ac.buffer(), length);
+                    applyEvent(buf, length);
                     ac.commit(FlyweightEvent.HEADER_LENGTH + length);
                 }
-                notifySent();
+                notifySent(time);
                 return SendingResult.SENT;
             } finally {
                 context = null;
@@ -177,7 +184,9 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
 
         private void applyEvent(final DirectBuffer buffer, final int length) {
             if (passthroughApplierOrNull != null) {
-                passthroughApplierOrNull.onEvent(sourceId(), sourceSequence(), eventSequence(), INDEX_0);
+                passthroughApplierOrNull.onEvent(sourceId(buffer), sourceSequence(buffer),
+                        FlyweightEvent.eventSequence(buffer), INDEX_0, APP_COMMIT, FlyweightEvent.eventTime(buffer),
+                        FlyweightEvent.payloadType(buffer));
                 return;
             }
             appliedEvent.wrapSilently(buffer, EventDescriptor.HEADER_OFFSET);

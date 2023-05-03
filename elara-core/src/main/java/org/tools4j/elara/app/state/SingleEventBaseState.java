@@ -24,6 +24,7 @@
 package org.tools4j.elara.app.state;
 
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.flyweight.EventType;
 
 import static java.util.Objects.requireNonNull;
 
@@ -76,10 +77,10 @@ public class SingleEventBaseState implements PassthroughState {
     }
 
     @Override
-    public void applyEvent(final int sourceId, final long sourceSeq, final long eventSeq, final int index) {
-        if (index != 0) {
+    public void applyEvent(final int srcId, final long srcSeq, final long evtSeq, final int evtIndex, final EventType evtType, final long evtTime, final int payloadType) {
+        if (evtIndex != 0) {
             throw new IllegalArgumentException("Only event with index 0 is allowed");
         }
-        delegate.applyEvent(sourceId, sourceSeq, eventSeq, index);
+        delegate.applyEvent(srcId, srcSeq, evtSeq, evtIndex, evtType, evtTime, payloadType);
     }
 }

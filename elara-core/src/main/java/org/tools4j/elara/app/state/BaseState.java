@@ -31,6 +31,7 @@ import org.tools4j.elara.sequence.SequenceGenerator;
  */
 public interface BaseState {
     long NIL_SEQUENCE = SequenceGenerator.NIL_SEQUENCE;
+    long MIN_SEQUENCE = SequenceGenerator.MIN_SEQUENCE;
 
     long lastAppliedCommandSequence(int sourceId);
     long lastAppliedEventSequence();

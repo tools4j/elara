@@ -36,7 +36,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class TimerStateTest {
 
-    private final int sourceId = 123;
     private final int repetition = 0;
 
     private final long idOffset = 111000000000000L;
@@ -49,23 +48,22 @@ class TimerStateTest {
 
     @ParameterizedTest
     @ValueSource(classes = {SimpleTimerState.class, DeadlineHeapTimerState.class})
-    public void addAndGet(final Class<? extends TimerState.Mutable> timerStateClass) throws Exception {
+    public void addAndGet(final Class<? extends MutableTimerState> timerStateClass) throws Exception {
         //given
-        final TimerState.Mutable timerState = timerStateClass.newInstance();
+        final MutableTimerState timerState = timerStateClass.newInstance();
 
         //when
         for (int i = 0; i < time.length; i++) {
-            timerState.add(sourceId, idOffset + i, Style.TIMER, 0, time[i], timeout[i], typeOffset + i, contextIdOffset + i);
+            timerState.add(idOffset + i, Style.TIMER, 0, time[i], timeout[i], typeOffset + i, contextIdOffset + i);
         }
 
         //then
         assertEquals(time.length, timerState.count(), "count");
         assertEquals(0, timerState.indexOfNextDeadline(), "indexOfNextDeadline()");
         for (int i = 0; i < time.length; i++) {
-            assertTrue(timerState.hasTimer(sourceId, idOffset + i), "hasTimer(" + (idOffset + i) + ")");
-            final int index = timerState.index(sourceId, idOffset + i);
+            assertTrue(timerState.hasTimer(idOffset + i), "hasTimer(" + (idOffset + i) + ")");
+            final int index = timerState.index(idOffset + i);
             assertTrue(index >= 0, "index(" + (idOffset + i) + ") >= 0");
-            assertEquals(sourceId, timerState.sourceId(index), "sourceId(" + (idOffset + i) + ")");
             assertEquals(idOffset + i, timerState.timerId(index), "timerId(" + (idOffset + i) + ")");
             assertEquals(Style.TIMER, timerState.style(index), "style(" + (idOffset + i) + ")");
             assertEquals(repetition, timerState.repetition(index), "repetition(" + (idOffset + i) + ")");
@@ -79,33 +77,33 @@ class TimerStateTest {
 
     @ParameterizedTest
     @ValueSource(classes = {SimpleTimerState.class, DeadlineHeapTimerState.class})
-    public void remove(final Class<? extends TimerState.Mutable> timerStateClass) throws Exception {
+    public void remove(final Class<? extends MutableTimerState> timerStateClass) throws Exception {
         //given
-        final TimerState.Mutable timerState = timerStateClass.newInstance();
+        final MutableTimerState timerState = timerStateClass.newInstance();
 
         //when
         for (int i = 0; i < time.length; i++) {
-            timerState.add(sourceId, idOffset + i, Style.TIMER, repetition, time[i], timeout[i], typeOffset + i, contextIdOffset + i);
+            timerState.add(idOffset + i, Style.TIMER, repetition, time[i], timeout[i], typeOffset + i, contextIdOffset + i);
         }
 
         int removed = 0;
         for (final int i : sorted) {
             //then
             final int indexOfNextDeadline = timerState.indexOfNextDeadline();
-            assertEquals(indexOfNextDeadline, timerState.index(sourceId, idOffset + i), "index(" + (idOffset + i) + ")");
+            assertEquals(indexOfNextDeadline, timerState.index(idOffset + i), "index(" + (idOffset + i) + ")");
             assertEquals(idOffset + i, timerState.timerId(indexOfNextDeadline), "timerId(indexOfNextDeadline())");
 
             //when
             if (i % 2 == 0) {
                 timerState.remove(indexOfNextDeadline);
             } else {
-                timerState.removeById(sourceId, idOffset + i);
+                timerState.removeById(idOffset + i);
             }
             removed++;
 
             //then
-            assertFalse(timerState.hasTimer(sourceId, idOffset + i), "hasTimer(" + (idOffset + i) + ")");
-            assertEquals(-1, timerState.index(sourceId, idOffset + i), "index(" + (idOffset + i) + ")");
+            assertFalse(timerState.hasTimer(idOffset + i), "hasTimer(" + (idOffset + i) + ")");
+            assertEquals(-1, timerState.index(idOffset + i), "index(" + (idOffset + i) + ")");
             assertEquals(time.length - removed, timerState.count(), "count");
         }
 
@@ -116,13 +114,13 @@ class TimerStateTest {
 
     @ParameterizedTest
     @ValueSource(classes = {SimpleTimerState.class, DeadlineHeapTimerState.class})
-    public void repeat(final Class<? extends TimerState.Mutable> timerStateClass) throws Exception {
+    public void repeat(final Class<? extends MutableTimerState> timerStateClass) throws Exception {
         //given
-        final TimerState.Mutable timerState = timerStateClass.newInstance();
+        final MutableTimerState timerState = timerStateClass.newInstance();
 
         //when
         for (int i = 0; i < time.length; i++) {
-            timerState.add(sourceId, idOffset + i, Style.TIMER, 0, time[i], timeout[i], typeOffset + i, contextIdOffset + i);
+            timerState.add(idOffset + i, Style.TIMER, 0, time[i], timeout[i], typeOffset + i, contextIdOffset + i);
         }
 
         //then
@@ -134,7 +132,7 @@ class TimerStateTest {
         //when: update first 9x does not change the heap
         for (int rep = 1; rep <= 9; rep++) {
             //when
-            timerState.updateRepetitionById(sourceId, idOffset + sorted[0], rep);
+            timerState.updateRepetitionById(idOffset + sorted[0], rep);
 
             //then
             assertEquals(0, timerState.indexOfNextDeadline(), "indexOfNextDeadline()");
@@ -144,15 +142,15 @@ class TimerStateTest {
         }
 
         //when: update 10th time moves it one down
-        timerState.updateRepetitionById(sourceId, idOffset + sorted[0], timerState.repetition(0) + 1);
+        timerState.updateRepetitionById(idOffset + sorted[0], timerState.repetition(0) + 1);
 
         //then
         final int indexOfNextDeadline = timerState.indexOfNextDeadline();
         assertEquals(idOffset + sorted[1], timerState.timerId(indexOfNextDeadline), "timerId(indexOfNextDeadline())");
 
         //when: reduce repetition by 2 brings it back to top
-        final int repetition = timerState.repetition(timerState.index(sourceId, idOffset + sorted[0]));
-        timerState.updateRepetitionById(sourceId, idOffset + sorted[0], repetition - 2);
+        final int repetition = timerState.repetition(timerState.index(idOffset + sorted[0]));
+        timerState.updateRepetitionById(idOffset + sorted[0], repetition - 2);
 
         //then
         assertEquals(0, timerState.indexOfNextDeadline(), "indexOfNextDeadline()");
@@ -165,7 +163,7 @@ class TimerStateTest {
             assertEquals(timerId, timerState.timerId(curIndex), "timerId(indexOfNextDeadline())");
 
             //when
-            timerState.updateRepetitionById(sourceId, timerId, timerState.repetition(0) + 100000);
+            timerState.updateRepetitionById(timerId, timerState.repetition(0) + 100000);
 
             //then
             final long nextTimerId = idOffset + sorted[i + 1];
