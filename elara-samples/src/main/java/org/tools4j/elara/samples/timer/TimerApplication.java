@@ -145,8 +145,8 @@ public class TimerApplication {
 
     private static String formatEvent(final Event event) {
         return "Command{source-id=" + event.sourceId() + "|source-seq=" + event.sourceSequence() +
-                "|event-seq=" + event.eventSequence() + "|payload-type=" + event.payloadType() +
-                "|event-time=" + formatTime(event.eventTime()) + "}";
+                "|event-seq=" + event.eventSequence() + "|event-type=" + event.eventType() +
+                "|payload-type=" + event.payloadType() + "|event-time=" + formatTime(event.eventTime()) + "}";
     }
 
     private static String formatTime(final long time) {

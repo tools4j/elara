@@ -29,6 +29,7 @@ import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.app.state.EventProcessingState.MutableEventProcessingState;
 import org.tools4j.elara.app.state.EventState;
 import org.tools4j.elara.app.state.TransientCommandState;
+import org.tools4j.elara.flyweight.EventType;
 import org.tools4j.elara.sequence.SequenceGenerator;
 import org.tools4j.elara.time.TimeSource;
 
@@ -38,7 +39,7 @@ final class DefaultCommandTracker implements CommandTracker {
 
     private final SourceContext sourceContext;
     private final SequenceGenerator sourceSequenceGenerator;
-    private final EventState eventState;
+    private final EventState eventLastProcessed;
     private final TransientCommandStateImpl transientCommandState = new TransientCommandStateImpl();
 
     public DefaultCommandTracker(final SourceContext sourceContext,
@@ -46,7 +47,7 @@ final class DefaultCommandTracker implements CommandTracker {
                                  final BaseState baseState) {
         this.sourceContext = requireNonNull(sourceContext);
         this.sourceSequenceGenerator = requireNonNull(sourceSequenceGenerator);
-        this.eventState = baseState instanceof MutableEventProcessingState ?
+        this.eventLastProcessed = baseState instanceof MutableEventProcessingState ?
                 ((MutableEventProcessingState)baseState).lastProcessedEventCreateIfAbsent(sourceContext.sourceId()) :
                 new BaseEventState(sourceContext.sourceId(), baseState);
     }
@@ -63,12 +64,18 @@ final class DefaultCommandTracker implements CommandTracker {
 
     @Override
     public EventState eventLastProcessed() {
-        return eventState;
+        return eventLastProcessed;
     }
 
     @Override
     public boolean hasInFlightCommand() {
-        return eventState.sourceSequence() < transientCommandState.sourceSequenceOfLastSentCommand();
+        final long cmdSeq = transientCommandState.sourceSequenceOfLastSentCommand();
+        final long evtSeq = eventLastProcessed.sourceSequence();
+        return (evtSeq < cmdSeq) || (evtSeq == cmdSeq && eventsPending(eventLastProcessed.eventType()));
+    }
+
+    private static boolean eventsPending(final EventType eventType) {
+        return eventType != null && !eventType.isLast();
     }
 
     void notifyCommandSent(final long sourceSequence, final long commandTime) {
@@ -125,7 +132,7 @@ final class DefaultCommandTracker implements CommandTracker {
                 "sourceId=" + sourceId() +
                 "|hasInFlightCommand=" + hasInFlightCommand() +
                 "|transientCommandState=" + transientCommandState +
-                "|eventLastProcessed=" + eventState +
+                "|eventLastProcessed=" + eventLastProcessed +
                 '}';
     }
 }
