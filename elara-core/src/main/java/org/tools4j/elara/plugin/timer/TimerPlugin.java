@@ -48,8 +48,7 @@ public class TimerPlugin implements SystemPlugin<MutableTimerState> {
     private final int signalInputSkip;
     private final TimerPluginSpecification specification = new TimerPluginSpecification(this);
     private final FlyweightTimerController controller = new FlyweightTimerController();
-    private TimerEventHandler timerEventHandler = TimerEventHandler.NOOP;
-
+    private final DefaultTimerHandlerRegistry registry = new DefaultTimerHandlerRegistry();
     public TimerPlugin() {
         this(DEFAULT_SOURCE_ID);
     }
@@ -68,6 +67,10 @@ public class TimerPlugin implements SystemPlugin<MutableTimerState> {
 
     void init(final TimeSource timeSource, final TimerIdGenerator timerIdGenerator, final MutableTimerState timerState) {
         controller.init(timeSource, timerIdGenerator, timerState);
+    }
+
+    void onTimerEvent(final Event event, final Timer timer) {
+        registry.onTimerEvent(event, timer);
     }
 
     public int sourceId() {
@@ -192,12 +195,14 @@ public class TimerPlugin implements SystemPlugin<MutableTimerState> {
         return controller.init(eventRouter);
     }
 
-    public void timerEventHandler(final TimerEventHandler timerEventHandler) {
-        this.timerEventHandler = requireNonNull(timerEventHandler);
-    }
-
-    public TimerEventHandler timerEventHandler() {
-        return timerEventHandler;
+    /**
+     * Returns a {@link TimerHandlerRegistry registry} to add and remove timer event handlers.
+     *
+     * @return the registry to add and remove handlers for timer events
+     * @see TimerHandlerRegistry
+     */
+    public TimerHandlerRegistry registry() {
+        return registry;
     }
 
     @Override

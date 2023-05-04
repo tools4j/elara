@@ -23,15 +23,19 @@
  */
 package org.tools4j.elara.plugin.timer;
 
-import org.agrona.collections.Hashing;
 import org.agrona.collections.Int2IntHashMap;
+
+import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
 
 /**
  * Generates collision free timer IDs for different sources IDs.
- * The timer ID range per source ID is that of an integer.
+ * The timer ID range per source ID is that of an unsigned integer.
  */
 public final class TimerIdGenerator {
     public static final int DEFAULT_SOURCE_ID_CAPACITY = 64;
+    public static final long NIL_TIMER_ID = 0;
+    public static final int MIN_TIMER_SEQUENCE = 1;
+    public static final long MAX_TIMER_SEQUENCE = 0xffffffffL;
 
     private final Int2IntHashMap sequenceBySourceId;
 
@@ -39,7 +43,7 @@ public final class TimerIdGenerator {
         this(DEFAULT_SOURCE_ID_CAPACITY);
     }
     public TimerIdGenerator(final int initialSourceIdCapacity) {
-        this.sequenceBySourceId = new Int2IntHashMap(initialSourceIdCapacity, Hashing.DEFAULT_LOAD_FACTOR, 1);
+        this.sequenceBySourceId = new Int2IntHashMap(initialSourceIdCapacity, DEFAULT_LOAD_FACTOR, MIN_TIMER_SEQUENCE);
     }
 
     public long current(final int sourceId) {

@@ -77,7 +77,7 @@ public class TimerEventApplier implements EventApplier {
 
     private void notifyTimerEvent(final Event event) {
         try {
-            timerPlugin.timerEventHandler().onTimerEvent(event, timer);
+            timerPlugin.onTimerEvent(event, timer);
         } finally {
             timer.reset();
         }

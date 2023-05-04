@@ -25,9 +25,18 @@ package org.tools4j.elara.plugin.timer;
 
 import org.tools4j.elara.event.Event;
 
+/**
+ * A specialized version of {@link TimerEventHandler} for signal timer events only.
+ */
 @FunctionalInterface
-public interface TimerEventHandler {
-    TimerEventHandler NOOP = (event, timer) -> {};
+public interface TimerSignalHandler extends TimerEventHandler {
+    TimerSignalHandler NOOP = (event, timer) -> {};
 
-    void onTimerEvent(Event event, Timer timer);
+    default void onTimerEvent(final Event event, final Timer timer) {
+        if (event.payloadType() == TimerPayloadTypes.SIGNAL_TIMER) {
+            onTimerSignal(event, timer);
+        }
+    }
+
+    void onTimerSignal(Event event, Timer timer);
 }
