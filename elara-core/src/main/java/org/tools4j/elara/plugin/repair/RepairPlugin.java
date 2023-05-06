@@ -69,7 +69,7 @@ public enum RepairPlugin implements SystemPlugin<NullState> {
     }
 
     private static void repairEventStoreIfNeeded(final MessageStore eventStore,
-                                          final ExceptionHandler exceptionHandler) {
+                                                 final ExceptionHandler exceptionHandler) {
         final EventStoreRepairer eventStoreRepairer = new EventStoreRepairer(eventStore);
         if (eventStoreRepairer.isCorrupted()) {
             exceptionHandler.handleException("Repairing corrupted event store",

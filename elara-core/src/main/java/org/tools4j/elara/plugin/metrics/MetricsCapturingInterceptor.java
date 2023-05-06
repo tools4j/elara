@@ -25,6 +25,8 @@ package org.tools4j.elara.plugin.metrics;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
+import org.agrona.collections.Hashing;
+import org.agrona.collections.Int2ObjectHashMap;
 import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.app.factory.AgentStepFactory;
@@ -552,32 +554,43 @@ public class MetricsCapturingInterceptor implements Interceptor {
     private SourceContextProvider timedSourceContextProvider(final SourceContextProvider sourceContextProvider) {
         requireNonNull(sourceContextProvider);
         return new SourceContextProvider() {
-            final TimedSourceContext timedSourceContext = new TimedSourceContext();
+            final Int2ObjectHashMap<TimedSourceContext> contextBySourceId = new Int2ObjectHashMap<>(64, Hashing.DEFAULT_LOAD_FACTOR);
 
+            TimedSourceContext registerNew(final SourceContext sourceContext) {
+                final TimedSourceContext timedSourceContext = new TimedSourceContext(sourceContext);
+                contextBySourceId.put(sourceContext.sourceId(), timedSourceContext);
+                return timedSourceContext;
+            }
             @Override
             public SourceContext sourceContext() {
-                return timedSourceContext.init(sourceContextProvider.sourceContext());
+                return registerNew(sourceContextProvider.sourceContext());
             }
 
             @Override
             public SourceContext sourceContext(final int sourceId) {
-                return timedSourceContext.init(sourceContextProvider.sourceContext(sourceId));
+                final TimedSourceContext timedSourceContext = contextBySourceId.get(sourceId);
+                return timedSourceContext != null ? timedSourceContext :
+                        registerNew(sourceContextProvider.sourceContext(sourceId));
             }
 
             @Override
-            public SourceContext sourceContext(final int sourceId, final long nextSourceSequence) {
-                return timedSourceContext.init(sourceContextProvider.sourceContext(sourceId));
+            public SourceContext sourceContext(final int sourceId, final long minSourceSeq) {
+                final TimedSourceContext timedSourceContext = contextBySourceId.get(sourceId);
+                if (timedSourceContext != null) {
+                    timedSourceContext.commandTracker().transientCommandState().sourceSequenceGenerator().nextSequence(minSourceSeq);
+                    return timedSourceContext;
+                }
+                return registerNew(sourceContextProvider.sourceContext(sourceId, minSourceSeq));
             }
         };
     }
 
     private final class TimedSourceContext implements SourceContext {
+        final SourceContext sourceContext;
         final TimedCommandSender timedCommandSender = new TimedCommandSender();
-        SourceContext sourceContext;
 
-        TimedSourceContext init(final SourceContext sourceContext) {
+        TimedSourceContext(final SourceContext sourceContext) {
             this.sourceContext = requireNonNull(sourceContext);
-            return this;
         }
 
         @Override
