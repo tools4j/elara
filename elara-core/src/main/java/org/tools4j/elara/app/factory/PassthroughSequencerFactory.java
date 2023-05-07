@@ -27,6 +27,7 @@ import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.EventStoreConfig;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.send.CommandPassthroughSender;
+import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.source.DefaultSourceContextProvider;
 import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.step.AgentStep;
@@ -60,10 +61,14 @@ public class PassthroughSequencerFactory implements SequencerFactory {
 
     @Override
     public SourceContextProvider sourceContextProvider() {
-        final CommandPassthroughSender commandSender = new CommandPassthroughSender(
-                appConfig.timeSource(), baseState, eventStoreConfig.eventStore().appender(),
-                applierSingletons.get().eventApplier(), appConfig.exceptionHandler(), eventStoreConfig.duplicateHandler());
-        return new DefaultSourceContextProvider(baseState, commandSender);
+        return new DefaultSourceContextProvider(baseState, sequencerSingletons.get().senderSupplier());
+    }
+
+    @Override
+    public SenderSupplier senderSupplier() {
+        return new CommandPassthroughSender(appConfig.timeSource(), baseState, eventStoreConfig.eventStore().appender(),
+                applierSingletons.get().eventApplier(), appConfig.exceptionHandler(),
+                eventStoreConfig.duplicateHandler());
     }
 
     @Override

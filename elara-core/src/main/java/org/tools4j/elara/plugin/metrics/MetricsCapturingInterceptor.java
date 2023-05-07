@@ -25,8 +25,6 @@ package org.tools4j.elara.plugin.metrics;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.agrona.collections.Hashing;
-import org.agrona.collections.Int2ObjectHashMap;
 import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.tools4j.elara.app.factory.AgentStepFactory;
@@ -39,7 +37,6 @@ import org.tools4j.elara.app.factory.ProcessorFactory;
 import org.tools4j.elara.app.factory.PublisherFactory;
 import org.tools4j.elara.app.factory.SequencerFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
-import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.app.state.PassthroughEventApplier;
 import org.tools4j.elara.command.Command;
@@ -54,7 +51,8 @@ import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.CommandSender.SendingContext;
-import org.tools4j.elara.source.SourceContext;
+import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.sequence.SequenceGenerator;
 import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore.Handler.Result;
@@ -271,11 +269,16 @@ public class MetricsCapturingInterceptor implements Interceptor {
             return new SequencerFactory() {
                 @Override
                 public SourceContextProvider sourceContextProvider() {
-                    final SourceContextProvider sourceContextProvider = singletons.get().sourceContextProvider();
+                    return singletons.get().sourceContextProvider();
+                }
+
+                @Override
+                public SenderSupplier senderSupplier() {
+                    final SenderSupplier senderSupplier = singletons.get().senderSupplier();
                     if (shouldCapture(INPUT_SENDING_TIME) || shouldCapture(INPUT_POLLING_TIME) || shouldCapture(COMMAND_APPENDING_TIME)) {
-                        return timedSourceContextProvider(sourceContextProvider);
+                        return new TimedCommandSender(senderSupplier);
                     }
-                    return sourceContextProvider;
+                    return senderSupplier;
                 }
 
                 @Override
@@ -551,73 +554,20 @@ public class MetricsCapturingInterceptor implements Interceptor {
         }
     }
 
-    private SourceContextProvider timedSourceContextProvider(final SourceContextProvider sourceContextProvider) {
-        requireNonNull(sourceContextProvider);
-        return new SourceContextProvider() {
-            final Int2ObjectHashMap<TimedSourceContext> contextBySourceId = new Int2ObjectHashMap<>(64, Hashing.DEFAULT_LOAD_FACTOR);
-
-            TimedSourceContext registerNew(final SourceContext sourceContext) {
-                final TimedSourceContext timedSourceContext = new TimedSourceContext(sourceContext);
-                contextBySourceId.put(sourceContext.sourceId(), timedSourceContext);
-                return timedSourceContext;
-            }
-            @Override
-            public SourceContext sourceContext() {
-                return registerNew(sourceContextProvider.sourceContext());
-            }
-
-            @Override
-            public SourceContext sourceContext(final int sourceId) {
-                final TimedSourceContext timedSourceContext = contextBySourceId.get(sourceId);
-                return timedSourceContext != null ? timedSourceContext :
-                        registerNew(sourceContextProvider.sourceContext(sourceId));
-            }
-
-            @Override
-            public SourceContext sourceContext(final int sourceId, final long minSourceSeq) {
-                final TimedSourceContext timedSourceContext = contextBySourceId.get(sourceId);
-                if (timedSourceContext != null) {
-                    timedSourceContext.commandTracker().transientCommandState().sourceSequenceGenerator().nextSequence(minSourceSeq);
-                    return timedSourceContext;
-                }
-                return registerNew(sourceContextProvider.sourceContext(sourceId, minSourceSeq));
-            }
-        };
-    }
-
-    private final class TimedSourceContext implements SourceContext {
-        final SourceContext sourceContext;
-        final TimedCommandSender timedCommandSender = new TimedCommandSender();
-
-        TimedSourceContext(final SourceContext sourceContext) {
-            this.sourceContext = requireNonNull(sourceContext);
-        }
-
-        @Override
-        public int sourceId() {
-            return sourceContext.sourceId();
-        }
-
-        @Override
-        public CommandSender commandSender() {
-            return timedCommandSender.init(sourceContext.commandSender());
-        }
-
-        @Override
-        public CommandTracker commandTracker() {
-            return sourceContext.commandTracker();
-        }
-    }
-
-    private final class TimedCommandSender implements CommandSender {
+    private final class TimedCommandSender implements CommandSender, SenderSupplier {
+        final SenderSupplier senderSupplier;
         final DirectBuffer empty = new UnsafeBuffer(0, 0);
         final TimedSendingContext context = shouldCapture(INPUT_SENDING_TIME)
                 || shouldCapture(COMMAND_APPENDING_TIME) ? new TimedSendingContext() : null;
 
+        TimedCommandSender(final SenderSupplier senderSupplier) {
+            this.senderSupplier = requireNonNull(senderSupplier);
+        }
         CommandSender sender;
 
-        TimedCommandSender init(final CommandSender sender) {
-            this.sender = requireNonNull(sender);
+        @Override
+        public CommandSender senderFor(final int sourceId, final SequenceGenerator sourceSequenceGenerator, final SentListener sentListener) {
+            this.sender = senderSupplier.senderFor(sourceId, sourceSequenceGenerator, sentListener);
             return this;
         }
 

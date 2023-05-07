@@ -27,6 +27,7 @@ import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.CommandStoreConfig;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.send.CommandAppendingSender;
+import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.source.DefaultSourceContextProvider;
 import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.step.AgentStep;
@@ -58,9 +59,13 @@ public class AppendingSequencerFactory implements SequencerFactory {
 
     @Override
     public SourceContextProvider sourceContextProvider() {
+        return new DefaultSourceContextProvider(baseState, sequencerSingletons.get().senderSupplier());
+    }
+
+    @Override
+    public SenderSupplier senderSupplier() {
         final MessageStore.Appender commandAppender = commandStoreConfig.commandStore().appender();
-        return new DefaultSourceContextProvider(baseState,
-                new CommandAppendingSender(appConfig.timeSource(), commandAppender));
+        return new CommandAppendingSender(appConfig.timeSource(), commandAppender);
     }
 
     @Override

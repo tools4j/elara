@@ -34,6 +34,7 @@ import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
+import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.stream.MessageStream;
@@ -90,6 +91,11 @@ final class Singletons {
             @Override
             public SourceContextProvider sourceContextProvider() {
                 return singletons.getOrCreate("sourceContextProvider", SourceContextProvider.class, factory, SequencerFactory::sourceContextProvider);
+            }
+
+            @Override
+            public SenderSupplier senderSupplier() {
+                return singletons.getOrCreate("senderSupplier", SenderSupplier.class, factory, SequencerFactory::senderSupplier);
             }
 
             @Override

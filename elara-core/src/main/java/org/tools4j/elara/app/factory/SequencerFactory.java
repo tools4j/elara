@@ -23,10 +23,12 @@
  */
 package org.tools4j.elara.app.factory;
 
+import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.step.AgentStep;
 
 public interface SequencerFactory {
     SourceContextProvider sourceContextProvider();
+    SenderSupplier senderSupplier();
     AgentStep sequencerStep();
 }

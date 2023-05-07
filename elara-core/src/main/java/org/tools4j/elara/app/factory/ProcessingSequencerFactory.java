@@ -27,6 +27,7 @@ import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.send.CommandHandlingSender;
+import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.source.DefaultSourceContextProvider;
 import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.step.AgentStep;
@@ -58,9 +59,13 @@ public class ProcessingSequencerFactory implements SequencerFactory {
 
     @Override
     public SourceContextProvider sourceContextProvider() {
+        return new DefaultSourceContextProvider(baseState, sequencerSingletons.get().senderSupplier());
+    }
+
+    @Override
+    public SenderSupplier senderSupplier() {
         final CommandHandler commandHandler = processorSingletons.get().commandHandler();
-        return new DefaultSourceContextProvider(baseState,
-                new CommandHandlingSender(4096, appConfig.timeSource(), commandHandler));
+        return new CommandHandlingSender(4096, appConfig.timeSource(), commandHandler);
     }
 
     @Override
