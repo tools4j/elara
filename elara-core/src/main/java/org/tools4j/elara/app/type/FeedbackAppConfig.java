@@ -32,6 +32,10 @@ import org.tools4j.elara.app.config.PluginConfig;
 
 public interface FeedbackAppConfig extends AppConfig, EventStreamConfig, CommandStreamConfig, InputConfig, OutputConfig,
         PluginConfig {
+    @Override
+    default AppType appType() {
+        return ElaraAppType.FeedbackApp;
+    }
     static FeedbackAppContext configure() {
         return FeedbackAppContext.create();
     }

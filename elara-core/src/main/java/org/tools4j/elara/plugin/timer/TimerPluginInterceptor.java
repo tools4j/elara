@@ -31,6 +31,7 @@ import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.timer.TimerController.ControlContext;
+import org.tools4j.elara.route.CommandTransaction;
 import org.tools4j.elara.stream.MessageStream;
 
 import java.util.function.Supplier;
@@ -57,6 +58,11 @@ final class TimerPluginInterceptor implements Interceptor {
                         commandProcessor.onCommand(command, router);
                     }
                 };
+            }
+
+            @Override
+            public CommandTransaction commandTransaction() {
+                return singletons.get().commandTransaction();
             }
 
             @Override

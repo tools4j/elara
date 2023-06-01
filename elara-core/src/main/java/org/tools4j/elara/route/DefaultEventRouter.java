@@ -41,7 +41,7 @@ import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.flyweight.EventDescriptor.HEADER_OFFSET;
 import static org.tools4j.elara.flyweight.EventDescriptor.PAYLOAD_OFFSET;
 
-public class DefaultEventRouter implements EventRouter.Default {
+public class DefaultEventRouter implements EventRouter.Default, CommandTransaction {
 
     private final TimeSource timeSource;
     private final BaseState baseState;
@@ -63,6 +63,7 @@ public class DefaultEventRouter implements EventRouter.Default {
         this.eventApplier = requireNonNull(eventApplier);
     }
 
+    @Override
     public DefaultEventRouter start(final Command command) {
         this.command = requireNonNull(command);
         this.nextIndex = 0;
@@ -85,6 +86,7 @@ public class DefaultEventRouter implements EventRouter.Default {
         return routingContext.init(eventType, payloadType, appender.appending());
     }
 
+    @Override
     public void complete() {
         if (!skipped) {
             //we need a commit event if (a) there was no event, or (b) if routing of the last event was aborted
@@ -118,7 +120,7 @@ public class DefaultEventRouter implements EventRouter.Default {
             routingContext.abort();
         }
         skipped = true;
-        return skipped;
+        return true;
     }
 
     @Override
@@ -200,12 +202,14 @@ public class DefaultEventRouter implements EventRouter.Default {
 
         @Override
         public int index() {
+            //noinspection ResultOfMethodCallIgnored
             unclosedContext();
             return nextIndex;
         }
 
         @Override
         public MutableDirectBuffer buffer() {
+            //noinspection ResultOfMethodCallIgnored
             unclosedContext();
             return buffer;
         }

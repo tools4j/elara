@@ -34,9 +34,12 @@ import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
+import org.tools4j.elara.route.CommandTransaction;
 import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.step.AgentStep;
+import org.tools4j.elara.store.MessageStore.Handler;
+import org.tools4j.elara.store.MessageStore.Poller;
 import org.tools4j.elara.stream.MessageStream;
 
 import java.util.Map;
@@ -113,7 +116,10 @@ final class Singletons {
             public CommandProcessor commandProcessor() {
                 return singletons.getOrCreate("commandProcessor", CommandProcessor.class, factory, ProcessorFactory::commandProcessor);
             }
-
+            @Override
+            public CommandTransaction commandTransaction() {
+                return singletons.getOrCreate("commandTransaction", CommandTransaction.class, factory, ProcessorFactory::commandTransaction);
+            }
             @Override
             public CommandHandler commandHandler() {
                 return singletons.getOrCreate("commandHandler", CommandHandler.class, factory, ProcessorFactory::commandHandler);
@@ -145,8 +151,15 @@ final class Singletons {
     static CommandPollerFactory create(final CommandPollerFactory factory) {
         requireNonNull(factory);
         final Singletons singletons = new Singletons();
-        //noinspection Convert2Lambda
         return new CommandPollerFactory() {
+            @Override
+            public Poller commandMessagePoller() {
+                return singletons.getOrCreate("commandMessagePoller", Poller.class, factory, CommandPollerFactory::commandMessagePoller);
+            }
+            @Override
+            public Handler commandMessageHandler() {
+                return singletons.getOrCreate("commandMessageHandler", Handler.class, factory, CommandPollerFactory::commandMessageHandler);
+            }
             @Override
             public AgentStep commandPollerStep() {
                 return singletons.getOrCreate("commandPollerStep", AgentStep.class, factory, CommandPollerFactory::commandPollerStep);
@@ -157,11 +170,15 @@ final class Singletons {
     static CommandStreamFactory create(final CommandStreamFactory factory) {
         requireNonNull(factory);
         final Singletons singletons = new Singletons();
-        //noinspection Convert2Lambda
         return new CommandStreamFactory() {
             @Override
             public SourceContextProvider sourceContextProvider() {
                 return singletons.getOrCreate("sourceContextProvider", SourceContextProvider.class, factory, CommandStreamFactory::sourceContextProvider);
+            }
+
+            @Override
+            public SenderSupplier senderSupplier() {
+                return singletons.getOrCreate("senderSupplier", SenderSupplier.class, factory, CommandStreamFactory::senderSupplier);
             }
 
             @Override
@@ -174,7 +191,6 @@ final class Singletons {
     static EventStreamFactory create(final EventStreamFactory factory) {
         requireNonNull(factory);
         final Singletons singletons = new Singletons();
-        //noinspection Convert2Lambda
         return new EventStreamFactory() {
             @Override
             public MessageStream eventStream() {

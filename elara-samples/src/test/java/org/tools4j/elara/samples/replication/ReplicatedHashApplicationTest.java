@@ -37,9 +37,9 @@ import org.tools4j.elara.input.UniSourceInput;
 import org.tools4j.elara.logging.Logger.Level;
 import org.tools4j.elara.logging.OutputStreamLogger;
 import org.tools4j.elara.plugin.api.Plugins;
-import org.tools4j.elara.plugin.replication.ReplicationConfig;
 import org.tools4j.elara.plugin.replication.Connection;
 import org.tools4j.elara.plugin.replication.EnforceLeaderInput;
+import org.tools4j.elara.plugin.replication.ReplicationConfig;
 import org.tools4j.elara.plugin.replication.ReplicationContext;
 import org.tools4j.elara.plugin.replication.ReplicationPlugin;
 import org.tools4j.elara.run.Elara;
@@ -69,14 +69,13 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
  * Unit test running the {@link HashApplication} on multiple nodes and threads using the
  * {@link org.tools4j.elara.plugin.replication.ReplicationPlugin replication plugin}.
  */
-//@Disabled
 public class ReplicatedHashApplicationTest {
 
-    private static final int SOURCE_OFFSET = 1000000000;
+    private static final int SOURCE_OFFSET = 1_000_000_000;
     private static final int ENFORCE_LEADER_SOURCE = 2 * SOURCE_OFFSET - 1;
 
-    //private final NetworkConfig networkConfig = NetworkConfig.RELIABLE;
-    private final NetworkConfig networkConfig = NetworkConfig.UNRELIABLE;
+    private final NetworkConfig networkConfig = NetworkConfig.RELIABLE;
+    //private final NetworkConfig networkConfig = NetworkConfig.UNRELIABLE;
 
     @Test
     public void run() throws Exception {
@@ -144,6 +143,7 @@ public class ReplicatedHashApplicationTest {
     private EnforceLeaderInput enforceLeaderInput(final IdMapping serverIds) {
         final long[] seqPtr = {System.currentTimeMillis()};
         final int nextLeader = serverIds.idByIndex(ThreadLocalRandom.current().nextInt(serverIds.count()));
+        System.out.println("LEADER: " + nextLeader);
         return receiver -> {
             if (receiver.leaderId() == nextLeader || receiver.serverId() != nextLeader) {
                 return 0;

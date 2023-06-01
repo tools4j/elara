@@ -34,6 +34,12 @@ import org.tools4j.elara.app.config.ProcessorConfig;
 
 public interface AllInOneAppConfig extends AppConfig, CommandStoreConfig, EventStoreConfig, ProcessorConfig,
         ApplierConfig, InputConfig, OutputConfig, PluginConfig {
+
+    @Override
+    default AppType appType() {
+        return ElaraAppType.AllInOneApp;
+    }
+
     static AllInOneAppContext configure() {
         return AllInOneAppContext.create();
     }

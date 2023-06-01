@@ -26,7 +26,7 @@ package org.tools4j.elara.input;
 import org.agrona.DirectBuffer;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.flyweight.FlyweightCommand;
-import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.handler.CommandSendingCommandHandler;
 import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageReceiver.Handler;
@@ -41,6 +41,7 @@ public class CommandMessageInput implements MultiSourceInput {
     private final FlyweightCommand command = new FlyweightCommand();
 
     private SourceContextProvider sourceContextProvider;
+
 
     public CommandMessageInput(final MessageReceiver messageReceiver, final ExceptionHandler exceptionHandler) {
         this.messageReceiver = requireNonNull(messageReceiver);
@@ -59,12 +60,9 @@ public class CommandMessageInput implements MultiSourceInput {
     private void onMessage(final DirectBuffer message) {
         try {
             command.wrap(message, 0);
-            final CommandSender commandSender = sourceContextProvider
-                    .sourceContext(command.sourceId(), command.sourceSequence())
-                    .commandSender();
-            commandSender.sendCommand(command.payloadType(), command.payload(), 0, command.payload().capacity());
+            CommandSendingCommandHandler.handleCommand(command, sourceContextProvider, exceptionHandler);
         } catch (final Exception e) {
-            exceptionHandler.handleException("Unhandled exception when receiving command input message", null, e);
+            exceptionHandler.handleException("Unhandled exception when receiving command input message", command, e);
         } finally {
             command.reset();
         }

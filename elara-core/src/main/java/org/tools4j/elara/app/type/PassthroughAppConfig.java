@@ -30,6 +30,10 @@ import org.tools4j.elara.app.config.OutputConfig;
 import org.tools4j.elara.app.config.PluginConfig;
 
 public interface PassthroughAppConfig extends AppConfig, EventStoreConfig, InputConfig, OutputConfig, PluginConfig {
+    @Override
+    default AppType appType() {
+        return ElaraAppType.PassthroughApp;
+    }
     static PassthroughAppContext configure() {
         return PassthroughAppContext.create();
     }

@@ -23,59 +23,49 @@
  */
 package org.tools4j.elara.handler;
 
-import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
-import org.tools4j.elara.route.DefaultEventRouter;
-import org.tools4j.elara.store.MessageStore.Handler.Result;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.store.MessageStore.Handler.Result.POLL;
 
-public class DefaultCommandHandler implements CommandHandler {
+public class DeduplicatingCommandHandler implements CommandHandler {
 
     private final BaseState baseState;
-    private final DefaultEventRouter eventRouter;
-    private final CommandProcessor commandProcessor;
+    private final CommandHandler commandHandler;
     private final ExceptionHandler exceptionHandler;
     private final DuplicateHandler duplicateHandler;
 
-    public DefaultCommandHandler(final BaseState baseState,
-                                 final DefaultEventRouter eventRouter,
-                                 final CommandProcessor commandProcessor,
-                                 final ExceptionHandler exceptionHandler,
-                                 final DuplicateHandler duplicateHandler) {
+    public DeduplicatingCommandHandler(final BaseState baseState,
+                                       final CommandHandler commandHandler,
+                                       final ExceptionHandler exceptionHandler,
+                                       final DuplicateHandler duplicateHandler) {
         this.baseState = requireNonNull(baseState);
-        this.eventRouter = requireNonNull(eventRouter);
-        this.commandProcessor = requireNonNull(commandProcessor);
+        this.commandHandler = requireNonNull(commandHandler);
         this.exceptionHandler = requireNonNull(exceptionHandler);
         this.duplicateHandler = requireNonNull(duplicateHandler);
     }
 
     @Override
-    public Result onCommand(final Command command) {
+    public void onCommand(final Command command) {
         if (eventAppliedForCommand(command)) {
             skipCommand(command);
-            return POLL;
+        } else {
+            processCommand(command);
         }
-        return processCommand(command);
     }
 
     protected boolean eventAppliedForCommand(final Command command) {
         return baseState.eventAppliedForCommand(command.sourceId(), command.sourceSequence());
     }
 
-    protected Result processCommand(final Command command) {
-        eventRouter.start(command);
+    protected void processCommand(final Command command) {
         try {
-            commandProcessor.onCommand(command, eventRouter);
+            commandHandler.onCommand(command);
         } catch (final Throwable t) {
             exceptionHandler.handleCommandProcessorException(command, t);
         }
-        eventRouter.complete();
-        return POLL;
     }
 
     protected void skipCommand(final Command command) {

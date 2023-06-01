@@ -79,8 +79,8 @@ public interface EventState {
     int eventIndex();
 
     /**
-     * Returns the event type of the most recently processed event, if no event has been processed yet from the source
-     * associated with this event state.
+     * Returns the event type of the most recently processed event, or null if no event has been processed yet from the
+     * source associated with this event state.
      * <p>
      * Not always available: returns {@link EventType#APP_COMMIT APP_COMMIT} for {@link BaseState} if at least one event
      * was processed, and null otherwise.

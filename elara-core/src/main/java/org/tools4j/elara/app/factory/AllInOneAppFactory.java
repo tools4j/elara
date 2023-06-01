@@ -70,7 +70,7 @@ public class AllInOneAppFactory implements AppFactory {
                 Singletons::create
         ));
         this.commandPollerSingletons = interceptor.commandPollerFactory(singletonsSupplier(
-                (CommandPollerFactory)new DefaultCommandPollerFactory(config, this::processorSingletons),
+                (CommandPollerFactory)new DefaultCommandPollerFactory(config, this::commandPollerSingletons, this::processorSingletons),
                 Singletons::create
         ));
         this.publisherSingletons = interceptor.publisherFactory(singletonsSupplier(
@@ -89,6 +89,10 @@ public class AllInOneAppFactory implements AppFactory {
     private <T> Supplier<T> singletonsSupplier(final T factory, final UnaryOperator<T> singletonOp) {
         final T singletons = singletonOp.apply(factory);
         return () -> singletons;
+    }
+
+    private CommandPollerFactory commandPollerSingletons() {
+        return commandPollerSingletons;
     }
 
     private ProcessorFactory processorSingletons() {

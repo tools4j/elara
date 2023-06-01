@@ -28,6 +28,7 @@ import org.tools4j.elara.app.config.CommandStoreConfig;
 import org.tools4j.elara.handler.CommandPollerHandler;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.step.CommandPollerStep;
+import org.tools4j.elara.store.MessageStore.Handler;
 import org.tools4j.elara.store.MessageStore.Poller;
 
 import java.util.function.Supplier;
@@ -37,18 +38,22 @@ import static java.util.Objects.requireNonNull;
 public class DefaultCommandPollerFactory implements CommandPollerFactory {
 
     private final CommandStoreConfig commandStoreConfig;
+    private final Supplier<? extends CommandPollerFactory> commandPollerSingletons;
     private final Supplier<? extends ProcessorFactory> processorSingletons;
 
     public DefaultCommandPollerFactory(final CommandStoreConfig commandStoreConfig,
+                                       final Supplier<? extends CommandPollerFactory> commandPollerSingletons,
                                        final Supplier<? extends ProcessorFactory> processorSingletons) {
         this.commandStoreConfig = requireNonNull(commandStoreConfig);
+        this.commandPollerSingletons = requireNonNull(commandPollerSingletons);
         this.processorSingletons = requireNonNull(processorSingletons);
     }
 
     @Override
-    public AgentStep commandPollerStep() {
+    public Poller commandMessagePoller() {
         final Poller commandStorePoller;
-        switch (commandStoreConfig.commandPollingMode()) {
+        final CommandPollingMode mode = commandStoreConfig.commandPollingMode();
+        switch (mode) {
             case REPLAY_ALL:
                 commandStorePoller = commandStoreConfig.commandStore().poller();
                 break;
@@ -60,11 +65,26 @@ public class DefaultCommandPollerFactory implements CommandPollerFactory {
                 commandStorePoller.moveToEnd();
                 break;
             case NO_STORE:
-                return AgentStep.NOOP;
+                throw new IllegalStateException("Cannot create command message poller with command polling mode: " + mode);
             default:
-                throw new IllegalArgumentException("Unsupported command polling mode: " + commandStoreConfig.commandPollingMode());
+                throw new IllegalArgumentException("Unsupported command polling mode: " + mode);
         }
-        return new CommandPollerStep(commandStorePoller, new CommandPollerHandler(processorSingletons.get().commandHandler()));
+        return commandStorePoller;
+    }
+
+    @Override
+    public Handler commandMessageHandler() {
+        return new CommandPollerHandler(processorSingletons.get().commandHandler());
+    }
+
+    @Override
+    public AgentStep commandPollerStep() {
+        if (commandStoreConfig.commandPollingMode() == CommandPollingMode.NO_STORE) {
+            return AgentStep.NOOP;
+        }
+        final Poller commandStorePoller = commandPollerSingletons.get().commandMessagePoller();
+        final Handler commandMessageHandler = commandPollerSingletons.get().commandMessageHandler();
+        return new CommandPollerStep(commandStorePoller, commandMessageHandler);
     }
 
 }

@@ -30,6 +30,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Agent for running input sequencer, command processor and event applier step.
+ * Almost the same as {@link AllInOneAgent} except for the output publishing.
  */
 public class CoreAgent implements Agent {
 

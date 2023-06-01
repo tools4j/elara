@@ -87,15 +87,6 @@ public class PollerPublisherStep implements AgentStep {
         return new PollerPublisherStep(handler, eventStore.poller(id), eventStore.poller());
     }
 
-    public PollerPublisherStep(final OutputHandler handler, final MessageStore messageStore) {
-        this(handler, new CommittedEventPoller(messageStore), null);
-    }
-
-    public PollerPublisherStep(final OutputHandler handler, final MessageStore messageStore, final String id) {
-        this(handler, new CommittedEventPoller(messageStore, id), messageStore.poller());
-    }
-
-
     @Override
     public int doWork() {
         if (replayPoller != null) {

@@ -49,15 +49,15 @@ import static java.util.Objects.requireNonNull;
  */
 public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable> {
 
-    private final ReplicationConfig configuration;
+    private final ReplicationConfig config;
     private final Specification specification = new Specification();
 
-    public ReplicationPlugin(final ReplicationConfig configuration) {
-        this.configuration = ReplicationConfig.validate(configuration);
+    public ReplicationPlugin(final ReplicationConfig config) {
+        this.config = ReplicationConfig.validate(config);
     }
 
-    public ReplicationConfig configuration() {
-        return configuration;
+    public ReplicationConfig config() {
+        return config;
     }
 
     @Override
@@ -67,6 +67,10 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
 
     public static ReplicationContext configure() {
         return ReplicationContext.create();
+    }
+
+    public boolean isLeader(final ReplicationState state) {
+        return state.leaderId() == config.serverId();
     }
 
     private final class Specification implements SystemPluginSpecification<ReplicationState.Mutable> {
@@ -93,10 +97,10 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
             final MessageStore eventStore = eventStoreConfig.eventStore();
             final Appender eventStoreAppender = eventStore.appender();
             final EnforcedLeaderEventReceiver enforcedLeaderEventReceiver = new EnforcedLeaderEventReceiver(
-                    appConfig.loggerFactory(), appConfig.timeSource(), configuration, replicationState, eventStoreAppender
+                    appConfig.loggerFactory(), appConfig.timeSource(), config, replicationState, eventStoreAppender
             );
-            final DispatchingPublisher dispatchingPublisher = new DispatchingPublisher(configuration);
-            final EventSender eventSender = new DefaultEventSender(configuration, replicationState, eventStore,
+            final DispatchingPublisher dispatchingPublisher = new DispatchingPublisher(config);
+            final EventSender eventSender = new DefaultEventSender(config, replicationState, eventStore,
                     dispatchingPublisher);
 
             return new Installer.Default() {
@@ -106,10 +110,10 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
                     switch (executionType) {
                         case ALWAYS_WHEN_EVENTS_APPLIED:
                             final Handler connectionHandler = new ConnectionHandler(
-                                    appConfig.loggerFactory(), configuration, baseState, replicationState, eventStoreAppender, dispatchingPublisher
+                                    appConfig.loggerFactory(), config, baseState, replicationState, eventStoreAppender, dispatchingPublisher
                             );
                             return new ReplicationPluginStep(
-                                    configuration, replicationState, enforcedLeaderEventReceiver, connectionHandler, eventSender
+                                    config, replicationState, enforcedLeaderEventReceiver, connectionHandler, eventSender
                             );
                         default:
                             return AgentStep.NOOP;
@@ -118,17 +122,18 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
 
                 @Override
                 public CommandProcessor commandProcessor(final BaseState baseState) {
-                    return new ReplicationCommandProcessor(appConfig.loggerFactory(), configuration, replicationState);
+                    return new ReplicationCommandProcessor(appConfig.loggerFactory(), config, replicationState);
                 }
 
                 @Override
                 public EventApplier eventApplier(final MutableBaseState baseState) {
-                    return new ReplicationEventApplier(appConfig.loggerFactory(), configuration, replicationState);
+                    return new ReplicationEventApplier(appConfig.loggerFactory(), config, replicationState);
                 }
 
                 @Override
                 public Interceptor interceptor(final StateFactory stateFactory) {
-                    return new ReplicationInterceptor(appConfig, eventStoreConfig, configuration, stateFactory, replicationState);
+                    return new ReplicationInterceptor(ReplicationPlugin.this, eventStoreConfig, stateFactory,
+                            replicationState);
                 }
             };
         }

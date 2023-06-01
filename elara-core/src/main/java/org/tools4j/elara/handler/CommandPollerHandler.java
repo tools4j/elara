@@ -41,7 +41,8 @@ public class CommandPollerHandler implements Handler {
     @Override
     public Result onMessage(final DirectBuffer message) {
         try {
-            return commandHandler.onCommand(flyweightCommand.wrap(message, 0));
+            commandHandler.onCommand(flyweightCommand.wrap(message, 0));
+            return Result.POLL;
         } finally {
             flyweightCommand.reset();
         }

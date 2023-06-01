@@ -30,8 +30,10 @@ import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.command.CompositeCommandProcessor;
 import org.tools4j.elara.handler.CommandHandler;
-import org.tools4j.elara.handler.DefaultCommandHandler;
+import org.tools4j.elara.handler.DeduplicatingCommandHandler;
+import org.tools4j.elara.handler.ProcessingCommandHandler;
 import org.tools4j.elara.plugin.api.PluginSpecification.Installer;
+import org.tools4j.elara.route.CommandTransaction;
 import org.tools4j.elara.route.DefaultEventRouter;
 
 import java.util.Arrays;
@@ -89,18 +91,23 @@ public class DefaultProcessorFactory implements ProcessorFactory {
     }
 
     @Override
-    public CommandHandler commandHandler() {
-        return new DefaultCommandHandler(
+    public CommandTransaction commandTransaction() {
+        return new DefaultEventRouter(
+                appConfig.timeSource(),
                 baseState,
-                new DefaultEventRouter(
-                        appConfig.timeSource(),
-                        baseState,
-                        eventStoreConfig.eventStore().appender(),
-                        applierSingletons.get().eventHandler()
-                ),
-                processorSingletons.get().commandProcessor(),
-                appConfig.exceptionHandler(),
-                eventStoreConfig.duplicateHandler()
+                eventStoreConfig.eventStore().appender(),
+                applierSingletons.get().eventHandler()
         );
+    }
+
+    @Override
+    public CommandHandler commandHandler() {
+        return new DeduplicatingCommandHandler(
+                baseState,
+                new ProcessingCommandHandler(
+                        processorSingletons.get().commandTransaction(),
+                        processorSingletons.get().commandProcessor()),
+                appConfig.exceptionHandler(),
+                eventStoreConfig.duplicateHandler());
     }
 }

@@ -23,19 +23,17 @@
  */
 package org.tools4j.elara.plugin.replication;
 
-import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.EventStoreConfig;
 import org.tools4j.elara.app.factory.ApplierFactory;
+import org.tools4j.elara.app.factory.CommandPollerFactory;
 import org.tools4j.elara.app.factory.Interceptor;
-import org.tools4j.elara.app.factory.ProcessorFactory;
 import org.tools4j.elara.app.factory.StateFactory;
-import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
-import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.EventHandler;
-import org.tools4j.elara.route.DefaultEventRouter;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.step.EventPollerStep;
+import org.tools4j.elara.store.MessageStore.Handler;
+import org.tools4j.elara.store.MessageStore.Poller;
 
 import java.util.function.Supplier;
 
@@ -43,29 +41,23 @@ import static java.util.Objects.requireNonNull;
 
 class ReplicationInterceptor implements Interceptor {
 
-    private final AppConfig appConfig;
+    private final ReplicationPlugin plugin;
     private final EventStoreConfig eventStoreConfig;
-    private final ReplicationConfig pluginConfig;
     private final StateFactory stateFactory;
     private final ReplicationState replicationState;
 
-    private Supplier<? extends ApplierFactory> eventApplierSingletons;
-
-    public ReplicationInterceptor(final AppConfig appConfig,
+    public ReplicationInterceptor(final ReplicationPlugin plugin,
                                   final EventStoreConfig eventStoreConfig,
-                                  final ReplicationConfig pluginConfig,
                                   final StateFactory stateFactory,
                                   final ReplicationState replicationState) {
-        this.appConfig = requireNonNull(appConfig);
+        this.plugin = requireNonNull(plugin);
         this.eventStoreConfig = requireNonNull(eventStoreConfig);
-        this.pluginConfig = requireNonNull(pluginConfig);
         this.stateFactory = requireNonNull(stateFactory);
         this.replicationState = requireNonNull(replicationState);
     }
 
     @Override
     public ApplierFactory applierFactory(final Supplier<? extends ApplierFactory> singletons) {
-        eventApplierSingletons = requireNonNull(singletons);
         return new ApplierFactory() {
             @Override
             public EventApplier eventApplier() {
@@ -86,32 +78,23 @@ class ReplicationInterceptor implements Interceptor {
     }
 
     @Override
-    public ProcessorFactory processorFactory(final Supplier<? extends ProcessorFactory> singletons) {
+    public CommandPollerFactory commandPollerFactory(final Supplier<? extends CommandPollerFactory> singletons) {
         requireNonNull(singletons);
-        return new ProcessorFactory() {
+        return new CommandPollerFactory() {
             @Override
-            public CommandProcessor commandProcessor() {
-                return singletons.get().commandProcessor();
+            public Poller commandMessagePoller() {
+                return singletons.get().commandMessagePoller();
             }
 
             @Override
-            public CommandHandler commandHandler() {
-                requireNonNull(eventApplierSingletons, "eventApplierSingletons is null");
-                return new ReplicationCommandHandler(
-                        appConfig.timeSource(),
-                        pluginConfig,
-                        stateFactory.baseState(),
-                        replicationState,
-                        new DefaultEventRouter(
-                                appConfig.timeSource(),
-                                stateFactory.baseState(),
-                                eventStoreConfig.eventStore().appender(),
-                                eventApplierSingletons.get().eventHandler()
-                        ),
-                        commandProcessor(),
-                        appConfig.exceptionHandler(),
-                        eventStoreConfig.duplicateHandler()
-                );
+            public Handler commandMessageHandler() {
+                final Handler leaderHandler = singletons.get().commandMessageHandler();
+                return new ReplicationCommandHandler(plugin, stateFactory.baseState(), replicationState, leaderHandler);
+            }
+
+            @Override
+            public AgentStep commandPollerStep() {
+                return singletons.get().commandPollerStep();
             }
         };
     }

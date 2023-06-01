@@ -37,7 +37,6 @@ import org.tools4j.elara.flyweight.PayloadType;
 import org.tools4j.elara.send.CommandHandlingSender;
 import org.tools4j.elara.source.DefaultSourceContextProvider;
 import org.tools4j.elara.source.SourceContextProvider;
-import org.tools4j.elara.store.MessageStore.Handler.Result;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.ArrayList;
@@ -72,7 +71,6 @@ public class CommandHandlingSenderTest {
                     final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer();
                     command.writeTo(buffer, 0);
                     commandStore.add(new FlyweightCommand().wrap(buffer, 0));
-                    return Result.POLL;
                 }));
     }
 

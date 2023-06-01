@@ -21,12 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.handler;
+package org.tools4j.elara.route;
 
-import org.tools4j.elara.event.Event;
-import org.tools4j.elara.output.Output.Ack;
+import org.tools4j.elara.command.Command;
 
-public interface OutputHandler {
-    Ack publish(Event event, boolean replay, int retry);
-
+public interface CommandTransaction {
+    EventRouter start(Command command);
+    void complete();
 }

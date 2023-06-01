@@ -23,60 +23,44 @@
  */
 package org.tools4j.elara.plugin.replication;
 
-import org.tools4j.elara.app.handler.CommandProcessor;
+import org.agrona.DirectBuffer;
 import org.tools4j.elara.app.state.BaseState;
-import org.tools4j.elara.command.Command;
-import org.tools4j.elara.exception.DuplicateHandler;
-import org.tools4j.elara.exception.ExceptionHandler;
-import org.tools4j.elara.handler.DefaultCommandHandler;
-import org.tools4j.elara.route.DefaultEventRouter;
-import org.tools4j.elara.store.MessageStore.Handler.Result;
-import org.tools4j.elara.time.TimeSource;
+import org.tools4j.elara.flyweight.FlyweightCommand;
+import org.tools4j.elara.store.MessageStore.Handler;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.store.MessageStore.Handler.Result.PEEK;
 import static org.tools4j.elara.store.MessageStore.Handler.Result.POLL;
 
-public class ReplicationCommandHandler extends DefaultCommandHandler {
+public class ReplicationCommandHandler implements Handler {
 
-    private final TimeSource timeSource;
-    private final ReplicationConfig configuration;
-    private final ReplicationState state;
+    private final ReplicationPlugin plugin;
+    private final BaseState baseState;
+    private final ReplicationState replicationState;
+    private final Handler leaderHandler;
 
-    public ReplicationCommandHandler(final TimeSource timeSource,
-                                     final ReplicationConfig configuration,
+    public ReplicationCommandHandler(final ReplicationPlugin plugin,
                                      final BaseState baseState,
-                                     final ReplicationState state,
-                                     final DefaultEventRouter eventRouter,
-                                     final CommandProcessor commandProcessor,
-                                     final ExceptionHandler exceptionHandler,
-                                     final DuplicateHandler duplicateHandler) {
-        super(baseState, eventRouter, commandProcessor, exceptionHandler, duplicateHandler);
-        this.timeSource = requireNonNull(timeSource);
-        this.configuration = requireNonNull(configuration);
-        this.state = requireNonNull(state);
+                                     final ReplicationState replicationState,
+                                     final Handler leaderHandler) {
+        this.plugin = requireNonNull(plugin);
+        this.baseState = requireNonNull(baseState);
+        this.replicationState = requireNonNull(replicationState);
+        this.leaderHandler = requireNonNull(leaderHandler);
     }
 
     @Override
-    public Result onCommand(final Command command) {
-        if (eventAppliedForCommand(command)) {
-            skipCommand(command);
-            return POLL;
+    public Result onMessage(final DirectBuffer message) {
+        if (plugin.isLeader(replicationState)) {
+            return leaderHandler.onMessage(message);
         }
-        if (isLeader()) {
-            processCommand(command);
+        final int sourceId = FlyweightCommand.sourceId(message);
+        final long sourceSequence = FlyweightCommand.sourceSequence(message);
+        if (baseState.eventAppliedForCommand(sourceId, sourceSequence)) {
+            //FIXME only consider committed events here
+            //TODO call handler for skipped command
             return POLL;
         }
         return PEEK;
-    }
-
-    private boolean isLeader() {
-        if (state.leaderId() == configuration.serverId()) {
-            final long time = timeSource.currentTime();
-            if (time - state.lastAppliedEventTime() <= configuration.leaderTimeout()) {
-                return true;
-            }
-        }
-        return false;
     }
 }

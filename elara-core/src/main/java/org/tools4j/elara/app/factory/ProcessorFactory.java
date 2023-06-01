@@ -25,8 +25,10 @@ package org.tools4j.elara.app.factory;
 
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.handler.CommandHandler;
+import org.tools4j.elara.route.CommandTransaction;
 
 public interface ProcessorFactory {
     CommandProcessor commandProcessor();
+    CommandTransaction commandTransaction();
     CommandHandler commandHandler();
 }

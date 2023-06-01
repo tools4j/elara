@@ -39,13 +39,13 @@ import static java.util.Objects.requireNonNull;
 public class DefaultPluginContext implements PluginContext {
 
     private static final Consumer<Object> STATE_UNAWARE = state -> {};
-    private static final PluginInstaller<?> DEFAULT_INSTALLER = defaultInstaller();
+    private static final InstallerProvider<?> DEFAULT_INSTALLER_PROVIDER = defaultInstallerProvider();
 
     private final AppConfig appConfig;
-    private final Map<Plugin<?>, PluginInstaller<?>> pluginInstallers = new Object2ObjectHashMap<>();
+    private final Map<Plugin<?>, InstallerProvider<?>> pluginInstallerProviders = new Object2ObjectHashMap<>();
     private final Map<Plugin<?>, Consumer<?>> pluginStateAwares = new Object2ObjectHashMap<>();
 
-    private interface PluginInstaller<P> {
+    private interface InstallerProvider<P> {
         Installer install(Plugin<P> plugin, AppConfig appConfig, Consumer<? super P> pluginStateAware);
     }
 
@@ -70,24 +70,24 @@ public class DefaultPluginContext implements PluginContext {
 
     @Override
     public <P> PluginContext plugin(final Plugin<P> plugin, final Consumer<? super P> pluginStateAware) {
-        register(plugin, defaultInstaller(), pluginStateAware);
+        register(plugin, defaultInstallerProvider(), pluginStateAware);
         return this;
     }
 
     @Override
     public <P> PluginContext plugin(final Plugin<P> plugin, final Supplier<? extends P> pluginStateProvider, final Consumer<? super P> pluginStateAware) {
-        register(plugin, installer(plugin, pluginStateProvider), pluginStateAware);
+        register(plugin, installerProvider(plugin, pluginStateProvider), pluginStateAware);
         return this;
     }
 
     private <P> void register(final Plugin<P> plugin,
-                              final PluginInstaller<P> installer,
+                              final InstallerProvider<P> installerProvider,
                               final Consumer<? super P> pluginStateAware) {
-        final PluginInstaller<?> curInstaller = pluginInstallers.get(plugin);
-        if (curInstaller == null || curInstaller == DEFAULT_INSTALLER) {
-            pluginInstallers.put(plugin, installer);
+        final InstallerProvider<?> curProvider = pluginInstallerProviders.get(plugin);
+        if (curProvider == null || curProvider == DEFAULT_INSTALLER_PROVIDER) {
+            pluginInstallerProviders.put(plugin, installerProvider);
         } else {
-            if (installer != DEFAULT_INSTALLER && installer != curInstaller) {
+            if (installerProvider != DEFAULT_INSTALLER_PROVIDER && installerProvider != curProvider) {
                 throw new IllegalStateException("plugin " + plugin + " is already registered with a different state provider");
             }
         }
@@ -107,13 +107,13 @@ public class DefaultPluginContext implements PluginContext {
         return spec.installer(appConfig, pluginState);
     }
 
-    private static <P> PluginInstaller<P> defaultInstaller() {
-        final PluginInstaller<P> installer = DefaultPluginContext::install;
-        assert installer == DEFAULT_INSTALLER || DEFAULT_INSTALLER == null;
+    private static <P> InstallerProvider<P> defaultInstallerProvider() {
+        final InstallerProvider<P> installer = DefaultPluginContext::install;
+        assert installer == DEFAULT_INSTALLER_PROVIDER || DEFAULT_INSTALLER_PROVIDER == null;
         return installer;
     }
 
-    private static <P> PluginInstaller<P> installer(final Plugin<P> plugin, final Supplier<? extends P> pluginStateProvider) {
+    private static <P> InstallerProvider<P> installerProvider(final Plugin<P> plugin, final Supplier<? extends P> pluginStateProvider) {
         requireNonNull(plugin);
         requireNonNull(pluginStateProvider);
         return (p,c,a) -> {
@@ -126,18 +126,18 @@ public class DefaultPluginContext implements PluginContext {
 
     private <P> Installer installer(final Plugin<P> plugin,
                                     final AppConfig appConfig,
-                                    final PluginInstaller<?> installer) {
-        @SuppressWarnings("unchecked")//safe because register method taking a installer enforces this
-        final PluginInstaller<P> pluginInstaller = (PluginInstaller<P>)installer;
+                                    final InstallerProvider<?> provider) {
+        @SuppressWarnings("unchecked")//safe because register method taking a provider enforces this
+        final InstallerProvider<P> installerProvider = (InstallerProvider<P>)provider;
         @SuppressWarnings("unchecked")//safe because register method taking a consumer enforces this
-        final Consumer<? super P> pluginStateAware = (Consumer<? super P>) this.pluginStateAwares.getOrDefault(plugin, STATE_UNAWARE);
-        return pluginInstaller.install(plugin, appConfig, pluginStateAware);
+        final Consumer<? super P> stateAware = (Consumer<? super P>) this.pluginStateAwares.getOrDefault(plugin, STATE_UNAWARE);
+        return installerProvider.install(plugin, appConfig, stateAware);
     }
 
 
     List<Installer> installers(final AppConfig appConfig) {
         requireNonNull(appConfig);
-        return pluginInstallers.entrySet().stream()
+        return pluginInstallerProviders.entrySet().stream()
                 .map(e -> installer(e.getKey(), appConfig, e.getValue()))
                 .collect(Collectors.toList());
     }

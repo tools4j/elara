@@ -29,6 +29,10 @@ import org.tools4j.elara.app.config.OutputConfig;
 import org.tools4j.elara.app.config.PluginConfig;
 
 public interface PublisherAppConfig extends AppConfig, EventStreamConfig, OutputConfig, PluginConfig {
+    @Override
+    default AppType appType() {
+        return ElaraAppType.PublisherApp;
+    }
     static PublisherAppContext configure() {
         return PublisherAppContext.create();
     }

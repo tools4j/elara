@@ -47,6 +47,7 @@ import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
+import org.tools4j.elara.route.CommandTransaction;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.send.CommandSender;
@@ -55,7 +56,8 @@ import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.sequence.SequenceGenerator;
 import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.step.AgentStep;
-import org.tools4j.elara.store.MessageStore.Handler.Result;
+import org.tools4j.elara.store.MessageStore.Handler;
+import org.tools4j.elara.store.MessageStore.Poller;
 import org.tools4j.elara.stream.SendingResult;
 import org.tools4j.elara.time.TimeSource;
 
@@ -297,6 +299,14 @@ public class MetricsCapturingInterceptor implements Interceptor {
             //noinspection Convert2Lambda
             return new CommandPollerFactory() {
                 @Override
+                public Poller commandMessagePoller() {
+                    return singletons.get().commandMessagePoller();
+                }
+                @Override
+                public Handler commandMessageHandler() {
+                    return singletons.get().commandMessageHandler();
+                }
+                @Override
                 public AgentStep commandPollerStep() {
                     return counterStep(COMMAND_POLL_FREQUENCY, null, singletons.get().commandPollerStep());
                 }
@@ -334,15 +344,19 @@ public class MetricsCapturingInterceptor implements Interceptor {
                 }
 
                 @Override
+                public CommandTransaction commandTransaction() {
+                    return singletons.get().commandTransaction();
+                }
+
+                @Override
                 public CommandHandler commandHandler() {
                     final CommandHandler commandHandler = singletons.get().commandHandler();
                     if (shouldCaptureAnyOf(COMMAND)) {//includes COMMAND_POLLING_TIME and PROCESSING_END_TIME
                         return command -> {
                             captureTime(COMMAND_POLLING_TIME);
-                            final Result result = commandHandler.onCommand(command);
+                            commandHandler.onCommand(command);
                             captureTime(PROCESSING_END_TIME);
                             timeMetricsWriter.writeMetrics(command);
-                            return result;
                         };
                     }
                     return commandHandler;

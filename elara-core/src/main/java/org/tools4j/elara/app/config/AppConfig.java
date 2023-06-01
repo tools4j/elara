@@ -26,6 +26,7 @@ package org.tools4j.elara.app.config;
 import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.IdleStrategy;
 import org.tools4j.elara.app.state.MutableBaseState;
+import org.tools4j.elara.app.type.AppType;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.step.AgentStep;
@@ -34,6 +35,7 @@ import org.tools4j.elara.time.TimeSource;
 import java.util.List;
 
 public interface AppConfig {
+    AppType appType();
     TimeSource timeSource();
     ExceptionHandler exceptionHandler();
     Logger.Factory loggerFactory();

@@ -23,10 +23,27 @@
  */
 package org.tools4j.elara.handler;
 
-import org.tools4j.elara.event.Event;
-import org.tools4j.elara.output.Output.Ack;
+import org.tools4j.elara.app.handler.CommandProcessor;
+import org.tools4j.elara.command.Command;
+import org.tools4j.elara.route.CommandTransaction;
+import org.tools4j.elara.route.EventRouter;
 
-public interface OutputHandler {
-    Ack publish(Event event, boolean replay, int retry);
+import static java.util.Objects.requireNonNull;
 
+public class ProcessingCommandHandler implements CommandHandler {
+
+    private final CommandTransaction commandTransaction;
+    private final CommandProcessor commandProcessor;
+    public ProcessingCommandHandler(final CommandTransaction commandTransaction,
+                                    final CommandProcessor commandProcessor) {
+        this.commandTransaction = requireNonNull(commandTransaction);
+        this.commandProcessor = requireNonNull(commandProcessor);
+    }
+
+    @Override
+    public void onCommand(final Command command) {
+        final EventRouter eventRouter = commandTransaction.start(command);
+        commandProcessor.onCommand(command, eventRouter);
+        commandTransaction.complete();
+    }
 }

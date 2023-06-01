@@ -52,6 +52,10 @@ public final class FlyweightCommand implements Flyweight<FlyweightCommand>, Comm
         return wrapPayload(buffer, offset + HEADER_LENGTH);
     }
 
+    public FlyweightCommand wrapSilently(final DirectBuffer buffer, final int offset) {
+        return wrapSilently(buffer, offset, buffer, offset + HEADER_LENGTH);
+    }
+
     public FlyweightCommand wrapSilently(final DirectBuffer headerBuffer, final int headerOffset,
                                          final DirectBuffer payloadBuffer, final int payloadOffset) {
         header.wrapSilently(headerBuffer, headerOffset);
