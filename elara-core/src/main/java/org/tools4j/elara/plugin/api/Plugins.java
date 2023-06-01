@@ -23,6 +23,8 @@
  */
 package org.tools4j.elara.plugin.api;
 
+import org.tools4j.elara.plugin.activation.ActivationConfig;
+import org.tools4j.elara.plugin.activation.ActivationPlugin;
 import org.tools4j.elara.plugin.boot.BootPlugin;
 import org.tools4j.elara.plugin.metrics.MetricsConfig;
 import org.tools4j.elara.plugin.metrics.MetricsPlugin;
@@ -56,6 +58,13 @@ public enum Plugins {
 
     public static MetricsPlugin metricsPlugin(final MetricsConfig config) {
         return new MetricsPlugin(config);
+    }
+
+    public static ActivationPlugin activationPlugin() {
+        return activationPlugin(ActivationPlugin.configure());
+    }
+    public static ActivationPlugin activationPlugin(final ActivationConfig config) {
+        return new ActivationPlugin(config);
     }
 
     public static ReplicationPlugin replicationPlugin(final ReplicationConfig config) {

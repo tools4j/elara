@@ -60,6 +60,16 @@ public interface PluginSpecification<P> {
      */
     Installer installer(AppConfig appConfig, P pluginState);
 
+    /**
+     * Returns other plugins that the current plugin depends on.  The default implementation returns
+     * {@link PluginDependency#NO_DEPENDENCIES NO_DEPENDENCIES}.
+     *
+     * @return the plugin dependencies of the current plugin, none by default.
+     */
+    default PluginDependency<?>[] dependencies() {
+        return PluginDependency.NO_DEPENDENCIES;
+    }
+
     interface Installer {
         Installer NOOP_INSTALLER = new Default() {};
         AgentStep step(BaseState baseState, ExecutionType executionType);
@@ -68,7 +78,6 @@ public interface PluginSpecification<P> {
         CommandProcessor commandProcessor(BaseState baseState);
         EventApplier eventApplier(MutableBaseState baseState);
         Interceptor interceptor(StateFactory stateFactory);
-
         interface Default extends Installer {
             @Override
             default AgentStep step(final BaseState baseState, final ExecutionType executionType) {return AgentStep.NOOP;}

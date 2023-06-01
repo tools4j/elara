@@ -62,6 +62,10 @@ Elara provides the following default plugins:
 * **timer:** a plugin that allows routing of events to start and stop simple and periodic timers;  the plugin injects
              commands to fire or expire timers which are then removed from the timer state through an event 
              (see samples section for examples) 
+* **activation:** a plugin that allows applications to be active or passive;  in passive mode no commands are sent or 
+                  processed, they are either discarded or will be replayed when the application becomes active;  this
+                  plugin provides a tool to run redundant application instances in standby mode ready to take over the
+                  functionality of an identical failed application instance
 * **metrics:** plugin to capture time and frequency metrics of the running application;  a running application 
                efficiently captures metrics in a message store file that can be inspected with the store printer tool  
 * **repair:** a plugin that attempts to repair a corrupted event store on startup if the last event in the store is not 

@@ -25,6 +25,7 @@ package org.tools4j.elara.app.config;
 
 import org.agrona.collections.Object2ObjectHashMap;
 import org.tools4j.elara.plugin.api.Plugin;
+import org.tools4j.elara.plugin.api.PluginDependency;
 import org.tools4j.elara.plugin.api.PluginSpecification;
 import org.tools4j.elara.plugin.api.PluginSpecification.Installer;
 
@@ -95,6 +96,12 @@ public class DefaultPluginContext implements PluginContext {
             @SuppressWarnings("unchecked")//safe because we know what we added can consume <P>
             final Consumer<P> consumer = (Consumer<P>) this.pluginStateAwares.getOrDefault(plugin, STATE_UNAWARE);
             this.pluginStateAwares.put(plugin, consumer.andThen(pluginStateAware));
+        }
+        if (curProvider == null) {
+            //only register dependencies if the plugin was not already registered before
+            for (final PluginDependency<?> dependency : plugin.specification().dependencies()) {
+                dependency.install(this);
+            }
         }
     }
 
