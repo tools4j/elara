@@ -47,6 +47,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.tools4j.elara.samples.hash.HashApplication.NULL_VALUE;
 
@@ -86,7 +87,7 @@ public class ActivationHashApplicationTest {
         final long expectedHash = 1282549506347406386L;
 
         //when
-        runWithCommandReplayModeDiscard(n, state, active, CommandStoreOption.PASSTHROUGH);
+        runWithCommandReplayMode(n, CommandReplayMode.DISCARD, state, active, CommandStoreOption.PASSTHROUGH);
         try (final ElaraRunner runner = HashPassthroughApplication.publisherWithState("activation-passthrough", state)) {
             while (state.count() < expectedCount) {
                 if (System.currentTimeMillis() > timeout) {
@@ -102,6 +103,26 @@ public class ActivationHashApplicationTest {
         assertEquals(expectedHash, state.hash(), "state.hash(" + n + ")");
     }
 
+    @Test
+    public void replayCommands_InMemoryCommandStore() throws Exception {
+        replayCommands(CommandStoreOption.MEMORY);
+    }
+    @Test
+    public void replayCommands_PersistedCommandStore() throws Exception {
+        replayCommands(CommandStoreOption.PERSISTED);
+
+        //run again, this time commands will be skipped as they are duplicate
+        replayCommands(CommandStoreOption.PERSISTED);
+    }
+    @Test
+    public void replayCommands_NoCommandStore_fails() {
+        assertThrows(IllegalArgumentException.class, () -> replayCommands(CommandStoreOption.NONE));
+    }
+    @Test
+    public void replayCommands_PassthroughApp_fails() {
+        assertThrows(IllegalArgumentException.class, () -> replayCommands(CommandStoreOption.PASSTHROUGH));
+    }
+
     private void discardCommands(final CommandStoreOption queueMode) throws Exception {
         //given
         final int n = 200;
@@ -111,33 +132,51 @@ public class ActivationHashApplicationTest {
         final long expectedHash = 1282549506347406386L;
 
         //when
-        runWithCommandReplayModeDiscard(n, state, active, queueMode);
+        runWithCommandReplayMode(n, CommandReplayMode.DISCARD, state, active, queueMode);
 
         //then
         assertEquals(expectedCount, state.count(), "state.count(" + n + ")");
         assertEquals(expectedHash, state.hash(), "state.hash(" + n + ")");
     }
 
-    private void runWithCommandReplayModeDiscard(final int n,
-                                                 final HashApplication.ModifiableState state,
-                                                 final IntPredicate active,
-                                                 final CommandStoreOption queueMode) throws Exception {
+    private void replayCommands(final CommandStoreOption queueMode) throws Exception {
+        //given
+        final int n = 200;
+        final HashApplication.ModifiableState state = new DefaultState();
+        final IntPredicate active = index -> index < 50 || index >= n - 20;
+        final long expectedHash = 6244545253611137478L;
+
+        //when
+        runWithCommandReplayMode(n, CommandReplayMode.REPLAY, state, active, queueMode);
+
+        //then
+        assertEquals(n, state.count(), "state.count(" + n + ")");
+        assertEquals(expectedHash, state.hash(), "state.hash(" + n + ")");
+    }
+
+    private void runWithCommandReplayMode(final int n,
+                                          final CommandReplayMode replayMode,
+                                          final HashApplication.ModifiableState state,
+                                          final IntPredicate active,
+                                          final CommandStoreOption queueMode) throws Exception {
         //given
         final AtomicLong input = new AtomicLong(NULL_VALUE);
         final Random random = new Random(123);
         final long oneMilli = MILLISECONDS.toNanos(1);
         final long oneSecond = SECONDS.toNanos(1);
         final ActivationPlugin plugin = Plugins.activationPlugin(ActivationPlugin.configure()
-                .commandReplayMode(CommandReplayMode.DISCARD)
+                .commandReplayMode(replayMode)
         );
 
         //when
-        try (final ElaraRunner runner = elaraRunner(queueMode, state, input, plugin)) {
+        try (final ElaraRunner runner = elaraRunner(queueMode, replayMode, state, input, plugin)) {
             assertTrue(plugin.activate());
             runHashApp(n, random, oneMilli, oneSecond, input, active, plugin, runner);
         }
     }
+
     public static ElaraRunner elaraRunner(final CommandStoreOption queueMode,
+                                          final CommandReplayMode replayMode,
                                           final HashApplication.ModifiableState state,
                                           final AtomicLong input,
                                           final ActivationPlugin plugin) {
@@ -147,7 +186,7 @@ public class ActivationHashApplicationTest {
             case MEMORY:
                 return inMemory(state, input, plugin);
             case PERSISTED:
-                return chronicleQueue(state, input, plugin);
+                return chronicleQueue(replayMode, state, input, plugin);
             case PASSTHROUGH:
                 return passthrough(input, plugin);
             default:
@@ -179,16 +218,20 @@ public class ActivationHashApplicationTest {
         );
     }
 
-    public static ElaraRunner chronicleQueue(final HashApplication.ModifiableState state,
+    public static ElaraRunner chronicleQueue(final CommandReplayMode replayMode,
+                                             final HashApplication.ModifiableState state,
                                              final AtomicLong input,
                                              final ActivationPlugin plugin) {
         requireNonNull(plugin);
+        final String path = replayMode == CommandReplayMode.DISCARD ?
+                "build/chronicle/activation/discard/" :
+                "build/chronicle/activation/replay/";
         final ChronicleQueue cq = ChronicleQueue.singleBuilder()
-                .path("build/chronicle/activation/cmd.cq4")
+                .path(path + "cmd.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         final ChronicleQueue eq = ChronicleQueue.singleBuilder()
-                .path("build/chronicle/activation/evt.cq4")
+                .path(path + "evt.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         return new HashApplication(state).launch(config -> config
