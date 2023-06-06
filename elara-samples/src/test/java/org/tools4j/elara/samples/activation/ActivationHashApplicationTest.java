@@ -49,6 +49,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.tools4j.elara.samples.activation.ActivationHashApplicationTest.CommandStoreOption.PASSTHROUGH;
 import static org.tools4j.elara.samples.hash.HashApplication.NULL_VALUE;
 
 /**
@@ -60,20 +61,25 @@ public class ActivationHashApplicationTest {
         NONE, MEMORY, PERSISTED, PASSTHROUGH
     }
 
+    @FunctionalInterface
+    interface InlineAsserts {
+        void assertAt(int nextIndex, boolean replay);
+    }
+
     @Test
     public void discardCommands_NoCommandStore() throws Exception {
-        discardCommands(CommandStoreOption.NONE);
+        discardCommands(false, CommandStoreOption.NONE);
     }
     @Test
     public void discardCommands_InMemoryCommandStore() throws Exception {
-        discardCommands(CommandStoreOption.MEMORY);
+        discardCommands(false, CommandStoreOption.MEMORY);
     }
     @Test
     public void discardCommands_PersistedCommandStore() throws Exception {
-        discardCommands(CommandStoreOption.PERSISTED);
+        discardCommands(false, CommandStoreOption.PERSISTED);
 
         //run again, this time commands will be skipped as they are duplicate
-        discardCommands(CommandStoreOption.PERSISTED);
+        discardCommands(true, CommandStoreOption.PERSISTED);
     }
     @Test
     public void discardCommands_PassthroughApp() throws Exception {
@@ -85,9 +91,10 @@ public class ActivationHashApplicationTest {
         final IntPredicate active = index -> index < 50 || index >= n - 20;
         final long expectedCount = 70;
         final long expectedHash = 1282549506347406386L;
+        final InlineAsserts inlineAsserts = (nextIndex, replay) -> {};
 
         //when
-        runWithCommandReplayMode(n, CommandReplayMode.DISCARD, state, active, CommandStoreOption.PASSTHROUGH);
+        runWithCommandReplayMode(n, false, CommandReplayMode.DISCARD, state, active, inlineAsserts, PASSTHROUGH);
         try (final ElaraRunner runner = HashPassthroughApplication.publisherWithState("activation-passthrough", state)) {
             while (state.count() < expectedCount) {
                 if (System.currentTimeMillis() > timeout) {
@@ -105,49 +112,63 @@ public class ActivationHashApplicationTest {
 
     @Test
     public void replayCommands_InMemoryCommandStore() throws Exception {
-        replayCommands(CommandStoreOption.MEMORY);
+        replayCommands(false, CommandStoreOption.MEMORY);
     }
     @Test
     public void replayCommands_PersistedCommandStore() throws Exception {
-        replayCommands(CommandStoreOption.PERSISTED);
+        replayCommands(false, CommandStoreOption.PERSISTED);
 
         //run again, this time commands will be skipped as they are duplicate
-        replayCommands(CommandStoreOption.PERSISTED);
+        replayCommands(true, CommandStoreOption.PERSISTED);
     }
     @Test
     public void replayCommands_NoCommandStore_fails() {
-        assertThrows(IllegalArgumentException.class, () -> replayCommands(CommandStoreOption.NONE));
+        assertThrows(IllegalArgumentException.class, () -> replayCommands(false, CommandStoreOption.NONE));
     }
     @Test
     public void replayCommands_PassthroughApp_fails() {
-        assertThrows(IllegalArgumentException.class, () -> replayCommands(CommandStoreOption.PASSTHROUGH));
+        assertThrows(IllegalArgumentException.class, () -> replayCommands(false, PASSTHROUGH));
     }
 
-    private void discardCommands(final CommandStoreOption queueMode) throws Exception {
+    private void discardCommands(final boolean isReplay, final CommandStoreOption queueMode) throws Exception {
         //given
         final int n = 200;
         final HashApplication.ModifiableState state = new DefaultState();
         final IntPredicate active = index -> index < 50 || index >= n - 20;
         final long expectedCount = 70;
         final long expectedHash = 1282549506347406386L;
+        final InlineAsserts inlineAsserts = (nextIndex, replay) -> {
+            if (nextIndex == 50 || nextIndex == n - 20) {
+                sleep(100);
+                final long expected = replay ? expectedCount : 50;
+                assertEquals(expected, state.count(), "state.count(" + nextIndex + ")");
+            }
+        };
 
         //when
-        runWithCommandReplayMode(n, CommandReplayMode.DISCARD, state, active, queueMode);
+        runWithCommandReplayMode(n, isReplay, CommandReplayMode.DISCARD, state, active, inlineAsserts, queueMode);
 
         //then
         assertEquals(expectedCount, state.count(), "state.count(" + n + ")");
         assertEquals(expectedHash, state.hash(), "state.hash(" + n + ")");
     }
 
-    private void replayCommands(final CommandStoreOption queueMode) throws Exception {
+    private void replayCommands(final boolean isReplay, final CommandStoreOption queueMode) throws Exception {
         //given
         final int n = 200;
         final HashApplication.ModifiableState state = new DefaultState();
         final IntPredicate active = index -> index < 50 || index >= n - 20;
         final long expectedHash = 6244545253611137478L;
+        final InlineAsserts inlineAsserts = (nextIndex, replay) -> {
+            if (nextIndex == 50 || nextIndex == n - 20) {
+                sleep(100);
+                final long expected = replay ? n : nextIndex;
+                assertEquals(expected, state.count(), "state.count(" + nextIndex + ")");
+            }
+        };
 
         //when
-        runWithCommandReplayMode(n, CommandReplayMode.REPLAY, state, active, queueMode);
+        runWithCommandReplayMode(n, isReplay, CommandReplayMode.REPLAY, state, active, inlineAsserts, queueMode);
 
         //then
         assertEquals(n, state.count(), "state.count(" + n + ")");
@@ -155,15 +176,17 @@ public class ActivationHashApplicationTest {
     }
 
     private void runWithCommandReplayMode(final int n,
+                                          final boolean isReplay,
                                           final CommandReplayMode replayMode,
                                           final HashApplication.ModifiableState state,
                                           final IntPredicate active,
+                                          final InlineAsserts inlineAsserts,
                                           final CommandStoreOption queueMode) throws Exception {
         //given
         final AtomicLong input = new AtomicLong(NULL_VALUE);
         final Random random = new Random(123);
-        final long oneMilli = MILLISECONDS.toNanos(1);
-        final long oneSecond = SECONDS.toNanos(1);
+        final long shortSleepNanos = MILLISECONDS.toNanos(1);
+        final long activationSleepNanos = MILLISECONDS.toNanos(500);
         final ActivationPlugin plugin = Plugins.activationPlugin(ActivationPlugin.configure()
                 .commandReplayMode(replayMode)
         );
@@ -171,7 +194,7 @@ public class ActivationHashApplicationTest {
         //when
         try (final ElaraRunner runner = elaraRunner(queueMode, replayMode, state, input, plugin)) {
             assertTrue(plugin.activate());
-            runHashApp(n, random, oneMilli, oneSecond, input, active, plugin, runner);
+            runHashApp(n, isReplay, random, shortSleepNanos, activationSleepNanos, input, active, inlineAsserts, plugin, runner);
         }
     }
 
@@ -257,11 +280,13 @@ public class ActivationHashApplicationTest {
     }
 
     private static void runHashApp(final int n,
+                                   final boolean isReplay,
                                    final Random random,
-                                   final long oneMilliInNanos,
-                                   final long oneSecondInNanos,
+                                   final long shortSleepNanos,
+                                   final long activationSleepNanos,
                                    final AtomicLong input,
                                    final IntPredicate active,
+                                   final InlineAsserts inlineAsserts,
                                    final ActivationPlugin plugin,
                                    final ElaraRunner runner) throws InterruptedException {
         long value = random.nextLong();
@@ -269,22 +294,31 @@ public class ActivationHashApplicationTest {
         for (int i = 0; i < n; ) {
             final boolean isActive = active.test(i);
             if (wasActive != isActive) {
-                LockSupport.parkNanos(oneSecondInNanos);
+                LockSupport.parkNanos(activationSleepNanos);
                 if (isActive) plugin.activate();
                 else plugin.deactivate();
                 wasActive = isActive;
             }
+            inlineAsserts.assertAt(i, isReplay);
             if (input.compareAndSet(NULL_VALUE, value)) {
                 value = random.nextLong();
                 i++;
             }
-            if (oneMilliInNanos > 0) {
-                LockSupport.parkNanos(oneMilliInNanos);
+            if (shortSleepNanos > 0) {
+                LockSupport.parkNanos(shortSleepNanos);
             }
         }
         while (input.get() != NULL_VALUE) {
             Thread.sleep(50);
         }
         runner.join(200);
+    }
+
+    private static void sleep(final int millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (final InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
