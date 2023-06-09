@@ -34,8 +34,8 @@ import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
 
 /**
  * Timer store backed by an {@link MutableDirectBuffer} to store timers. Each timer occupies a block of bytes for all
- * the timer attributes.  The store also has a double map to lookup (sourceId, timerId) tuples and map them to an index,
- * which is then used to calculate the offset in the buffer.
+ * the timer attributes.  The store also maintains a mapping of timer ID to index from which one can derive the offset
+ * in the buffer.
  */
 public class DirectTimerStore implements TimerStore.MutableTimerStore {
 
