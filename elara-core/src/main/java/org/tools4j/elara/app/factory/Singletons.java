@@ -29,6 +29,7 @@ import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.app.state.MutableBaseState;
+import org.tools4j.elara.app.state.TransientEventState;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.handler.OutputHandler;
@@ -40,10 +41,11 @@ import org.tools4j.elara.source.SourceContextProvider;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore.Handler;
 import org.tools4j.elara.store.MessageStore.Poller;
-import org.tools4j.elara.stream.MessageStream;
 
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import static java.util.Objects.requireNonNull;
 import static org.agrona.collections.Hashing.DEFAULT_LOAD_FACTOR;
@@ -61,6 +63,11 @@ final class Singletons {
             instanceByName.put(name, value = factoryMethod.apply(factoryInstance));
         }
         return type.cast(value);
+    }
+
+    static <T> Supplier<T> supplier(final T factory, final UnaryOperator<T> singletonOp) {
+        final T singletons = singletonOp.apply(factory);
+        return () -> singletons;
     }
 
     static StateFactory create(final StateFactory factory) {
@@ -95,12 +102,10 @@ final class Singletons {
             public SourceContextProvider sourceContextProvider() {
                 return singletons.getOrCreate("sourceContextProvider", SourceContextProvider.class, factory, SequencerFactory::sourceContextProvider);
             }
-
             @Override
             public SenderSupplier senderSupplier() {
                 return singletons.getOrCreate("senderSupplier", SenderSupplier.class, factory, SequencerFactory::senderSupplier);
             }
-
             @Override
             public AgentStep sequencerStep() {
                 return singletons.getOrCreate("sequencerStep", AgentStep.class, factory, SequencerFactory::sequencerStep);
@@ -135,12 +140,10 @@ final class Singletons {
             public EventApplier eventApplier() {
                 return singletons.getOrCreate("eventApplier", EventApplier.class, factory, ApplierFactory::eventApplier);
             }
-
             @Override
             public EventHandler eventHandler() {
                 return singletons.getOrCreate("eventHandler", EventHandler.class, factory, ApplierFactory::eventHandler);
             }
-
             @Override
             public AgentStep eventPollerStep() {
                 return singletons.getOrCreate("eventPollerStep", AgentStep.class, factory, ApplierFactory::eventPollerStep);
@@ -175,12 +178,10 @@ final class Singletons {
             public SourceContextProvider sourceContextProvider() {
                 return singletons.getOrCreate("sourceContextProvider", SourceContextProvider.class, factory, CommandStreamFactory::sourceContextProvider);
             }
-
             @Override
             public SenderSupplier senderSupplier() {
                 return singletons.getOrCreate("senderSupplier", SenderSupplier.class, factory, CommandStreamFactory::senderSupplier);
             }
-
             @Override
             public AgentStep inputPollerStep() {
                 return singletons.getOrCreate("inputPollerStep", AgentStep.class, factory, CommandStreamFactory::inputPollerStep);
@@ -193,18 +194,20 @@ final class Singletons {
         final Singletons singletons = new Singletons();
         return new EventStreamFactory() {
             @Override
-            public MessageStream eventStream() {
-                return singletons.getOrCreate("eventStream", MessageStream.class, factory, EventStreamFactory::eventStream);
+            public TransientEventState transientEventState() {
+                return singletons.getOrCreate("transientEventState", TransientEventState.class, factory, EventStreamFactory::transientEventState);
             }
-
             @Override
             public EventProcessor eventProcessor() {
                 return singletons.getOrCreate("eventProcessor", EventProcessor.class, factory, EventStreamFactory::eventProcessor);
             }
-
             @Override
-            public Output output() {
-                return singletons.getOrCreate("output", Output.class, factory, EventStreamFactory::output);
+            public EventHandler eventHandler() {
+                return singletons.getOrCreate("eventHandler", EventHandler.class, factory, EventStreamFactory::eventHandler);
+            }
+            @Override
+            public AgentStep eventPollerStep() {
+                return singletons.getOrCreate("eventPollerStep", AgentStep.class, factory, EventStreamFactory::eventPollerStep);
             }
         };
     }
@@ -217,7 +220,6 @@ final class Singletons {
             public AgentStep extraStepAlwaysWhenEventsApplied() {
                 return singletons.getOrCreate("extraStepAlwaysWhenEventsApplied", AgentStep.class, factory, AgentStepFactory::extraStepAlwaysWhenEventsApplied);
             }
-
             @Override
             public AgentStep extraStepAlways() {
                 return singletons.getOrCreate("extraStepAlways", AgentStep.class, factory, AgentStepFactory::extraStepAlways);
@@ -257,11 +259,11 @@ final class Singletons {
             public OutputHandler outputHandler() {
                 return singletons.getOrCreate("outputHandler", OutputHandler.class, factory, PublisherFactory::outputHandler);
             }
-
             @Override
             public AgentStep publisherStep() {
                 return singletons.getOrCreate("publisherStep", AgentStep.class, factory, PublisherFactory::publisherStep);
             }
         };
     }
+
 }

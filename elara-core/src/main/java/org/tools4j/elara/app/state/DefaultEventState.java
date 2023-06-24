@@ -26,7 +26,7 @@ package org.tools4j.elara.app.state;
 import org.tools4j.elara.flyweight.EventType;
 import org.tools4j.elara.time.TimeSource;
 
-final class DefaultEventState implements EventState {
+final class DefaultEventState implements EventInfo {
     private final int sourceId;
     private long count;
     private long sourceSequence = BaseState.NIL_SEQUENCE;

@@ -21,21 +21,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.app.state;
+package org.tools4j.elara.step;
+
+import org.agrona.DirectBuffer;
+import org.tools4j.elara.flyweight.FlyweightEvent;
+import org.tools4j.elara.handler.EventHandler;
+import org.tools4j.elara.stream.MessageReceiver;
+
+import static java.util.Objects.requireNonNull;
 
 /**
- * Extended version of {@link BaseState} providing information about the last processed event for any given source ID.
+ * Receives events form a message stream and invokes the event handler.
  */
-public interface EventProcessingState extends BaseState {
-    /**
-     * Returns the event state for the given source ID, or null if no events from this source have been processed yet.
-     *
-     * @param sourceId the source ID for events
-     * @return the event state for the given source ID, or null if unavailable
-     */
-    EventInfo lastProcessedEvent(int sourceId);
+public class EventReceiverStep implements AgentStep {
 
-    interface MutableEventProcessingState extends EventProcessingState, MutableBaseState {
-        EventInfo lastProcessedEventCreateIfAbsent(int sourceId);
+    private final MessageReceiver eventReceiver;
+    private final EventHandler eventHandler;
+
+    private final MessageReceiver.Handler receiverHandler = this::onEvent;
+    private final FlyweightEvent flyweightEvent = new FlyweightEvent();
+
+    public EventReceiverStep(final MessageReceiver eventReceiver, final EventHandler eventHandler) {
+        this.eventReceiver = requireNonNull(eventReceiver);
+        this.eventHandler = requireNonNull(eventHandler);
     }
+
+    @Override
+    public int doWork() {
+        return eventReceiver.poll(receiverHandler);
+    }
+
+    private void onEvent(final DirectBuffer event) {
+        eventHandler.onEvent(flyweightEvent.wrap(event, 0));
+    }
+
 }

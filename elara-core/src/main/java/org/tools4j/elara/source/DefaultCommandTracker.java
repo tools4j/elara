@@ -27,7 +27,7 @@ import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.app.state.BaseEventState;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.app.state.EventProcessingState.MutableEventProcessingState;
-import org.tools4j.elara.app.state.EventState;
+import org.tools4j.elara.app.state.EventInfo;
 import org.tools4j.elara.app.state.TransientCommandState;
 import org.tools4j.elara.flyweight.EventType;
 import org.tools4j.elara.sequence.SequenceGenerator;
@@ -39,7 +39,7 @@ final class DefaultCommandTracker implements CommandTracker {
 
     private final SourceContext sourceContext;
     private final SequenceGenerator sourceSequenceGenerator;
-    private final EventState eventLastProcessed;
+    private final EventInfo eventLastProcessed;
     private final TransientCommandStateImpl transientCommandState = new TransientCommandStateImpl();
 
     public DefaultCommandTracker(final SourceContext sourceContext,
@@ -63,7 +63,7 @@ final class DefaultCommandTracker implements CommandTracker {
     }
 
     @Override
-    public EventState eventLastProcessed() {
+    public EventInfo eventLastProcessed() {
         return eventLastProcessed;
     }
 

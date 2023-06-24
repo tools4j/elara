@@ -38,7 +38,6 @@ import java.util.function.Supplier;
 import static java.util.Objects.requireNonNull;
 
 public class SendingCommandStreamFactory implements CommandStreamFactory {
-
     private final AppConfig appConfig;
     private final CommandStreamConfig commandStreamConfig;
     private final BaseState baseState;

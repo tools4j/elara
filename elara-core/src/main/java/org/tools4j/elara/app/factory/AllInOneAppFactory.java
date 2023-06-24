@@ -28,9 +28,6 @@ import org.tools4j.elara.agent.AllInOneAgent;
 import org.tools4j.elara.app.config.CommandPollingMode;
 import org.tools4j.elara.app.type.AllInOneAppConfig;
 
-import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
-
 import static org.tools4j.elara.app.factory.Bootstrap.bootstrap;
 
 public class AllInOneAppFactory implements AppFactory {
@@ -47,48 +44,43 @@ public class AllInOneAppFactory implements AppFactory {
     public AllInOneAppFactory(final AllInOneAppConfig config) {
         final Bootstrap bootstrap = bootstrap(config, config);
         final Interceptor interceptor = bootstrap.interceptor();
-        this.sequencerSingletons = interceptor.sequencerFactory(singletonsSupplier(
+        this.sequencerSingletons = interceptor.sequencerFactory(Singletons.supplier(
                 config.commandPollingMode() == CommandPollingMode.NO_STORE ?
                         new ProcessingSequencerFactory(config, bootstrap.baseState(), this::sequencerSingletons, this::processorSingletons, this::inputSingletons) :
                         new AppendingSequencerFactory(config, config, bootstrap.baseState(), this::sequencerSingletons, this::inputSingletons),
                 Singletons::create
         ));
-        this.processorSingletons = interceptor.processorFactory(singletonsSupplier(
+        this.processorSingletons = interceptor.processorFactory(Singletons.supplier(
                 (ProcessorFactory) new DefaultProcessorFactory(config, config, config, bootstrap.baseState(), bootstrap.plugins(), this::processorSingletons, this::applierSingletons),
                 Singletons::create
         ));
-        this.applierSingletons = interceptor.applierFactory(singletonsSupplier(
+        this.applierSingletons = interceptor.applierFactory(Singletons.supplier(
                 (ApplierFactory) new DefaultApplierFactory(config, config, config, bootstrap.baseState(), bootstrap.plugins(), this::applierSingletons),
                 Singletons::create
         ));
-        this.inputSingletons = interceptor.inputFactory(singletonsSupplier(
+        this.inputSingletons = interceptor.inputFactory(Singletons.supplier(
                 (InputFactory) new DefaultInputFactory(config, bootstrap.baseState(), bootstrap.plugins()),
                 Singletons::create
         ));
-        this.outputSingletons = interceptor.outputFactory(singletonsSupplier(
+        this.outputSingletons = interceptor.outputFactory(Singletons.supplier(
                 (OutputFactory) new DefaultOutputFactory(config, config, bootstrap.baseState(), bootstrap.plugins()),
                 Singletons::create
         ));
-        this.commandPollerSingletons = interceptor.commandPollerFactory(singletonsSupplier(
+        this.commandPollerSingletons = interceptor.commandPollerFactory(Singletons.supplier(
                 (CommandPollerFactory)new DefaultCommandPollerFactory(config, this::commandPollerSingletons, this::processorSingletons),
                 Singletons::create
         ));
-        this.publisherSingletons = interceptor.publisherFactory(singletonsSupplier(
+        this.publisherSingletons = interceptor.publisherFactory(Singletons.supplier(
                 (PublisherFactory)new DefaultPublisherFactory(config, config, bootstrap.baseState(), this::publisherSingletons, this::outputSingletons),
                 Singletons::create
         ));
-        this.agentStepSingletons = interceptor.agentStepFactory(singletonsSupplier(
+        this.agentStepSingletons = interceptor.agentStepFactory(Singletons.supplier(
                 (AgentStepFactory)new DefaultAgentStepFactory(config, bootstrap.baseState(), bootstrap.plugins()),
                 Singletons::create
         ));
-        this.appSingletons = interceptor.appFactory(singletonsSupplier(
+        this.appSingletons = interceptor.appFactory(Singletons.supplier(
                 appFactory(), Singletons::create
         ));
-    }
-
-    private <T> Supplier<T> singletonsSupplier(final T factory, final UnaryOperator<T> singletonOp) {
-        final T singletons = singletonOp.apply(factory);
-        return () -> singletons;
     }
 
     private CommandPollerFactory commandPollerSingletons() {

@@ -34,8 +34,10 @@ import org.tools4j.elara.sequence.SequenceGenerator;
  * <p>
  * Note however that transient state should not be used in the decision-making logic of the application, otherwise its
  * state will not be deterministic and cannot be reproduced through event replay.
+ *
+ * @see TransientState
  */
-public interface TransientCommandState {
+public interface TransientCommandState extends TransientState {
     long NIL_SEQUENCE = SequenceGenerator.NIL_SEQUENCE;
     int sourceId();
     SequenceGenerator sourceSequenceGenerator();

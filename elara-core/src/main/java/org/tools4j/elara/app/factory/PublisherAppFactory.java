@@ -27,9 +27,6 @@ import org.agrona.concurrent.Agent;
 import org.tools4j.elara.agent.PublisherAgent;
 import org.tools4j.elara.app.type.PublisherAppConfig;
 
-import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
-
 import static org.tools4j.elara.app.factory.Bootstrap.bootstrap;
 
 public class PublisherAppFactory implements AppFactory {
@@ -40,22 +37,17 @@ public class PublisherAppFactory implements AppFactory {
     public PublisherAppFactory(final PublisherAppConfig config) {
         final Bootstrap bootstrap = bootstrap(config, config);
         final Interceptor interceptor = bootstrap.interceptor();
-        this.outputSingletons = interceptor.outputFactory(singletonsSupplier(
+        this.outputSingletons = interceptor.outputFactory(Singletons.supplier(
                 (OutputFactory) new DefaultOutputFactory(config, config, bootstrap.baseState(), bootstrap.plugins()),
                 Singletons::create
         ));
-        this.publisherSingletons = interceptor.publisherFactory(singletonsSupplier(
+        this.publisherSingletons = interceptor.publisherFactory(Singletons.supplier(
                 (PublisherFactory)new StreamPublisherFactory(config, config, this::publisherSingletons, this::outputSingletons),
                 Singletons::create
         ));
-        this.appSingletons = interceptor.appFactory(singletonsSupplier(
+        this.appSingletons = interceptor.appFactory(Singletons.supplier(
                 appFactory(), Singletons::create
         ));
-    }
-
-    private <T> Supplier<T> singletonsSupplier(final T factory, final UnaryOperator<T> singletonOp) {
-        final T singletons = singletonOp.apply(factory);
-        return () -> singletons;
     }
 
     private OutputFactory outputSingletons() {

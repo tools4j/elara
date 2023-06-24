@@ -40,7 +40,7 @@ class DefaultEventStateTest {
     void nilDefaultValues() {
         //given
         final int sourceId = 123;
-        final EventState eventState = new DefaultEventState(sourceId);
+        final EventInfo eventState = new DefaultEventState(sourceId);
 
         //when + then
         assertNilValues(sourceId, eventState);
@@ -80,7 +80,7 @@ class DefaultEventStateTest {
         assertEquals(56, eventState.payloadType(), "payloadType");
     }
 
-    static void assertNilValues(final int sourceId, final EventState eventState) {
+    static void assertNilValues(final int sourceId, final EventInfo eventState) {
         assertEquals(sourceId, eventState.sourceId(), "sourceId");
         assertEquals(0, eventState.eventsProcessed(), "eventsProcessed");
         assertEquals(BaseState.NIL_SEQUENCE, eventState.sourceSequence(), "sourceSequence");

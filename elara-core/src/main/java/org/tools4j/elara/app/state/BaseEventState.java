@@ -34,7 +34,7 @@ import static org.tools4j.elara.app.state.BaseState.NIL_SEQUENCE;
 /**
  * Event state returned by {@link CommandTracker#eventLastProcessed()} if {@link BaseState} is in use.
  */
-public final class BaseEventState implements EventState {
+public final class BaseEventState implements EventInfo {
     private final int sourceId;
     private final BaseState baseState;
 

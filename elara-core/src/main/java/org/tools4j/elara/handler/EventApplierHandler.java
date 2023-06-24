@@ -31,14 +31,14 @@ import org.tools4j.elara.exception.ExceptionHandler;
 
 import static java.util.Objects.requireNonNull;
 
-public class DefaultEventHandler implements EventHandler {
+public class EventApplierHandler implements EventHandler {
 
     private final MutableBaseState baseState;
     private final EventApplier eventApplier;
     private final ExceptionHandler exceptionHandler;
     private final DuplicateHandler duplicateHandler;
 
-    public DefaultEventHandler(final MutableBaseState baseState,
+    public EventApplierHandler(final MutableBaseState baseState,
                                final EventApplier eventApplier,
                                final ExceptionHandler exceptionHandler,
                                final DuplicateHandler duplicateHandler) {

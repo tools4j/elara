@@ -59,6 +59,17 @@ public interface DuplicateHandler {
         //default is no-op;  apps may want to log something
     }
 
+    /**
+     * Event processing is skipped because it has already been processed before.
+     * <p>
+     * This only happens when events are received again, for instance after a disconnect.
+     *
+     * @param event the skipped event
+     */
+    default void skipEventProcessing(final Event event) {
+        //default is no-op;  apps may want to log something
+    }
+
     static DuplicateHandler systemDefault() {
         return ExceptionLogger.DEFAULT;
     }

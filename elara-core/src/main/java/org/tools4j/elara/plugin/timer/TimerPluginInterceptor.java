@@ -28,11 +28,12 @@ import org.tools4j.elara.app.factory.Interceptor;
 import org.tools4j.elara.app.factory.ProcessorFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventProcessor;
+import org.tools4j.elara.app.state.TransientEventState;
 import org.tools4j.elara.handler.CommandHandler;
-import org.tools4j.elara.output.Output;
+import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.plugin.timer.TimerController.ControlContext;
 import org.tools4j.elara.route.CommandTransaction;
-import org.tools4j.elara.stream.MessageStream;
+import org.tools4j.elara.step.AgentStep;
 
 import java.util.function.Supplier;
 
@@ -77,10 +78,9 @@ final class TimerPluginInterceptor implements Interceptor {
         requireNonNull(singletons);
         return new EventStreamFactory() {
             @Override
-            public MessageStream eventStream() {
-                return singletons.get().eventStream();
+            public TransientEventState transientEventState() {
+                return singletons.get().transientEventState();
             }
-
             @Override
             public EventProcessor eventProcessor() {
                 final EventProcessor eventProcessor = singletons.get().eventProcessor();
@@ -92,8 +92,13 @@ final class TimerPluginInterceptor implements Interceptor {
             }
 
             @Override
-            public Output output() {
-                return singletons.get().output();
+            public EventHandler eventHandler() {
+                return singletons.get().eventHandler();
+            }
+
+            @Override
+            public AgentStep eventPollerStep() {
+                return singletons.get().eventPollerStep();
             }
         };
     }

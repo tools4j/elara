@@ -28,7 +28,6 @@ import org.tools4j.elara.app.handler.EventApplier;
 import static java.util.Objects.requireNonNull;
 
 public class CompositeEventApplier implements EventApplier {
-
     private final EventApplier[] appliers;
 
     public CompositeEventApplier(final EventApplier... appliers) {

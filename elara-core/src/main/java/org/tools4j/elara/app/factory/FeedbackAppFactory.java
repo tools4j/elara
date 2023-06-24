@@ -24,35 +24,31 @@
 package org.tools4j.elara.app.factory;
 
 import org.agrona.concurrent.Agent;
-import org.tools4j.elara.agent.PassthroughAgent;
-import org.tools4j.elara.app.config.ApplierConfig;
-import org.tools4j.elara.app.handler.EventApplier;
-import org.tools4j.elara.app.state.MutableBaseState;
-import org.tools4j.elara.app.state.PassthroughEventApplier;
-import org.tools4j.elara.app.state.PassthroughState;
-import org.tools4j.elara.app.type.PassthroughAppConfig;
+import org.tools4j.elara.agent.FeedbackAgent;
+import org.tools4j.elara.app.type.FeedbackAppConfig;
 
-import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.app.factory.Bootstrap.bootstrap;
 
-public class PassthroughAppFactory implements AppFactory {
-    private final SequencerFactory sequencerSingletons;
-    private final ApplierFactory applierSingletons;
+public class FeedbackAppFactory implements AppFactory {
+    private final EventStreamFactory eventStreamSingletons;
+    private final CommandStreamFactory commandStreamSingletons;
     private final InputFactory inputSingletons;
     private final OutputFactory outputSingletons;
     private final PublisherFactory publisherSingletons;
     private final AgentStepFactory agentStepSingletons;
     private final AppFactory appSingletons;
 
-    public PassthroughAppFactory(final PassthroughAppConfig config) {
+    public FeedbackAppFactory(final FeedbackAppConfig config) {
         final Bootstrap bootstrap = bootstrap(config, config);
         final Interceptor interceptor = bootstrap.interceptor();
-        this.sequencerSingletons = interceptor.sequencerFactory(Singletons.supplier(
-                (SequencerFactory) new PassthroughSequencerFactory(config, config, bootstrap.baseState(), this::sequencerSingletons, this::inputSingletons, this::applierSingletons),
+        this.eventStreamSingletons = interceptor.applierFactory(Singletons.supplier(
+                (EventStreamFactory) new DefaultEventStreamFactory(config, config, bootstrap.baseState(), bootstrap.plugins(),
+                        this::commandStreamSingletons, this::outputSingletons, this::eventStreamSingletons),
                 Singletons::create
         ));
-        this.applierSingletons = interceptor.applierFactory(Singletons.supplier(
-                (ApplierFactory) new DefaultApplierFactory(config, applierConfig(config, bootstrap.baseState()), config, bootstrap.baseState(), bootstrap.plugins(), this::applierSingletons),
+        this.commandStreamSingletons = interceptor.applierFactory(Singletons.supplier(
+                (CommandStreamFactory) new SendingCommandStreamFactory(config, config, bootstrap.baseState(),
+                        this::commandStreamSingletons, this::inputSingletons),
                 Singletons::create
         ));
         this.inputSingletons = interceptor.inputFactory(Singletons.supplier(
@@ -76,25 +72,11 @@ public class PassthroughAppFactory implements AppFactory {
         ));
     }
 
-    private ApplierConfig applierConfig(final PassthroughAppConfig config, final MutableBaseState baseState) {
-        requireNonNull(config);
-        requireNonNull(baseState);
-        final EventApplier eventApplier;
-        if (config instanceof ApplierConfig) {
-            eventApplier = ((ApplierConfig)config).eventApplier();
-        } else {
-            if (baseState instanceof PassthroughState) {
-                final PassthroughState passthroughState = (PassthroughState) baseState;
-                eventApplier = (PassthroughEventApplier) passthroughState::applyEvent;
-            } else {
-                eventApplier = baseState::applyEvent;
-            }
-        }
-        return () -> eventApplier;
+    private EventStreamFactory eventStreamSingletons() {
+        return eventStreamSingletons;
     }
-
-    private ApplierFactory applierSingletons() {
-        return applierSingletons;
+    private CommandStreamFactory commandStreamSingletons() {
+        return eventStreamSingletons;
     }
 
     private InputFactory inputSingletons() {
@@ -105,18 +87,14 @@ public class PassthroughAppFactory implements AppFactory {
         return outputSingletons;
     }
 
-    private SequencerFactory sequencerSingletons() {
-        return sequencerSingletons;
-    }
-
     private PublisherFactory publisherSingletons() {
         return publisherSingletons;
     }
 
     private AppFactory appFactory() {
-        return () -> new PassthroughAgent(
-                sequencerSingletons.sequencerStep(),
-                applierSingletons.eventPollerStep(),
+        return () -> new FeedbackAgent(
+                eventStreamSingletons.eventPollerStep(),
+                inputSingletons.input().inputPollerStep(commandStreamSingletons.sourceContextProvider()),
                 publisherSingletons.publisherStep(),
                 agentStepSingletons.extraStepAlwaysWhenEventsApplied(),
                 agentStepSingletons.extraStepAlways());

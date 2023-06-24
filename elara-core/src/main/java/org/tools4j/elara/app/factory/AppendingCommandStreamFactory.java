@@ -38,7 +38,6 @@ import java.util.function.Supplier;
 import static java.util.Objects.requireNonNull;
 
 public class AppendingCommandStreamFactory implements CommandStreamFactory {
-
     private final AppConfig appConfig;
     private final CommandStoreConfig commandStoreConfig;
     private final BaseState baseState;

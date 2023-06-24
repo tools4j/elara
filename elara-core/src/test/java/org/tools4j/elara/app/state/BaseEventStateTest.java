@@ -43,7 +43,7 @@ class BaseEventStateTest {
         //given
         final int sourceId = 456;
         final MutableBaseState baseState = new DefaultBaseState();
-        final EventState eventState = new BaseEventState(sourceId, baseState);
+        final EventInfo eventState = new BaseEventState(sourceId, baseState);
 
         //when + then
         assertNilValues(sourceId, eventState);
@@ -54,7 +54,7 @@ class BaseEventStateTest {
         //given
         final int sourceId = 456;
         final PassthroughState baseState = new DefaultBaseState();
-        final EventState eventState = new BaseEventState(sourceId, baseState);
+        final EventInfo eventState = new BaseEventState(sourceId, baseState);
 
         //when
         baseState.applyEvent(sourceId, 22L, 33L, 1, INTERMEDIARY, 44L, 55);

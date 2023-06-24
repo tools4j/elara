@@ -35,7 +35,7 @@ public class DefaultEventProcessingState implements MutableEventProcessingState,
 
     @Override
     public long lastAppliedCommandSequence(final int sourceId) {
-        final EventState eventState = lastProcessedEvent(sourceId);
+        final EventInfo eventState = lastProcessedEvent(sourceId);
         return eventState != null ? eventState.sourceSequence() : NIL_SEQUENCE;
     }
 
@@ -45,7 +45,7 @@ public class DefaultEventProcessingState implements MutableEventProcessingState,
     }
 
     @Override
-    public EventState lastProcessedEvent(final int sourceId) {
+    public EventInfo lastProcessedEvent(final int sourceId) {
         return sourceIdToEventState.get(sourceId);
     }
 

@@ -32,7 +32,7 @@ import org.tools4j.elara.time.TimeSource;
  * Note that if {@link BaseState} is used, some fields may not be populated when accessed through
  * {@link CommandTracker#eventLastProcessed()} as indicated by the method descriptions.
  */
-public interface EventState {
+public interface EventInfo {
     /**
      * Source ID of the event, provided even if no event was processed yet.
      * @return the event source ID, always provided

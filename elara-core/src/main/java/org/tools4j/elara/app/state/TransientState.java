@@ -24,18 +24,10 @@
 package org.tools4j.elara.app.state;
 
 /**
- * Extended version of {@link BaseState} providing information about the last processed event for any given source ID.
+ * Transient state subtypes are temporary storage vehicles for information that is transient and non-deterministic in
+ * nature and cannot be reproduced through events. Transient state should not be used in the decision-making logic of
+ * the application, otherwise its state will not be deterministic and cannot be reproduced through event replay.
  */
-public interface EventProcessingState extends BaseState {
-    /**
-     * Returns the event state for the given source ID, or null if no events from this source have been processed yet.
-     *
-     * @param sourceId the source ID for events
-     * @return the event state for the given source ID, or null if unavailable
-     */
-    EventInfo lastProcessedEvent(int sourceId);
-
-    interface MutableEventProcessingState extends EventProcessingState, MutableBaseState {
-        EventInfo lastProcessedEventCreateIfAbsent(int sourceId);
-    }
+public interface TransientState {
+    //subclasses define the content
 }

@@ -24,11 +24,13 @@
 package org.tools4j.elara.app.factory;
 
 import org.tools4j.elara.app.handler.EventProcessor;
-import org.tools4j.elara.output.Output;
-import org.tools4j.elara.stream.MessageStream;
+import org.tools4j.elara.app.state.TransientEventState;
+import org.tools4j.elara.handler.EventHandler;
+import org.tools4j.elara.step.AgentStep;
 
 public interface EventStreamFactory {
-    MessageStream eventStream();
+    TransientEventState transientEventState();
     EventProcessor eventProcessor();
-    Output output();
+    EventHandler eventHandler();
+    AgentStep eventPollerStep();
 }

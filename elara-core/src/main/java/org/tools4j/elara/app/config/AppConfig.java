@@ -27,6 +27,7 @@ import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.IdleStrategy;
 import org.tools4j.elara.app.state.MutableBaseState;
 import org.tools4j.elara.app.type.AppType;
+import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.step.AgentStep;
@@ -38,6 +39,7 @@ public interface AppConfig {
     AppType appType();
     TimeSource timeSource();
     ExceptionHandler exceptionHandler();
+    DuplicateHandler duplicateHandler();
     Logger.Factory loggerFactory();
     IdleStrategy idleStrategy();
     List<AgentStep> dutyCycleExtraSteps(ExecutionType executionType);

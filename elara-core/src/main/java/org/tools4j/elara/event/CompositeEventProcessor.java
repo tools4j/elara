@@ -21,21 +21,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.app.state;
+package org.tools4j.elara.event;
 
-/**
- * Extended version of {@link BaseState} providing information about the last processed event for any given source ID.
- */
-public interface EventProcessingState extends BaseState {
-    /**
-     * Returns the event state for the given source ID, or null if no events from this source have been processed yet.
-     *
-     * @param sourceId the source ID for events
-     * @return the event state for the given source ID, or null if unavailable
-     */
-    EventInfo lastProcessedEvent(int sourceId);
+import org.tools4j.elara.app.handler.CommandTracker;
+import org.tools4j.elara.app.handler.EventProcessor;
+import org.tools4j.elara.send.CommandSender;
 
-    interface MutableEventProcessingState extends EventProcessingState, MutableBaseState {
-        EventInfo lastProcessedEventCreateIfAbsent(int sourceId);
+import static java.util.Objects.requireNonNull;
+
+public class CompositeEventProcessor implements EventProcessor {
+    private final EventProcessor[] processors;
+
+    public CompositeEventProcessor(final EventProcessor... processors) {
+        this.processors = requireNonNull(processors);
     }
+
+    @Override
+    public void onEvent(final Event event, final CommandTracker commandTracker, final CommandSender sender) {
+        for (final EventProcessor processor : processors) {
+            processor.onEvent(event, commandTracker, sender);
+        }
+    }
+
 }

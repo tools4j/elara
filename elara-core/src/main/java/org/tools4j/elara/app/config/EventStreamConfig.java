@@ -27,6 +27,7 @@ import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.stream.MessageReceiver;
 
 public interface EventStreamConfig {
+    int sourceId();
     MessageReceiver eventReceiver();
     EventProcessor eventProcessor();
 }

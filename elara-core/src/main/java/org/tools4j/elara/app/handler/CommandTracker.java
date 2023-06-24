@@ -25,7 +25,7 @@ package org.tools4j.elara.app.handler;
 
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.app.state.EventProcessingState;
-import org.tools4j.elara.app.state.EventState;
+import org.tools4j.elara.app.state.EventInfo;
 import org.tools4j.elara.app.state.TransientCommandState;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.route.EventRouter;
@@ -36,6 +36,7 @@ import org.tools4j.elara.route.EventRouter;
  * yet.
  *
  * @see #hasInFlightCommand()
+ * @see org.tools4j.elara.source.SourceContext
  */
 public interface CommandTracker {
     /**
@@ -81,10 +82,10 @@ public interface CommandTracker {
      * <p>
      * Application types using {@link BaseState} instead of {@link EventProcessingState} to track events (typically
      * sequencer and command processor apps), not all elements in the returned event state will be populated (as
-     * indicated in the description of the {@link EventState} methods).
+     * indicated in the description of the {@link EventInfo} methods).
      *
      * @return  information about the event last received and processed, considering only events from commands sent by
      *          this application
      */
-    EventState eventLastProcessed();
+    EventInfo eventLastProcessed();
 }

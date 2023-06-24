@@ -44,6 +44,10 @@ public interface ExceptionHandler extends ErrorHandler {
         handleException("Unhandled exception when applying event", event, t);
     }
 
+    default void handleEventProcessorException(final Event event, final Throwable t) {
+        handleException("Unhandled exception when processing event", event, t);
+    }
+
     default void handleEventOutputException(final Event event, final Throwable t) {
         handleException("Unhandled exception when publishing event", event, t);
     }
