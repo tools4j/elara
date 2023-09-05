@@ -175,7 +175,7 @@ public class DeadlineHeapTimerState implements MutableTimerState {
         int half = size >>> 1;
         while (k < half) {
             int child = (k << 1) + 1;
-            int right = child + 1;
+            final int right = child + 1;
             int c = deadlineHeapToStoreIndex.getInt(child);
             if (right < size) {
                 final int r = deadlineHeapToStoreIndex.getInt(right);
