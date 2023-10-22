@@ -127,6 +127,11 @@ public class SimpleTimerState implements MutableTimerState {
     }
 
     @Override
+    public void removeAll() {
+        timers.removeAll();
+    }
+
+    @Override
     public void updateRepetitionById(long timerId, final int repetition) {
         timers.updateRepetitionById(timerId, repetition);
     }

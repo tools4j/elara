@@ -50,7 +50,9 @@ public interface TimerStore {
         boolean add(long timerId, Style style, int repetition, long startTime, long timeout, int timerType, long contextId);
 
         void remove(int index);
+        void removeAll();
         void updateRepetition(int index, int repetition);
+
         default boolean updateRepetitionById(final long timerId, final int repetition) {
             final int index = index(timerId);
             if (index >= 0) {

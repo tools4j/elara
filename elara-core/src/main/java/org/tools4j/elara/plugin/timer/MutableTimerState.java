@@ -34,6 +34,7 @@ public interface MutableTimerState extends TimerState {
     boolean add(long timerId, final Style style, int repetition, long startTime, long timeout, int timerType, final long contextId);
     void remove(int index);
     void updateRepetitionById(long timerId, int repetition);
+    void removeAll();
 
     default boolean removeById(final long timerId) {
         final int index = index(timerId);

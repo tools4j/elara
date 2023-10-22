@@ -195,6 +195,12 @@ public class DirectTimerStore implements TimerStore.MutableTimerStore {
     }
 
     @Override
+    public void removeAll() {
+        timerIdToTimerIndex.clear();
+        count = 0;
+    }
+
+    @Override
     public void updateRepetition(final int index, final int repetition) {
         validateIndex(index);
         FlyweightTimerPayload.writeRepetition(repetition, buffer, payloadOffset(index));

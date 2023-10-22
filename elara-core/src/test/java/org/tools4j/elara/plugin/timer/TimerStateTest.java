@@ -27,6 +27,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.tools4j.elara.plugin.timer.Timer.Style;
 
+import java.util.function.Consumer;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -42,9 +44,9 @@ class TimerStateTest {
     private final int typeOffset = 1000;
     private final long contextIdOffset = 6660000000L;
     private final long t0 = 999000000000L;
-    private final long[] time = {t0 + 1, t0 + 1000, t0 + 2, t0 + 100, t0 + 3};
-    private final long[] timeout = {     1,        10,     20,       30,      8};
-    private final int[] sorted = {0, 4, 2, 3, 1};
+    private final long[] time = {t0 + 1, t0 + 1000, t0 + 2, t0 + 100, t0 + 3, t0 + 10000, t0 + 4};
+    private final long[] timeout = {1, 10, 20, 30, 8, 100, 40};
+    private final int[] sorted = {0, 4, 2, 6, 3, 1, 5};
 
     @ParameterizedTest
     @ValueSource(classes = {SimpleTimerState.class, DeadlineHeapTimerState.class})
@@ -172,4 +174,57 @@ class TimerStateTest {
         }
     }
 
+    @ParameterizedTest
+    @ValueSource(classes = {SimpleTimerState.class, DeadlineHeapTimerState.class})
+    public void removeAndSeek(final Class<? extends MutableTimerState> timerStateClass) throws Exception {
+        //given
+        //            1
+        //        10     2
+        //      11  12 3   4
+        final long time = 123400000000L;
+        final MutableTimerState timerState = timerStateClass.newInstance();
+        final Consumer<MutableTimerState> initializer = state -> {
+            state.removeAll();
+            for (final long timeout : new long[]{1, 10, 2, 11, 12, 3, 4}) {
+                final long id = timeout;
+                timerState.add(id, Style.TIMER, 0, time, timeout, 0, 0);
+            }
+        };
+        initializer.accept(timerState);
+
+        //when: remove 2
+        timerState.removeById(2);
+
+        //then
+        //            1                              1
+        //        10     4    --sweep down-->    10     3
+        //      11  12 3                       11  12 4
+        for (final long timeout : new long[]{1, 3, 4, 10, 11, 12}) {
+            final long id = timeout;
+            final int index = timerState.indexOfNextDeadline();
+            assertEquals(id, timerState.timerId(index));
+            assertEquals(timeout, timerState.timeout(index));
+            assertTrue(timerState.removeById(id));
+        }
+        assertEquals(0, timerState.count());
+
+        //when: remove 2, then 11, then add 100
+        initializer.accept(timerState);
+        timerState.removeById(2);
+        timerState.removeById(11);
+        timerState.add(100, Style.TIMER, 0, time, 100, 0, 0);
+
+        //then
+        //            1                           1                            1
+        //        10     3   --sweep up-->     4     3   --add: 100-->     4       3
+        //      4   12                      10  12                      10  12  100
+        for (final long timeout : new long[]{1, 3, 4, 10, 12, 100}) {
+            final long id = timeout;
+            final int index = timerState.indexOfNextDeadline();
+            assertEquals(id, timerState.timerId(index));
+            assertEquals(timeout, timerState.timeout(index));
+            assertTrue(timerState.removeById(id));
+        }
+        assertEquals(0, timerState.count());
+    }
 }

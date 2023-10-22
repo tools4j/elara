@@ -150,7 +150,7 @@ public class DeadlineHeapTimerState implements MutableTimerState {
         }
     }
 
-    private void siftUp(final int heapIndex, final int storeIndex) {
+    private int siftUp(final int heapIndex, final int storeIndex) {
         //see PriorityQueue.siftUp(..)
         final long deadline = timerStore.deadline(storeIndex);
         int k = heapIndex;
@@ -164,9 +164,10 @@ public class DeadlineHeapTimerState implements MutableTimerState {
             k = parent;
         }
         set(k, storeIndex);
+        return k;
     }
 
-    private void siftDown(final int heapIndex, final int storeIndex) {
+    private int siftDown(final int heapIndex, final int storeIndex) {
         //see PriorityQueue.siftDown(..)
         final long deadline = timerStore.deadline(storeIndex);
         final int size = deadlineHeapToStoreIndex.size();
@@ -191,6 +192,7 @@ public class DeadlineHeapTimerState implements MutableTimerState {
             k = child;
         }
         set(k, storeIndex);
+        return k;
     }
 
     private void set(final int heapIndex, final int storeIndex) {
@@ -205,7 +207,9 @@ public class DeadlineHeapTimerState implements MutableTimerState {
         final int s = deadlineHeapToStoreIndex.size() - 1;
         final int movedStoreIndex = deadlineHeapToStoreIndex.removeAt(s);
         if (s != index) {
-            siftDown(index, movedStoreIndex);
+            if (index == siftDown(index, movedStoreIndex)) {
+                siftUp(index, movedStoreIndex);
+            }
         }
         //NOTE: we know that removing timerStore[storeIndex] from the store will swap the last element into its place
         timerStore.remove(storeIndex);
@@ -215,6 +219,13 @@ public class DeadlineHeapTimerState implements MutableTimerState {
             storeIndexToHeapIndex.put(storeIndex, heapIndex);
             deadlineHeapToStoreIndex.setInt(heapIndex, storeIndex);
         }
+    }
+
+    @Override
+    public void removeAll() {
+        storeIndexToHeapIndex.clear();
+        deadlineHeapToStoreIndex.clear();
+        timerStore.removeAll();
     }
 
     @Override
