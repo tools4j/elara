@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2024 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -183,10 +183,10 @@ public class FlyweightTimerPayload implements Timer, Flyweight<FlyweightTimerPay
 
     @Override
     public StringBuilder printTo(final StringBuilder dst) {
-        dst.append("FlyweightTimerPayload{");
+        dst.append("FlyweightTimerPayload");
         if (valid()) {
             final Style style = style();
-            dst.append("timer-id=").append(timerId());
+            dst.append(":timer-id=").append(timerId());
             dst.append("|style=").append(style);
             if (style == Style.ALARM) {
                 dst.append("|time=").append(timeout());
@@ -199,9 +199,8 @@ public class FlyweightTimerPayload implements Timer, Flyweight<FlyweightTimerPay
             dst.append("|timer-type=").append(timerType());
             dst.append("|context-id=").append(contextId());
         } else {
-            dst.append("???");
+            dst.append(":???");
         }
-        dst.append('}');
         return dst;
     }
 

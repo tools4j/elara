@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2024 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,4 +25,8 @@ package org.tools4j.elara.logging;
 
 public interface Printable {
     StringBuilder printTo(StringBuilder dst);
+
+    static String toString(final Printable printable) {
+        return printable.printTo(new StringBuilder(64)).toString();
+    }
 }
