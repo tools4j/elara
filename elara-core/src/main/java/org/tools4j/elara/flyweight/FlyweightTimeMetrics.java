@@ -277,10 +277,10 @@ public class FlyweightTimeMetrics implements TimeMetricsFrame, Flyweight<Flyweig
 
     @Override
     public StringBuilder printTo(final StringBuilder dst) {
-        dst.append("FlyweightTimeMetrics{");
+        dst.append("FlyweightTimeMetrics");
         if (valid()) {
             final Header header = header();
-            dst.append("version=").append(header.version());
+            dst.append(":version=").append(header.version());
             dst.append("|frame-size=").append(frameSize());
             dst.append("|metric-type=").append(sourceId());
             dst.append("|target=").append(target());
@@ -291,9 +291,8 @@ public class FlyweightTimeMetrics implements TimeMetricsFrame, Flyweight<Flyweig
             dst.append("|metric-time=").append(metricTime());
             dst.append("|value-count=").append(valueCount());
         } else {
-            dst.append("???");
+            dst.append(":???");
         }
-        dst.append('}');
         return dst;
     }
 

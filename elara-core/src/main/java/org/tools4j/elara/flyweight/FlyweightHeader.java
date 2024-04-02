@@ -161,16 +161,15 @@ public final class FlyweightHeader implements Flyweight<FlyweightHeader>, Header
 
     @Override
     public StringBuilder printTo(final StringBuilder dst) {
-        dst.append("FlyweightHeader{");
+        dst.append("FlyweightHeader");
         if (valid()) {
-            dst.append("version=").append(version());
+            dst.append(":version=").append(version());
             dst.append("|type=").append(type());
             dst.append("|reserved=").append(reserved());
             dst.append("|frame-size=").append(frameSize());
         } else {
-            dst.append("???");
+            dst.append(":???");
         }
-        dst.append('}');
         return dst;
     }
 

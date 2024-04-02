@@ -123,7 +123,7 @@ public class FlyweightMetricsFrame implements MetricsFrame, Flyweight<FlyweightM
         if (frequencyMetrics.valid()) {
             return frequencyMetrics.printTo(dst);
         }
-        return dst.append("FlyweightMetricsFrame{???}");
+        return dst.append("FlyweightMetricsFrame:???");
     }
 
     @Override

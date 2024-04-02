@@ -125,7 +125,7 @@ public class FlyweightDataFrame implements Flyweight<FlyweightDataFrame>, DataFr
         if (event.valid()) {
             return event.printTo(dst);
         }
-        return dst.append("FlyweightDataFrame{???}");
+        return dst.append("FlyweightDataFrame:???");
     }
 
     @Override

@@ -195,10 +195,10 @@ public final class FlyweightCommand implements Flyweight<FlyweightCommand>, Comm
 
     @Override
     public StringBuilder printTo(final StringBuilder dst) {
-        dst.append("FlyweightCommand{");
+        dst.append("FlyweightCommand");
         if (valid()) {
             final Header header = header();
-            dst.append("version=").append(header.version());
+            dst.append(":version=").append(header.version());
             dst.append("|type=").append(type());
             dst.append("|reserved=").append(header.reserved());
             dst.append("|frame-size=").append(frameSize());
@@ -208,9 +208,8 @@ public final class FlyweightCommand implements Flyweight<FlyweightCommand>, Comm
             dst.append("|payload-type=").append(payloadType());
             dst.append("|payload-size=").append(payloadSize());
         } else {
-            dst.append("???");
+            dst.append(":???");
         }
-        dst.append('}');
         return dst;
     }
 

@@ -196,10 +196,10 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFr
 
     @Override
     public StringBuilder printTo(final StringBuilder dst) {
-        dst.append("FlyweightEvent{");
+        dst.append("FlyweightEvent");
         if (valid()) {
             final Header header = header();
-            dst.append("version=").append(header.version());
+            dst.append(":version=").append(header.version());
             dst.append("|type=").append(type());
             dst.append("|frame-size=").append(frameSize());
             dst.append("|source-id=").append(sourceId());
@@ -210,9 +210,8 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFr
             dst.append("|payload-type=").append(payloadType());
             dst.append("|payload-size=").append(payloadSize());
         } else {
-            dst.append("???");
+            dst.append(":???");
         }
-        dst.append('}');
         return dst;
     }
 

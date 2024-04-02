@@ -202,10 +202,10 @@ public class FlyweightFrequencyMetrics implements FrequencyMetricsFrame, Flyweig
 
     @Override
     public StringBuilder printTo(final StringBuilder dst) {
-        dst.append("FlyweightFrequencyMetrics{");
+        dst.append("FlyweightFrequencyMetrics");
         if (valid()) {
             final Header header = header();
-            dst.append("version=").append(header.version());
+            dst.append(":version=").append(header.version());
             dst.append("|frame-size=").append(frameSize());
             dst.append("|metric-type=").append(metricType());
             dst.append("|iteration=").append(iteration());
@@ -213,9 +213,8 @@ public class FlyweightFrequencyMetrics implements FrequencyMetricsFrame, Flyweig
             dst.append("|metric-time=").append(metricTime());
             dst.append("|value-count=").append(valueCount());
         } else {
-            dst.append("???");
+            dst.append(":???");
         }
-        dst.append('}');
         return dst;
     }
 
