@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2024 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,52 +23,31 @@
  */
 package org.tools4j.elara.samples.bank.command;
 
-import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
-import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.samples.bank.flyweight.FlyweightTransferCommand;
 
-import static java.util.Objects.requireNonNull;
-
-public class TransferCommand implements BankCommand {
-    public static final CommandType TYPE = CommandType.Transfer;
-    public final String from;
-    public final String to;
-    public final double amount;
-
-    public TransferCommand(String from, String to, final double amount) {
-        this.from = requireNonNull(from);
-        this.to = requireNonNull(to);
-        this.amount = amount;
-    }
+public interface TransferCommand extends BankCommand {
+    CommandType TYPE = CommandType.Transfer;
 
     @Override
-    public CommandType type() {
+    default CommandType type() {
         return TYPE;
     }
-    @Override
-    public DirectBuffer encode() {
-        final MutableDirectBuffer buffer = new ExpandableArrayBuffer(
-                /*from*/ Integer.BYTES + from.length() +
-                /*from*/ Integer.BYTES + to.length() +
-                /*amount*/ Double.BYTES);
-        buffer.putStringAscii(0, from);
-        buffer.putStringAscii(4 + from.length(), to);
-        buffer.putDouble(8 + from.length() + to.length(), amount);
-        return buffer;
+
+    CharSequence from();
+    CharSequence to();
+    double amount();
+
+    interface MutableTransferCommand extends TransferCommand {
+        MutableTransferCommand from(CharSequence from);
+        MutableTransferCommand to(CharSequence to);
+        MutableTransferCommand amount(double amount);
     }
 
-    public String toString() {
-        return TYPE + "{from=" + from + ", to=" + to + ", amount=" + amount + "}";
-    }
-
-    public static TransferCommand decode(final DirectBuffer payload) {
-        final String from = payload.getStringAscii(0);
-        final String to = payload.getStringAscii(4 + from.length());
-        final double amount = payload.getDouble(8 + from.length() + to.length());
-        return new TransferCommand(from, to, amount);
-    }
-
-    public static String toString(final DirectBuffer payload) {
-        return decode(payload).toString();
+    static TransferCommand create(final CharSequence from, final CharSequence to, final double amount) {
+        return new FlyweightTransferCommand().wrap(new ExpandableArrayBuffer(), 0)
+                .from(from)
+                .to(to)
+                .amount(amount);
     }
 }

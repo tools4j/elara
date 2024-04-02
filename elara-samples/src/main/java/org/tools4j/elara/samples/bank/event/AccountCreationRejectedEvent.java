@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2024 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,49 +23,19 @@
  */
 package org.tools4j.elara.samples.bank.event;
 
-import org.agrona.DirectBuffer;
-import org.agrona.ExpandableArrayBuffer;
-import org.agrona.MutableDirectBuffer;
-
-import static java.util.Objects.requireNonNull;
-
-public class AccountCreationRejectedEvent implements BankEvent {
-    public static final EventType TYPE = EventType.AccountCreationRejected;
-
-    public final String account;
-    public final String reason;
-    public AccountCreationRejectedEvent(final String account, final String reason) {
-        this.account = requireNonNull(account);
-        this.reason = requireNonNull(reason);
-    }
+public interface AccountCreationRejectedEvent extends BankEvent {
+    EventType TYPE = EventType.AccountCreationRejected;
 
     @Override
-    public EventType type() {
+    default EventType type() {
         return TYPE;
     }
 
-    @Override
-    public DirectBuffer encode() {
-        final MutableDirectBuffer buffer = new ExpandableArrayBuffer(
-                        + Integer.BYTES + account.length() +
-                        + Integer.BYTES + reason.length()
-                );
-        buffer.putStringAscii(0, account);
-        buffer.putStringAscii(4 + account.length(), reason);
-        return buffer;
-    }
+    CharSequence account();
+    CharSequence reason();
 
-    public String toString() {
-        return TYPE + "{account=" + account + ", reason=" + reason + "}";
-    }
-
-    public static AccountCreationRejectedEvent decode(final DirectBuffer payload) {
-        final String account = payload.getStringAscii(0);
-        final String reason = payload.getStringAscii(4 + account.length());
-        return new AccountCreationRejectedEvent(account, reason);
-    }
-
-    public static String toString(final DirectBuffer payload) {
-        return decode(payload).toString();
+    interface MutableAccountCreationRejectedEvent extends AccountCreationRejectedEvent {
+        MutableAccountCreationRejectedEvent account(CharSequence account);
+        MutableAccountCreationRejectedEvent reason(CharSequence reason);
     }
 }

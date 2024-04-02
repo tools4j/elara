@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2024 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,46 +23,54 @@
  */
 package org.tools4j.elara.samples.bank.state;
 
+import org.agrona.collections.Object2ObjectHashMap;
 import org.tools4j.elara.samples.bank.command.CreateAccountCommand;
-import org.tools4j.elara.samples.bank.event.AccountCreatedEvent;
-import org.tools4j.elara.samples.bank.event.AccountCreationRejectedEvent;
-import org.tools4j.elara.samples.bank.event.BankEvent;
+import org.tools4j.elara.samples.bank.flyweight.AsciiString;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public interface Bank {
-    Set<String> accounts();
-    boolean hasAccount(String name);
-    BankAccount account(String name);
+    /** @return all accounts, actually a set but for GC free iteration returns as a list */
+    List<CharSequence> accounts();
+    boolean hasAccount(CharSequence name);
+    BankAccount account(CharSequence name);
 
-    BankEvent process(CreateAccountCommand command);
+    void createAccount(CreateAccountCommand command, BankEventRouter router);
 
     interface Mutable extends Bank {
         @Override
-        BankAccount.Mutable account(String name);
-        BankAccount.Mutable openAccount(final String name);
-        BankAccount.Mutable closeAccount(final String name);
+        BankAccount.Mutable account(CharSequence name);
+        BankAccount.Mutable openAccount(CharSequence name);
+        BankAccount.Mutable closeAccount(CharSequence name);
     }
 
     class Default implements Mutable {
-        private final Map<String, BankAccount.Mutable> accountByName = new LinkedHashMap<>();
+        private final List<AsciiString> accounts = new ArrayList<>();
+        private final List<CharSequence> unmodifiableAccounts = Collections.unmodifiableList(accounts);
+        private final Map<AsciiString, BankAccount.Mutable> accountByName = new Object2ObjectHashMap<>();
 
-        @Override
-        public Set<String> accounts() {
-            return Collections.unmodifiableSet(accountByName.keySet());
+        private final AsciiString tempString = new AsciiString();
+
+        private AsciiString toAsciiString(final CharSequence value) {
+            return value instanceof AsciiString ? (AsciiString)value : tempString.set(value);
         }
 
         @Override
-        public boolean hasAccount(final String name) {
-            return accountByName.containsKey(name);
+        public List<CharSequence> accounts() {
+            return unmodifiableAccounts;
         }
 
         @Override
-        public BankAccount.Mutable account(final String name) {
-            final BankAccount.Mutable account = accountByName.get(name);
+        public boolean hasAccount(final CharSequence name) {
+            return accountByName.containsKey(toAsciiString(name));
+        }
+
+        @Override
+        public BankAccount.Mutable account(final CharSequence name) {
+            final BankAccount.Mutable account = accountByName.get(toAsciiString(name));
             if (account != null) {
                 return account;
             }
@@ -70,17 +78,20 @@ public interface Bank {
         }
 
         @Override
-        public BankAccount.Mutable openAccount(final String name) {
-            final BankAccount.Mutable account = new BankAccount.Default(this, name);
-            if (accountByName.putIfAbsent(name, account) != null) {
+        public BankAccount.Mutable openAccount(final CharSequence name) {
+            if (accountByName.containsKey(toAsciiString(name))) {
                 throw new IllegalArgumentException("Account already exists: " + name);
             }
+            final AsciiString asciiName = new AsciiString(name);
+            final BankAccount.Mutable account = new BankAccount.Default(this, name.toString());
+            accountByName.put(asciiName, account);
+            accounts.add(asciiName);
             return account;
         }
 
         @Override
-        public BankAccount.Mutable closeAccount(final String name) {
-            final BankAccount.Mutable account = accountByName.remove(name);
+        public BankAccount.Mutable closeAccount(final CharSequence name) {
+            final BankAccount.Mutable account = accountByName.remove(toAsciiString(name));
             if (account != null) {
                 return account;
             }
@@ -88,12 +99,13 @@ public interface Bank {
         }
 
         @Override
-        public BankEvent process(final CreateAccountCommand command) {
-            final String account = command.name;
+        public void createAccount(final CreateAccountCommand command, final BankEventRouter router) {
+            final CharSequence account = command.name();
             if (hasAccount(account)) {
-                return new AccountCreationRejectedEvent(account, "account with this name already exists");
+                router.routeAccountCreationRejectedEvent(account, "Account cannot be created since another account with the same name already exists");
+                return;
             }
-            return new AccountCreatedEvent(account);
+            router.routeAccountCreatedEvent(account);
         }
     }
 }

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2024 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,42 +23,25 @@
  */
 package org.tools4j.elara.samples.bank.command;
 
-import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
-import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.samples.bank.flyweight.FlyweightCreateAccountCommand;
 
-import static java.util.Objects.requireNonNull;
-
-public class CreateAccountCommand implements BankCommand {
-    public static final CommandType TYPE = CommandType.CreateAccount;
-
-    public final String name;
-    public CreateAccountCommand(String name) {
-        this.name = requireNonNull(name);
-    }
+public interface CreateAccountCommand extends BankCommand {
+    CommandType TYPE = CommandType.CreateAccount;
 
     @Override
-    public CommandType type() {
+    default CommandType type() {
         return TYPE;
     }
-    @Override
-    public DirectBuffer encode() {
-        final MutableDirectBuffer buffer = new ExpandableArrayBuffer(
-                Integer.BYTES + name.length());
-        buffer.putStringAscii(0, name);
-        return buffer;
+
+    CharSequence name();
+
+    interface MutableCreateAccountCommand extends CreateAccountCommand {
+        MutableCreateAccountCommand name(CharSequence account);
     }
 
-    public String toString() {
-        return TYPE + "{name=" + name + "}";
-    }
-
-    public static CreateAccountCommand decode(final DirectBuffer payload) {
-        final String name = payload.getStringAscii(0);
-        return new CreateAccountCommand(name);
-    }
-
-    public static String toString(final DirectBuffer payload) {
-        return decode(payload).toString();
+    static CreateAccountCommand create(final CharSequence name) {
+        return new FlyweightCreateAccountCommand().wrap(new ExpandableArrayBuffer(), 0)
+                .name(name);
     }
 }

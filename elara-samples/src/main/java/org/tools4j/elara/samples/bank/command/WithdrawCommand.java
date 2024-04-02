@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2024 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,48 +23,28 @@
  */
 package org.tools4j.elara.samples.bank.command;
 
-import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
-import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.samples.bank.flyweight.FlyweightWithdrawCommand;
 
-import static java.util.Objects.requireNonNull;
-
-public class WithdrawCommand implements BankCommand {
-    public static final CommandType TYPE = CommandType.Withdraw;
-    public final String account;
-    public final double amount;
-
-    public WithdrawCommand(String account, final double amount) {
-        this.account = requireNonNull(account);
-        this.amount = amount;
-    }
+public interface WithdrawCommand extends BankCommand {
+    CommandType TYPE = CommandType.Withdraw;
 
     @Override
-    public CommandType type() {
+    default CommandType type() {
         return TYPE;
     }
 
-    @Override
-    public DirectBuffer encode() {
-        final MutableDirectBuffer buffer = new ExpandableArrayBuffer(
-                Integer.BYTES + account.length() + Double.BYTES
-        );
-        buffer.putStringAscii(0, account);
-        buffer.putDouble(4 + account.length(), amount);
-        return buffer;
+    CharSequence account();
+    double amount();
+
+    interface MutableWithdrawCommand extends WithdrawCommand {
+        MutableWithdrawCommand account(CharSequence account);
+        MutableWithdrawCommand amount(double amount);
     }
 
-    public String toString() {
-        return TYPE + "{account=" + account + ", amount=" + amount + "}";
-    }
-
-    public static WithdrawCommand decode(final DirectBuffer payload) {
-        final String account = payload.getStringAscii(0);
-        final double amount = payload.getDouble(4 + account.length());
-        return new WithdrawCommand(account, amount);
-    }
-
-    public static String toString(final DirectBuffer payload) {
-        return decode(payload).toString();
+    static WithdrawCommand create(final CharSequence account, final double amount) {
+        return new FlyweightWithdrawCommand().wrap(new ExpandableArrayBuffer(), 0)
+                .account(account)
+                .amount(amount);
     }
 }

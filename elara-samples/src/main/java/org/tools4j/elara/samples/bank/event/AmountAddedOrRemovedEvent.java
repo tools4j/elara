@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2024 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,49 +23,19 @@
  */
 package org.tools4j.elara.samples.bank.event;
 
-import org.agrona.DirectBuffer;
-import org.agrona.ExpandableArrayBuffer;
-import org.agrona.MutableDirectBuffer;
-
-import static java.util.Objects.requireNonNull;
-
-public class AmountAddedOrRemovedEvent implements BankEvent {
-    public static final EventType TYPE = EventType.AmountAddedOrRemoved;
-
-    public final String account;
-    public final double change;
-    public AmountAddedOrRemovedEvent(final String account, final double change) {
-        this.account = requireNonNull(account);
-        this.change = change;
-    }
+public interface AmountAddedOrRemovedEvent extends BankEvent {
+    EventType TYPE = EventType.AmountAddedOrRemoved;
 
     @Override
-    public EventType type() {
+    default EventType type() {
         return TYPE;
     }
 
-    @Override
-    public DirectBuffer encode() {
-        final MutableDirectBuffer buffer = new ExpandableArrayBuffer(
-                        + Integer.BYTES + account.length() +
-                        + Double.BYTES
-                );
-        buffer.putStringAscii(0, account);
-        buffer.putDouble(4 + account.length(), change);
-        return buffer;
-    }
+    CharSequence account();
+    double change();
 
-    public String toString() {
-        return TYPE + "{account=" + account + ", change=" + change + "}";
-    }
-
-    public static AmountAddedOrRemovedEvent decode(final DirectBuffer payload) {
-        final String account = payload.getStringAscii(0);
-        final double change = payload.getDouble(4 + account.length());
-        return new AmountAddedOrRemovedEvent(account, change);
-    }
-
-    public static String toString(final DirectBuffer payload) {
-        return decode(payload).toString();
+    interface MutableAmountAddedOrRemovedEvent extends AmountAddedOrRemovedEvent {
+        MutableAmountAddedOrRemovedEvent account(CharSequence account);
+        MutableAmountAddedOrRemovedEvent change(double change);
     }
 }

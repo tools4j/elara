@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2024 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,43 +23,17 @@
  */
 package org.tools4j.elara.samples.bank.event;
 
-import org.agrona.DirectBuffer;
-import org.agrona.ExpandableArrayBuffer;
-import org.agrona.MutableDirectBuffer;
-
-import static java.util.Objects.requireNonNull;
-
-public class AccountCreatedEvent implements BankEvent {
-    public static final EventType TYPE = EventType.AccountCreated;
-
-    public final String name;
-    public AccountCreatedEvent(String name) {
-        this.name = requireNonNull(name);
-    }
+public interface AccountCreatedEvent extends BankEvent {
+    EventType TYPE = EventType.AccountCreated;
 
     @Override
-    public EventType type() {
+    default EventType type() {
         return TYPE;
     }
 
-    @Override
-    public DirectBuffer encode() {
-        final MutableDirectBuffer buffer = new ExpandableArrayBuffer(
-                Integer.BYTES + name.length());
-        buffer.putStringAscii(0, name);
-        return buffer;
-    }
+    CharSequence name();
 
-    public String toString() {
-        return TYPE + "{name=" + name + "}";
-    }
-
-    public static AccountCreatedEvent decode(final DirectBuffer payload) {
-        final String name = payload.getStringAscii(0);
-        return new AccountCreatedEvent(name);
-    }
-
-    public static String toString(final DirectBuffer payload) {
-        return decode(payload).toString();
+    interface MutableAccountCreatedEvent extends AccountCreatedEvent {
+        MutableAccountCreatedEvent name(CharSequence name);
     }
 }

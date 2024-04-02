@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2024 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,6 @@
  */
 package org.tools4j.elara.samples.bank;
 
-import org.agrona.DirectBuffer;
 import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.app.type.AllInOneApp;
 import org.tools4j.elara.command.Command;
@@ -38,10 +37,9 @@ import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.samples.bank.actor.Accountant;
 import org.tools4j.elara.samples.bank.actor.Teller;
 import org.tools4j.elara.samples.bank.command.BankCommand;
-import org.tools4j.elara.samples.bank.command.CommandType;
-import org.tools4j.elara.samples.bank.event.EventType;
 import org.tools4j.elara.samples.bank.state.Bank;
 import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.send.CommandSender.SendingContext;
 import org.tools4j.elara.store.InMemoryStore;
 import org.tools4j.elara.store.MessageStore;
 
@@ -55,10 +53,11 @@ public class BankApplication implements AllInOneApp, Output {
     private final Bank.Mutable bank = new Bank.Default();
     private final Teller teller = new Teller(bank);
     private final Accountant accountant = new Accountant(bank);
+    private final PayloadPrinter flyweightString = new PayloadPrinter();
 
     private final DuplicateHandler duplicateHandler = command -> {
         System.out.println("-----------------------------------------------------------");
-        System.out.println("skipping: " + command + ", payload=" + payloadFor(command));
+        flyweightString.reset().append("skipping: ").append(command).println();
     };
 
     public Bank bank() {
@@ -94,42 +93,32 @@ public class BankApplication implements AllInOneApp, Output {
     @Override
     public void onCommand(final Command command, final EventRouter router) {
         System.out.println("-----------------------------------------------------------");
-        System.out.println("processing: " + command + ", payload=" + payloadFor(command));
+        flyweightString.reset().append("processing: ").append(command).println();
         teller.onCommand(command, router);
     }
 
     @Override
     public void onEvent(final Event event) {
-        System.out.println("applying: " + event + ", payload=" + payloadFor(event));
+        flyweightString.reset().append("applying: ").append(event).println();
         accountant.onEvent(event);
         printBankAccounts(bank);
     }
 
-    private static void printBankAccounts(final Bank bank) {
+    private void printBankAccounts(final Bank bank) {
         System.out.println("bank accounts:");
-        for (final String account : bank.accounts()) {
-            System.out.println("..." + account + ":\tbalance=" + bank.account(account).balance());
+        for (int i = 0; i < bank.accounts().size(); i++) {
+            final CharSequence account = bank.accounts().get(i);
+            flyweightString.reset()
+                    .append("...").append(account)
+                    .append(":\tbalance=").append(bank.account(account).balance())
+                    .println();
         }
     }
 
     @Override
     public Ack publish(final Event event, final boolean replay, final int retry) {
-        System.out.println("published: " + event + ", replay=" + replay + ", retry=" + retry + ", payload=" + payloadFor(event));
+        flyweightString.reset().append("published: ").append(event).append(", replay=").append(replay).append(", retry=").append(retry).println();
         return Ack.COMMIT;
-    }
-
-    private String payloadFor(final Command command) {
-        if (command.isApplication()) {
-            return CommandType.toString(command);
-        }
-        return "(unknown)";
-    }
-
-    private String payloadFor(final Event event) {
-        if (event.isApplication()) {
-            return EventType.toString(event);
-        }
-        return "(unknown)";
     }
 
     private static class CommandInput implements SingleSourceInput {
@@ -144,8 +133,10 @@ public class BankApplication implements AllInOneApp, Output {
             final BankCommand cmd = commands.poll();
             if (cmd != null) {
                 final int type = cmd.type().value;
-                final DirectBuffer encoded = cmd.encode();
-                sender.sendCommand(type, encoded, 0, encoded.capacity());
+                try (final SendingContext context = sender.sendingCommand(type)) {
+                    final int length = cmd.encodeTo(context.buffer(), 0);
+                    context.send(length);
+                }
                 return 1;
             }
             return 0;

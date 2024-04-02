@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2024 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,14 +23,9 @@
  */
 package org.tools4j.elara.samples.bank.state;
 
-import org.tools4j.elara.command.Command;
-import org.tools4j.elara.samples.bank.command.CommandType;
 import org.tools4j.elara.samples.bank.command.DepositCommand;
 import org.tools4j.elara.samples.bank.command.TransferCommand;
 import org.tools4j.elara.samples.bank.command.WithdrawCommand;
-import org.tools4j.elara.samples.bank.event.AmountAddedOrRemovedEvent;
-import org.tools4j.elara.samples.bank.event.BankEvent;
-import org.tools4j.elara.samples.bank.event.TransactionRejectedEvent;
 
 import static java.util.Objects.requireNonNull;
 
@@ -39,7 +34,9 @@ public interface BankAccount {
     String name();
     double balance();
 
-    BankEvent[] process(CommandType commandType, Command command);
+    void deposit(DepositCommand command, BankEventRouter router);
+    void withdraw(WithdrawCommand command, BankEventRouter router);
+    boolean transfer(TransferCommand command, BankEventRouter router);
 
     interface Mutable extends BankAccount {
         void add(double value);
@@ -80,73 +77,89 @@ public interface BankAccount {
         }
 
         @Override
-        public BankEvent[] process(final CommandType commandType, final Command command) {
-            switch (commandType) {
-                case Deposit:
-                    return new BankEvent[] {
-                            process(DepositCommand.decode(command.payload()))
-                    };
-                case Withdraw:
-                    return new BankEvent[] {
-                            process(WithdrawCommand.decode(command.payload()))
-                    };
-                case Transfer:
-                    return process(TransferCommand.decode(command.payload()));
-                default:
-                    throw new IllegalArgumentException("Unsupported command: " + command);
+        public void deposit(final DepositCommand command, final BankEventRouter router) {
+            final CharSequence account = command.account();
+            final double amount = command.amount();
+            validateAccount(account);
+            if (amount <= 0) {
+                router.routeTransactionRejectedEvent(account, "Invalid deposit amount");
+                return;
+            }
+            router.routeAmountAddedOrRemovedEvent(account, amount);
+        }
+
+        @Override
+        public void withdraw(final WithdrawCommand command, final BankEventRouter router) {
+            final CharSequence account = command.account();
+            final double amount = command.amount();
+            validateAccount(account);
+            if (amount <= 0) {
+                router.routeTransactionRejectedEvent(account, "Invalid withdrawal amount");
+                return;
+            }
+            if (amount > balance) {
+                router.routeTransactionRejectedEvent(account, "Insufficient funds for given withdrawal amount");
+                return;
+            }
+            router.routeAmountAddedOrRemovedEvent(account, -amount);
+        }
+
+        @Override
+        public boolean transfer(final TransferCommand command, final BankEventRouter router) {
+            final CharSequence from = command.from();
+            final CharSequence to = command.to();
+            final double amount = command.amount();
+            final boolean isFrom = isThisAccount(from);
+            final boolean isTo = isThisAccount(to);
+            if (!isFrom && !isTo) {
+                //coding error, wrong account invoked
+                throw new IllegalArgumentException("Invalid account: expected " + name +
+                        " but found transfer from " + from + " to " + to);
+            }
+            if (isFrom && isTo) {
+                router.routeTransactionRejectedEvent(name, "Transfer from and to account are identical");
+                return false;
+            }
+            if (amount <= 0) {
+                router.routeTransactionRejectedEvent(name, "Invalid transfer amount");
+                return false;
+            }
+            if (isFrom && amount > balance) {
+                router.routeTransactionRejectedEvent(name, "Insufficient funds for given transfer amount");
+                return false;
+            }
+            router.routeAmountAddedOrRemovedEvent(name, isFrom ? -amount : amount);
+            return true;
+        }
+
+        private void validateAccount(final CharSequence account) {
+            if (!isThisAccount(account)) {
+                //coding error, wrong account invoked
+                throw new IllegalArgumentException("Invalid account: expected " + name + " but found " + account);
             }
         }
 
-        public BankEvent process(final DepositCommand command) {
-            validateAccount(command.account);
-            if (command.amount <= 0) {
-                return new TransactionRejectedEvent(command.account, "Invalid deposit amount: " + command.amount);
-            }
-            return new AmountAddedOrRemovedEvent(command.account, command.amount);
+        private boolean isThisAccount(final CharSequence account) {
+            return equalCharSequences(name, account);
         }
 
-        public BankEvent process(final WithdrawCommand command) {
-            validateAccount(command.account);
-            if (command.amount <= 0) {
-                return new TransactionRejectedEvent(command.account, "Invalid withdraw amount: " + command.amount);
+        private boolean equalCharSequences(final CharSequence ch1, final CharSequence ch2) {
+            if (ch1 == ch2) {
+                return true;
             }
-            if (command.amount > balance) {
-                return new TransactionRejectedEvent(command.account, "Withdrawal results in negative account balance: " +
-                        "current balance=" + balance + ", attempted withdrawal amount=" + command.amount);
+            if (ch1 == null || ch2 == null) {
+                return false;
             }
-            return new AmountAddedOrRemovedEvent(command.account, -command.amount);
-        }
-
-        public BankEvent[] process(final TransferCommand command) {
-            validateAccount(command.from);
-            if (command.amount <= 0) {
-                return new BankEvent[] {new TransactionRejectedEvent(
-                        command.from, "Invalid transfer amount: " + command.amount
-                )};
+            final int length;
+            if ((length = ch1.length()) != ch2.length()) {
+                return false;
             }
-            if (command.amount > balance) {
-                return new BankEvent[] {new TransactionRejectedEvent(
-                        command.from, "Transfer results in negative account balance: "
-                        + "current balance=" + balance + ", attempted transfer amount="
-                        + command.amount)
-                };
+            for (int i = 0; i < length; i++) {
+                if (ch1.charAt(i) != ch2.charAt(i)) {
+                    return false;
+                }
             }
-            if (!bank.hasAccount(command.to)) {
-                return new BankEvent[] {new TransactionRejectedEvent(
-                        command.to, "Invalid target account in transfer"
-                )};
-            }
-            return new BankEvent[] {
-                    new AmountAddedOrRemovedEvent(command.from, -command.amount),
-                    new AmountAddedOrRemovedEvent(command.to, command.amount),
-            };
-        }
-
-        private void validateAccount(final String account) {
-            if (!this.name.equals(account)) {
-                throw new IllegalArgumentException("Invalid account: expected=" + name +
-                        " but found account=" + account);
-            }
+            return true;
         }
     }
 }

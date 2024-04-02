@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2024 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,13 +28,20 @@ import org.tools4j.elara.event.Event;
 import org.tools4j.elara.samples.bank.event.AccountCreatedEvent;
 import org.tools4j.elara.samples.bank.event.AmountAddedOrRemovedEvent;
 import org.tools4j.elara.samples.bank.event.EventType;
+import org.tools4j.elara.samples.bank.flyweight.FlyweightAccountCreatedEvent;
+import org.tools4j.elara.samples.bank.flyweight.FlyweightAmountAddedOrRemovedEvent;
 import org.tools4j.elara.samples.bank.state.Bank;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * The accountant performs the actual modifying operation on the bank based on events.
+ */
 public class Accountant implements EventApplier {
 
     private final Bank.Mutable bank;
+    private final FlyweightAccountCreatedEvent accountCreatedEvent = new FlyweightAccountCreatedEvent();
+    private final FlyweightAmountAddedOrRemovedEvent amountAddedOrRemovedEvent = new FlyweightAmountAddedOrRemovedEvent();
 
     public Accountant(final Bank.Mutable bank) {
         this.bank = requireNonNull(bank);
@@ -46,13 +53,13 @@ public class Accountant implements EventApplier {
             final EventType type = EventType.byValue(event.payloadType());
             switch (type) {
                 case AccountCreated: {
-                    final AccountCreatedEvent evt = AccountCreatedEvent.decode(event.payload());
-                    bank.openAccount(evt.name);
+                    final AccountCreatedEvent evt = accountCreatedEvent.wrap(event);
+                    bank.openAccount(evt.name());
                     break;
                 }
                 case AmountAddedOrRemoved: {
-                    final AmountAddedOrRemovedEvent evt = AmountAddedOrRemovedEvent.decode(event.payload());
-                    bank.account(evt.account).add(evt.change);
+                    final AmountAddedOrRemovedEvent evt = amountAddedOrRemovedEvent.wrap(event);
+                    bank.account(evt.account()).add(evt.change());
                     break;
                 }
             }

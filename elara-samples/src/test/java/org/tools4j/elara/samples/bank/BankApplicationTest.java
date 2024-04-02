@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2024 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -128,34 +128,34 @@ public class BankApplicationTest {
 
     private Queue<BankCommand> initCommandQueue() {
         final Queue<BankCommand> commands = new ConcurrentLinkedQueue<>();
-        commands.add(new CreateAccountCommand("Marco"));
-        commands.add(new CreateAccountCommand("Henry"));
-        commands.add(new CreateAccountCommand("Frank"));
+        commands.add(CreateAccountCommand.create("Marco"));
+        commands.add(CreateAccountCommand.create("Henry"));
+        commands.add(CreateAccountCommand.create("Frank"));
         return commands;
     }
 
     private void injectSomeCommands(final Queue<BankCommand> commands) {
         sleep(500);
         //WHEN: deposits
-        commands.add(new DepositCommand("Marco", 1000.0));
-        commands.add(new DepositCommand("Frank", 200.0));
+        commands.add(DepositCommand.create("Marco", 1000.0));
+        commands.add(DepositCommand.create("Frank", 200.0));
         sleep(500);
 
         //WHEN: deposits + withdrawals
-        commands.add(new DepositCommand("Marco", 200.0));
-        commands.add(new WithdrawCommand("Frank", 50.0));
+        commands.add(DepositCommand.create("Marco", 200.0));
+        commands.add(WithdrawCommand.create("Frank", 50.0));
         sleep(500);
 
         //WHEN: illegal stuff
-        commands.add(new WithdrawCommand("Henry", 1.0));
-        commands.add(new DepositCommand("Lawry", 50.0));
-        commands.add(new TransferCommand("Frank", "Marco", 200.0));
+        commands.add(WithdrawCommand.create("Henry", 1.0));
+        commands.add(DepositCommand.create("Lawry", 50.0));
+        commands.add(TransferCommand.create("Frank", "Marco", 200.0));
 
         //WHEN: other stuff that works
-        commands.add(new CreateAccountCommand("Lawry"));
-        commands.add(new DepositCommand("Lawry", 50.0));
-        commands.add(new TransferCommand("Marco", "Frank", 100.0));
-        commands.add(new WithdrawCommand("Frank", 200.0));
+        commands.add(CreateAccountCommand.create("Lawry"));
+        commands.add(DepositCommand.create("Lawry", 50.0));
+        commands.add(TransferCommand.create("Marco", "Frank", 100.0));
+        commands.add(WithdrawCommand.create("Frank", 200.0));
     }
 
     private void assertBankAccounts(final Bank bank) {

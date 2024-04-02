@@ -21,19 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.samples.bank.command;
+package org.tools4j.elara.samples.bank.flyweight;
 
-import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.event.Event;
+import org.tools4j.elara.samples.bank.event.BankEvent;
 
-public interface BankCommand {
-    CommandType type();
-
+public interface FlyweightBankEvent extends BankEvent, BankFlyweight {
     /**
-     * Encodes the current command payload to the given buffer.
-     * @param dstBuffer the buffer to encode to
-     * @param dstOffset the offset in the buffer where the first byte is written to
-     * @return the total number of bytes written to the buffer
+     * Wrap the given event to decode its payload.  Throws an exception if it is the wrong payload type.
+     * @param event the event to wrap for decoding
+     * @return this wrapped bank event
+     * @throws IllegalArgumentException if event payload type is not matching {@link #type()}
      */
-    int encodeTo(MutableDirectBuffer dstBuffer, int dstOffset);
-
+    FlyweightBankEvent wrap(Event event);
 }

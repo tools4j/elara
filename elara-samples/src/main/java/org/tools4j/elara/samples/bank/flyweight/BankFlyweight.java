@@ -21,19 +21,32 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.samples.bank.command;
+package org.tools4j.elara.samples.bank.flyweight;
 
 import org.agrona.MutableDirectBuffer;
+import org.tools4j.elara.logging.Printable;
 
-public interface BankCommand {
-    CommandType type();
+/**
+ * A flyweight object used by the banking application, usually a command or event.
+ */
+public interface BankFlyweight extends Printable {
+    /**
+     * Reset buffer, offset and length.
+     * @return this flyweight.
+     */
+    BankFlyweight reset();
 
     /**
-     * Encodes the current command payload to the given buffer.
-     * @param dstBuffer the buffer to encode to
-     * @param dstOffset the offset in the buffer where the first byte is written to
-     * @return the total number of bytes written to the buffer
+     * Wraps the given buffer to start encoding.
+     * @param buffer the buffer to encode to
+     * @param offset the offset in the buffer where the first byte is written to
+     * @return this flyweight to do the encoding
      */
-    int encodeTo(MutableDirectBuffer dstBuffer, int dstOffset);
+    BankFlyweight wrap(MutableDirectBuffer buffer, int offset);
 
+    /**
+     * Returns the encoding length in bytes.  For variable length types the length may change if the content changes.
+     * @return the total number of bytes that this flyweight occupies in the buffer with the current values
+     */
+    int encodingLength();
 }

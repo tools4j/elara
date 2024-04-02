@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2024 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,24 +23,31 @@
  */
 package org.tools4j.elara.samples.bank.actor;
 
-import org.agrona.DirectBuffer;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.samples.bank.command.CommandType;
-import org.tools4j.elara.samples.bank.command.CreateAccountCommand;
-import org.tools4j.elara.samples.bank.command.DepositCommand;
-import org.tools4j.elara.samples.bank.command.TransferCommand;
-import org.tools4j.elara.samples.bank.command.WithdrawCommand;
-import org.tools4j.elara.samples.bank.event.BankEvent;
-import org.tools4j.elara.samples.bank.event.TransactionRejectedEvent;
+import org.tools4j.elara.samples.bank.flyweight.FlyweightCreateAccountCommand;
+import org.tools4j.elara.samples.bank.flyweight.FlyweightDepositCommand;
+import org.tools4j.elara.samples.bank.flyweight.FlyweightTransferCommand;
+import org.tools4j.elara.samples.bank.flyweight.FlyweightWithdrawCommand;
 import org.tools4j.elara.samples.bank.state.Bank;
+import org.tools4j.elara.samples.bank.state.BankAccount;
+import org.tools4j.elara.samples.bank.state.BankEventRouter;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * The teller validates commands and sends instructions in form of events to the accountant to execute.
+ */
 public class Teller implements CommandProcessor {
 
     private final Bank bank;
+    private final FlyweightCreateAccountCommand createAccountCommand = new FlyweightCreateAccountCommand();
+    private final FlyweightDepositCommand depositCommand = new FlyweightDepositCommand();
+    private final FlyweightWithdrawCommand withdrawCommand = new FlyweightWithdrawCommand();
+    private final FlyweightTransferCommand transferCommand = new FlyweightTransferCommand();
+    private final BankEventRouter router = new BankEventRouter();
 
     public Teller(final Bank bank) {
         this.bank = requireNonNull(bank);
@@ -54,44 +61,53 @@ public class Teller implements CommandProcessor {
         }
     }
 
-    private void onCommand(final CommandType type, final Command command, final EventRouter router) {
-        if (type == CommandType.CreateAccount) {
-            routeEvent(
-                    bank.process(CreateAccountCommand.decode(command.payload())),
-                    router
-            );
-            return;
-        }
-        final String account;
-        switch (type) {
-            case Deposit:
-                account = DepositCommand.decode(command.payload()).account;
-                break;
-            case Withdraw:
-                account = WithdrawCommand.decode(command.payload()).account;
-                break;
-            case Transfer:
-                account = TransferCommand.decode(command.payload()).from;
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid command: " + command);
-        }
-        if (!bank.hasAccount(account)) {
-            routeEvent(
-                    new TransactionRejectedEvent(account, type + " account is invalid"),
-                    router
-            );
-            return;
-        }
-        final BankEvent[] events = bank.account(account).process(type, command);
-        for (final BankEvent event : events) {
-            routeEvent(event, router);
+    private void onCommand(final CommandType type, final Command command, final EventRouter eventRouter) {
+        router.init(eventRouter);
+        try {
+            if (type == CommandType.CreateAccount) {
+                bank.createAccount(createAccountCommand.wrap(command), router);
+                return;
+            }
+            final BankAccount account1;
+            final BankAccount account2;
+            switch (type) {
+                case Deposit:
+                    depositCommand.wrap(command);
+                    account1 = validateAndGetAccount(depositCommand.account());
+                    if (account1 != null) {
+                        account1.deposit(depositCommand, router);
+                    }
+                    break;
+                case Withdraw:
+                    withdrawCommand.wrap(command);
+                    account1 = validateAndGetAccount(withdrawCommand.account());
+                    if (account1 != null) {
+                        account1.withdraw(withdrawCommand, router);
+                    }
+                    break;
+                case Transfer:
+                    transferCommand.wrap(command);
+                    account1 = validateAndGetAccount(transferCommand.from());
+                    account2 = validateAndGetAccount(transferCommand.to());
+                    if (account1 != null && account2 != null) {
+                        if (account1.transfer(transferCommand, router)) {
+                            account2.transfer(transferCommand, router);
+                        }
+                    }
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid command: " + command);
+            }
+        } finally {
+            router.reset();
         }
     }
 
-    private void routeEvent(final BankEvent event, final EventRouter router) {
-        final int type = event.type().value;
-        final DirectBuffer encoded = event.encode();
-        router.routeEvent(type, encoded, 0, encoded.capacity());
+    private BankAccount validateAndGetAccount(final CharSequence account) {
+        if (bank.hasAccount(account)) {
+            return bank.account(account);
+        }
+        router.routeTransactionRejectedEvent(account, "Account does not exist");
+        return null;
     }
 }

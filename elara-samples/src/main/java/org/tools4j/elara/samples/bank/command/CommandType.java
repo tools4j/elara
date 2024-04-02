@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2023 tools4j.org (Marco Terzer, Anton Anufriev)
+ * Copyright (c) 2020-2024 tools4j.org (Marco Terzer, Anton Anufriev)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +23,6 @@
  */
 package org.tools4j.elara.samples.bank.command;
 
-import org.tools4j.elara.command.Command;
-
 public enum CommandType {
     CreateAccount(1),
     Deposit(2),
@@ -42,24 +40,6 @@ public enum CommandType {
             }
         }
         throw new IllegalArgumentException("Invalid command type value: " + value);
-    }
-
-    public static String toString(final Command command) {
-        if (command.isApplication()) {
-            switch (CommandType.byValue(command.payloadType())) {
-                case CreateAccount:
-                    return CreateAccountCommand.toString(command.payload());
-                case Deposit:
-                    return DepositCommand.toString(command.payload());
-                case Withdraw:
-                    return WithdrawCommand.toString(command.payload());
-                case Transfer:
-                    return TransferCommand.toString(command.payload());
-                default:
-                    //fallthrough
-            }
-        }
-        return "(unknown)";
     }
 
     private static CommandType[] VALUES = values();
