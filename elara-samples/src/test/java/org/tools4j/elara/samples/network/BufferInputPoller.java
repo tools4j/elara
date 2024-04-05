@@ -21,17 +21,37 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.input;
+package org.tools4j.elara.samples.network;
 
+import org.tools4j.elara.input.InputPoller;
+import org.tools4j.elara.send.CommandSender.SendingContext;
 import org.tools4j.elara.source.SourceContext;
-import org.tools4j.elara.source.SourceContextProvider;
-import org.tools4j.elara.step.AgentStep;
 
-@FunctionalInterface
-public interface UniSourceInput extends Input {
-    @Override
-    default AgentStep inputPollerStep(final SourceContextProvider sourceContextProvider) {
-        return Input.single(this).inputPollerStep(sourceContextProvider);
+import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.samples.network.Buffer.CONSUMED_NOTHING;
+
+public class BufferInputPoller implements InputPoller {
+
+    private final Buffer buffer;
+
+    public BufferInputPoller(final Buffer buffer) {
+        this.buffer = requireNonNull(buffer);
     }
-    int poll(SourceContext sourceContext);
+
+    public Buffer buffer() {
+        return buffer;
+    }
+
+    @Override
+    public int poll(final SourceContext sourceContext) {
+        try (final SendingContext context = sourceContext.commandSender().sendingCommand()) {
+            final int consumed = buffer.consume(context.buffer(), 0);
+            if (consumed == CONSUMED_NOTHING) {
+                context.abort();
+                return 0;
+            }
+            context.send(consumed);
+            return 1;
+        }
+    }
 }

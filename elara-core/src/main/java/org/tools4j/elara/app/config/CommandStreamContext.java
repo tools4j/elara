@@ -23,18 +23,10 @@
  */
 package org.tools4j.elara.app.config;
 
-import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.MultiSourceInput;
-import org.tools4j.elara.input.SingleSourceInput;
-import org.tools4j.elara.input.UniSourceInput;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.stream.MessageSender;
 
 public interface CommandStreamContext extends CommandStreamConfig {
     CommandStreamContext commandStore(MessageStore commandStore);
     CommandStreamContext commandSender(MessageSender commandStream);
-    CommandStreamContext input(Input input);
-    CommandStreamContext input(MultiSourceInput input);
-    CommandStreamContext input(int sourceId, UniSourceInput input);
-    CommandStreamContext input(int sourceId, SingleSourceInput input);
 }

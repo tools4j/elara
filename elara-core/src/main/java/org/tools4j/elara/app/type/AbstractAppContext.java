@@ -35,14 +35,14 @@ import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.exception.ExceptionLogger;
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.input.InputPoller;
 import org.tools4j.elara.input.MultiSourceInput;
 import org.tools4j.elara.input.SingleSourceInput;
-import org.tools4j.elara.input.UniSourceInput;
 import org.tools4j.elara.logging.Logger.Factory;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.api.PluginSpecification.Installer;
-import org.tools4j.elara.plugin.boot.BootCommandInput;
+import org.tools4j.elara.plugin.boot.BootCommandInputPoller;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.time.TimeSource;
 
@@ -89,7 +89,7 @@ abstract class AbstractAppContext<T extends AbstractAppContext<T>> implements Ap
     }
 
     public T input(final Input input) {
-        return input(input, input instanceof BootCommandInput);
+        return input(input, false);
     }
 
     private T input(final Input input, final boolean isBoot) {
@@ -104,12 +104,12 @@ abstract class AbstractAppContext<T extends AbstractAppContext<T>> implements Ap
         return input(Input.multi(input), false);
     }
 
-    public T input(final int sourceId, final UniSourceInput input) {
-        return input(Input.single(sourceId, input), input instanceof BootCommandInput);
+    public T input(final SingleSourceInput input) {
+        return input(Input.single(input), false);
     }
 
-    public T input(final int sourceId, final SingleSourceInput input) {
-        return input(Input.single(sourceId, input), input instanceof BootCommandInput);
+    public T input(final int sourceId, final InputPoller inputPoller) {
+        return input(Input.single(sourceId, inputPoller), inputPoller instanceof BootCommandInputPoller);
     }
 
     public Output output() {

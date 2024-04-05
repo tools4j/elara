@@ -90,7 +90,7 @@ public class TimerPlugin implements SystemPlugin<MutableTimerState> {
 
     /**
      * Returns how many poll invocations are skipped before re-checking timeouts of timers in the
-     * {@link TimerSignalInput}.
+     * {@link TimerSignalPoller}.
      *
      * @return  the polling interval after which timers are checked for expiry, one if every cycle should check, or a
      *          positive power of two to check less frequently

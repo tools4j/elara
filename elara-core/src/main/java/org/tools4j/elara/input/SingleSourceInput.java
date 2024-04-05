@@ -23,16 +23,14 @@
  */
 package org.tools4j.elara.input;
 
-import org.tools4j.elara.app.handler.CommandTracker;
-import org.tools4j.elara.send.CommandSender;
-import org.tools4j.elara.source.SourceContext;
+import org.tools4j.elara.source.SourceContextProvider;
+import org.tools4j.elara.step.AgentStep;
 
-@FunctionalInterface
-public interface SingleSourceInput extends UniSourceInput {
+public interface SingleSourceInput extends Input, InputPoller {
+    int sourceId();
+
     @Override
-    default int poll(final SourceContext sourceContext) {
-        return poll(sourceContext.commandSender(), sourceContext.commandTracker());
+    default AgentStep inputPollerStep(final SourceContextProvider sourceContextProvider) {
+        return Input.single(this).inputPollerStep(sourceContextProvider);
     }
-
-    int poll(CommandSender sender, CommandTracker commandTracker);
 }

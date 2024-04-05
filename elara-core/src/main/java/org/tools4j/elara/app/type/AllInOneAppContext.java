@@ -40,9 +40,9 @@ import org.tools4j.elara.app.state.BaseStateProvider;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.input.InputPoller;
 import org.tools4j.elara.input.MultiSourceInput;
 import org.tools4j.elara.input.SingleSourceInput;
-import org.tools4j.elara.input.UniSourceInput;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
@@ -62,9 +62,9 @@ public interface AllInOneAppContext extends AllInOneAppConfig, AppContext, Comma
     @Override
     AllInOneAppContext input(MultiSourceInput input);
     @Override
-    AllInOneAppContext input(int sourceId, UniSourceInput input);
+    AllInOneAppContext input(SingleSourceInput input);
     @Override
-    AllInOneAppContext input(int sourceId, SingleSourceInput input);
+    AllInOneAppContext input(int sourceId, InputPoller inputPoller);
     @Override
     AllInOneAppContext output(Output output);
     @Override

@@ -24,17 +24,16 @@
 package org.tools4j.elara.samples.simple;
 
 import org.agrona.DirectBuffer;
-import org.agrona.ExpandableArrayBuffer;
-import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.app.type.AllInOneApp;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.input.SingleSourceInput;
+import org.tools4j.elara.input.InputPoller;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.send.CommandSender.SendingContext;
+import org.tools4j.elara.source.SourceContext;
 import org.tools4j.elara.store.InMemoryStore;
 
 import java.util.Queue;
@@ -48,7 +47,7 @@ public class SimpleStringApplication implements AllInOneApp, Output {
 
     public ElaraRunner launch(final Queue<String> inputQueue) {
         return launch(config -> config
-                .input(SOURCE_ID, new StringInput(inputQueue))
+                .input(SOURCE_ID, new StringInputPoller(inputQueue))
                 .commandStore(new InMemoryStore())
                 .eventStore(new InMemoryStore())
         );
@@ -78,20 +77,22 @@ public class SimpleStringApplication implements AllInOneApp, Output {
         return "(unknown)";
     }
 
-    private static class StringInput implements SingleSourceInput {
+    private static class StringInputPoller implements InputPoller {
         final Queue<String> strings;
 
-        StringInput(final Queue<String> strings) {
+        StringInputPoller(final Queue<String> strings) {
             this.strings = requireNonNull(strings);
         }
 
         @Override
-        public int poll(final CommandSender sender, final CommandTracker commandTracker) {
+        public int poll(final SourceContext sourceContext) {
             final String msg = strings.poll();
             if (msg != null) {
-                final MutableDirectBuffer buffer = new ExpandableArrayBuffer(msg.length() + 4);
-                final int length = buffer.putStringAscii(0, msg);
-                sender.sendCommand(TYPE_STRING, buffer, 0, length);
+                final CommandSender sender = sourceContext.commandSender();
+                try (final SendingContext context = sender.sendingCommand(TYPE_STRING)) {
+                    final int bytes = context.buffer().putStringAscii(0, msg);
+                    context.send(bytes);
+                }
                 return 1;
             }
             return 0;

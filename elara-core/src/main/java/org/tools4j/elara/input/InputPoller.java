@@ -21,38 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.samples.network;
+package org.tools4j.elara.input;
 
-import org.tools4j.elara.app.handler.CommandTracker;
-import org.tools4j.elara.input.SingleSourceInput;
-import org.tools4j.elara.send.CommandSender;
-import org.tools4j.elara.send.CommandSender.SendingContext;
+import org.tools4j.elara.source.SourceContext;
 
-import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.samples.network.Buffer.CONSUMED_NOTHING;
-
-public class BufferInput implements SingleSourceInput {
-
-    private final Buffer buffer;
-
-    public BufferInput(final Buffer buffer) {
-        this.buffer = requireNonNull(buffer);
-    }
-
-    public Buffer buffer() {
-        return buffer;
-    }
-
-    @Override
-    public int poll(final CommandSender sender, final CommandTracker commandTracker) {
-        try (final SendingContext context = sender.sendingCommand()) {
-            final int consumed = buffer.consume(context.buffer(), 0);
-            if (consumed == CONSUMED_NOTHING) {
-                context.abort();
-                return 0;
-            }
-            context.send(consumed);
-            return 1;
-        }
-    }
+@FunctionalInterface
+public interface InputPoller {
+    int poll(SourceContext sourceContext);
 }

@@ -24,26 +24,26 @@
 package org.tools4j.elara.plugin.timer;
 
 import org.agrona.BitUtil;
-import org.tools4j.elara.app.handler.CommandTracker;
-import org.tools4j.elara.input.SingleSourceInput;
+import org.tools4j.elara.input.InputPoller;
 import org.tools4j.elara.plugin.timer.Timer.Style;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.CommandSender.SendingContext;
+import org.tools4j.elara.source.SourceContext;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.timer.TimerCommands.SIGNAL_TIMER;
 
 /**
- * Input that is polled to send signal commands when a timer fires or expires.
+ * Input poller to send signal commands when a timer fires or expires.
  */
-public final class TimerSignalInput implements SingleSourceInput {
+public final class TimerSignalPoller implements InputPoller {
     private final TimeSource timeSource;
     private final TimerState timerState;
     private final int signalInputSkipMask;
     private int counter;
 
-    public TimerSignalInput(final TimeSource timeSource, final TimerState timerState, final int signalInputSkip) {
+    public TimerSignalPoller(final TimeSource timeSource, final TimerState timerState, final int signalInputSkip) {
         this.timeSource = requireNonNull(timeSource);
         this.timerState = requireNonNull(timerState);
         this.signalInputSkipMask = signalInputSkip - 1;
@@ -54,18 +54,19 @@ public final class TimerSignalInput implements SingleSourceInput {
     }
 
     @Override
-    public int poll(final CommandSender sender, final CommandTracker commandTracker) {
+    public int poll(final SourceContext sourceContext) {
         if ((counter & signalInputSkipMask) != 0) {
             counter++;
             return 0;
         }
-        if (commandTracker.hasInFlightCommand()) {
+        if (sourceContext.commandTracker().hasInFlightCommand()) {
             return 0;
         }
         counter++;
 
         final int index = timerState.indexOfNextDeadline();
         if (index >= 0 && timerState.deadline(index) <= timeSource.currentTime()) {
+            final CommandSender sender = sourceContext.commandSender();
             try (final SendingContext context = sender.sendingCommand(SIGNAL_TIMER)) {
                 final Style style = timerState.style(index);
                 final int length;

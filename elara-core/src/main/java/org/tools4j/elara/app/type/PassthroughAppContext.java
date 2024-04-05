@@ -34,9 +34,9 @@ import org.tools4j.elara.app.state.BaseStateProvider;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.input.Input;
+import org.tools4j.elara.input.InputPoller;
 import org.tools4j.elara.input.MultiSourceInput;
 import org.tools4j.elara.input.SingleSourceInput;
-import org.tools4j.elara.input.UniSourceInput;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
@@ -56,9 +56,9 @@ public interface PassthroughAppContext extends PassthroughAppConfig, AppContext,
     @Override
     PassthroughAppContext input(MultiSourceInput input);
     @Override
-    PassthroughAppContext input(int sourceId, UniSourceInput input);
+    PassthroughAppContext input(SingleSourceInput input);
     @Override
-    PassthroughAppContext input(int sourceId, SingleSourceInput input);
+    PassthroughAppContext input(int sourceId, InputPoller inputPoller);
     @Override
     PassthroughAppContext output(Output output);
     @Override

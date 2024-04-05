@@ -34,7 +34,6 @@ import org.tools4j.elara.app.type.AllInOneAppConfig;
 import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.UniSourceInput;
 import org.tools4j.elara.logging.Logger.Level;
 import org.tools4j.elara.logging.OutputStreamLogger;
 import org.tools4j.elara.plugin.api.Plugins;
@@ -50,7 +49,7 @@ import org.tools4j.elara.samples.hash.HashApplication.DefaultState;
 import org.tools4j.elara.samples.hash.HashApplication.ModifiableState;
 import org.tools4j.elara.samples.hash.HashApplication.State;
 import org.tools4j.elara.samples.network.Buffer;
-import org.tools4j.elara.samples.network.BufferInput;
+import org.tools4j.elara.samples.network.BufferInputPoller;
 import org.tools4j.elara.samples.network.DefaultServerTopology;
 import org.tools4j.elara.samples.network.RingBuffer;
 import org.tools4j.elara.samples.network.ServerTopology;
@@ -61,7 +60,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -131,10 +129,11 @@ public class ReplicatedHashApplicationTest {
         }
     }
 
-    private UniSourceInput[] inputs(final Buffer[] buffers) {
-        final UniSourceInput[] inputs = new UniSourceInput[buffers.length];
+    private Input[] inputs(final IdMapping sourceIds, final Buffer[] buffers) {
+        final Input[] inputs = new Input[buffers.length];
         for (int i = 0; i < inputs.length; i++) {
-            inputs[i] = new BufferInput(buffers[i]);
+            final int sourceId = sourceIds.idByIndex(i);
+            inputs[i] = Input.single(sourceId, new BufferInputPoller(buffers[i]));
         }
         return inputs;
     }
@@ -219,9 +218,9 @@ public class ReplicatedHashApplicationTest {
         final int servers = appStates.length;
         final ElaraRunner[] runners = new ElaraRunner[servers];
         for (int server = 0; server < servers; server++) {
-            final UniSourceInput[] inputs = inputs(sourceTopology.receiveBuffers(server));
+            final Input[] inputs = inputs(sourceIds, sourceTopology.receiveBuffers(server));
             final ReplicationPlugin replicationPlugin = replicationPlugin(server, serverIds, serverTopology, enforceLeaderInput);
-            runners[server] = startServer(server, serverIds, sourceIds, appStates[server], inputs, replicationPlugin);
+            runners[server] = startServer(server, serverIds, appStates[server], inputs, replicationPlugin);
         }
         return runners;
     }
@@ -259,14 +258,10 @@ public class ReplicatedHashApplicationTest {
 
     private ElaraRunner startServer(final int server,
                                     final IdMapping serverIds,
-                                    final IdMapping sourceIds,
                                     final ModifiableState appState,
-                                    final UniSourceInput[] inputs,
+                                    final Input[] inputs,
                                     final ReplicationPlugin replicationPlugin) {
         final int serverId = serverIds.idByIndex(server);
-        final Input[] singleInputs = IntStream.range(0, inputs.length)
-                .mapToObj(index -> Input.single(sourceIds.idByIndex(index), inputs[index]))
-                .toArray(Input[]::new);
         final ChronicleQueue cq = ChronicleQueue.singleBuilder()
                 .path("build/chronicle/replication/server-" + serverId + "-cmd.cq4")
                 .wireType(WireType.BINARY_LIGHT)
@@ -278,7 +273,7 @@ public class ReplicatedHashApplicationTest {
         return Elara.launch(AllInOneAppConfig.configure()
                 .commandProcessor(commandProcessor(serverId, appState))
                 .eventApplier(eventApplier(serverId, appState))
-                .input(Input.roundRobin(singleInputs))
+                .input(Input.roundRobin(inputs))
                 .commandStore(new ChronicleMessageStore(cq))
                 .eventStore(new ChronicleMessageStore(eq))
                 .duplicateHandler(DuplicateHandler.NOOP)

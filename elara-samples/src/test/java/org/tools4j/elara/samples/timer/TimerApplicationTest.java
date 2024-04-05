@@ -25,7 +25,7 @@ package org.tools4j.elara.samples.timer;
 
 import org.junit.jupiter.api.Test;
 import org.tools4j.elara.event.Event;
-import org.tools4j.elara.input.SingleSourceInput;
+import org.tools4j.elara.input.InputPoller;
 import org.tools4j.elara.plugin.timer.DeadlineHeapTimerState;
 import org.tools4j.elara.plugin.timer.FlyweightTimerPayload;
 import org.tools4j.elara.plugin.timer.MutableTimerState;
@@ -35,6 +35,7 @@ import org.tools4j.elara.plugin.timer.TimerController.ControlContext;
 import org.tools4j.elara.plugin.timer.TimerEvents;
 import org.tools4j.elara.plugin.timer.TimerIdGenerator;
 import org.tools4j.elara.run.ElaraRunner;
+import org.tools4j.elara.send.CommandSender;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -79,7 +80,8 @@ class TimerApplicationTest {
         final Supplier<? extends MutableTimerState> timerStateSupplier = simpleState ?
                 SimpleTimerState::new : DeadlineHeapTimerState::new;
         final long[] startTimePtr = {0};//NOTE: if we initialize this here, ALARM timers may go off out of sequence
-        final SingleSourceInput input = (sender, commandTracker) -> {
+        final InputPoller inputPoller = sourceContext -> {
+            final CommandSender sender = sourceContext.commandSender();
             try (final ControlContext timerControl = app.timerPlugin.controller(sender)) {
                 if (startTimePtr[0] == 0) {
                     startTimePtr[0] = timerControl.currentTime();
@@ -95,8 +97,8 @@ class TimerApplicationTest {
 
         //when
         try (final ElaraRunner runner = persisted ?
-                app.chronicleQueue(oneTimeInput(input), "single", events::add) :
-                app.inMemory(oneTimeInput(input), events::add, timerStateSupplier)) {
+                app.chronicleQueue(oneTimeInput(inputPoller), "single", events::add) :
+                app.inMemory(oneTimeInput(inputPoller), events::add, timerStateSupplier)) {
             runner.join(3000);
         }
 
@@ -147,7 +149,7 @@ class TimerApplicationTest {
 
             //when
             final List<Event> replay = new ArrayList<>();
-            try (final ElaraRunner runner = app.chronicleQueue(oneTimeInput(input), "single", replay::add)) {
+            try (final ElaraRunner runner = app.chronicleQueue(oneTimeInput(inputPoller), "single", replay::add)) {
                 runner.join(1000);
             }
 
@@ -188,7 +190,8 @@ class TimerApplicationTest {
         final List<Event> events = new ArrayList<>();
 
         //when
-        final SingleSourceInput input = (sender, commandTracker) -> {
+        final InputPoller inputPoller = sourceContext -> {
+            final CommandSender sender = sourceContext.commandSender();
             try (final ControlContext timerControl = app.timerPlugin.controller(sender)) {
                 timerControl.startPeriodic(periodMicros, timerType, contextId);
             }
@@ -196,8 +199,8 @@ class TimerApplicationTest {
         };
 
         try (final ElaraRunner runner = persisted ?
-                app.chronicleQueue(oneTimeInput(input), "periodic", events::add) :
-                app.inMemory(oneTimeInput(input), events::add, timerStateSupplier)) {
+                app.chronicleQueue(oneTimeInput(inputPoller), "periodic", events::add) :
+                app.inMemory(oneTimeInput(inputPoller), events::add, timerStateSupplier)) {
 
             //then
             runner.join(2000 + periodMillis * (PERIODIC_REPETITIONS + 1));
@@ -249,7 +252,7 @@ class TimerApplicationTest {
 
             //when
             final List<Event> replay = new ArrayList<>();
-            try (final ElaraRunner runner = app.chronicleQueue(oneTimeInput(input), "periodic", replay::add)) {
+            try (final ElaraRunner runner = app.chronicleQueue(oneTimeInput(inputPoller), "periodic", replay::add)) {
                 runner.join(1000);
             }
 

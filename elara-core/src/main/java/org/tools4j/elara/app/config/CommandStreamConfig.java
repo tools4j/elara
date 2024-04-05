@@ -23,10 +23,8 @@
  */
 package org.tools4j.elara.app.config;
 
-import org.tools4j.elara.input.Input;
 import org.tools4j.elara.stream.MessageSender;
 
 public interface CommandStreamConfig {
     MessageSender commandSender();
-    Input input();
 }

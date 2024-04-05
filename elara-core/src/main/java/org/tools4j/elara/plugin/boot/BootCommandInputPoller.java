@@ -25,36 +25,40 @@ package org.tools4j.elara.plugin.boot;
 
 import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.app.state.BaseState;
-import org.tools4j.elara.input.SingleSourceInput;
+import org.tools4j.elara.input.InputPoller;
 import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.source.SourceContext;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.boot.BootCommands.BOOT_NOTIFY_APP_START;
 import static org.tools4j.elara.stream.SendingResult.SENT;
 
-public final class BootCommandInput implements SingleSourceInput {
+public final class BootCommandInputPoller implements InputPoller {
     private final BootPlugin bootPlugin;
     private final BaseState baseState;
     private boolean commandSent;
 
-    BootCommandInput(final BootPlugin bootPlugin, final BaseState baseState) {
+    BootCommandInputPoller(final BootPlugin bootPlugin, final BaseState baseState) {
         this.bootPlugin = requireNonNull(bootPlugin);
         this.baseState = requireNonNull(baseState);
     }
 
     @Override
-    public int poll(final CommandSender sender, final CommandTracker commandTracker) {
+    public int poll(final SourceContext sourceContext) {
         if (commandSent) {
             return 0;
         }
+        final CommandSender sender = sourceContext.commandSender();
+        final CommandTracker tracker = sourceContext.commandTracker();
+
         //NOTE: make sure that command is not de-duplicated
         final long nextSourceSeq = 1 + baseState.lastAppliedCommandSequence(sender.sourceId());
-        commandTracker.transientCommandState().sourceSequenceGenerator().nextSequence(nextSourceSeq);
+        tracker.transientCommandState().sourceSequenceGenerator().nextSequence(nextSourceSeq);
 
         //send command now
         if (SENT == sender.sendCommandWithoutPayload(BOOT_NOTIFY_APP_START)) {
             commandSent = true;
-            bootPlugin.notifyCommandSent(commandTracker.transientCommandState());
+            bootPlugin.notifyCommandSent(tracker.transientCommandState());
         }
         return 1;
     }

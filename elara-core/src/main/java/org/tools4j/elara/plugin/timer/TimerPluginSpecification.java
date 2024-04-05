@@ -64,7 +64,8 @@ final class TimerPluginSpecification implements SystemPluginSpecification<Mutabl
             @Override
             public Input input(final BaseState baseState) {
                 final long sourceSeq = 1 + baseState.lastAppliedCommandSequence(timerPlugin.sourceId());
-                return Input.single(timerPlugin.sourceId(), sourceSeq, new TimerSignalInput(appConfig.timeSource(), timerState,
+                return Input.single(timerPlugin.sourceId(), sourceSeq,
+                        new TimerSignalPoller(appConfig.timeSource(), timerState,
                         timerPlugin.signalInputSkip()));
             }
 

@@ -34,7 +34,7 @@ import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.format.TimeFormatter.MicroTimeFormatter;
-import org.tools4j.elara.input.SingleSourceInput;
+import org.tools4j.elara.input.InputPoller;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.plugin.timer.FlyweightTimerPayload;
 import org.tools4j.elara.plugin.timer.MutableTimerState;
@@ -62,18 +62,18 @@ public class TimerApplication {
 
     public final TimerPlugin timerPlugin = Plugins.timerPlugin();
 
-    public ElaraRunner inMemory(final SingleSourceInput input,
+    public ElaraRunner inMemory(final InputPoller inputPoller,
                                 final Consumer<? super Event> eventConsumer) {
-        return inMemory(input, eventConsumer, SimpleTimerState::new);
+        return inMemory(inputPoller, eventConsumer, SimpleTimerState::new);
     }
 
-    public ElaraRunner inMemory(final SingleSourceInput input,
+    public ElaraRunner inMemory(final InputPoller inputPoller,
                                 final Consumer<? super Event> eventConsumer,
                                 final Supplier<? extends MutableTimerState> timerStateSupplier) {
         return Elara.launch(AllInOneAppConfig.configure()
                 .commandProcessor(this::process)
                 .eventApplier(eventApplier(eventConsumer))
-                .input(SOURCE_ID, input)
+                .input(SOURCE_ID, inputPoller)
                 .commandStore(new InMemoryStore())
                 .eventStore(new InMemoryStore())
                 .timeSource(new PseudoMicroClock())
@@ -82,7 +82,7 @@ public class TimerApplication {
         );
     }
 
-    public ElaraRunner chronicleQueue(final SingleSourceInput input,
+    public ElaraRunner chronicleQueue(final InputPoller inputPoller,
                                       final String queueName,
                                       final Consumer<? super Event> eventConsumer) {
         final ChronicleQueue cq = ChronicleQueue.singleBuilder()
@@ -96,7 +96,7 @@ public class TimerApplication {
         return Elara.launch(AllInOneAppConfig.configure()
                 .commandProcessor(this::process)
                 .eventApplier(eventApplier(eventConsumer))
-                .input(SOURCE_ID, input)
+                .input(SOURCE_ID, inputPoller)
                 .commandStore(new ChronicleMessageStore(cq))
                 .eventStore(new ChronicleMessageStore(eq))
                 .timeSource(new PseudoMicroClock())
@@ -159,11 +159,12 @@ public class TimerApplication {
         return new FlyweightEvent().wrap(buffer, 0);
     }
 
-    public static SingleSourceInput oneTimeInput(final SingleSourceInput input) {
+    public static InputPoller oneTimeInput(final InputPoller inputPoller) {
+        requireNonNull(inputPoller);
         final boolean[] inputPolled = {false};
-        return (sender, commandTracker) -> {
+        return context -> {
             if (!inputPolled[0]) {
-                final int result = input.poll(sender, commandTracker);
+                final int result = inputPoller.poll(context);
                 inputPolled[0] = true;
                 return result;
             }

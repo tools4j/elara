@@ -23,13 +23,11 @@
  */
 package org.tools4j.elara.samples.bank;
 
-import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.app.type.AllInOneApp;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.exception.DuplicateHandler;
-import org.tools4j.elara.input.SingleSourceInput;
-import org.tools4j.elara.input.UniSourceInput;
+import org.tools4j.elara.input.InputPoller;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.route.EventRouter;
@@ -40,6 +38,7 @@ import org.tools4j.elara.samples.bank.command.BankCommand;
 import org.tools4j.elara.samples.bank.state.Bank;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.CommandSender.SendingContext;
+import org.tools4j.elara.source.SourceContext;
 import org.tools4j.elara.store.InMemoryStore;
 import org.tools4j.elara.store.MessageStore;
 
@@ -64,21 +63,21 @@ public class BankApplication implements AllInOneApp, Output {
         return bank;
     }
 
-    public ElaraRunner launch(final Queue<BankCommand> inputQueue) {
+    public ElaraRunner launch(final Queue<? extends BankCommand> inputQueue) {
         return launch(inputQueue, new InMemoryStore(), new InMemoryStore());
     }
 
-    public ElaraRunner launch(final Queue<BankCommand> inputQueue,
+    public ElaraRunner launch(final Queue<? extends BankCommand> inputQueue,
                               final MessageStore commandStore,
                               final MessageStore eventStore) {
-        return launch(new CommandInput(inputQueue), commandStore, eventStore);
+        return launch(new CommandInputPoller(inputQueue), commandStore, eventStore);
     }
 
-    public ElaraRunner launch(final UniSourceInput input,
+    public ElaraRunner launch(final InputPoller inputPoller,
                               final MessageStore commandStore,
                               final MessageStore eventStore) {
         return launch(config -> config
-                .input(SOURCE_ID, input)
+                .input(SOURCE_ID, inputPoller)
                 .commandStore(commandStore)
                 .eventStore(eventStore)
                 .duplicateHandler(duplicateHandler)
@@ -121,17 +120,18 @@ public class BankApplication implements AllInOneApp, Output {
         return Ack.COMMIT;
     }
 
-    private static class CommandInput implements SingleSourceInput {
-        final Queue<BankCommand> commands;
+    private static class CommandInputPoller implements InputPoller {
+        final Queue<? extends BankCommand> commands;
 
-        CommandInput(final Queue<BankCommand> commands) {
+        CommandInputPoller(final Queue<? extends BankCommand> commands) {
             this.commands = requireNonNull(commands);
         }
 
         @Override
-        public int poll(final CommandSender sender, final CommandTracker commandTracker) {
+        public int poll(final SourceContext sourceContext) {
             final BankCommand cmd = commands.poll();
             if (cmd != null) {
+                final CommandSender sender = sourceContext.commandSender();
                 final int type = cmd.type().value;
                 try (final SendingContext context = sender.sendingCommand(type)) {
                     final int length = cmd.encodeTo(context.buffer(), 0);

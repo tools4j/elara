@@ -38,27 +38,23 @@ public interface Input {
 
     Input NOOP = sourceContextProvider -> AgentStep.NOOP;
 
-    static Input single(final UniSourceInput input) {
-        requireNonNull(input);
-        return sourceContextProvider -> {
-            final SourceContext sourceContext = sourceContextProvider.sourceContext();
-            return () -> input.poll(sourceContext);
-        };
+    static Input single(final SingleSourceInput input) {
+        return single(input.sourceId(), input);
     }
 
-    static Input single(final int sourceId, final UniSourceInput input) {
-        requireNonNull(input);
+    static Input single(final int sourceId, final InputPoller inputPoller) {
+        requireNonNull(inputPoller);
         return sourceContextProvider -> {
             final SourceContext sourceContext = sourceContextProvider.sourceContext(sourceId);
-            return () -> input.poll(sourceContext);
+            return () -> inputPoller.poll(sourceContext);
         };
     }
 
-    static Input single(final int sourceId, final long initialSourceSequence, final UniSourceInput input) {
-        requireNonNull(input);
+    static Input single(final int sourceId, final long initialSourceSequence, final InputPoller inputPoller) {
+        requireNonNull(inputPoller);
         return sourceContextProvider -> {
             final SourceContext sourceContext = sourceContextProvider.sourceContext(sourceId, initialSourceSequence);
-            return () -> input.poll(sourceContext);
+            return () -> inputPoller.poll(sourceContext);
         };
     }
 

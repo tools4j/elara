@@ -60,7 +60,7 @@ final class BootPluginSpecification implements SystemPluginSpecification<NullSta
         return new Installer.Default() {
             @Override
             public Input input(final BaseState baseState) {
-                return Input.single(bootPlugin.sourceId(), new BootCommandInput(bootPlugin, baseState));
+                return Input.single(bootPlugin.sourceId(), new BootCommandInputPoller(bootPlugin, baseState));
             }
 
             @Override

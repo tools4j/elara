@@ -57,15 +57,6 @@ public class DefaultSourceContextProvider implements SourceContextProvider {
     }
 
     @Override
-    public SourceContext sourceContext() {
-        int sourceId = contextBySourceId.size() + 1;
-        while (contextBySourceId.containsKey(sourceId)) {
-            sourceId++;
-        }
-        return sourceContext(sourceId);
-    }
-
-    @Override
     public SourceContext sourceContext(final int sourceId) {
         return contextBySourceId.computeIfAbsent(sourceId, sourceContextFactory);
     }

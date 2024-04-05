@@ -222,7 +222,7 @@ public class ActivationHashApplicationTest {
                                              final ActivationPlugin plugin) {
         requireNonNull(plugin);
         return new HashApplication(state).launch(config -> config
-                .input(HashApplication.DEFAULT_SOURCE_ID, HashApplication.input(input))
+                .input(HashApplication.DEFAULT_SOURCE_ID, HashApplication.inputPoller(input))
                 .commandPollingMode(CommandPollingMode.NO_STORE)
                 .eventStore(new InMemoryStore())
                 .plugin(plugin)
@@ -234,7 +234,7 @@ public class ActivationHashApplicationTest {
                                        final ActivationPlugin plugin) {
         requireNonNull(plugin);
         return new HashApplication(state).launch(config -> config
-                .input(HashApplication.DEFAULT_SOURCE_ID, HashApplication.input(input))
+                .input(HashApplication.DEFAULT_SOURCE_ID, HashApplication.inputPoller(input))
                 .commandStore(new InMemoryStore())
                 .eventStore(new InMemoryStore())
                 .plugin(plugin)
@@ -258,7 +258,7 @@ public class ActivationHashApplicationTest {
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         return new HashApplication(state).launch(config -> config
-                .input(HashApplication.DEFAULT_SOURCE_ID, HashApplication.input(input))
+                .input(HashApplication.DEFAULT_SOURCE_ID, HashApplication.inputPoller(input))
                 .commandStore(new ChronicleMessageStore(cq))
                 .eventStore(new ChronicleMessageStore(eq))
                 .plugin(plugin)
@@ -273,7 +273,7 @@ public class ActivationHashApplicationTest {
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
         return new HashPassthroughApplication().launch(context -> context
-                .input(HashApplication.DEFAULT_SOURCE_ID, HashApplication.input(input))
+                .input(HashApplication.DEFAULT_SOURCE_ID, HashApplication.inputPoller(input))
                 .eventStore(new ChronicleMessageStore(eq))
                 .plugin(plugin)
         );

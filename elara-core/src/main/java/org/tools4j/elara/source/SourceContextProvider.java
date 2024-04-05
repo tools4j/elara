@@ -24,7 +24,6 @@
 package org.tools4j.elara.source;
 
 public interface SourceContextProvider {
-    SourceContext sourceContext();
     SourceContext sourceContext(int sourceId);
     SourceContext sourceContext(int sourceId, long minSourceSequence);
 }

@@ -29,7 +29,7 @@ import org.tools4j.elara.flyweight.DataFrame;
 import static org.tools4j.elara.flyweight.FrameType.COMMAND_TYPE;
 
 /**
- * Timer commands sent by {@link TimerSignalInput} and {@link TimerController}.
+ * Timer commands sent by {@link TimerSignalPoller} and {@link TimerController}.
  */
 public enum TimerCommands {
     ;
