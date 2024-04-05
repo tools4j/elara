@@ -74,9 +74,8 @@ public class DefaultSourceContext implements SourceContext {
 
     @Override
     public String toString() {
-        return "DefaultSourceContext{" +
-                "sourceId=" + sourceId +
-                "|commandTracker=" + commandTracker +
-                '}';
+        return "DefaultSourceContext" +
+                ":sourceId=" + sourceId +
+                "|commandTracker=" + commandTracker;
     }
 }

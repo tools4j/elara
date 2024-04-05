@@ -51,9 +51,8 @@ public class DefaultBaseState implements PassthroughState {
 
     @Override
     public String toString() {
-        return "DefaultBaseState{" +
-                "sourceIdToSequence=" + sourceIdToSequence +
-                ", lastAppliedEventSequence=" + lastAppliedEventSequence +
-                '}';
+        return "DefaultBaseState" +
+                ":source-id-to-seq=" + sourceIdToSequence +
+                "|last-applied-evt-seq=" + lastAppliedEventSequence;
     }
 }

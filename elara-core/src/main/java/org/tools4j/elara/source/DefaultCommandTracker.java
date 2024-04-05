@@ -117,22 +117,20 @@ final class DefaultCommandTracker implements CommandTracker {
 
         @Override
         public String toString() {
-            return "TransientCommandState{" +
-                    "sourceId=" + sourceId() +
+            return "TransientCommandState" +
+                    ":sourceId=" + sourceId() +
                     "|commandsSent=" + commandsSent +
                     "|sourceSequenceOfLastSentCommand=" + lastCommandSequence +
-                    "|sendingTimeOfLastSentCommand=" + lastCommandSendingTime +
-                    '}';
+                    "|sendingTimeOfLastSentCommand=" + lastCommandSendingTime;
         }
     }
 
     @Override
     public String toString() {
-        return "DefaultCommandTracker{" +
-                "sourceId=" + sourceId() +
+        return "DefaultCommandTracker" +
+                ":sourceId=" + sourceId() +
                 "|hasInFlightCommand=" + hasInFlightCommand() +
                 "|transientCommandState=" + transientCommandState +
-                "|eventLastProcessed=" + eventLastProcessed +
-                '}';
+                "|eventLastProcessed=" + eventLastProcessed;
     }
 }

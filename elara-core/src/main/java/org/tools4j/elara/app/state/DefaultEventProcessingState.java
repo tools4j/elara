@@ -62,9 +62,8 @@ public class DefaultEventProcessingState implements MutableEventProcessingState,
 
     @Override
     public String toString() {
-        return "DefaultEventProcessingState{" +
-                "sourceIdToEventState=" + sourceIdToEventState +
-                "|lastAppliedEventSequence=" + lastAppliedEventSequence +
-                '}';
+        return "DefaultEventProcessingState" +
+                ":source-id-evt-state=" + sourceIdToEventState +
+                "|last-applied-evt-seq=" + lastAppliedEventSequence;
     }
 }

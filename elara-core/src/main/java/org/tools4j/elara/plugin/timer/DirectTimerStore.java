@@ -209,11 +209,11 @@ public class DirectTimerStore implements TimerStore.MutableTimerStore {
     @Override
     public String toString() {
         final StringBuilder builder = new StringBuilder(256);
-        builder.append("DirectTimerStore{");
+        builder.append("DirectTimerStore:timers=[");
         for (int i = 0; i < count; i++) {
-            builder.append(i == 0 ? "" : "|");
-            builder.append("timer[").append(i).append("]={");
-            builder.append("|timer-id=").append(timerId(i));
+            builder.append(i == 0 ? "" : ", ");
+            builder.append(i);
+            builder.append(":timer-id=").append(timerId(i));
             builder.append("|style=").append(style(i));
             builder.append("|repetition=").append(repetition(i));
             builder.append("|start-time=").append(startTime(i));
@@ -221,9 +221,8 @@ public class DirectTimerStore implements TimerStore.MutableTimerStore {
             builder.append("|deadline=").append(deadline(i));
             builder.append("|timer-type=").append(timerType(i));
             builder.append("|context-id=").append(contextId(i));
-            builder.append("}");
         }
-        builder.append("}");
+        builder.append("]");
         return builder.toString();
     }
 }

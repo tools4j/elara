@@ -226,11 +226,10 @@ public class TimerPlugin implements SystemPlugin<MutableTimerState> {
     @Override
     public String toString() {
         final TimerState timerState = controller.timerState();;
-        return "TimerPlugin{" +
-                "sourceId=" + sourceId +
-                ", useInterceptor=" + useInterceptor +
-                ", signalInputSkip=" + signalInputSkip +
-                ", timerState=" + (timerState != null ? timerState : "(not initialized)") +
-                '}';
+        return "TimerPlugin" +
+                ":source-id=" + sourceId +
+                "|use-interceptor=" + useInterceptor +
+                "|signal-input-skip=" + signalInputSkip +
+                "|timer-state=" + (timerState != null ? timerState : "(not initialized)");
     }
 }

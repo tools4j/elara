@@ -150,16 +150,15 @@ public class DefaultReplicationState implements ReplicationState.Mutable {
 
     @Override
     public String toString() {
-        return "DefaultReplicationState{" +
-                "term=" + term +
-                ", leaderId=" + leaderId +
-                ", lastAppliedEventSequence=" + lastAppliedEventSequence +
-                ", lastAppliedEventTime=" + lastAppliedEventTime +
-                ", eventStoreSize=" + eventStoreSize +
-                ", nextEventStoreIndexByServerId=" + nextEventStoreIndexByServerId +
-                ", confirmedEventStoreIndexByServerId=" + confirmedEventStoreIndexByServerId +
-                ", nextNotBefore=" + nextNotBefore +
-                ", temp=" + temp +
-                '}';
+        return "DefaultReplicationState:" +
+                ":term=" + term +
+                "|leader-id=" + leaderId +
+                "|last-applied-evt-seq=" + lastAppliedEventSequence +
+                "|last-applied-evt-time=" + lastAppliedEventTime +
+                "|evt-store-size=" + eventStoreSize +
+                "|next-evt-store-index-by-server-id=" + nextEventStoreIndexByServerId +
+                "|confirmed-evt-store-index-by-server-id=" + confirmedEventStoreIndexByServerId +
+                "|next-not-before=" + nextNotBefore +
+                "|temp=" + temp;
     }
 }

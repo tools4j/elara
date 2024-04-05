@@ -59,8 +59,6 @@ final class SimpleSequenceGenerator implements SequenceGenerator {
 
     @Override
     public String toString() {
-        return "SimpleSequenceGenerator{" +
-                "sequence=" + sequence +
-                '}';
+        return "SimpleSequenceGenerator:sequence=" + sequence;
     }
 }

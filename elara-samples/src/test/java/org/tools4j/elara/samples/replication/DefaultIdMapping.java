@@ -77,8 +77,6 @@ public class DefaultIdMapping implements IdMapping {
 
     @Override
     public String toString() {
-        return "DefaultIdMapping{" +
-                "ids=" + Arrays.toString(ids) +
-                '}';
+        return "DefaultIdMapping:ids=" + Arrays.toString(ids);
     }
 }

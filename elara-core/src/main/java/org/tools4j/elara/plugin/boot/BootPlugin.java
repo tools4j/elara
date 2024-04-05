@@ -106,13 +106,13 @@ public class BootPlugin implements SystemPlugin<NullState> {
 
     @Override
     public String toString() {
-        return "BootPlugin{" +
-                "sourceId=" + sourceId +
-                "|bootCommandSourceSequence=" + bootCommandSourceSequence +
-                "|bootCommandSendingTime=" + bootCommandSendingTime +
-                "|bootEventSequence=" + bootEventSequence +
-                "|bootEventTime=" + bootEventTime +
-                "|bootComplete=" + isBootComplete() +
+        return "BootPlugin" +
+                ":sourceId=" + sourceId +
+                "|boot-cmd-source-seq=" + bootCommandSourceSequence +
+                "|boot-cmd-sending-time=" + bootCommandSendingTime +
+                "|boot-evt-seq=" + bootEventSequence +
+                "|boot-evt-time=" + bootEventTime +
+                "|boot-complete=" + isBootComplete() +
                 '}';
     }
 }

@@ -85,9 +85,8 @@ public final class BaseEventState implements EventState {
 
     @Override
     public String toString() {
-        return "BaseEventState{" +
-                "source-id=" + sourceId +
-                "|source-seq=" + sourceSequence() +
-                '}';
+        return "BaseEventState" +
+                ":source-id=" + sourceId +
+                "|source-seq=" + sourceSequence();
     }
 }
