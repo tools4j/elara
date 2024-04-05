@@ -56,7 +56,7 @@ public class MetricsPlugin implements SystemPlugin<MetricsState> {
         return specification;
     }
 
-    public static MetricsContext configure() {
+    public static MetricsConfigurator configure() {
         return MetricsConfig.configure();
     }
 

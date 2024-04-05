@@ -42,7 +42,7 @@ import org.tools4j.elara.store.MessageStore.Poller;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.plugin.activation.ActivationContextImpl.hasCommandStore;
+import static org.tools4j.elara.plugin.activation.ActivationConfiguratorImpl.hasCommandStore;
 
 final class ActivationPluginInterceptor implements Interceptor {
 

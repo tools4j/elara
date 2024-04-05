@@ -29,7 +29,7 @@ import org.tools4j.elara.stream.tcp.TcpSendingStrategy;
 
 import static java.util.Objects.requireNonNull;
 
-class TcpContextImpl implements TcpContext {
+class TcpConfiguratorImpl implements TcpConfigurator {
 
     private static final int MIN_BUFFER_CAPACITY = 64;
     private static final int DEFAULT_BUFFER_CAPACITY = 1 << 14;
@@ -46,7 +46,7 @@ class TcpContextImpl implements TcpContext {
     }
 
     @Override
-    public TcpContextImpl bufferCapacity(final int capacity) {
+    public TcpConfiguratorImpl bufferCapacity(final int capacity) {
         if (capacity < MIN_BUFFER_CAPACITY) {
             throw new IllegalArgumentException("Buffer capacity must be at least " + MIN_BUFFER_CAPACITY +
                     " but was " + capacity);
@@ -61,7 +61,7 @@ class TcpContextImpl implements TcpContext {
     }
 
     @Override
-    public TcpContext reconnectTimeoutMillis(final long timeoutMillis) {
+    public TcpConfigurator reconnectTimeoutMillis(final long timeoutMillis) {
         this.reconnectTimeoutMillis = timeoutMillis;
         return this;
     }
@@ -72,7 +72,7 @@ class TcpContextImpl implements TcpContext {
     }
 
     @Override
-    public TcpContext connectListener(final ConnectListener listener) {
+    public TcpConfigurator connectListener(final ConnectListener listener) {
         this.connectListener = listener;
         return this;
     }
@@ -83,7 +83,7 @@ class TcpContextImpl implements TcpContext {
     }
 
     @Override
-    public TcpContext sendingStrategyFactory(final TcpSendingStrategy.Factory factory) {
+    public TcpConfigurator sendingStrategyFactory(final TcpSendingStrategy.Factory factory) {
         this.sendingStrategyFactory = requireNonNull(factory);
         return this;
     }
@@ -94,7 +94,7 @@ class TcpContextImpl implements TcpContext {
     }
 
     @Override
-    public TcpContext acceptListener(final AcceptListener listener) {
+    public TcpConfigurator acceptListener(final AcceptListener listener) {
         this.acceptListener = listener;
         return this;
     }
@@ -110,7 +110,7 @@ class TcpContextImpl implements TcpContext {
     }
 
     @Override
-    public TcpContext populateDefaults() {
+    public TcpConfigurator populateDefaults() {
         if (connectListener == null) {
             connectListener = defaultConnectListener();
         }
@@ -120,7 +120,7 @@ class TcpContextImpl implements TcpContext {
         return this;
     }
 
-    static final class TcpClientContextImpl extends TcpContextImpl {
+    static final class TcpClientConfiguratorImpl extends TcpConfiguratorImpl {
         @Override
         public void validate() {
             if (connectListener == null) {
@@ -129,7 +129,7 @@ class TcpContextImpl implements TcpContext {
         }
 
         @Override
-        public TcpContext populateDefaults() {
+        public TcpConfigurator populateDefaults() {
             if (connectListener == null) {
                 connectListener = defaultConnectListener();
             }
@@ -137,7 +137,7 @@ class TcpContextImpl implements TcpContext {
         }
     }
 
-    static final class TcpServerContextImpl extends TcpContextImpl {
+    static final class TcpServerConfiguratorImpl extends TcpConfiguratorImpl {
         @Override
         public void validate() {
             if (acceptListener == null) {
@@ -146,7 +146,7 @@ class TcpContextImpl implements TcpContext {
         }
 
         @Override
-        public TcpContext populateDefaults() {
+        public TcpConfigurator populateDefaults() {
            if (acceptListener == null) {
                 acceptListener = defaultAcceptListener();
             }

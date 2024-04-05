@@ -28,13 +28,13 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.tools4j.elara.stream.ipc.AllocationStrategy;
 import org.tools4j.elara.stream.ipc.Ipc;
-import org.tools4j.elara.stream.ipc.IpcConfiguration;
+import org.tools4j.elara.stream.ipc.IpcConfig;
 import org.tools4j.elara.stream.tcp.Tcp;
-import org.tools4j.elara.stream.tcp.config.TcpConfiguration;
-import org.tools4j.elara.stream.tcp.config.TcpContext;
+import org.tools4j.elara.stream.tcp.config.TcpConfig;
+import org.tools4j.elara.stream.tcp.config.TcpConfigurator;
 import org.tools4j.elara.stream.udp.Udp;
-import org.tools4j.elara.stream.udp.config.UdpConfiguration;
-import org.tools4j.elara.stream.udp.config.UdpContext;
+import org.tools4j.elara.stream.udp.config.UdpConfig;
+import org.tools4j.elara.stream.udp.config.UdpConfigurator;
 
 import java.io.File;
 import java.net.InetSocketAddress;
@@ -83,7 +83,7 @@ class MessageStreamTest {
     private static Arguments ipcSenderToReceiverFile(final AllocationStrategy allocationStrategy) {
         final File file = new File("build/stream/ipc-receiver-" + allocationStrategy + ".map");
         final int length = 1 << 20;
-        final IpcConfiguration config = IpcConfiguration.configure()
+        final IpcConfig config = IpcConfig.configure()
                 .senderCardinality(ONE)
                 .senderInitialBufferSize(2 * MESSAGE_BYTES)
                 .senderAllocationStrategy(allocationStrategy)
@@ -107,7 +107,7 @@ class MessageStreamTest {
     private static Arguments ipcSenderFileToReceiver(final AllocationStrategy allocationStrategy) {
         final File file = new File("build/stream/ipc-sender-" + allocationStrategy + ".map");
         final int length = 1 << 20;
-        final IpcConfiguration config = IpcConfiguration.configure()
+        final IpcConfig config = IpcConfig.configure()
                 .senderCardinality(ONE)
                 .senderInitialBufferSize(2 * MESSAGE_BYTES)
                 .senderAllocationStrategy(allocationStrategy)
@@ -123,7 +123,7 @@ class MessageStreamTest {
     private static Arguments tcpClientSenderAndServerReceiver() {
         //final SocketAddress address = new InetSocketAddress("localhost", nextFreePort());
         final SocketAddress address = new InetSocketAddress(hostAddress(), nextFreePort());
-        final TcpContext config = TcpConfiguration.configure()
+        final TcpConfigurator config = TcpConfig.configure()
                 .bufferCapacity(Math.max(1<<14, MESSAGE_BYTES << 1))
                 .populateDefaults();
         return Arguments.of(
@@ -135,7 +135,7 @@ class MessageStreamTest {
     private static Arguments tcpServerSenderAndClientReceiver() {
         final SocketAddress address = new InetSocketAddress("localhost", nextFreePort());
 //        final SocketAddress address = new InetSocketAddress(hostAddress(), nextFreePort());
-        final TcpContext config = TcpConfiguration.configure()
+        final TcpConfigurator config = TcpConfig.configure()
                 .bufferCapacity(Math.max(1<<14, MESSAGE_BYTES << 1))
                 .populateDefaults();
         return Arguments.of(
@@ -146,7 +146,7 @@ class MessageStreamTest {
 
     private static Arguments udpClientSenderAndServerReceiver() {
         final SocketAddress address = new InetSocketAddress(hostAddress(), nextFreePort());
-        final UdpContext config = UdpConfiguration.configure()
+        final UdpConfigurator config = UdpConfig.configure()
                 .bufferCapacity(Math.max(1<<14, MESSAGE_BYTES << 1))
                 .populateDefaults();
         return Arguments.of(
@@ -157,7 +157,7 @@ class MessageStreamTest {
 
     private static Arguments udpServerSenderAndClientReceiver() {
         final SocketAddress address = new InetSocketAddress(hostAddress(), nextFreePort());
-        final UdpContext config = UdpConfiguration.configure()
+        final UdpConfigurator config = UdpConfig.configure()
                 .bufferCapacity(Math.max(1<<14, MESSAGE_BYTES << 1))
                 .populateDefaults();
         return Arguments.of(

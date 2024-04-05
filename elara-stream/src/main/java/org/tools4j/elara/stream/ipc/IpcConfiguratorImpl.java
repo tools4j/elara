@@ -25,7 +25,7 @@ package org.tools4j.elara.stream.ipc;
 
 import static java.util.Objects.requireNonNull;
 
-final class IpcContextImpl implements IpcContext {
+final class IpcConfiguratorImpl implements IpcConfigurator {
 
     private Cardinality senderCardinality = Cardinality.ONE;
     private int senderInitialBufferSize = 4096;
@@ -65,13 +65,13 @@ final class IpcContextImpl implements IpcContext {
     }
 
     @Override
-    public IpcContext senderCardinality(final Cardinality cardinality) {
+    public IpcConfigurator senderCardinality(final Cardinality cardinality) {
         this.senderCardinality = requireNonNull(cardinality);
         return this;
     }
 
     @Override
-    public IpcContext senderInitialBufferSize(final int bytes) {
+    public IpcConfigurator senderInitialBufferSize(final int bytes) {
         if (bytes < 0) {
             throw new IllegalArgumentException("Initial sender buffer size cannot be negative: " + bytes);
         }
@@ -80,13 +80,13 @@ final class IpcContextImpl implements IpcContext {
     }
 
     @Override
-    public IpcContext senderAllocationStrategy(final AllocationStrategy strategy) {
+    public IpcConfigurator senderAllocationStrategy(final AllocationStrategy strategy) {
         this.allocationStrategy = requireNonNull(strategy);
         return this;
     }
 
     @Override
-    public IpcContext maxMessagesReceivedPerPoll(final int maxMessages) {
+    public IpcConfigurator maxMessagesReceivedPerPoll(final int maxMessages) {
         if (maxMessages <= 0) {
             throw new IllegalArgumentException("Max messages received per poll must be positive but was " + maxMessages);
         }
@@ -95,13 +95,13 @@ final class IpcContextImpl implements IpcContext {
     }
 
     @Override
-    public IpcContext newFileCreateParentDirs(final boolean create) {
+    public IpcConfigurator newFileCreateParentDirs(final boolean create) {
         this.newFileCreateParentDirs = create;
         return this;
     }
 
     @Override
-    public IpcContext newFileDeleteIfPresent(final boolean delete) {
+    public IpcConfigurator newFileDeleteIfPresent(final boolean delete) {
         this.newFileDeleteIfPresent = delete;
         return this;
     }

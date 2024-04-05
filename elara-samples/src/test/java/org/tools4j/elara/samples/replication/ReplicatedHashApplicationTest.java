@@ -40,7 +40,7 @@ import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.plugin.replication.Connection;
 import org.tools4j.elara.plugin.replication.EnforceLeaderInput;
 import org.tools4j.elara.plugin.replication.ReplicationConfig;
-import org.tools4j.elara.plugin.replication.ReplicationContext;
+import org.tools4j.elara.plugin.replication.ReplicationConfigurator;
 import org.tools4j.elara.plugin.replication.ReplicationPlugin;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
@@ -238,13 +238,13 @@ public class ReplicatedHashApplicationTest {
                                                 final EnforceLeaderInput enforceLeaderInput) {
         final int curServerId = serverIds.idByIndex(server);
         final Connection connection = connection(curServerId, serverIds, serverTopology);
-        final ReplicationContext context = ReplicationPlugin.configure();
+        final ReplicationConfigurator config = ReplicationPlugin.configure();
         for (int i = 0; i < serverIds.count(); i++) {
             final int serverId = serverIds.idByIndex(i);
-            context.serverId(serverId, i == server)
+            config.serverId(serverId, i == server)
                     .connection(serverId, connection);
         }
-        return context.enforceLeaderInput(enforceLeaderInput);
+        return config.enforceLeaderInput(enforceLeaderInput);
     }
 
     private Connection connection(final int serverId,

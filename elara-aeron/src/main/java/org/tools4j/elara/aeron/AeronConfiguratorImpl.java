@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.aeron;
 
-final class AeronContextImpl implements AeronContext {
+final class AeronConfiguratorImpl implements AeronConfigurator {
     private int senderInitialBufferSize = 4096;
     private int senderMaxRetriesAfterAdminAction = 3;
     private int receiverFragmentLimit = 1;
@@ -50,7 +50,7 @@ final class AeronContextImpl implements AeronContext {
     }
 
     @Override
-    public AeronContext senderInitialBufferSize(final int bytes) {
+    public AeronConfigurator senderInitialBufferSize(final int bytes) {
         if (bytes < 0) {
             throw new IllegalArgumentException("Initial sender buffer size cannot be negative: " + bytes);
         }
@@ -59,13 +59,13 @@ final class AeronContextImpl implements AeronContext {
     }
 
     @Override
-    public AeronContext senderMaxRetriesAfterAdminAction(final int maxRetries) {
+    public AeronConfigurator senderMaxRetriesAfterAdminAction(final int maxRetries) {
         this.senderMaxRetriesAfterAdminAction = maxRetries;
         return this;
     }
 
     @Override
-    public AeronContext receiverFragmentLimit(final int limit) {
+    public AeronConfigurator receiverFragmentLimit(final int limit) {
         if (limit < 1) {
             throw new IllegalArgumentException("Receiver fragment limit cannot be less than one: " + limit);
         }
@@ -74,7 +74,7 @@ final class AeronContextImpl implements AeronContext {
     }
 
     @Override
-    public AeronContext receiverFragmentAssemblerInitialBufferSize(final int bytes) {
+    public AeronConfigurator receiverFragmentAssemblerInitialBufferSize(final int bytes) {
         if (bytes < 0) {
             throw new IllegalArgumentException("Initial receiver fragment assembler buffer size cannot be negative: " + bytes);
         }

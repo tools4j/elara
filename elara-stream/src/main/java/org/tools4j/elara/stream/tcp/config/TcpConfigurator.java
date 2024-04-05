@@ -23,20 +23,28 @@
  */
 package org.tools4j.elara.stream.tcp.config;
 
+import org.tools4j.elara.stream.tcp.AcceptListener;
 import org.tools4j.elara.stream.tcp.ConnectListener;
+import org.tools4j.elara.stream.tcp.TcpSendingStrategy;
 
-public interface TcpClientConfiguration extends TcpConfiguration {
-    /**
-     * Returns the timeout in milliseconds after which new reconnect attempts are made;
-     * returning zero or a negative value disables reconnect attempts altogether.
-     *
-     * @return reconnect timeout in milliseconds, zero or negative to not attempt at all
-     */
-    long reconnectTimeoutMillis();
+public interface TcpConfigurator extends TcpClientConfigurator, TcpServerConfigurator {
+    @Override
+    TcpConfigurator bufferCapacity(int capacity);
 
-    ConnectListener connectListener();
+    @Override
+    TcpConfigurator reconnectTimeoutMillis(long timeoutMillis);
+    @Override
+    TcpConfigurator connectListener(ConnectListener listener);
 
-    static TcpClientContext configure() {
-        return TcpClientContext.create();
+    @Override
+    TcpConfigurator sendingStrategyFactory(TcpSendingStrategy.Factory factory);
+    @Override
+    TcpConfigurator acceptListener(AcceptListener listener);
+
+    @Override
+    TcpConfigurator populateDefaults();
+
+    static TcpConfigurator create() {
+        return new TcpConfiguratorImpl();
     }
 }

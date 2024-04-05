@@ -23,9 +23,9 @@
  */
 package org.tools4j.elara.stream.tcp;
 
-import org.tools4j.elara.stream.tcp.config.TcpClientConfiguration;
-import org.tools4j.elara.stream.tcp.config.TcpConfiguration;
-import org.tools4j.elara.stream.tcp.config.TcpServerConfiguration;
+import org.tools4j.elara.stream.tcp.config.TcpClientConfig;
+import org.tools4j.elara.stream.tcp.config.TcpConfig;
+import org.tools4j.elara.stream.tcp.config.TcpServerConfig;
 import org.tools4j.elara.stream.tcp.impl.TcpClient;
 import org.tools4j.elara.stream.tcp.impl.TcpServer;
 
@@ -39,10 +39,10 @@ public enum Tcp {
     }
 
     public static TcpConnection bind(final SocketAddress address) {
-        return bind(address, TcpConfiguration.configureServer().populateDefaults());
+        return bind(address, TcpConfig.configureServer().populateDefaults());
     }
 
-    public static TcpConnection bind(final SocketAddress address, final TcpServerConfiguration configuration) {
+    public static TcpConnection bind(final SocketAddress address, final TcpServerConfig configuration) {
         return new TcpServer(address, configuration);
     }
 
@@ -51,10 +51,10 @@ public enum Tcp {
     }
 
     public static TcpConnection connect(final SocketAddress address) {
-        return connect(address, TcpConfiguration.configureClient().populateDefaults());
+        return connect(address, TcpConfig.configureClient().populateDefaults());
     }
 
-    public static TcpConnection connect(final SocketAddress address, final TcpClientConfiguration configuration) {
+    public static TcpConnection connect(final SocketAddress address, final TcpClientConfig configuration) {
         return new TcpClient(address, configuration, configuration.bufferCapacity());
     }
 

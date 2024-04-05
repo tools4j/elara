@@ -34,7 +34,7 @@ import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.plugin.metrics.MetricsConfig;
-import org.tools4j.elara.plugin.metrics.MetricsContext;
+import org.tools4j.elara.plugin.metrics.MetricsConfigurator;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.samples.hash.HashApplication.ModifiableState;
 import org.tools4j.elara.samples.time.PseudoMicroClock;
@@ -104,7 +104,7 @@ public class HashPassthroughApplication implements PassthroughApp {
                 .path(path + "/frq.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
-        final MetricsContext metricsConfig = MetricsConfig.configure()
+        final MetricsConfigurator metricsConfig = MetricsConfig.configure()
 //                .frequencyMetrics(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY, COMMAND_PROCESSED_FREQUENCY, EVENT_APPLIED_FREQUENCY, OUTPUT_PUBLISHED_FREQUENCY)
                 .frequencyMetrics(DUTY_CYCLE_FREQUENCY, DUTY_CYCLE_PERFORMED_FREQUENCY, INPUT_RECEIVED_FREQUENCY)
                 .frequencyMetricInterval(100_000)//micros

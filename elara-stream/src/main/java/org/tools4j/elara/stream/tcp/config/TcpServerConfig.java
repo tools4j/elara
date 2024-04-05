@@ -26,12 +26,12 @@ package org.tools4j.elara.stream.tcp.config;
 import org.tools4j.elara.stream.tcp.AcceptListener;
 import org.tools4j.elara.stream.tcp.TcpSendingStrategy;
 
-public interface TcpServerConfiguration extends TcpConfiguration {
+public interface TcpServerConfig extends TcpConfig {
     TcpSendingStrategy.Factory sendingStrategyFactory();
 
     AcceptListener acceptListener();
 
-    static TcpServerContext configure() {
-        return TcpServerContext.create();
+    static TcpServerConfigurator configure() {
+        return TcpServerConfigurator.create();
     }
 }

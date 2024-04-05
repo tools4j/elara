@@ -35,11 +35,11 @@ public interface ReplicationConfig {
 
     int initialSendBufferCapacity();
 
-    static ReplicationContext configure() {
-        return ReplicationContext.create();
+    static ReplicationConfigurator configure() {
+        return ReplicationConfigurator.create();
     }
 
     static ReplicationConfig validate(final ReplicationConfig configuration) {
-        return DefaultReplicationContext.validate(configuration);
+        return ReplicationConfiguratorImpl.validate(configuration);
     }
 }

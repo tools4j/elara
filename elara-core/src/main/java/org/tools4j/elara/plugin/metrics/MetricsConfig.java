@@ -35,11 +35,11 @@ public interface MetricsConfig {
     MessageStore timeMetricsStore();
     MessageStore frequencyMetricsStore();
 
-    static MetricsContext configure() {
-        return MetricsContext.create();
+    static MetricsConfigurator configure() {
+        return MetricsConfigurator.create();
     }
 
     static MetricsConfig validate(final MetricsConfig configuration) {
-        return DefaultContext.validate(configuration);
+        return MetricsConfiguratorImpl.validate(configuration);
     }
 }

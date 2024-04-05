@@ -21,20 +21,29 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.activation;
+package org.tools4j.elara.plugin.metrics;
 
 import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.stream.MessageReceiver;
-import org.tools4j.elara.stream.MessageSender;
-import org.tools4j.elara.stream.ipc.SharedBuffer;
 
-public interface ActivationContext extends ActivationConfig {
-    ActivationContext commandReplayMode(CommandReplayMode mode);
-    ActivationContext commandCache(MessageStore commandStore);
-    ActivationContext commandCache(SharedBuffer commandBuffer);
-    ActivationContext commandCacheSender(MessageSender sender);
-    ActivationContext commandCacheReceiver(MessageReceiver receiver);
-    static ActivationContext create() {
-        return new ActivationContextImpl();
+import java.util.Set;
+
+public interface MetricsConfigurator extends MetricsConfig {
+    MetricsConfigurator timeMetric(TimeMetric metric);
+    MetricsConfigurator timeMetrics(TimeMetric... metrics);
+    MetricsConfigurator timeMetrics(Set<? extends TimeMetric> metrics);
+    MetricsConfigurator frequencyMetric(FrequencyMetric metric);
+    MetricsConfigurator frequencyMetrics(FrequencyMetric... metrics);
+    MetricsConfigurator frequencyMetrics(Set<? extends FrequencyMetric> metrics);
+    MetricsConfigurator latencyMetric(LatencyMetric metric);
+    MetricsConfigurator latencyMetrics(LatencyMetric... metrics);
+    MetricsConfigurator latencyMetrics(Set<? extends LatencyMetric> metrics);
+    MetricsConfigurator inputSendingTimeExtractor(InputSendingTimeExtractor sendingTimeExtractor);
+    MetricsConfigurator frequencyMetricInterval(long timeInterval);
+    MetricsConfigurator metricsStore(MessageStore metricStore);
+    MetricsConfigurator timeMetricsStore(MessageStore metricStore);
+    MetricsConfigurator frequencyMetricsStore(MessageStore metricStore);
+
+    static MetricsConfigurator create() {
+        return new MetricsConfiguratorImpl();
     }
 }

@@ -23,21 +23,21 @@
  */
 package org.tools4j.elara.stream.udp.config;
 
-public interface UdpConfiguration {
+public interface UdpConfig {
     int bufferCapacity();
 
     int mtuLength();
 
     void validate();
 
-    static UdpContext configure() {
-        return UdpContext.create();
+    static UdpConfigurator configure() {
+        return UdpConfigurator.create();
     }
 
-    static UdpClientContext configureClient() {
-        return UdpClientConfiguration.configure();
+    static UdpClientConfigurator configureClient() {
+        return UdpClientConfig.configure();
     }
-    static UdpServerContext configureServer() {
-        return UdpServerConfiguration.configure();
+    static UdpServerConfigurator configureServer() {
+        return UdpServerConfig.configure();
     }
 }

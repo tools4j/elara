@@ -29,7 +29,7 @@ import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.nio.NioReceiver;
 import org.tools4j.elara.stream.nio.NioSender;
 import org.tools4j.elara.stream.tcp.TcpConnection;
-import org.tools4j.elara.stream.tcp.config.TcpServerConfiguration;
+import org.tools4j.elara.stream.tcp.config.TcpServerConfig;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -42,12 +42,12 @@ import static java.util.Objects.requireNonNull;
 public class TcpServer implements TcpConnection {
 
     private final SocketAddress bindAddress;
-    private final TcpServerConfiguration configuration;
+    private final TcpServerConfig configuration;
     private final TcpServerReceiver receiver;
     private final TcpServerSender sender;
     private TcpServerEndpoint server;
 
-    public TcpServer(final SocketAddress bindAddress, final TcpServerConfiguration configuration) {
+    public TcpServer(final SocketAddress bindAddress, final TcpServerConfig configuration) {
         configuration.validate();
         this.bindAddress = requireNonNull(bindAddress);
         this.configuration = requireNonNull(configuration);

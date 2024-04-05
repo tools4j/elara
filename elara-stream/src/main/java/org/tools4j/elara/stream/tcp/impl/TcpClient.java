@@ -32,7 +32,7 @@ import org.tools4j.elara.stream.nio.NioReceiver;
 import org.tools4j.elara.stream.nio.NioSender;
 import org.tools4j.elara.stream.tcp.ConnectListener;
 import org.tools4j.elara.stream.tcp.TcpConnection;
-import org.tools4j.elara.stream.tcp.config.TcpClientConfiguration;
+import org.tools4j.elara.stream.tcp.config.TcpClientConfig;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -42,7 +42,7 @@ import static java.util.Objects.requireNonNull;
 
 public class TcpClient implements TcpConnection {
     private final SocketAddress connectAddress;
-    private final TcpClientConfiguration configuration;
+    private final TcpClientConfig configuration;
     private final ConnectListener connectListener;
     private final Supplier<? extends ByteBuffer> bufferFactory;
     private final TcpClientReceiver receiver;
@@ -50,7 +50,7 @@ public class TcpClient implements TcpConnection {
     private TcpClientEndpoint client;
 
     public TcpClient(final SocketAddress connectAddress,
-                     final TcpClientConfiguration configuration,
+                     final TcpClientConfig configuration,
                      final int bufferCapacity) {
         configuration.validate();
         this.connectAddress = requireNonNull(connectAddress);

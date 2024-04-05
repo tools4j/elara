@@ -65,8 +65,8 @@ public class ReplicationPlugin implements SystemPlugin<ReplicationState.Mutable>
         return specification;
     }
 
-    public static ReplicationContext configure() {
-        return ReplicationContext.create();
+    public static ReplicationConfigurator configure() {
+        return ReplicationConfigurator.create();
     }
 
     public boolean isLeader(final ReplicationState state) {

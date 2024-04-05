@@ -33,7 +33,7 @@ import org.tools4j.elara.stream.udp.UdpEndpoint;
 import org.tools4j.elara.stream.udp.UdpHeader;
 import org.tools4j.elara.stream.udp.UdpReceiver;
 import org.tools4j.elara.stream.udp.UdpSender;
-import org.tools4j.elara.stream.udp.config.UdpServerConfiguration;
+import org.tools4j.elara.stream.udp.config.UdpServerConfig;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -48,14 +48,14 @@ import static java.util.Objects.requireNonNull;
 public class UdpServer implements UdpEndpoint {
 
     private final SocketAddress bindAddress;
-    private final UdpServerConfiguration configuration;
+    private final UdpServerConfig configuration;
     private final UdpServerReceiver receiver;
     private final UdpServerSender sender;
 
     private final Set<SocketChannel> accepted = new CopyOnWriteArraySet<>();
     private UdpServerEndpoint server;
 
-    public UdpServer(final SocketAddress bindAddress, final UdpServerConfiguration configuration) {
+    public UdpServer(final SocketAddress bindAddress, final UdpServerConfig configuration) {
         configuration.validate();
         this.bindAddress = requireNonNull(bindAddress);
         this.configuration = requireNonNull(configuration);

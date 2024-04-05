@@ -45,44 +45,44 @@ import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
 public enum Ipc {
     ;
 
-    public static MessageSender newSender(final File file, final int length, final IpcConfiguration config) {
+    public static MessageSender newSender(final File file, final int length, final IpcConfig config) {
         return config.senderAllocationStrategy() == AllocationStrategy.FIXED ?
                 new IpcDirectSender(file, length, config) :
                 new IpcBufferedSender(file, length, config);
     }
 
-    public static MessageSender openSender(final File file, final IpcConfiguration config) {
+    public static MessageSender openSender(final File file, final IpcConfig config) {
         final MappedByteBuffer mappedByteBuffer = IoUtil.mapExistingFile(file, READ_WRITE, file.getAbsolutePath());
         return config.senderAllocationStrategy() == AllocationStrategy.FIXED ?
                 new IpcDirectSender(mappedByteBuffer, config) :
                 new IpcBufferedSender(mappedByteBuffer, config);
     }
 
-    public static MessageSender retryOpenSender(final File file, final IpcConfiguration config) {
+    public static MessageSender retryOpenSender(final File file, final IpcConfig config) {
         return new IpcRetryOpenSender(new RingBufferRetryOpener(file, config), config);
     }
 
-    public static MessageReceiver newReceiver(final File file, final int length, final IpcConfiguration config) {
+    public static MessageReceiver newReceiver(final File file, final int length, final IpcConfig config) {
         return new IpcReceiver(file, length, config);
     }
 
-    public static MessageReceiver openReceiver(final File file, final IpcConfiguration config) {
+    public static MessageReceiver openReceiver(final File file, final IpcConfig config) {
         return new IpcReceiver(IoUtil.mapExistingFile(file, READ_WRITE, file.getAbsolutePath()), config);
     }
 
-    public static MessageReceiver retryOpenReceiver(final File file, final IpcConfiguration config) {
+    public static MessageReceiver retryOpenReceiver(final File file, final IpcConfig config) {
         return new IpcRetryOpenReceiver(new RingBufferRetryOpener(file, config), config);
     }
 
-    public static SharedBuffer share(final ByteBuffer buffer, final IpcConfiguration config) {
+    public static SharedBuffer share(final ByteBuffer buffer, final IpcConfig config) {
         return share(buffer, config);
     }
 
-    public static SharedBuffer share(final AtomicBuffer buffer, final IpcConfiguration config) {
+    public static SharedBuffer share(final AtomicBuffer buffer, final IpcConfig config) {
         return share(buffer, config);
     }
 
-    public static SharedBuffer share(final RingBuffer ringBuffer, final IpcConfiguration config) {
+    public static SharedBuffer share(final RingBuffer ringBuffer, final IpcConfig config) {
         return new IpcRingBuffer(ringBuffer, config);
     }
 

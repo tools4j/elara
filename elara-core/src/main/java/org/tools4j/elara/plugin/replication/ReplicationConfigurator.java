@@ -21,15 +21,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.aeron;
+package org.tools4j.elara.plugin.replication;
 
-public interface AeronContext extends AeronConfig {
-    AeronContext  senderInitialBufferSize(int bytes);
-    AeronContext  senderMaxRetriesAfterAdminAction(int maxRetries);
-    AeronContext  receiverFragmentLimit(int limit);
-    AeronContext  receiverFragmentAssemblerInitialBufferSize(int bytes);
+public interface ReplicationConfigurator extends ReplicationConfig {
+    ReplicationConfigurator serverId(int serverId);
+    ReplicationConfigurator serverId(int serverId, boolean local);
+    ReplicationConfigurator serverIds(int... serverIds);
+    ReplicationConfigurator enforceLeaderInput(EnforceLeaderInput input);
+    ReplicationConfigurator connection(int serverId, Connection connection);
+    ReplicationConfigurator heartbeatInterval(long interval);
+    ReplicationConfigurator leaderTimeout(long timeout);
+    ReplicationConfigurator serverReplyTimeout(long timeout);
+    ReplicationConfigurator initialSendBufferCapacity(int capacity);
 
-    static AeronContext create() {
-        return new AeronContextImpl();
+    static ReplicationConfigurator create() {
+        return new ReplicationConfiguratorImpl();
     }
 }

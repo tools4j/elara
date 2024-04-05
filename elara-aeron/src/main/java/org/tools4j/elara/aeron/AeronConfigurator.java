@@ -21,17 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.ipc;
+package org.tools4j.elara.aeron;
 
-public interface IpcContext extends IpcConfiguration {
-    IpcContext senderCardinality(Cardinality cardinality);
-    IpcContext senderInitialBufferSize(int bytes);
-    IpcContext senderAllocationStrategy(AllocationStrategy strategy);
-    IpcContext maxMessagesReceivedPerPoll(int maxMessages);
-    IpcContext newFileCreateParentDirs(boolean create);
-    IpcContext newFileDeleteIfPresent(boolean delete);
+public interface AeronConfigurator extends AeronConfig {
+    AeronConfigurator senderInitialBufferSize(int bytes);
+    AeronConfigurator senderMaxRetriesAfterAdminAction(int maxRetries);
+    AeronConfigurator receiverFragmentLimit(int limit);
+    AeronConfigurator receiverFragmentAssemblerInitialBufferSize(int bytes);
 
-    static IpcContext create() {
-        return new IpcContextImpl();
+    static AeronConfigurator create() {
+        return new AeronConfiguratorImpl();
     }
 }

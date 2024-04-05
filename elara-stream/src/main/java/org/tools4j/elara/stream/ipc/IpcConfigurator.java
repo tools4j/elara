@@ -21,18 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.config;
+package org.tools4j.elara.stream.ipc;
 
-import org.tools4j.elara.stream.tcp.AcceptListener;
-import org.tools4j.elara.stream.tcp.TcpSendingStrategy;
+public interface IpcConfigurator extends IpcConfig {
+    IpcConfigurator senderCardinality(Cardinality cardinality);
+    IpcConfigurator senderInitialBufferSize(int bytes);
+    IpcConfigurator senderAllocationStrategy(AllocationStrategy strategy);
+    IpcConfigurator maxMessagesReceivedPerPoll(int maxMessages);
+    IpcConfigurator newFileCreateParentDirs(boolean create);
+    IpcConfigurator newFileDeleteIfPresent(boolean delete);
 
-public interface TcpServerContext extends TcpServerConfiguration {
-    TcpServerContext bufferCapacity(int capacity);
-    TcpServerContext sendingStrategyFactory(TcpSendingStrategy.Factory factory);
-    TcpServerContext acceptListener(AcceptListener listener);
-    TcpServerContext populateDefaults();
-
-    static TcpServerContext create() {
-        return new TcpContextImpl();
+    static IpcConfigurator create() {
+        return new IpcConfiguratorImpl();
     }
 }

@@ -25,7 +25,7 @@ package org.tools4j.elara.stream.ipc.impl;
 
 import org.agrona.IoUtil;
 import org.agrona.concurrent.ringbuffer.RingBuffer;
-import org.tools4j.elara.stream.ipc.IpcConfiguration;
+import org.tools4j.elara.stream.ipc.IpcConfig;
 
 import java.io.File;
 import java.util.function.Supplier;
@@ -36,12 +36,12 @@ import static java.util.Objects.requireNonNull;
 public class RingBufferRetryOpener implements Supplier<RingBuffer>, AutoCloseable {
 
     private final File file;
-    private final IpcConfiguration config;
+    private final IpcConfig config;
     private final String description;
     private RingBuffer ringBuffer;
     private boolean closed;
 
-    public RingBufferRetryOpener(final File file, final IpcConfiguration config) {
+    public RingBufferRetryOpener(final File file, final IpcConfig config) {
         this.file = requireNonNull(file);
         this.config = requireNonNull(config);
         this.description = file.getAbsolutePath();

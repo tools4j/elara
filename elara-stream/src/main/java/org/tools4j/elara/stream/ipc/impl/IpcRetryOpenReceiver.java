@@ -26,7 +26,7 @@ package org.tools4j.elara.stream.ipc.impl;
 import org.agrona.CloseHelper;
 import org.agrona.concurrent.ringbuffer.RingBuffer;
 import org.tools4j.elara.stream.MessageReceiver;
-import org.tools4j.elara.stream.ipc.IpcConfiguration;
+import org.tools4j.elara.stream.ipc.IpcConfig;
 
 import java.util.function.Supplier;
 
@@ -40,7 +40,7 @@ public class IpcRetryOpenReceiver implements MessageReceiver {
     private RingBuffer ringBuffer;
     private boolean closed;
 
-    public IpcRetryOpenReceiver(final Supplier<? extends RingBuffer> ringBufferSupplier, final IpcConfiguration config) {
+    public IpcRetryOpenReceiver(final Supplier<? extends RingBuffer> ringBufferSupplier, final IpcConfig config) {
         this.ringBufferSupplier = requireNonNull(ringBufferSupplier);
         this.maxMessagesPerPoll = Math.max(1, config.maxMessagesReceivedPerPoll());
     }

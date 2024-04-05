@@ -28,7 +28,7 @@ import org.tools4j.elara.stream.udp.UdpSendingStrategy;
 
 import static java.util.Objects.requireNonNull;
 
-class UdpContextImpl implements UdpContext {
+class UdpConfiguratorImpl implements UdpConfigurator {
 
     private static final int MIN_BUFFER_CAPACITY = 64;
     private static final int DEFAULT_BUFFER_CAPACITY = 1 << 14;
@@ -46,7 +46,7 @@ class UdpContextImpl implements UdpContext {
     }
 
     @Override
-    public UdpContext bufferCapacity(final int capacity) {
+    public UdpConfigurator bufferCapacity(final int capacity) {
         if (capacity < MIN_BUFFER_CAPACITY) {
             throw new IllegalArgumentException("Buffer capacity must be at least " + MIN_BUFFER_CAPACITY +
                     " but was " + capacity);
@@ -61,7 +61,7 @@ class UdpContextImpl implements UdpContext {
     }
 
     @Override
-    public UdpContext sendingStrategyFactory(final UdpSendingStrategy.Factory factory) {
+    public UdpConfigurator sendingStrategyFactory(final UdpSendingStrategy.Factory factory) {
         this.sendingStrategyFactory = requireNonNull(factory);
         return this;
     }
@@ -72,7 +72,7 @@ class UdpContextImpl implements UdpContext {
     }
 
     @Override
-    public UdpContext remoteAddressListener(final RemoteAddressListener listener) {
+    public UdpConfigurator remoteAddressListener(final RemoteAddressListener listener) {
         this.remoteAddressListener = listener;
         return this;
     }
@@ -83,7 +83,7 @@ class UdpContextImpl implements UdpContext {
     }
 
     @Override
-    public UdpContext mtuLength(final int mtuLength) {
+    public UdpConfigurator mtuLength(final int mtuLength) {
         if (mtuLength < MIN_MTU_LENGTH) {
             throw new IllegalArgumentException("MTU length must be at least " + MIN_MTU_LENGTH +
                     " but was " + mtuLength);
@@ -100,27 +100,27 @@ class UdpContextImpl implements UdpContext {
     }
 
     @Override
-    public UdpContext populateDefaults() {
+    public UdpConfigurator populateDefaults() {
         if (remoteAddressListener == null) {
             remoteAddressListener = defaultRemoteAddressListener();
         }
         return this;
     }
 
-    static final class UdpClientContextImpl extends UdpContextImpl implements UdpClientContext {
+    static final class UdpClientConfiguratorImpl extends UdpConfiguratorImpl implements UdpClientConfigurator {
         @Override
         public void validate() {
             //nothing to validate
         }
 
         @Override
-        public UdpContext populateDefaults() {
+        public UdpConfigurator populateDefaults() {
             //nothing to populate
             return this;
         }
     }
 
-    static final class UdpServerContextImpl extends UdpContextImpl implements UdpServerContext {
+    static final class UdpServerConfiguratorImpl extends UdpConfiguratorImpl implements UdpServerConfigurator {
         //nothing to add
     }
 

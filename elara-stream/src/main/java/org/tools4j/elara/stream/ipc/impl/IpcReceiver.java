@@ -25,7 +25,7 @@ package org.tools4j.elara.stream.ipc.impl;
 
 import org.agrona.concurrent.ringbuffer.RingBuffer;
 import org.tools4j.elara.stream.MessageReceiver;
-import org.tools4j.elara.stream.ipc.IpcConfiguration;
+import org.tools4j.elara.stream.ipc.IpcConfig;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -38,15 +38,15 @@ public class IpcReceiver implements MessageReceiver {
     private final int maxMessagesPerPoll;
     private final IpcMessageHandler messageHandler = new IpcMessageHandler();
 
-    public IpcReceiver(final File file, final int length, final IpcConfiguration config) {
+    public IpcReceiver(final File file, final int length, final IpcConfig config) {
         this(RingBuffers.newFileMapped(file, length, config), config);
     }
 
-    public IpcReceiver(final ByteBuffer buffer, final IpcConfiguration config) {
+    public IpcReceiver(final ByteBuffer buffer, final IpcConfig config) {
         this(RingBuffers.create(buffer, config), config);
     }
 
-    public IpcReceiver(final RingBuffer ringBuffer, final IpcConfiguration config) {
+    public IpcReceiver(final RingBuffer ringBuffer, final IpcConfig config) {
         this.ringBuffer = requireNonNull(ringBuffer);
         this.maxMessagesPerPoll = Math.max(1, config.maxMessagesReceivedPerPoll());
     }

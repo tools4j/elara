@@ -21,20 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.replication;
+package org.tools4j.elara.stream.tcp.config;
 
-public interface ReplicationContext extends ReplicationConfig {
-    ReplicationContext serverId(int serverId);
-    ReplicationContext serverId(int serverId, boolean local);
-    ReplicationContext serverIds(int... serverIds);
-    ReplicationContext enforceLeaderInput(EnforceLeaderInput input);
-    ReplicationContext connection(int serverId, Connection connection);
-    ReplicationContext heartbeatInterval(long interval);
-    ReplicationContext leaderTimeout(long timeout);
-    ReplicationContext serverReplyTimeout(long timeout);
-    ReplicationContext initialSendBufferCapacity(int capacity);
+import org.tools4j.elara.stream.tcp.ConnectListener;
 
-    static ReplicationContext create() {
-        return new DefaultReplicationContext();
+public interface TcpClientConfigurator extends TcpClientConfig {
+    TcpClientConfigurator bufferCapacity(int capacity);
+    TcpClientConfigurator reconnectTimeoutMillis(long timeoutMillis);
+    TcpClientConfigurator connectListener(ConnectListener listener);
+    TcpClientConfigurator populateDefaults();
+
+    static TcpClientConfigurator create() {
+        return new TcpConfiguratorImpl();
     }
 }

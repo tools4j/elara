@@ -34,7 +34,7 @@ import org.tools4j.elara.stream.ipc.SharedBuffer;
 
 import static java.util.Objects.requireNonNull;
 
-public class ActivationContextImpl implements ActivationContext {
+public class ActivationConfiguratorImpl implements ActivationConfigurator {
 
     private CommandReplayMode commandReplayMode = CommandReplayMode.DISCARD;
     private MessageSender commandCacheSender;
@@ -46,7 +46,7 @@ public class ActivationContextImpl implements ActivationContext {
     }
 
     @Override
-    public ActivationContext commandReplayMode(final CommandReplayMode mode) {
+    public ActivationConfigurator commandReplayMode(final CommandReplayMode mode) {
         this.commandReplayMode = requireNonNull(mode);
         return this;
     }
@@ -62,27 +62,27 @@ public class ActivationContextImpl implements ActivationContext {
     }
 
     @Override
-    public ActivationContext commandCache(final MessageStore commandStore) {
+    public ActivationConfigurator commandCache(final MessageStore commandStore) {
         commandCacheSender = new StoreAppendingMessageSender(commandStore);
         commandCacheReceiver = new StorePollingMessageReceiver(commandStore);
         return this;
     }
 
     @Override
-    public ActivationContext commandCache(final SharedBuffer commandBuffer) {
+    public ActivationConfigurator commandCache(final SharedBuffer commandBuffer) {
         commandCacheSender = commandBuffer.sender();
         commandCacheReceiver = commandBuffer.receiver();
         return this;
     }
 
     @Override
-    public ActivationContext commandCacheSender(final MessageSender sender) {
+    public ActivationConfigurator commandCacheSender(final MessageSender sender) {
         this.commandCacheSender = requireNonNull(sender);
         return this;
     }
 
     @Override
-    public ActivationContext commandCacheReceiver(final MessageReceiver receiver) {
+    public ActivationConfigurator commandCacheReceiver(final MessageReceiver receiver) {
         this.commandCacheReceiver = requireNonNull(receiver);
         return this;
     }

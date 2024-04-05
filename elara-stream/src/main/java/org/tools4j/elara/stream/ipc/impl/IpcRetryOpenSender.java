@@ -29,7 +29,7 @@ import org.agrona.concurrent.ringbuffer.RingBuffer;
 import org.tools4j.elara.stream.BufferingSendingContext;
 import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.SendingResult;
-import org.tools4j.elara.stream.ipc.IpcConfiguration;
+import org.tools4j.elara.stream.ipc.IpcConfig;
 
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
@@ -40,14 +40,14 @@ import static org.tools4j.elara.stream.ipc.AllocationStrategy.FIXED;
 public class IpcRetryOpenSender implements MessageSender {
 
     private final Supplier<? extends RingBuffer> ringBufferSupplier;
-    private final BiFunction<? super RingBuffer, ? super IpcConfiguration, ? extends MessageSender> senderFactory;
-    private final IpcConfiguration config;
+    private final BiFunction<? super RingBuffer, ? super IpcConfig, ? extends MessageSender> senderFactory;
+    private final IpcConfig config;
     private MessageSender sender;
     private BufferedContext bufferedContext;
     private boolean closed;
 
     public IpcRetryOpenSender(final Supplier<? extends RingBuffer> ringBufferSupplier,
-                              final IpcConfiguration config) {
+                              final IpcConfig config) {
         this.ringBufferSupplier = requireNonNull(ringBufferSupplier);
         this.senderFactory = config.senderAllocationStrategy() == FIXED ? IpcDirectSender::new : IpcBufferedSender::new;
         this.config = requireNonNull(config);

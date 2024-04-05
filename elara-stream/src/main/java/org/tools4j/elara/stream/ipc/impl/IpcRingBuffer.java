@@ -27,7 +27,7 @@ import org.agrona.concurrent.AtomicBuffer;
 import org.agrona.concurrent.ringbuffer.RingBuffer;
 import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageSender;
-import org.tools4j.elara.stream.ipc.IpcConfiguration;
+import org.tools4j.elara.stream.ipc.IpcConfig;
 import org.tools4j.elara.stream.ipc.SharedBuffer;
 
 import java.nio.ByteBuffer;
@@ -37,20 +37,20 @@ import static java.util.Objects.requireNonNull;
 public class IpcRingBuffer implements SharedBuffer {
 
     private final RingBuffer ringBuffer;
-    private final IpcConfiguration config;
+    private final IpcConfig config;
     private final ThreadLocal<MessageSender> senderThreadLocal;
     private MessageSender sender;
     private MessageReceiver receiver;
 
-    public IpcRingBuffer(final ByteBuffer buffer, final IpcConfiguration config) {
+    public IpcRingBuffer(final ByteBuffer buffer, final IpcConfig config) {
         this(RingBuffers.create(buffer, config), config);
     }
 
-    public IpcRingBuffer(final AtomicBuffer buffer, final IpcConfiguration config) {
+    public IpcRingBuffer(final AtomicBuffer buffer, final IpcConfig config) {
         this(RingBuffers.create(buffer, config), config);
     }
 
-    public IpcRingBuffer(final RingBuffer ringBuffer, final IpcConfiguration config) {
+    public IpcRingBuffer(final RingBuffer ringBuffer, final IpcConfig config) {
         this.ringBuffer = requireNonNull(ringBuffer);
         this.config = requireNonNull(config);
         this.senderThreadLocal = ThreadLocal.withInitial(() -> new IpcBufferedSender(ringBuffer, config));

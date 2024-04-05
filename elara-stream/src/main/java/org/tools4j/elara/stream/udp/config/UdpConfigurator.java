@@ -21,21 +21,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.tcp.config;
+package org.tools4j.elara.stream.udp.config;
 
-public interface TcpConfiguration {
-    int bufferCapacity();
+import org.tools4j.elara.stream.udp.RemoteAddressListener;
+import org.tools4j.elara.stream.udp.UdpSendingStrategy;
 
-    void validate();
+public interface UdpConfigurator extends UdpServerConfigurator, UdpClientConfigurator {
+    @Override
+    UdpConfigurator bufferCapacity(int capacity);
+    @Override
+    UdpConfigurator mtuLength(int mtuLength);
 
-    static TcpContext configure() {
-        return TcpContext.create();
-    }
-    static TcpClientContext configureClient() {
-        return TcpClientConfiguration.configure();
-    }
+    @Override
+    UdpConfigurator sendingStrategyFactory(UdpSendingStrategy.Factory factory);
+    @Override
+    UdpConfigurator remoteAddressListener(RemoteAddressListener listener);
 
-    static TcpServerContext configureServer() {
-        return TcpServerConfiguration.configure();
+    @Override
+    UdpConfigurator populateDefaults();
+
+    static UdpConfigurator create() {
+        return new UdpConfiguratorImpl();
     }
 }

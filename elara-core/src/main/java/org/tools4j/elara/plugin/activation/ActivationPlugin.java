@@ -45,8 +45,8 @@ public class ActivationPlugin implements SystemPlugin<ActivationState> {
         return config;
     }
 
-    public static ActivationContext configure() {
-        return ActivationContext.create();
+    public static ActivationConfigurator configure() {
+        return ActivationConfigurator.create();
     }
 
     public boolean activate() {

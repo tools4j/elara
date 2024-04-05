@@ -30,7 +30,7 @@ import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.concurrent.ringbuffer.ManyToOneRingBuffer;
 import org.agrona.concurrent.ringbuffer.OneToOneRingBuffer;
 import org.agrona.concurrent.ringbuffer.RingBuffer;
-import org.tools4j.elara.stream.ipc.IpcConfiguration;
+import org.tools4j.elara.stream.ipc.IpcConfig;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -68,7 +68,7 @@ enum RingBuffers {
         ringBuffer.buffer().wrap(0, 0);
     }
 
-    static RingBuffer newFileMapped(final File file, final int length, final IpcConfiguration config) {
+    static RingBuffer newFileMapped(final File file, final int length, final IpcConfig config) {
         final File dir = file.getParentFile();
         if (dir != null && config.newFileCreateParentDirs()) {
             IoUtil.ensureDirectoryExists(dir, dir.getAbsolutePath());
@@ -79,11 +79,11 @@ enum RingBuffers {
         return create(IoUtil.mapNewFile(file, length + TRAILER_LENGTH), config);
     }
 
-    static RingBuffer create(final ByteBuffer buffer, final IpcConfiguration config) {
+    static RingBuffer create(final ByteBuffer buffer, final IpcConfig config) {
         return create(new UnsafeBuffer(buffer), config);
     }
 
-    static RingBuffer create(final AtomicBuffer buffer, final IpcConfiguration config) {
+    static RingBuffer create(final AtomicBuffer buffer, final IpcConfig config) {
         switch (config.senderCardinality()) {
             case ONE:
                 return new OneToOneRingBuffer(buffer);

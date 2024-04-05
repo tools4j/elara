@@ -27,7 +27,7 @@ import org.agrona.DirectBuffer;
 import org.agrona.concurrent.ringbuffer.RingBuffer;
 import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.SendingResult;
-import org.tools4j.elara.stream.ipc.IpcConfiguration;
+import org.tools4j.elara.stream.ipc.IpcConfig;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -38,15 +38,15 @@ public class IpcBufferedSender extends MessageSender.Buffered {
 
     private final RingBuffer ringBuffer;
 
-    public IpcBufferedSender(final File file, final int length, final IpcConfiguration config) {
+    public IpcBufferedSender(final File file, final int length, final IpcConfig config) {
         this(RingBuffers.newFileMapped(file, length, config), config);
     }
 
-    public IpcBufferedSender(final ByteBuffer buffer, final IpcConfiguration config) {
+    public IpcBufferedSender(final ByteBuffer buffer, final IpcConfig config) {
         this(RingBuffers.create(buffer, config), config);
     }
 
-    public IpcBufferedSender(final RingBuffer ringBuffer, final IpcConfiguration config) {
+    public IpcBufferedSender(final RingBuffer ringBuffer, final IpcConfig config) {
         super(config.senderInitialBufferSize());
         this.ringBuffer = requireNonNull(ringBuffer);
     }

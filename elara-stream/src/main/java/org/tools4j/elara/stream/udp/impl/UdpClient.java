@@ -34,7 +34,7 @@ import org.tools4j.elara.stream.udp.UdpEndpoint;
 import org.tools4j.elara.stream.udp.UdpHeader;
 import org.tools4j.elara.stream.udp.UdpReceiver;
 import org.tools4j.elara.stream.udp.UdpSender;
-import org.tools4j.elara.stream.udp.config.UdpClientConfiguration;
+import org.tools4j.elara.stream.udp.config.UdpClientConfig;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -45,13 +45,13 @@ import static java.util.Objects.requireNonNull;
 public class UdpClient implements UdpEndpoint {
     private static final UnsafeBuffer HELLO = new UnsafeBuffer(ByteBuffer.allocate(0));
     private final SocketAddress connectAddress;
-    private final UdpClientConfiguration configuration;
+    private final UdpClientConfig configuration;
     private final Supplier<? extends ByteBuffer> bufferFactory;
     private final UcpClientReceiver receiver;
     private final UcpClientSender sender;
     private UdpClientEndpoint client;
 
-    public UdpClient(final SocketAddress connectAddress, final UdpClientConfiguration configuration) {
+    public UdpClient(final SocketAddress connectAddress, final UdpClientConfig configuration) {
         configuration.validate();
         this.connectAddress = requireNonNull(connectAddress);
         this.configuration = requireNonNull(configuration);

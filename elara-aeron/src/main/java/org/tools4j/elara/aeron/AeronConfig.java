@@ -29,7 +29,7 @@ public interface AeronConfig {
     int receiverFragmentLimit();
     int receiverFragmentAssemblerInitialBufferSize();
 
-    static AeronContext configure() {
-        return AeronContext.create();
+    static AeronConfigurator configure() {
+        return AeronConfigurator.create();
     }
 }

@@ -60,6 +60,7 @@ public interface CommandSender {
      * @see #sendingCommand(int)
      */
     SendingContext sendingCommand();
+    
     /**
      * Starts sending of a command and returns the sending context with the buffer for command encoding.  Encoding and
      * sending are completed with {@link SendingContext#send(int) send(..)} and it is recommended to perform the

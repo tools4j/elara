@@ -31,7 +31,7 @@ import java.util.Set;
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.metrics.TimeMetric.INPUT_SENDING_TIME;
 
-public class DefaultContext implements MetricsContext {
+public class MetricsConfiguratorImpl implements MetricsConfigurator {
 
     private final Set<TimeMetric> timeMetrics = EnumSet.noneOf(TimeMetric.class);
     private final Set<FrequencyMetric> frequencyMetrics = EnumSet.noneOf(FrequencyMetric.class);
@@ -71,13 +71,13 @@ public class DefaultContext implements MetricsContext {
     }
 
     @Override
-    public MetricsContext timeMetric(final TimeMetric metric) {
+    public MetricsConfigurator timeMetric(final TimeMetric metric) {
         timeMetrics.add(metric);
         return this;
     }
 
     @Override
-    public MetricsContext timeMetrics(final TimeMetric... metrics) {
+    public MetricsConfigurator timeMetrics(final TimeMetric... metrics) {
         for (final TimeMetric metric : metrics) {
             timeMetrics.add(metric);
         }
@@ -85,19 +85,19 @@ public class DefaultContext implements MetricsContext {
     }
 
     @Override
-    public MetricsContext timeMetrics(final Set<? extends TimeMetric> metrics) {
+    public MetricsConfigurator timeMetrics(final Set<? extends TimeMetric> metrics) {
         timeMetrics.addAll(metrics);
         return this;
     }
 
     @Override
-    public MetricsContext frequencyMetric(final FrequencyMetric metric) {
+    public MetricsConfigurator frequencyMetric(final FrequencyMetric metric) {
         frequencyMetrics.add(metric);
         return this;
     }
 
     @Override
-    public MetricsContext frequencyMetrics(final FrequencyMetric... metrics) {
+    public MetricsConfigurator frequencyMetrics(final FrequencyMetric... metrics) {
         for (final FrequencyMetric metric : metrics) {
             frequencyMetrics.add(metric);
         }
@@ -105,18 +105,18 @@ public class DefaultContext implements MetricsContext {
     }
 
     @Override
-    public MetricsContext frequencyMetrics(final Set<? extends FrequencyMetric> metrics) {
+    public MetricsConfigurator frequencyMetrics(final Set<? extends FrequencyMetric> metrics) {
         frequencyMetrics.addAll(metrics);
         return this;
     }
 
     @Override
-    public MetricsContext latencyMetric(final LatencyMetric metric) {
+    public MetricsConfigurator latencyMetric(final LatencyMetric metric) {
         return timeMetric(metric.start()).timeMetric(metric.end());
     }
 
     @Override
-    public MetricsContext latencyMetrics(final LatencyMetric... metrics) {
+    public MetricsConfigurator latencyMetrics(final LatencyMetric... metrics) {
         for (final LatencyMetric metric : metrics) {
             latencyMetric(metric);
         }
@@ -124,19 +124,19 @@ public class DefaultContext implements MetricsContext {
     }
 
     @Override
-    public MetricsContext latencyMetrics(final Set<? extends LatencyMetric> metrics) {
+    public MetricsConfigurator latencyMetrics(final Set<? extends LatencyMetric> metrics) {
         metrics.forEach(this::latencyMetric);
         return this;
     }
 
     @Override
-    public MetricsContext inputSendingTimeExtractor(final InputSendingTimeExtractor sendingTimeExtractor) {
+    public MetricsConfigurator inputSendingTimeExtractor(final InputSendingTimeExtractor sendingTimeExtractor) {
         this.inputSendingTimeExtractor = requireNonNull(sendingTimeExtractor);
         return this;
     }
 
     @Override
-    public MetricsContext frequencyMetricInterval(final long timeInterval) {
+    public MetricsConfigurator frequencyMetricInterval(final long timeInterval) {
         if (timeInterval <= 0) {
             throw new IllegalArgumentException("time interval must be positive: " + timeInterval);
         }
@@ -145,7 +145,7 @@ public class DefaultContext implements MetricsContext {
     }
 
     @Override
-    public MetricsContext metricsStore(final MessageStore metricsStore) {
+    public MetricsConfigurator metricsStore(final MessageStore metricsStore) {
         requireNonNull(metricsStore);
         this.timeMetricsStore = metricsStore;
         this.frequencyMetricsStore = metricsStore;
@@ -153,13 +153,13 @@ public class DefaultContext implements MetricsContext {
     }
 
     @Override
-    public MetricsContext timeMetricsStore(final MessageStore metricStore) {
+    public MetricsConfigurator timeMetricsStore(final MessageStore metricStore) {
         this.timeMetricsStore = requireNonNull(metricStore);
         return this;
     }
 
     @Override
-    public MetricsContext frequencyMetricsStore(final MessageStore metricStore) {
+    public MetricsConfigurator frequencyMetricsStore(final MessageStore metricStore) {
         this.frequencyMetricsStore = requireNonNull(metricStore);
         return this;
     }

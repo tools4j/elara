@@ -21,17 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.ipc;
+package org.tools4j.elara.stream.udp.config;
 
-public interface IpcConfiguration {
-    Cardinality senderCardinality();
-    int senderInitialBufferSize();
-    AllocationStrategy senderAllocationStrategy();
-    int maxMessagesReceivedPerPoll();
-    boolean newFileCreateParentDirs();
-    boolean newFileDeleteIfPresent();
-
-    static IpcContext configure() {
-        return IpcContext.create();
+public interface UdpClientConfig extends UdpConfig {
+    static UdpClientConfigurator configure() {
+        return UdpClientConfigurator.create();
     }
 }

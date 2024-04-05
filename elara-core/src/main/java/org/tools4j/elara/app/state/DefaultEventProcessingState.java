@@ -27,7 +27,7 @@ import org.agrona.collections.Int2ObjectHashMap;
 import org.tools4j.elara.app.state.EventProcessingState.MutableEventProcessingState;
 import org.tools4j.elara.flyweight.EventType;
 
-public class DefaultEventProcessingState implements MutableEventProcessingState, PassthroughState {
+class DefaultEventProcessingState implements MutableEventProcessingState, PassthroughState {
     public static final BaseStateProvider PROVIDER = appConfig -> new DefaultEventProcessingState();
 
     private final Int2ObjectHashMap<DefaultEventState> sourceIdToEventState = new Int2ObjectHashMap<>();
@@ -57,6 +57,7 @@ public class DefaultEventProcessingState implements MutableEventProcessingState,
     @Override
     public void applyEvent(final int srcId, final long srcSeq, final long evtSeq, final int evtIndex,
                            final EventType evtType, final long evtTime, final int payloadType) {
+        lastAppliedEventSequence = evtSeq;
         lastProcessedEventCreateIfAbsent(srcId).applyEvent(srcSeq, evtSeq, evtIndex, evtType, evtTime, payloadType);
     }
 

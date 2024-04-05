@@ -21,29 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.metrics;
+package org.tools4j.elara.stream.ipc;
 
-import org.tools4j.elara.store.MessageStore;
+public interface IpcConfig {
+    Cardinality senderCardinality();
+    int senderInitialBufferSize();
+    AllocationStrategy senderAllocationStrategy();
+    int maxMessagesReceivedPerPoll();
+    boolean newFileCreateParentDirs();
+    boolean newFileDeleteIfPresent();
 
-import java.util.Set;
-
-public interface MetricsContext extends MetricsConfig {
-    MetricsContext timeMetric(TimeMetric metric);
-    MetricsContext timeMetrics(TimeMetric... metrics);
-    MetricsContext timeMetrics(Set<? extends TimeMetric> metrics);
-    MetricsContext frequencyMetric(FrequencyMetric metric);
-    MetricsContext frequencyMetrics(FrequencyMetric... metrics);
-    MetricsContext frequencyMetrics(Set<? extends FrequencyMetric> metrics);
-    MetricsContext latencyMetric(LatencyMetric metric);
-    MetricsContext latencyMetrics(LatencyMetric... metrics);
-    MetricsContext latencyMetrics(Set<? extends LatencyMetric> metrics);
-    MetricsContext inputSendingTimeExtractor(InputSendingTimeExtractor sendingTimeExtractor);
-    MetricsContext frequencyMetricInterval(long timeInterval);
-    MetricsContext metricsStore(MessageStore metricStore);
-    MetricsContext timeMetricsStore(MessageStore metricStore);
-    MetricsContext frequencyMetricsStore(MessageStore metricStore);
-
-    static MetricsContext create() {
-        return new DefaultContext();
+    static IpcConfigurator configure() {
+        return IpcConfigurator.create();
     }
 }

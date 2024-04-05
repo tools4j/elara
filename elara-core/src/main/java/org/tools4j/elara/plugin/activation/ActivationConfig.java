@@ -33,7 +33,7 @@ public interface ActivationConfig {
     MessageReceiver commandCacheReceiver();
     void validate(AppConfig appConfig);
 
-    static ActivationContext configure() {
-        return ActivationContext.create();
+    static ActivationConfigurator configure() {
+        return ActivationConfigurator.create();
     }
 }

@@ -93,7 +93,7 @@ final class DefaultEventState implements EventState {
 
     @Override
     public String toString() {
-        return "EventState" +
+        return "DefaultEventState" +
                 ":source-id=" + sourceId +
                 "|events-processed=" + count +
                 "|source-seq=" + sourceSequence +

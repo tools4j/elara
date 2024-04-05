@@ -21,10 +21,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.udp.config;
+package org.tools4j.elara.stream.tcp.config;
 
-public interface UdpClientConfiguration extends UdpConfiguration {
-    static UdpClientContext configure() {
-        return UdpClientContext.create();
+public interface TcpConfig {
+    int bufferCapacity();
+
+    void validate();
+
+    static TcpConfigurator configure() {
+        return TcpConfigurator.create();
+    }
+    static TcpClientConfigurator configureClient() {
+        return TcpClientConfig.configure();
+    }
+
+    static TcpServerConfigurator configureServer() {
+        return TcpServerConfig.configure();
     }
 }

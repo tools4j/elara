@@ -21,17 +21,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.stream.udp.config;
+package org.tools4j.elara.plugin.activation;
 
-import org.tools4j.elara.stream.udp.config.UdpContextImpl.UdpClientContextImpl;
+import org.tools4j.elara.store.MessageStore;
+import org.tools4j.elara.stream.MessageReceiver;
+import org.tools4j.elara.stream.MessageSender;
+import org.tools4j.elara.stream.ipc.SharedBuffer;
 
-public interface UdpClientContext extends UdpClientConfiguration {
-    UdpClientContext bufferCapacity(int capacity);
-    UdpClientContext mtuLength(int mtuLength);
-
-    UdpClientContext populateDefaults();
-
-    static UdpClientContext create() {
-        return new UdpClientContextImpl();
+public interface ActivationConfigurator extends ActivationConfig {
+    ActivationConfigurator commandReplayMode(CommandReplayMode mode);
+    ActivationConfigurator commandCache(MessageStore commandStore);
+    ActivationConfigurator commandCache(SharedBuffer commandBuffer);
+    ActivationConfigurator commandCacheSender(MessageSender sender);
+    ActivationConfigurator commandCacheReceiver(MessageReceiver receiver);
+    static ActivationConfigurator create() {
+        return new ActivationConfiguratorImpl();
     }
 }

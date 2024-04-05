@@ -23,9 +23,9 @@
  */
 package org.tools4j.elara.stream.udp;
 
-import org.tools4j.elara.stream.udp.config.UdpClientConfiguration;
-import org.tools4j.elara.stream.udp.config.UdpConfiguration;
-import org.tools4j.elara.stream.udp.config.UdpServerConfiguration;
+import org.tools4j.elara.stream.udp.config.UdpClientConfig;
+import org.tools4j.elara.stream.udp.config.UdpConfig;
+import org.tools4j.elara.stream.udp.config.UdpServerConfig;
 import org.tools4j.elara.stream.udp.impl.UdpClient;
 import org.tools4j.elara.stream.udp.impl.UdpServer;
 
@@ -40,10 +40,10 @@ public enum Udp {
     }
 
     public static UdpServer bind(final SocketAddress address) {
-        return bind(address, UdpConfiguration.configureServer().populateDefaults());
+        return bind(address, UdpConfig.configureServer().populateDefaults());
     }
 
-    public static UdpServer bind(final SocketAddress address, final UdpServerConfiguration configuration) {
+    public static UdpServer bind(final SocketAddress address, final UdpServerConfig configuration) {
         return new UdpServer(address, configuration);
     }
 
@@ -52,10 +52,10 @@ public enum Udp {
     }
 
     public static UdpClient connect(final SocketAddress address) {
-        return connect(address, UdpConfiguration.configureClient().populateDefaults());
+        return connect(address, UdpConfig.configureClient().populateDefaults());
     }
 
-    public static UdpClient connect(final SocketAddress address, final UdpClientConfiguration configuration) {
+    public static UdpClient connect(final SocketAddress address, final UdpClientConfig configuration) {
         return new UdpClient(address, configuration);
     }
 
