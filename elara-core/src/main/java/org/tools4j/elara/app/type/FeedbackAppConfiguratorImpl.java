@@ -30,12 +30,12 @@ import org.tools4j.elara.stream.MessageSender;
 
 import static java.util.Objects.requireNonNull;
 
-final class FeedbackAppContextImpl extends AbstractEventStreamContext<FeedbackAppContextImpl> implements FeedbackAppContext {
+final class FeedbackAppConfiguratorImpl extends AbstractEventStreamConfigurator<FeedbackAppConfiguratorImpl> implements FeedbackAppConfigurator {
 
     private MessageSender commandSender;
 
     @Override
-    protected FeedbackAppContextImpl self() {
+    protected FeedbackAppConfiguratorImpl self() {
         return this;
     }
 
@@ -45,23 +45,23 @@ final class FeedbackAppContextImpl extends AbstractEventStreamContext<FeedbackAp
     }
 
     @Override
-    public FeedbackAppContext commandStore(final MessageStore commandStore) {
+    public FeedbackAppConfigurator commandStore(final MessageStore commandStore) {
         return commandSender(new StoreAppendingMessageSender(commandStore));
     }
 
     @Override
-    public FeedbackAppContext commandSender(final MessageSender commandStream) {
+    public FeedbackAppConfigurator commandSender(final MessageSender commandStream) {
         this.commandSender = requireNonNull(commandStream);
         return this;
     }
 
     @Override
-    public FeedbackAppContextImpl populateDefaults() {
+    public FeedbackAppConfiguratorImpl populateDefaults() {
         return super.populateDefaults();
     }
 
     @Override
-    public FeedbackAppContext populateDefaults(final FeedbackApp app) {
+    public FeedbackAppConfigurator populateDefaults(final FeedbackApp app) {
         return this
                 .eventProcessor(app)
                 .populateDefaults();

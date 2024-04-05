@@ -23,8 +23,10 @@
  */
 package org.tools4j.elara.app.config;
 
-import org.tools4j.elara.app.handler.CommandProcessor;
+import org.tools4j.elara.store.MessageStore;
+import org.tools4j.elara.stream.MessageSender;
 
-public interface ProcessorContext extends ProcessorConfig {
-    ProcessorContext commandProcessor(CommandProcessor commandProcessor);
+public interface CommandStreamConfigurator extends CommandStreamConfig {
+    CommandStreamConfigurator commandStore(MessageStore commandStore);
+    CommandStreamConfigurator commandSender(MessageSender commandStream);
 }

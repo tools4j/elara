@@ -30,7 +30,6 @@ import org.agrona.concurrent.BusySpinIdleStrategy;
 import org.tools4j.elara.app.state.SingleEventBaseState;
 import org.tools4j.elara.app.type.PassthroughApp;
 import org.tools4j.elara.app.type.PublisherApp;
-import org.tools4j.elara.app.type.PublisherAppContext;
 import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.plugin.api.Plugins;
@@ -43,7 +42,6 @@ import org.tools4j.elara.time.TimeSource;
 
 import java.io.File;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.metrics.FrequencyMetric.DUTY_CYCLE_FREQUENCY;
@@ -115,7 +113,7 @@ public class HashPassthroughApplication implements PassthroughApp {
                 .timeMetrics(INPUT_SENDING_TIME, INPUT_POLLING_TIME, PROCESSING_START_TIME, PROCESSING_END_TIME, ROUTING_START_TIME, APPLYING_START_TIME, APPLYING_END_TIME, ROUTING_END_TIME, OUTPUT_START_TIME, OUTPUT_END_TIME)
                 .inputSendingTimeExtractor((sourceId, sequence, type, buffer, offset, length) -> pseudoNanoClock.currentTime() - 100_000)//for testing only
                 .timeMetricsStore(new ChronicleMessageStore(tq));
-        return new HashPassthroughApplication().launch(context -> context
+        return new HashPassthroughApplication().launch(config -> config
                 .input(SOURCE_ID, HashApplication.inputPoller(input))
                 .eventStore(new ChronicleMessageStore(eq))
                 .timeSource(pseudoNanoClock)
@@ -131,7 +129,7 @@ public class HashPassthroughApplication implements PassthroughApp {
                 .path(path + "/evt.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
-        return new PublisherWithState(state).launch((Consumer<? super PublisherAppContext>)context -> context
+        return new PublisherWithState(state).launch(config -> config
                 .eventStore(new ChronicleMessageStore(eq))
                 .timeSource(pseudoNanoClock)
                 .idleStrategy(BusySpinIdleStrategy.INSTANCE)

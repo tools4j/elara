@@ -272,7 +272,7 @@ public class ActivationHashApplicationTest {
                 .path("build/chronicle/activation-passthrough/evt.cq4")
                 .wireType(WireType.BINARY_LIGHT)
                 .build();
-        return new HashPassthroughApplication().launch(context -> context
+        return new HashPassthroughApplication().launch(config -> config
                 .input(HashApplication.DEFAULT_SOURCE_ID, HashApplication.inputPoller(input))
                 .eventStore(new ChronicleMessageStore(eq))
                 .plugin(plugin)

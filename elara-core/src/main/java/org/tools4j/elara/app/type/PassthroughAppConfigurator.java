@@ -24,12 +24,12 @@
 package org.tools4j.elara.app.type;
 
 import org.agrona.concurrent.IdleStrategy;
-import org.tools4j.elara.app.config.AppContext;
-import org.tools4j.elara.app.config.EventStoreContext;
+import org.tools4j.elara.app.config.AppConfigurator;
+import org.tools4j.elara.app.config.EventStoreConfigurator;
 import org.tools4j.elara.app.config.ExecutionType;
-import org.tools4j.elara.app.config.InputContext;
-import org.tools4j.elara.app.config.OutputContext;
-import org.tools4j.elara.app.config.PluginContext;
+import org.tools4j.elara.app.config.InputConfigurator;
+import org.tools4j.elara.app.config.OutputConfigurator;
+import org.tools4j.elara.app.config.PluginConfigurator;
 import org.tools4j.elara.app.state.BaseStateProvider;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
@@ -47,49 +47,49 @@ import org.tools4j.elara.time.TimeSource;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public interface PassthroughAppContext extends PassthroughAppConfig, AppContext, EventStoreContext, InputContext,
-        OutputContext, PluginContext {
+public interface PassthroughAppConfigurator extends PassthroughAppConfig, AppConfigurator, EventStoreConfigurator, InputConfigurator,
+        OutputConfigurator, PluginConfigurator {
     @Override
-    PassthroughAppContext baseStateProvider(BaseStateProvider baseStateFactory);
+    PassthroughAppConfigurator baseStateProvider(BaseStateProvider baseStateFactory);
     @Override
-    PassthroughAppContext input(Input input);
+    PassthroughAppConfigurator input(Input input);
     @Override
-    PassthroughAppContext input(MultiSourceInput input);
+    PassthroughAppConfigurator input(MultiSourceInput input);
     @Override
-    PassthroughAppContext input(SingleSourceInput input);
+    PassthroughAppConfigurator input(SingleSourceInput input);
     @Override
-    PassthroughAppContext input(int sourceId, InputPoller inputPoller);
+    PassthroughAppConfigurator input(int sourceId, InputPoller inputPoller);
     @Override
-    PassthroughAppContext output(Output output);
+    PassthroughAppConfigurator output(Output output);
     @Override
-    PassthroughAppContext eventStore(MessageStore eventStore);
+    PassthroughAppConfigurator eventStore(MessageStore eventStore);
     @Override
-    PassthroughAppContext timeSource(TimeSource timeSource);
+    PassthroughAppConfigurator timeSource(TimeSource timeSource);
 
     @Override
-    PassthroughAppContext exceptionHandler(ExceptionHandler exceptionHandler);
+    PassthroughAppConfigurator exceptionHandler(ExceptionHandler exceptionHandler);
     @Override
-    PassthroughAppContext duplicateHandler(DuplicateHandler duplicateHandler);
+    PassthroughAppConfigurator duplicateHandler(DuplicateHandler duplicateHandler);
     @Override
-    PassthroughAppContext loggerFactory(Logger.Factory loggerFactory);
+    PassthroughAppConfigurator loggerFactory(Logger.Factory loggerFactory);
     @Override
-    PassthroughAppContext idleStrategy(IdleStrategy idleStrategy);
+    PassthroughAppConfigurator idleStrategy(IdleStrategy idleStrategy);
     @Override
-    PassthroughAppContext dutyCycleExtraStep(AgentStep step, ExecutionType executionType);
+    PassthroughAppConfigurator dutyCycleExtraStep(AgentStep step, ExecutionType executionType);
 
     @Override
-    PassthroughAppContext plugin(Plugin<?> plugin);
+    PassthroughAppConfigurator plugin(Plugin<?> plugin);
     @Override
-    <P> PassthroughAppContext plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider);
+    <P> PassthroughAppConfigurator plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider);
     @Override
-    <P> PassthroughAppContext plugin(Plugin<P> plugin, Consumer<? super P> pluginStateAware);
+    <P> PassthroughAppConfigurator plugin(Plugin<P> plugin, Consumer<? super P> pluginStateAware);
     @Override
-    <P> PassthroughAppContext plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider, Consumer<? super P> pluginStateAware);
+    <P> PassthroughAppConfigurator plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider, Consumer<? super P> pluginStateAware);
 
-    PassthroughAppContext populateDefaults();
-    PassthroughAppContext populateDefaults(PassthroughApp app);
+    PassthroughAppConfigurator populateDefaults();
+    PassthroughAppConfigurator populateDefaults(PassthroughApp app);
 
-    static PassthroughAppContext create() {
-        return new PassthroughAppContextImpl();
+    static PassthroughAppConfigurator create() {
+        return new PassthroughAppConfiguratorImpl();
     }
 }

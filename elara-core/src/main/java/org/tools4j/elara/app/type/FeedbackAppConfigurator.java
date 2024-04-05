@@ -24,13 +24,13 @@
 package org.tools4j.elara.app.type;
 
 import org.agrona.concurrent.IdleStrategy;
-import org.tools4j.elara.app.config.AppContext;
-import org.tools4j.elara.app.config.CommandStreamContext;
-import org.tools4j.elara.app.config.EventStreamContext;
+import org.tools4j.elara.app.config.AppConfigurator;
+import org.tools4j.elara.app.config.CommandStreamConfigurator;
+import org.tools4j.elara.app.config.EventStreamConfigurator;
 import org.tools4j.elara.app.config.ExecutionType;
-import org.tools4j.elara.app.config.InputContext;
-import org.tools4j.elara.app.config.OutputContext;
-import org.tools4j.elara.app.config.PluginContext;
+import org.tools4j.elara.app.config.InputConfigurator;
+import org.tools4j.elara.app.config.OutputConfigurator;
+import org.tools4j.elara.app.config.PluginConfigurator;
 import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.app.state.BaseStateProvider;
 import org.tools4j.elara.exception.ExceptionHandler;
@@ -51,59 +51,59 @@ import org.tools4j.elara.time.TimeSource;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public interface FeedbackAppContext extends FeedbackAppConfig, AppContext, EventStreamContext, CommandStreamContext,
-        InputContext, OutputContext, PluginContext {
+public interface FeedbackAppConfigurator extends FeedbackAppConfig, AppConfigurator, EventStreamConfigurator,
+        CommandStreamConfigurator, InputConfigurator, OutputConfigurator, PluginConfigurator {
 
     @Override
-    FeedbackAppContext baseStateProvider(BaseStateProvider baseStateFactory);
+    FeedbackAppConfigurator baseStateProvider(BaseStateProvider baseStateFactory);
     @Override
-    FeedbackAppContext eventStore(MessageStore eventStore);
+    FeedbackAppConfigurator eventStore(MessageStore eventStore);
     @Override
-    FeedbackAppContext eventStore(Poller eventStorePoller);
+    FeedbackAppConfigurator eventStore(Poller eventStorePoller);
     @Override
-    FeedbackAppContext eventReceiver(MessageReceiver eventReceiver);
+    FeedbackAppConfigurator eventReceiver(MessageReceiver eventReceiver);
     @Override
-    FeedbackAppContext eventProcessor(EventProcessor eventProcessor);
+    FeedbackAppConfigurator eventProcessor(EventProcessor eventProcessor);
     @Override
-    FeedbackAppContext commandStore(MessageStore commandStore);
+    FeedbackAppConfigurator commandStore(MessageStore commandStore);
     @Override
-    FeedbackAppContext commandSender(MessageSender commandSender);
+    FeedbackAppConfigurator commandSender(MessageSender commandSender);
 
     @Override
-    FeedbackAppContext input(Input input);
+    FeedbackAppConfigurator input(Input input);
     @Override
-    FeedbackAppContext input(MultiSourceInput input);
+    FeedbackAppConfigurator input(MultiSourceInput input);
     @Override
-    FeedbackAppContext input(SingleSourceInput input);
+    FeedbackAppConfigurator input(SingleSourceInput input);
     @Override
-    FeedbackAppContext input(int sourceId, InputPoller inputPoller);
+    FeedbackAppConfigurator input(int sourceId, InputPoller inputPoller);
     @Override
-    FeedbackAppContext output(Output output);
+    FeedbackAppConfigurator output(Output output);
 
     @Override
-    FeedbackAppContext timeSource(TimeSource timeSource);
+    FeedbackAppConfigurator timeSource(TimeSource timeSource);
     @Override
-    FeedbackAppContext exceptionHandler(ExceptionHandler exceptionHandler);
+    FeedbackAppConfigurator exceptionHandler(ExceptionHandler exceptionHandler);
     @Override
-    FeedbackAppContext loggerFactory(Logger.Factory loggerFactory);
+    FeedbackAppConfigurator loggerFactory(Logger.Factory loggerFactory);
     @Override
-    FeedbackAppContext idleStrategy(IdleStrategy idleStrategy);
+    FeedbackAppConfigurator idleStrategy(IdleStrategy idleStrategy);
     @Override
-    FeedbackAppContext dutyCycleExtraStep(AgentStep step, ExecutionType executionType);
+    FeedbackAppConfigurator dutyCycleExtraStep(AgentStep step, ExecutionType executionType);
 
     @Override
-    FeedbackAppContext plugin(Plugin<?> plugin);
+    FeedbackAppConfigurator plugin(Plugin<?> plugin);
     @Override
-    <P> FeedbackAppContext plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider);
+    <P> FeedbackAppConfigurator plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider);
     @Override
-    <P> FeedbackAppContext plugin(Plugin<P> plugin, Consumer<? super P> pluginStateAware);
+    <P> FeedbackAppConfigurator plugin(Plugin<P> plugin, Consumer<? super P> pluginStateAware);
     @Override
-    <P> FeedbackAppContext plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider, Consumer<? super P> pluginStateAware);
+    <P> FeedbackAppConfigurator plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider, Consumer<? super P> pluginStateAware);
 
-    FeedbackAppContext populateDefaults();
-    FeedbackAppContext populateDefaults(FeedbackApp app);
+    FeedbackAppConfigurator populateDefaults();
+    FeedbackAppConfigurator populateDefaults(FeedbackApp app);
 
-    static FeedbackAppContext create() {
-        return new FeedbackAppContextImpl();
+    static FeedbackAppConfigurator create() {
+        return new FeedbackAppConfiguratorImpl();
     }
 }

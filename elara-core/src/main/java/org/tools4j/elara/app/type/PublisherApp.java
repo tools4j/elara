@@ -41,23 +41,23 @@ public interface PublisherApp extends Output {
 
     default ElaraRunner launch(final MessageStore eventStore) {
         requireNonNull(eventStore);
-        return launch(context -> context.eventStore(eventStore));
+        return launch(config -> config.eventStore(eventStore));
     }
 
     default ElaraRunner launch(final MessageStore.Poller eventStorePoller) {
         requireNonNull(eventStorePoller);
-        return launch(context -> context.eventStore(eventStorePoller));
+        return launch(config -> config.eventStore(eventStorePoller));
     }
 
     default ElaraRunner launch(final MessageReceiver eventReceiver) {
         requireNonNull(eventReceiver);
-        return launch(context -> context.eventReceiver(eventReceiver));
+        return launch(config -> config.eventReceiver(eventReceiver));
     }
 
-    default ElaraRunner launch(final Consumer<? super PublisherAppContext> configurator) {
-        final PublisherAppContext context = PublisherAppConfig.configure();
-        configurator.accept(context);
-        context.populateDefaults(this);
-        return Elara.launch(context);
+    default ElaraRunner launch(final Consumer<? super PublisherAppConfigurator> configurator) {
+        final PublisherAppConfigurator config = PublisherAppConfig.configure();
+        configurator.accept(config);
+        config.populateDefaults(this);
+        return Elara.launch(config);
     }
 }

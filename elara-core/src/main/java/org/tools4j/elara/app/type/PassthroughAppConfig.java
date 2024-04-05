@@ -34,7 +34,7 @@ public interface PassthroughAppConfig extends AppConfig, EventStoreConfig, Input
     default AppType appType() {
         return ElaraAppType.PassthroughApp;
     }
-    static PassthroughAppContext configure() {
-        return PassthroughAppContext.create();
+    static PassthroughAppConfigurator configure() {
+        return PassthroughAppConfigurator.create();
     }
 }

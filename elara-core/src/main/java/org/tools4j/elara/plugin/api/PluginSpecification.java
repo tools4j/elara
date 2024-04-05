@@ -25,7 +25,7 @@ package org.tools4j.elara.plugin.api;
 
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.ExecutionType;
-import org.tools4j.elara.app.config.PluginContext;
+import org.tools4j.elara.app.config.PluginConfigurator;
 import org.tools4j.elara.app.factory.Interceptor;
 import org.tools4j.elara.app.factory.StateFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
@@ -46,7 +46,7 @@ public interface PluginSpecification<P> {
     /**
      * Returns the default plugin state provider used to create the state for the plugin.  The specification's provider
      * is only used if no explicit provider is specified through one of the {@code plugin(..)} methods in
-     * {@link PluginContext} when configuring the Elara application.
+     * {@link PluginConfigurator} when configuring the Elara application.
      *
      * @return the default provider used to create the plugin's state
      */

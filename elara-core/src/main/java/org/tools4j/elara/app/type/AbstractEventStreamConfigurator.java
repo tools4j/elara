@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.app.type;
 
-import org.tools4j.elara.app.config.EventStreamContext;
+import org.tools4j.elara.app.config.EventStreamConfigurator;
 import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.store.MessageStore.Poller;
@@ -32,7 +32,7 @@ import org.tools4j.elara.stream.MessageReceiver;
 
 import static java.util.Objects.requireNonNull;
 
-abstract class AbstractEventStreamContext<T extends AbstractEventStreamContext<T>> extends AbstractAppContext<T> implements EventStreamContext {
+abstract class AbstractEventStreamConfigurator<T extends AbstractEventStreamConfigurator<T>> extends AbstractAppConfigurator<T> implements EventStreamConfigurator {
 
     private MessageReceiver eventReceiver;
     private EventProcessor eventProcessor;

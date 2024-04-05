@@ -162,9 +162,9 @@ public class TimerApplication {
     public static InputPoller oneTimeInput(final InputPoller inputPoller) {
         requireNonNull(inputPoller);
         final boolean[] inputPolled = {false};
-        return context -> {
+        return sourceContext -> {
             if (!inputPolled[0]) {
-                final int result = inputPoller.poll(context);
+                final int result = inputPoller.poll(sourceContext);
                 inputPolled[0] = true;
                 return result;
             }

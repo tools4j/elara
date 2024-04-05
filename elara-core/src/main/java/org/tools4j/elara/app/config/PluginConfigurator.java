@@ -23,10 +23,14 @@
  */
 package org.tools4j.elara.app.config;
 
-import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.stream.MessageSender;
+import org.tools4j.elara.plugin.api.Plugin;
 
-public interface CommandStreamContext extends CommandStreamConfig {
-    CommandStreamContext commandStore(MessageStore commandStore);
-    CommandStreamContext commandSender(MessageSender commandStream);
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+public interface PluginConfigurator extends PluginConfig {
+    PluginConfigurator plugin(Plugin<?> plugin);
+    <P> PluginConfigurator plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider);
+    <P> PluginConfigurator plugin(Plugin<P> plugin, Consumer<? super P> pluginStateAware);
+    <P> PluginConfigurator plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider, Consumer<? super P> pluginStateAware);
 }

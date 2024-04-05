@@ -36,7 +36,7 @@ public interface FeedbackAppConfig extends AppConfig, EventStreamConfig, Command
     default AppType appType() {
         return ElaraAppType.FeedbackApp;
     }
-    static FeedbackAppContext configure() {
-        return FeedbackAppContext.create();
+    static FeedbackAppConfigurator configure() {
+        return FeedbackAppConfigurator.create();
     }
 }

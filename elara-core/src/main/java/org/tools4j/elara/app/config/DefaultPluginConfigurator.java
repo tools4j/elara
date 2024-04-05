@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
-public class DefaultPluginContext implements PluginContext {
+public class DefaultPluginConfigurator implements PluginConfigurator {
 
     private static final Consumer<Object> STATE_UNAWARE = state -> {};
     private static final InstallerProvider<?> DEFAULT_INSTALLER_PROVIDER = defaultInstallerProvider();
@@ -50,7 +50,7 @@ public class DefaultPluginContext implements PluginContext {
         Installer install(Plugin<P> plugin, AppConfig appConfig, Consumer<? super P> pluginStateAware);
     }
 
-    public DefaultPluginContext(final AppConfig appConfig) {
+    public DefaultPluginConfigurator(final AppConfig appConfig) {
         this.appConfig = requireNonNull(appConfig);
     }
 
@@ -60,23 +60,23 @@ public class DefaultPluginContext implements PluginContext {
     }
 
     @Override
-    public PluginContext plugin(final Plugin<?> plugin) {
+    public PluginConfigurator plugin(final Plugin<?> plugin) {
         return plugin(plugin, STATE_UNAWARE);
     }
 
     @Override
-    public <P> PluginContext plugin(final Plugin<P> plugin, final Supplier<? extends P> pluginStateProvider) {
+    public <P> PluginConfigurator plugin(final Plugin<P> plugin, final Supplier<? extends P> pluginStateProvider) {
         return plugin(plugin, pluginStateProvider, STATE_UNAWARE);
     }
 
     @Override
-    public <P> PluginContext plugin(final Plugin<P> plugin, final Consumer<? super P> pluginStateAware) {
+    public <P> PluginConfigurator plugin(final Plugin<P> plugin, final Consumer<? super P> pluginStateAware) {
         register(plugin, defaultInstallerProvider(), pluginStateAware);
         return this;
     }
 
     @Override
-    public <P> PluginContext plugin(final Plugin<P> plugin, final Supplier<? extends P> pluginStateProvider, final Consumer<? super P> pluginStateAware) {
+    public <P> PluginConfigurator plugin(final Plugin<P> plugin, final Supplier<? extends P> pluginStateProvider, final Consumer<? super P> pluginStateAware) {
         register(plugin, installerProvider(plugin, pluginStateProvider), pluginStateAware);
         return this;
     }
@@ -115,7 +115,7 @@ public class DefaultPluginContext implements PluginContext {
     }
 
     private static <P> InstallerProvider<P> defaultInstallerProvider() {
-        final InstallerProvider<P> installer = DefaultPluginContext::install;
+        final InstallerProvider<P> installer = DefaultPluginConfigurator::install;
         assert installer == DEFAULT_INSTALLER_PROVIDER || DEFAULT_INSTALLER_PROVIDER == null;
         return installer;
     }

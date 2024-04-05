@@ -21,16 +21,37 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.app.config;
+package org.tools4j.elara.app.type;
 
-import org.tools4j.elara.plugin.api.Plugin;
+import org.agrona.concurrent.Agent;
+import org.tools4j.elara.app.factory.PublisherAppFactory;
+import org.tools4j.elara.app.handler.EventProcessor;
 
-import java.util.function.Consumer;
-import java.util.function.Supplier;
+final class PublisherAppConfiguratorImpl extends AbstractEventStreamConfigurator<PublisherAppConfiguratorImpl> implements PublisherAppConfigurator {
 
-public interface PluginContext extends PluginConfig {
-    PluginContext plugin(Plugin<?> plugin);
-    <P> PluginContext plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider);
-    <P> PluginContext plugin(Plugin<P> plugin, Consumer<? super P> pluginStateAware);
-    <P> PluginContext plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider, Consumer<? super P> pluginStateAware);
+    @Override
+    protected PublisherAppConfiguratorImpl self() {
+        return this;
+    }
+
+    @Override
+    public PublisherAppConfiguratorImpl populateDefaults() {
+        if (eventProcessor() == null) {
+            eventProcessor(EventProcessor.NOOP);
+        }
+        return super.populateDefaults();
+    }
+
+    @Override
+    public PublisherAppConfigurator populateDefaults(final PublisherApp app) {
+        return this
+                .output(app)
+                .populateDefaults();
+    }
+
+    @Override
+    public Agent createAgent() {
+        populateDefaults().validate();
+        return new PublisherAppFactory(this).agent();
+    }
 }

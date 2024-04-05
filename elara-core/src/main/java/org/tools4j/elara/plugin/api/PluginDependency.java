@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.plugin.api;
 
-import org.tools4j.elara.app.config.PluginContext;
+import org.tools4j.elara.app.config.PluginConfigurator;
 
 import static java.util.Objects.requireNonNull;
 
@@ -32,7 +32,7 @@ public interface PluginDependency<P> {
 
     Plugin<P> plugin();
 
-    default void install(final PluginContext plugins) {
+    default void install(final PluginConfigurator plugins) {
         plugins.plugin(plugin());
     }
 

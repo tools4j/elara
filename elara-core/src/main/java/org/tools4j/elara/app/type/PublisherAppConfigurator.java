@@ -24,11 +24,11 @@
 package org.tools4j.elara.app.type;
 
 import org.agrona.concurrent.IdleStrategy;
-import org.tools4j.elara.app.config.AppContext;
-import org.tools4j.elara.app.config.EventStreamContext;
+import org.tools4j.elara.app.config.AppConfigurator;
+import org.tools4j.elara.app.config.EventStreamConfigurator;
 import org.tools4j.elara.app.config.ExecutionType;
-import org.tools4j.elara.app.config.OutputContext;
-import org.tools4j.elara.app.config.PluginContext;
+import org.tools4j.elara.app.config.OutputConfigurator;
+import org.tools4j.elara.app.config.PluginConfigurator;
 import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.app.state.BaseStateProvider;
 import org.tools4j.elara.exception.ExceptionHandler;
@@ -44,47 +44,47 @@ import org.tools4j.elara.time.TimeSource;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public interface PublisherAppContext extends PublisherAppConfig, AppContext, EventStreamContext, OutputContext,
-        PluginContext {
+public interface PublisherAppConfigurator extends PublisherAppConfig, AppConfigurator, EventStreamConfigurator, OutputConfigurator,
+        PluginConfigurator {
 
     @Override
-    PublisherAppContext baseStateProvider(BaseStateProvider baseStateFactory);
+    PublisherAppConfigurator baseStateProvider(BaseStateProvider baseStateFactory);
     @Override
-    PublisherAppContext eventStore(MessageStore eventStore);
+    PublisherAppConfigurator eventStore(MessageStore eventStore);
     @Override
-    PublisherAppContext eventStore(Poller eventStorePoller);
+    PublisherAppConfigurator eventStore(Poller eventStorePoller);
     @Override
-    PublisherAppContext eventReceiver(MessageReceiver eventReceiver);
+    PublisherAppConfigurator eventReceiver(MessageReceiver eventReceiver);
     @Override
-    PublisherAppContext eventProcessor(EventProcessor eventProcessor);
+    PublisherAppConfigurator eventProcessor(EventProcessor eventProcessor);
 
     @Override
-    PublisherAppContext output(Output output);
+    PublisherAppConfigurator output(Output output);
     @Override
-    PublisherAppContext timeSource(TimeSource timeSource);
+    PublisherAppConfigurator timeSource(TimeSource timeSource);
 
     @Override
-    PublisherAppContext exceptionHandler(ExceptionHandler exceptionHandler);
+    PublisherAppConfigurator exceptionHandler(ExceptionHandler exceptionHandler);
     @Override
-    PublisherAppContext loggerFactory(Logger.Factory loggerFactory);
+    PublisherAppConfigurator loggerFactory(Logger.Factory loggerFactory);
     @Override
-    PublisherAppContext idleStrategy(IdleStrategy idleStrategy);
+    PublisherAppConfigurator idleStrategy(IdleStrategy idleStrategy);
     @Override
-    PublisherAppContext dutyCycleExtraStep(AgentStep step, ExecutionType executionType);
+    PublisherAppConfigurator dutyCycleExtraStep(AgentStep step, ExecutionType executionType);
 
     @Override
-    PublisherAppContext plugin(Plugin<?> plugin);
+    PublisherAppConfigurator plugin(Plugin<?> plugin);
     @Override
-    <P> PublisherAppContext plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider);
+    <P> PublisherAppConfigurator plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider);
     @Override
-    <P> PublisherAppContext plugin(Plugin<P> plugin, Consumer<? super P> pluginStateAware);
+    <P> PublisherAppConfigurator plugin(Plugin<P> plugin, Consumer<? super P> pluginStateAware);
     @Override
-    <P> PublisherAppContext plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider, Consumer<? super P> pluginStateAware);
+    <P> PublisherAppConfigurator plugin(Plugin<P> plugin, Supplier<? extends P> pluginStateProvider, Consumer<? super P> pluginStateAware);
 
-    PublisherAppContext populateDefaults();
-    PublisherAppContext populateDefaults(PublisherApp app);
+    PublisherAppConfigurator populateDefaults();
+    PublisherAppConfigurator populateDefaults(PublisherApp app);
 
-    static PublisherAppContext create() {
-        return new PublisherAppContextImpl();
+    static PublisherAppConfigurator create() {
+        return new PublisherAppConfiguratorImpl();
     }
 }

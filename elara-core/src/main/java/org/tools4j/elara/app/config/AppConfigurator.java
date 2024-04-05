@@ -21,37 +21,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.app.type;
+package org.tools4j.elara.app.config;
 
-import org.agrona.concurrent.Agent;
-import org.tools4j.elara.app.factory.PublisherAppFactory;
-import org.tools4j.elara.app.handler.EventProcessor;
+import org.agrona.concurrent.IdleStrategy;
+import org.tools4j.elara.app.state.BaseStateProvider;
+import org.tools4j.elara.exception.ExceptionHandler;
+import org.tools4j.elara.logging.Logger;
+import org.tools4j.elara.step.AgentStep;
+import org.tools4j.elara.time.TimeSource;
 
-final class PublisherAppContextImpl extends AbstractEventStreamContext<PublisherAppContextImpl> implements PublisherAppContext {
-
-    @Override
-    protected PublisherAppContextImpl self() {
-        return this;
-    }
-
-    @Override
-    public PublisherAppContextImpl populateDefaults() {
-        if (eventProcessor() == null) {
-            eventProcessor(EventProcessor.NOOP);
-        }
-        return super.populateDefaults();
-    }
-
-    @Override
-    public PublisherAppContext populateDefaults(final PublisherApp app) {
-        return this
-                .output(app)
-                .populateDefaults();
-    }
-
-    @Override
-    public Agent createAgent() {
-        populateDefaults().validate();
-        return new PublisherAppFactory(this).agent();
-    }
+public interface AppConfigurator extends AppConfig {
+    AppConfigurator baseStateProvider(BaseStateProvider baseStateFactory);
+    AppConfigurator timeSource(TimeSource timeSource);
+    AppConfigurator exceptionHandler(ExceptionHandler exceptionHandler);
+    AppConfigurator loggerFactory(Logger.Factory loggerFactory);
+    AppConfigurator idleStrategy(IdleStrategy idleStrategy);
+    AppConfigurator dutyCycleExtraStep(AgentStep step, ExecutionType executionType);
 }

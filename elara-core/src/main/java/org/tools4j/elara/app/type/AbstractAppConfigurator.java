@@ -25,10 +25,10 @@ package org.tools4j.elara.app.type;
 
 import org.agrona.concurrent.BackoffIdleStrategy;
 import org.agrona.concurrent.IdleStrategy;
-import org.tools4j.elara.app.config.AppContext;
-import org.tools4j.elara.app.config.DefaultPluginContext;
+import org.tools4j.elara.app.config.AppConfigurator;
+import org.tools4j.elara.app.config.DefaultPluginConfigurator;
 import org.tools4j.elara.app.config.ExecutionType;
-import org.tools4j.elara.app.config.PluginContext;
+import org.tools4j.elara.app.config.PluginConfigurator;
 import org.tools4j.elara.app.state.BaseStateProvider;
 import org.tools4j.elara.app.state.MutableBaseState;
 import org.tools4j.elara.exception.DuplicateHandler;
@@ -57,7 +57,7 @@ import java.util.function.Supplier;
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.logging.OutputStreamLogger.SYSTEM_FACTORY;
 
-abstract class AbstractAppContext<T extends AbstractAppContext<T>> implements AppContext, PluginContext {
+abstract class AbstractAppConfigurator<T extends AbstractAppConfigurator<T>> implements AppConfigurator, PluginConfigurator {
 
     private BaseStateProvider baseStateFactory;
     private Input input = Input.NOOP;
@@ -69,7 +69,7 @@ abstract class AbstractAppContext<T extends AbstractAppContext<T>> implements Ap
     private IdleStrategy idleStrategy = new BackoffIdleStrategy(
             100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100));
     private final EnumMap<ExecutionType, List<AgentStep>> extraSteps = new EnumMap<>(ExecutionType.class);
-    private final DefaultPluginContext plugins = new DefaultPluginContext(this);
+    private final DefaultPluginConfigurator plugins = new DefaultPluginConfigurator(this);
 
     abstract protected T self();
 

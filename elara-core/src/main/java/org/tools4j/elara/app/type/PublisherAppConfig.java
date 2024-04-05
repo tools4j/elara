@@ -33,7 +33,7 @@ public interface PublisherAppConfig extends AppConfig, EventStreamConfig, Output
     default AppType appType() {
         return ElaraAppType.PublisherApp;
     }
-    static PublisherAppContext configure() {
-        return PublisherAppContext.create();
+    static PublisherAppConfigurator configure() {
+        return PublisherAppConfigurator.create();
     }
 }

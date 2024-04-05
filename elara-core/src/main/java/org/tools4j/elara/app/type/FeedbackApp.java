@@ -43,23 +43,23 @@ public interface FeedbackApp extends EventProcessor {
 
     default ElaraRunner launch(final MessageStore messageStore) {
         requireNonNull(messageStore);
-        return launch(context -> context.eventStore(messageStore));
+        return launch(config -> config.eventStore(messageStore));
     }
 
     default ElaraRunner launch(final MessageStore.Poller eventStorePoller) {
         requireNonNull(eventStorePoller);
-        return launch(context -> context.eventStore(eventStorePoller));
+        return launch(config -> config.eventStore(eventStorePoller));
     }
 
     default ElaraRunner launch(final MessageReceiver eventReceiver) {
         requireNonNull(eventReceiver);
-        return launch(context -> context.eventReceiver(eventReceiver));
+        return launch(config -> config.eventReceiver(eventReceiver));
     }
 
-    default ElaraRunner launch(final Consumer<? super FeedbackAppContext> configurator) {
-        final FeedbackAppContext context = FeedbackAppConfig.configure();
-        configurator.accept(context);
-        context.populateDefaults(this);
-        return Elara.launch(context);
+    default ElaraRunner launch(final Consumer<? super FeedbackAppConfigurator> configurator) {
+        final FeedbackAppConfigurator config = FeedbackAppConfig.configure();
+        configurator.accept(config);
+        config.populateDefaults(this);
+        return Elara.launch(config);
     }
 }

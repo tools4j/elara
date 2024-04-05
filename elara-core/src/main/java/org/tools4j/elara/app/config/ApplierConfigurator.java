@@ -23,14 +23,8 @@
  */
 package org.tools4j.elara.app.config;
 
-import org.tools4j.elara.input.Input;
-import org.tools4j.elara.input.InputPoller;
-import org.tools4j.elara.input.MultiSourceInput;
-import org.tools4j.elara.input.SingleSourceInput;
+import org.tools4j.elara.app.handler.EventApplier;
 
-public interface InputContext extends InputConfig {
-    InputContext input(Input input);
-    InputContext input(MultiSourceInput input);
-    InputContext input(SingleSourceInput input);
-    InputContext input(int sourceId, InputPoller inputPoller);
+public interface ApplierConfigurator extends ApplierConfig {
+    ApplierConfigurator eventApplier(EventApplier eventApplier);
 }

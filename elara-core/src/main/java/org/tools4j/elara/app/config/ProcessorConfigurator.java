@@ -23,8 +23,8 @@
  */
 package org.tools4j.elara.app.config;
 
-import org.tools4j.elara.output.Output;
+import org.tools4j.elara.app.handler.CommandProcessor;
 
-public interface OutputContext extends OutputConfig {
-    OutputContext output(Output output);
+public interface ProcessorConfigurator extends ProcessorConfig {
+    ProcessorConfigurator commandProcessor(CommandProcessor commandProcessor);
 }

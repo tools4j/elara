@@ -30,12 +30,12 @@ import org.tools4j.elara.store.MessageStore;
 
 import static java.util.Objects.requireNonNull;
 
-final class PassthroughAppContextImpl extends AbstractAppContext<PassthroughAppContextImpl> implements PassthroughAppContext {
+final class PassthroughAppConfiguratorImpl extends AbstractAppConfigurator<PassthroughAppConfiguratorImpl> implements PassthroughAppConfigurator {
 
     private MessageStore eventStore;
 
     @Override
-    protected PassthroughAppContextImpl self() {
+    protected PassthroughAppConfiguratorImpl self() {
         return this;
     }
 
@@ -45,18 +45,18 @@ final class PassthroughAppContextImpl extends AbstractAppContext<PassthroughAppC
     }
 
     @Override
-    public PassthroughAppContext eventStore(final MessageStore eventStore) {
+    public PassthroughAppConfigurator eventStore(final MessageStore eventStore) {
         this.eventStore = requireNonNull(eventStore);
         return this;
     }
 
     @Override
-    public PassthroughAppContextImpl populateDefaults() {
+    public PassthroughAppConfiguratorImpl populateDefaults() {
         return super.populateDefaults();
     }
 
     @Override
-    public PassthroughAppContext populateDefaults(final PassthroughApp app) {
+    public PassthroughAppConfigurator populateDefaults(final PassthroughApp app) {
         return this
                 .output(app instanceof Output ? ((Output)app) : Output.NOOP)
                 .populateDefaults();

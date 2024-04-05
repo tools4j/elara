@@ -35,14 +35,14 @@ public interface PassthroughApp {
 
     default ElaraRunner launch(final MessageStore eventStore) {
         requireNonNull(eventStore);
-        return launch(context -> context.eventStore(eventStore));
+        return launch(config -> config.eventStore(eventStore));
     }
 
-    default ElaraRunner launch(final Consumer<? super PassthroughAppContext> configurator) {
-        final PassthroughAppContext context = PassthroughAppConfig.configure();
-        configurator.accept(context);
-        context.populateDefaults(this);
-        return Elara.launch(context);
+    default ElaraRunner launch(final Consumer<? super PassthroughAppConfigurator> configurator) {
+        final PassthroughAppConfigurator config = PassthroughAppConfig.configure();
+        configurator.accept(config);
+        config.populateDefaults(this);
+        return Elara.launch(config);
     }
 
 }

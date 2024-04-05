@@ -40,7 +40,7 @@ public interface AllInOneAppConfig extends AppConfig, CommandStoreConfig, EventS
         return ElaraAppType.AllInOneApp;
     }
 
-    static AllInOneAppContext configure() {
-        return AllInOneAppContext.create();
+    static AllInOneAppConfigurator configure() {
+        return AllInOneAppConfigurator.create();
     }
 }

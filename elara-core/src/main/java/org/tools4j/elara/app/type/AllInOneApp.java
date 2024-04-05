@@ -46,14 +46,14 @@ public interface AllInOneApp extends CommandProcessor, EventApplier {
 
     default ElaraRunner launch(final MessageStore eventStore) {
         requireNonNull(eventStore);
-        return launch(context -> context.eventStore(eventStore));
+        return launch(config -> config.eventStore(eventStore));
     }
 
-    default ElaraRunner launch(final Consumer<? super AllInOneAppContext> configurator) {
-        final AllInOneAppContext context = AllInOneAppConfig.configure();
-        configurator.accept(context);
-        context.populateDefaults(this);
-        return Elara.launch(context);
+    default ElaraRunner launch(final Consumer<? super AllInOneAppConfigurator> configurator) {
+        final AllInOneAppConfigurator config = AllInOneAppConfig.configure();
+        configurator.accept(config);
+        config.populateDefaults(this);
+        return Elara.launch(config);
     }
 
 }

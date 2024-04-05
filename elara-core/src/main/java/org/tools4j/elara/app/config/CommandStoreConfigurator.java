@@ -25,7 +25,7 @@ package org.tools4j.elara.app.config;
 
 import org.tools4j.elara.store.MessageStore;
 
-public interface CommandStoreContext extends CommandStoreConfig {
-    CommandStoreContext commandPollingMode(CommandPollingMode mode);
-    CommandStoreContext commandStore(MessageStore commandStore);
+public interface CommandStoreConfigurator extends CommandStoreConfig {
+    CommandStoreConfigurator commandPollingMode(CommandPollingMode mode);
+    CommandStoreConfigurator commandStore(MessageStore commandStore);
 }

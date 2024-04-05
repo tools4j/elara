@@ -33,7 +33,7 @@ import org.tools4j.elara.store.MessageStore;
 
 import static java.util.Objects.requireNonNull;
 
-final class AllInOneAppContextImpl extends AbstractAppContext<AllInOneAppContextImpl> implements AllInOneAppContext {
+final class AllInOneAppConfiguratorImpl extends AbstractAppConfigurator<AllInOneAppConfiguratorImpl> implements AllInOneAppConfigurator {
 
     private CommandProcessor commandProcessor;
     private EventApplier eventApplier;
@@ -42,7 +42,7 @@ final class AllInOneAppContextImpl extends AbstractAppContext<AllInOneAppContext
     private MessageStore eventStore;
 
     @Override
-    protected AllInOneAppContextImpl self() {
+    protected AllInOneAppConfiguratorImpl self() {
         return this;
     }
 
@@ -52,7 +52,7 @@ final class AllInOneAppContextImpl extends AbstractAppContext<AllInOneAppContext
     }
 
     @Override
-    public AllInOneAppContext commandProcessor(final CommandProcessor commandProcessor) {
+    public AllInOneAppConfigurator commandProcessor(final CommandProcessor commandProcessor) {
         this.commandProcessor = requireNonNull(commandProcessor);
         return this;
     }
@@ -63,7 +63,7 @@ final class AllInOneAppContextImpl extends AbstractAppContext<AllInOneAppContext
     }
 
     @Override
-    public AllInOneAppContext eventApplier(final EventApplier eventApplier) {
+    public AllInOneAppConfigurator eventApplier(final EventApplier eventApplier) {
         this.eventApplier = requireNonNull(eventApplier);
         return this;
     }
@@ -74,7 +74,7 @@ final class AllInOneAppContextImpl extends AbstractAppContext<AllInOneAppContext
     }
 
     @Override
-    public AllInOneAppContext commandStore(final MessageStore commandStore) {
+    public AllInOneAppConfigurator commandStore(final MessageStore commandStore) {
         this.commandStore = commandStore;//nullable
         if (commandStore == null) {
             commandPollingMode = CommandPollingMode.NO_STORE;
@@ -90,7 +90,7 @@ final class AllInOneAppContextImpl extends AbstractAppContext<AllInOneAppContext
     }
 
     @Override
-    public AllInOneAppContext commandPollingMode(final CommandPollingMode mode) {
+    public AllInOneAppConfigurator commandPollingMode(final CommandPollingMode mode) {
         this.commandPollingMode = requireNonNull(mode);
         return this;
     }
@@ -101,18 +101,18 @@ final class AllInOneAppContextImpl extends AbstractAppContext<AllInOneAppContext
     }
 
     @Override
-    public AllInOneAppContext eventStore(final MessageStore eventStore) {
+    public AllInOneAppConfigurator eventStore(final MessageStore eventStore) {
         this.eventStore = requireNonNull(eventStore);
         return this;
     }
 
     @Override
-    public AllInOneAppContextImpl populateDefaults() {
+    public AllInOneAppConfiguratorImpl populateDefaults() {
         return super.populateDefaults();
     }
 
     @Override
-    public AllInOneAppContext populateDefaults(final AllInOneApp app) {
+    public AllInOneAppConfigurator populateDefaults(final AllInOneApp app) {
         return this
                 .commandProcessor(app)
                 .eventApplier(app)
