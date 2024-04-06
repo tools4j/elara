@@ -23,8 +23,8 @@
  */
 package org.tools4j.elara.app.state;
 
-import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.flyweight.EventType;
+import org.tools4j.elara.source.CommandSource;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
@@ -32,7 +32,7 @@ import static org.tools4j.elara.app.state.BaseState.MIN_SEQUENCE;
 import static org.tools4j.elara.app.state.BaseState.NIL_SEQUENCE;
 
 /**
- * Event state returned by {@link CommandTracker#eventLastProcessed()} if {@link BaseState} is in use.
+ * Event state returned by {@link CommandSource#eventLastProcessed()} if {@link BaseState} is in use.
  */
 public final class BaseEventState implements EventState {
     private final int sourceId;

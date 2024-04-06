@@ -25,10 +25,11 @@ package org.tools4j.elara.app.handler;
 
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.source.CommandContext;
 
 /**
  * Event processor called to process events in a feedback app.  Note that own commands from previous processing
- * invocations can still be {@link CommandTracker#hasInFlightCommand() in-flight}.  This means the current state of this
+ * invocations can still be {@link CommandContext#hasInFlightCommand() in-flight}.  This means the current state of this
  * application may not be up-to-date yet.
  * <p>
  * To understand the concept of in-flight commands, it is important to understand that application state should only be
@@ -46,9 +47,10 @@ public interface EventProcessor {
      * Invoked to process the given event.
      *
      * @param event             the processed event
-     * @param commandTracker    tracker for sent commands and corresponding events, for instance to provide insights
-     *                          about {@link CommandTracker#hasInFlightCommand() in-flight} commands
+     * @param commandContext    command context with command sources and tracking information for sent commands, for
+     *                          instance to provide insights about {@link CommandContext#hasInFlightCommand() in-flight}
+     *                          commands
      * @param sender            handler to encode and send commands back to the sequencer
      */
-    void onEvent(Event event, CommandTracker commandTracker, CommandSender sender);
+    void onEvent(Event event, CommandContext commandContext, CommandSender sender);
 }

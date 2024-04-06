@@ -57,6 +57,7 @@ class DefaultEventProcessingState implements MutableEventProcessingState, Passth
     @Override
     public void applyEvent(final int srcId, final long srcSeq, final long evtSeq, final int evtIndex,
                            final EventType evtType, final long evtTime, final int payloadType) {
+        assert evtSeq == lastAppliedEventSequence + 1;
         lastAppliedEventSequence = evtSeq;
         lastProcessedEventCreateIfAbsent(srcId).applyEvent(srcSeq, evtSeq, evtIndex, evtType, evtTime, payloadType);
     }

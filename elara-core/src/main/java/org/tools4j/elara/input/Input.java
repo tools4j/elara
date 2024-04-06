@@ -23,8 +23,8 @@
  */
 package org.tools4j.elara.input;
 
-import org.tools4j.elara.source.SourceContext;
-import org.tools4j.elara.source.SourceContextProvider;
+import org.tools4j.elara.source.CommandContext;
+import org.tools4j.elara.source.CommandSource;
 import org.tools4j.elara.step.AgentStep;
 
 import java.util.function.Function;
@@ -34,7 +34,7 @@ import static java.util.Objects.requireNonNull;
 @FunctionalInterface
 public interface Input {
 
-    AgentStep inputPollerStep(SourceContextProvider sourceContextProvider);
+    AgentStep inputPollerStep(CommandContext commandContext);
 
     Input NOOP = sourceContextProvider -> AgentStep.NOOP;
 
@@ -44,23 +44,24 @@ public interface Input {
 
     static Input single(final int sourceId, final InputPoller inputPoller) {
         requireNonNull(inputPoller);
-        return sourceContextProvider -> {
-            final SourceContext sourceContext = sourceContextProvider.sourceContext(sourceId);
-            return () -> inputPoller.poll(sourceContext);
+        return commandContext -> {
+            final CommandSource commandSource = commandContext.commandSources().sourceById(sourceId);
+            return () -> inputPoller.poll(commandContext, commandSource.commandSender());
         };
     }
 
     static Input single(final int sourceId, final long initialSourceSequence, final InputPoller inputPoller) {
         requireNonNull(inputPoller);
-        return sourceContextProvider -> {
-            final SourceContext sourceContext = sourceContextProvider.sourceContext(sourceId, initialSourceSequence);
-            return () -> inputPoller.poll(sourceContext);
+        return commandContext -> {
+            final CommandSource commandSource = commandContext.commandSources().sourceById(sourceId);
+            commandSource.transientCommandState().sourceSequenceGenerator().nextSequence(initialSourceSequence);
+            return () -> inputPoller.poll(commandContext, commandSource.commandSender());
         };
     }
 
     static Input multi(final MultiSourceInput input) {
         requireNonNull(input);
-        return sourceContextProvider -> () -> input.poll(sourceContextProvider);
+        return commandContext -> () -> input.poll(commandContext, commandContext.commandSources());
     }
 
     static Input composite(final Input... inputs) {

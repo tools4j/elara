@@ -30,7 +30,7 @@ import org.tools4j.elara.handler.CommandSendingCommandHandler;
 import org.tools4j.elara.send.CommandHandlingSender;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.SenderSupplier;
-import org.tools4j.elara.sequence.SequenceGenerator;
+import org.tools4j.elara.source.CommandSource;
 
 import static java.util.Objects.requireNonNull;
 
@@ -52,9 +52,9 @@ final class DiscardingSenderSupplier implements SenderSupplier {
     }
 
     @Override
-    public CommandSender senderFor(final int sourceId, final SequenceGenerator sourceSequenceGenerator, final SentListener sentListener) {
-        activeSender = activeSenderSupplier.senderFor(sourceId, sourceSequenceGenerator, (sourceSequence, commandTime) -> {});
-        return commandHandlingSender.senderFor(sourceId, sourceSequenceGenerator, sentListener);
+    public CommandSender senderFor(final CommandSource commandSource, final SentListener sentListener) {
+        activeSender = activeSenderSupplier.senderFor(commandSource, (sourceSequence, commandTime) -> {});
+        return commandHandlingSender.senderFor(commandSource, sentListener);
     }
 
     private void onCommand(final Command command) {

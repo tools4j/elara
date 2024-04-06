@@ -36,7 +36,8 @@ import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.route.CommandTransaction;
 import org.tools4j.elara.send.SenderSupplier;
-import org.tools4j.elara.source.SourceContextProvider;
+import org.tools4j.elara.source.CommandContext;
+import org.tools4j.elara.source.CommandSourceProvider;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore.Handler;
 import org.tools4j.elara.store.MessageStore.Poller;
@@ -92,8 +93,13 @@ final class Singletons {
         final Singletons singletons = new Singletons();
         return new SequencerFactory() {
             @Override
-            public SourceContextProvider sourceContextProvider() {
-                return singletons.getOrCreate("sourceContextProvider", SourceContextProvider.class, factory, SequencerFactory::sourceContextProvider);
+            public CommandContext commandContext() {
+                return singletons.getOrCreate("commandContext", CommandContext.class, factory, SequencerFactory::commandContext);
+            }
+
+            @Override
+            public CommandSourceProvider commandSourceProvider() {
+                return singletons.getOrCreate("commandSourceProvider", CommandSourceProvider.class, factory, SequencerFactory::commandSourceProvider);
             }
 
             @Override
@@ -172,8 +178,13 @@ final class Singletons {
         final Singletons singletons = new Singletons();
         return new CommandStreamFactory() {
             @Override
-            public SourceContextProvider sourceContextProvider() {
-                return singletons.getOrCreate("sourceContextProvider", SourceContextProvider.class, factory, CommandStreamFactory::sourceContextProvider);
+            public CommandContext commandContext() {
+                return singletons.getOrCreate("commandContext", CommandContext.class, factory, CommandStreamFactory::commandContext);
+            }
+
+            @Override
+            public CommandSourceProvider commandSourceProvider() {
+                return singletons.getOrCreate("commandSourceProvider", CommandSourceProvider.class, factory, CommandStreamFactory::commandSourceProvider);
             }
 
             @Override

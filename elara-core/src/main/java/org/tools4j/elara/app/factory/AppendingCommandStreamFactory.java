@@ -28,8 +28,10 @@ import org.tools4j.elara.app.config.CommandStoreConfig;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.send.CommandAppendingSender;
 import org.tools4j.elara.send.SenderSupplier;
-import org.tools4j.elara.source.DefaultSourceContextProvider;
-import org.tools4j.elara.source.SourceContextProvider;
+import org.tools4j.elara.source.CommandContext;
+import org.tools4j.elara.source.CommandSourceProvider;
+import org.tools4j.elara.source.DefaultCommandContext;
+import org.tools4j.elara.source.DefaultCommandSourceProvider;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore;
 
@@ -58,8 +60,13 @@ public class AppendingCommandStreamFactory implements CommandStreamFactory {
     }
 
     @Override
-    public SourceContextProvider sourceContextProvider() {
-        return new DefaultSourceContextProvider(baseState, commandStreamSingletons.get().senderSupplier());
+    public CommandContext commandContext() {
+        return new DefaultCommandContext(commandStreamSingletons.get().commandSourceProvider());
+    }
+
+    @Override
+    public CommandSourceProvider commandSourceProvider() {
+        return new DefaultCommandSourceProvider(baseState, commandStreamSingletons.get().senderSupplier());
     }
 
     @Override
@@ -70,7 +77,7 @@ public class AppendingCommandStreamFactory implements CommandStreamFactory {
 
     @Override
     public AgentStep inputPollerStep() {
-        return inOutSingletons.get().input().inputPollerStep(commandStreamSingletons.get().sourceContextProvider());
+        return inOutSingletons.get().input().inputPollerStep(commandStreamSingletons.get().commandContext());
     }
 
 }

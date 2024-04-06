@@ -30,7 +30,7 @@ import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.plugin.timer.TimerController.ControlContext;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.send.CommandSender;
-import org.tools4j.elara.source.SourceContext;
+import org.tools4j.elara.source.CommandSource;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
@@ -132,11 +132,11 @@ public class TimerPlugin implements SystemPlugin<MutableTimerState> {
      *     }
      * </pre>
      *
-     * @param sourceContext the source context to initialize the controller for sending timer commands
+     * @param commandSource the command source to initialize the controller for sending timer commands
      * @return the controller to start or cancel cancel timers via commands
      */
-    public ControlContext controller(final SourceContext sourceContext) {
-        return controller.init(null, requireNonNull(sourceContext.commandSender()));
+    public ControlContext controller(final CommandSource commandSource) {
+        return controller.init(null, requireNonNull(commandSource.commandSender()));
     }
 
     /**

@@ -23,15 +23,16 @@
  */
 package org.tools4j.elara.input;
 
-import org.tools4j.elara.source.SourceContextProvider;
+import org.tools4j.elara.source.CommandContext;
+import org.tools4j.elara.source.CommandSourceProvider;
 import org.tools4j.elara.step.AgentStep;
 
 @FunctionalInterface
 public interface MultiSourceInput extends Input {
     @Override
-    default AgentStep inputPollerStep(final SourceContextProvider sourceContextProvider) {
-        return Input.multi(this).inputPollerStep(sourceContextProvider);
+    default AgentStep inputPollerStep(final CommandContext commandContext) {
+        return Input.multi(this).inputPollerStep(commandContext);
     }
 
-    int poll(SourceContextProvider sourceContextProvider);
+    int poll(CommandContext commandContext, CommandSourceProvider commandSourceProvider);
 }

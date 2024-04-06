@@ -28,6 +28,7 @@ import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.flyweight.PayloadType;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.SingleSourceInput;
+import org.tools4j.elara.source.CommandSource;
 import org.tools4j.elara.stream.SendingResult;
 
 /**
@@ -49,6 +50,26 @@ import org.tools4j.elara.stream.SendingResult;
  * if {@link SendingContext#send(int) send(..)} is not called for instance due to an exception.
  */
 public interface CommandSender {
+    /**
+     * Returns the command source this command sender is currently associated with.
+     * @return the command source currently associated with this command sender
+     */
+    CommandSource source();
+
+    /**
+     * Returns the source ID used for commands sent by this command sender.
+     * @return the source ID used by this command sender
+     */
+    int sourceId();
+
+    /**
+     * Returns the sequence of the next command to be sent.  If sending has started via {@link #sendingCommand()}
+     * then the sequence refers to the command currently being encoded.
+     *
+     * @return sequence of the next command to be sent.
+     */
+    long nextCommandSequence();
+
     /**
      * Starts sending of a command and returns the sending context with the buffer for command encoding.  Encoding and
      * sending are completed with {@link SendingContext#send(int) send(..)} and it is recommended to perform the
@@ -102,20 +123,6 @@ public interface CommandSender {
      * @return the result indicating whether sending was successful, with options to resend after failures
      */
     SendingResult sendCommandWithoutPayload(int payloadType);
-
-    /**
-     * Returns the source ID associated with the node sending commands with this command sender.
-     * @return the source ID used for commands sent by this command sender
-     */
-    int sourceId();
-
-    /**
-     * Returns the sequence of the next command to be sent.  If sending has started via {@link #sendingCommand()}
-     * then the sequence refers to the command currently being encoded.
-     *
-     * @return sequence of the next command to be sent.
-     */
-    long nextCommandSequence();
 
     /**
      * Context object returned by {@link #sendingCommand()} allowing for zero copy encoding of commands directly into

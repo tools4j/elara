@@ -30,7 +30,7 @@ public interface EventProcessingState extends BaseState {
     /**
      * Returns the event state for the given source ID, or null if no events from this source have been processed yet.
      *
-     * @param sourceId the source ID for events
+     * @param sourceId the source ID for events from a particular command source
      * @return the event state for the given source ID, or null if unavailable
      */
     EventState lastProcessedEvent(int sourceId);

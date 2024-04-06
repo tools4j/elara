@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.handler;
+package org.tools4j.elara.send;
 
 import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
@@ -35,9 +35,8 @@ import org.tools4j.elara.app.state.DefaultBaseState;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.PayloadType;
-import org.tools4j.elara.send.CommandAppendingSender;
-import org.tools4j.elara.source.DefaultSourceContextProvider;
-import org.tools4j.elara.source.SourceContextProvider;
+import org.tools4j.elara.source.CommandSourceProvider;
+import org.tools4j.elara.source.DefaultCommandSourceProvider;
 import org.tools4j.elara.store.DirectAppender;
 import org.tools4j.elara.store.MessageStore.AppendingContext;
 import org.tools4j.elara.time.TimeSource;
@@ -58,16 +57,15 @@ public class CommandAppendingSenderTest {
 
     @Mock
     private TimeSource timeSource;
-
     private List<Command> commandStore;
 
     //under test
-    private SourceContextProvider sourceContextProvider;
+    private CommandSourceProvider sourceContextProvider;
 
     @BeforeEach
     public void init() {
         commandStore = new ArrayList<>();
-        sourceContextProvider = new DefaultSourceContextProvider(new DefaultBaseState(),
+        sourceContextProvider = new DefaultCommandSourceProvider(new DefaultBaseState(),
                 new CommandAppendingSender(timeSource, new DirectAppender() {
                     @Override
                     public AppendingContext appending() {
@@ -114,8 +112,8 @@ public class CommandAppendingSenderTest {
     public void shouldAppendDefaultTypeCommand() {
         //given
         final long commandTime = 9988776600001L;
-        final int sourceIdId = 1;
-        final long sourceIdSeq = 22;
+        final int sourceId = 1;
+        final long sourceSeq = 22;
         final String text = "Hello world!!!";
         final int offset = 77;
         final DirectBuffer message = message(text, offset);
@@ -123,13 +121,15 @@ public class CommandAppendingSenderTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        sourceContextProvider.sourceContext(sourceIdId, sourceIdSeq)
+        sourceContextProvider.sourceById(sourceId)
+                .transientCommandState().sourceSequenceGenerator().nextSequence(sourceSeq);
+        sourceContextProvider.sourceById(sourceId)
                 .commandSender()
                 .sendCommand(message, offset, length);
 
         //then
         assertEquals(1, commandStore.size(), "commandStore.size");
-        assertCommand(sourceIdId, sourceIdSeq, commandTime, PayloadType.DEFAULT, text, commandStore.get(0));
+        assertCommand(sourceId, sourceSeq, commandTime, PayloadType.DEFAULT, text, commandStore.get(0));
     }
 
     @Test
@@ -146,7 +146,9 @@ public class CommandAppendingSenderTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        sourceContextProvider.sourceContext(sourceId, seq)
+        sourceContextProvider.sourceById(sourceId)
+                .transientCommandState().sourceSequenceGenerator().nextSequence(seq);
+        sourceContextProvider.sourceById(sourceId)
                 .commandSender()
                 .sendCommand(type, message, offset, length);
 

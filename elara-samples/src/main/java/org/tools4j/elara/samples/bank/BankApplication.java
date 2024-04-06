@@ -38,7 +38,7 @@ import org.tools4j.elara.samples.bank.command.BankCommand;
 import org.tools4j.elara.samples.bank.state.Bank;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.CommandSender.SendingContext;
-import org.tools4j.elara.source.SourceContext;
+import org.tools4j.elara.source.CommandContext;
 import org.tools4j.elara.store.InMemoryStore;
 import org.tools4j.elara.store.MessageStore;
 
@@ -128,12 +128,11 @@ public class BankApplication implements AllInOneApp, Output {
         }
 
         @Override
-        public int poll(final SourceContext sourceContext) {
+        public int poll(final CommandContext commandContext, final CommandSender commandSender) {
             final BankCommand cmd = commands.poll();
             if (cmd != null) {
-                final CommandSender sender = sourceContext.commandSender();
                 final int type = cmd.type().value;
-                try (final SendingContext context = sender.sendingCommand(type)) {
+                try (final SendingContext context = commandSender.sendingCommand(type)) {
                     final int length = cmd.encodeTo(context.buffer(), 0);
                     context.send(length);
                 }

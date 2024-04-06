@@ -35,7 +35,6 @@ import org.tools4j.elara.plugin.timer.TimerController.ControlContext;
 import org.tools4j.elara.plugin.timer.TimerEvents;
 import org.tools4j.elara.plugin.timer.TimerIdGenerator;
 import org.tools4j.elara.run.ElaraRunner;
-import org.tools4j.elara.send.CommandSender;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -80,9 +79,8 @@ class TimerApplicationTest {
         final Supplier<? extends MutableTimerState> timerStateSupplier = simpleState ?
                 SimpleTimerState::new : DeadlineHeapTimerState::new;
         final long[] startTimePtr = {0};//NOTE: if we initialize this here, ALARM timers may go off out of sequence
-        final InputPoller inputPoller = sourceContext -> {
-            final CommandSender sender = sourceContext.commandSender();
-            try (final ControlContext timerControl = app.timerPlugin.controller(sender)) {
+        final InputPoller inputPoller = (commandContext, commandSender) -> {
+            try (final ControlContext timerControl = app.timerPlugin.controller(commandSender)) {
                 if (startTimePtr[0] == 0) {
                     startTimePtr[0] = timerControl.currentTime();
                 }
@@ -190,9 +188,8 @@ class TimerApplicationTest {
         final List<Event> events = new ArrayList<>();
 
         //when
-        final InputPoller inputPoller = sourceContext -> {
-            final CommandSender sender = sourceContext.commandSender();
-            try (final ControlContext timerControl = app.timerPlugin.controller(sender)) {
+        final InputPoller inputPoller = (commandContext, commandSender) -> {
+            try (final ControlContext timerControl = app.timerPlugin.controller(commandSender)) {
                 timerControl.startPeriodic(periodMicros, timerType, contextId);
             }
             return 1;

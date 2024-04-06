@@ -23,7 +23,36 @@
  */
 package org.tools4j.elara.source;
 
-public interface SourceContextProvider {
-    SourceContext sourceContext(int sourceId);
-    SourceContext sourceContext(int sourceId, long minSourceSequence);
+import static java.util.Objects.requireNonNull;
+
+public class DefaultCommandContext implements CommandContext {
+
+    private final CommandSourceProvider commandSourceProvider;
+
+    public DefaultCommandContext(final CommandSourceProvider commandSourceProvider) {
+        this.commandSourceProvider = requireNonNull(commandSourceProvider);
+    }
+
+    @Override
+    public boolean hasInFlightCommand() {
+        final int sources = commandSourceProvider.sources();
+        for (int i = 0; i < sources; i++) {
+            if (commandSourceProvider.sourceByIndex(i).hasInFlightCommand()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public CommandSourceProvider commandSources() {
+        return commandSourceProvider;
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultCommandContext" +
+                ":has-in-flight-cmd=" + hasInFlightCommand() +
+                "|cmd-sources=" + commandSourceProvider;
+    }
 }

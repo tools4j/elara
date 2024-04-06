@@ -23,11 +23,29 @@
  */
 package org.tools4j.elara.source;
 
-import org.tools4j.elara.app.handler.CommandTracker;
-import org.tools4j.elara.send.CommandSender;
+/**
+ * Provides access to {@link CommandSource command sources}.
+ */
+public interface CommandSourceProvider {
+    /**
+     * Returns the number of sources in use.
+     * @return the number of command sources
+     */
+    int sources();
 
-public interface SourceContext {
-    int sourceId();
-    CommandTracker commandTracker();
-    CommandSender commandSender();
+    /**
+     * Returns the command source for the specified {@code index}, a value zero to {@link #sources()}-1
+     * @param index the index, a value in {@code [0..(sources-1)]}.
+     * @return the command source
+     * @throws IndexOutOfBoundsException if index is not in {@code [0..(sources-1)]}
+     */
+    CommandSource sourceByIndex(int index);
+
+    /**
+     * Returns the command source for the specified source ID. A new source is created if no command source exists yet
+     * for the specified source ID
+     * @param sourceId the command source ID
+     * @return the command source, newly created if necessary
+     */
+    CommandSource sourceById(int sourceId);
 }

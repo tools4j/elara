@@ -27,7 +27,7 @@ import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.send.CommandMessageSender;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.SenderSupplier;
-import org.tools4j.elara.sequence.SequenceGenerator;
+import org.tools4j.elara.source.CommandSource;
 
 final class CachingSenderSupplier implements SenderSupplier {
     private final CommandMessageSender commandMessageSender;
@@ -37,7 +37,7 @@ final class CachingSenderSupplier implements SenderSupplier {
     }
 
     @Override
-    public CommandSender senderFor(final int sourceId, final SequenceGenerator sourceSequenceGenerator, final SentListener sentListener) {
-        return commandMessageSender.senderFor(sourceId, sourceSequenceGenerator, sentListener);
+    public CommandSender senderFor(final CommandSource commandSource, final SentListener sentListener) {
+        return commandMessageSender.senderFor(commandSource, sentListener);
     }
 }

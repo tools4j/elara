@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.handler;
+package org.tools4j.elara.send;
 
 import org.agrona.DirectBuffer;
 import org.agrona.ExpandableArrayBuffer;
@@ -34,9 +34,8 @@ import org.tools4j.elara.app.state.DefaultBaseState;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.PayloadType;
-import org.tools4j.elara.send.CommandHandlingSender;
-import org.tools4j.elara.source.DefaultSourceContextProvider;
-import org.tools4j.elara.source.SourceContextProvider;
+import org.tools4j.elara.source.CommandSourceProvider;
+import org.tools4j.elara.source.DefaultCommandSourceProvider;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.ArrayList;
@@ -61,12 +60,12 @@ public class CommandHandlingSenderTest {
     private List<Command> commandStore;
 
     //under test
-    private SourceContextProvider sourceContextProvider;
+    private CommandSourceProvider sourceContextProvider;
 
     @BeforeEach
     public void init() {
         commandStore = new ArrayList<>();
-        sourceContextProvider = new DefaultSourceContextProvider(new DefaultBaseState(),
+        sourceContextProvider = new DefaultCommandSourceProvider(new DefaultBaseState(),
                 new CommandHandlingSender(INITIAL_BUFFER_CAPACITY, timeSource, command -> {
                     final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer();
                     command.writeTo(buffer, 0);
@@ -87,7 +86,9 @@ public class CommandHandlingSenderTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        sourceContextProvider.sourceContext(sourceId, seq)
+        sourceContextProvider.sourceById(sourceId)
+                .transientCommandState().sourceSequenceGenerator().nextSequence(seq);
+        sourceContextProvider.sourceById(sourceId)
                 .commandSender()
                 .sendCommand(message, offset, length);
 
@@ -110,7 +111,9 @@ public class CommandHandlingSenderTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        sourceContextProvider.sourceContext(sourceId, seq)
+        sourceContextProvider.sourceById(sourceId)
+                .transientCommandState().sourceSequenceGenerator().nextSequence(seq);
+        sourceContextProvider.sourceById(sourceId)
                 .commandSender()
                 .sendCommand(type, message, offset, length);
 
@@ -132,7 +135,9 @@ public class CommandHandlingSenderTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        sourceContextProvider.sourceContext(sourceId, seq)
+        sourceContextProvider.sourceById(sourceId)
+                .transientCommandState().sourceSequenceGenerator().nextSequence(seq);
+        sourceContextProvider.sourceById(sourceId)
                 .commandSender()
                 .sendCommand(type, message, offset, length);
 
@@ -150,7 +155,9 @@ public class CommandHandlingSenderTest {
 
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
-        sourceContextProvider.sourceContext(sourceId, seq)
+        sourceContextProvider.sourceById(sourceId)
+                .transientCommandState().sourceSequenceGenerator().nextSequence(seq);
+        sourceContextProvider.sourceById(sourceId)
                 .commandSender()
                 .sendCommandWithoutPayload(type);
 

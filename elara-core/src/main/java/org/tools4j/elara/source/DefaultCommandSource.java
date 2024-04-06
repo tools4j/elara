@@ -23,38 +23,55 @@
  */
 package org.tools4j.elara.source;
 
-import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.app.state.BaseEventState;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.app.state.EventProcessingState.MutableEventProcessingState;
 import org.tools4j.elara.app.state.EventState;
 import org.tools4j.elara.app.state.TransientCommandState;
 import org.tools4j.elara.flyweight.EventType;
+import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.send.SenderSupplier.SentListener;
 import org.tools4j.elara.sequence.SequenceGenerator;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
 
-final class DefaultCommandTracker implements CommandTracker {
+final class DefaultCommandSource implements CommandSource {
 
-    private final SourceContext sourceContext;
-    private final SequenceGenerator sourceSequenceGenerator;
+    private final int sourceId;
+    private final SenderSupplier senderSupplier;
+    private final SequenceGenerator sequenceGenerator;
     private final EventState eventLastProcessed;
-    private final TransientCommandStateImpl transientCommandState = new TransientCommandStateImpl();
+    private final TransientCommandState transientCommandState = new TransientCommandStateImpl();
+    private final SentListener sentListener = (TransientCommandStateImpl)transientCommandState;
 
-    public DefaultCommandTracker(final SourceContext sourceContext,
-                                 final SequenceGenerator sourceSequenceGenerator,
-                                 final BaseState baseState) {
-        this.sourceContext = requireNonNull(sourceContext);
-        this.sourceSequenceGenerator = requireNonNull(sourceSequenceGenerator);
+    public DefaultCommandSource(final int sourceId,
+                                final BaseState baseState,
+                                final SenderSupplier senderSupplier) {
+        this(sourceId, baseState, senderSupplier, SequenceGenerator.create());
+    }
+
+    public DefaultCommandSource(final int sourceId,
+                                final BaseState baseState,
+                                final SenderSupplier senderSupplier,
+                                final SequenceGenerator sourceSequenceGenerator) {
+        this.sourceId = sourceId;
+        this.senderSupplier = requireNonNull(senderSupplier);
+        this.sequenceGenerator = requireNonNull(sourceSequenceGenerator);
         this.eventLastProcessed = baseState instanceof MutableEventProcessingState ?
-                ((MutableEventProcessingState)baseState).lastProcessedEventCreateIfAbsent(sourceContext.sourceId()) :
-                new BaseEventState(sourceContext.sourceId(), baseState);
+                ((MutableEventProcessingState)baseState).lastProcessedEventCreateIfAbsent(sourceId) :
+                new BaseEventState(sourceId, baseState);
     }
 
     @Override
     public int sourceId() {
-        return sourceContext.sourceId();
+        return sourceId;
+    }
+
+    @Override
+    public CommandSender commandSender() {
+        return senderSupplier.senderFor(this, sentListener);
     }
 
     @Override
@@ -78,26 +95,19 @@ final class DefaultCommandTracker implements CommandTracker {
         return eventType != null && !eventType.isLast();
     }
 
-    void notifyCommandSent(final long sourceSequence, final long commandTime) {
-        assert sourceSequence > transientCommandState.lastCommandSequence;
-        transientCommandState.commandsSent++;
-        transientCommandState.lastCommandSequence = sourceSequence;
-        transientCommandState.lastCommandSendingTime = commandTime;
-    }
-
-    private class TransientCommandStateImpl implements TransientCommandState {
+    private class TransientCommandStateImpl implements TransientCommandState, SentListener {
         long commandsSent = 0;
         long lastCommandSequence = NIL_SEQUENCE;
         long lastCommandSendingTime = TimeSource.MIN_VALUE;
 
         @Override
         public int sourceId() {
-            return sourceContext.sourceId();
+            return sourceId;
         }
 
         @Override
         public SequenceGenerator sourceSequenceGenerator() {
-            return sourceSequenceGenerator;
+            return sequenceGenerator;
         }
 
         @Override
@@ -116,21 +126,30 @@ final class DefaultCommandTracker implements CommandTracker {
         }
 
         @Override
+        public void onSent(final long sourceSequence, final long commandTime) {
+            assert sourceSequence > lastCommandSequence;
+            commandsSent++;
+            lastCommandSequence = sourceSequence;
+            lastCommandSendingTime = commandTime;
+            sequenceGenerator.nextSequence();
+        }
+
+        @Override
         public String toString() {
             return "TransientCommandState" +
-                    ":sourceId=" + sourceId() +
-                    "|commandsSent=" + commandsSent +
-                    "|sourceSequenceOfLastSentCommand=" + lastCommandSequence +
-                    "|sendingTimeOfLastSentCommand=" + lastCommandSendingTime;
+                    ":source-id=" + sourceId +
+                    "|commands-sent=" + commandsSent +
+                    "|source-seq-of-last-sent-cmd=" + lastCommandSequence +
+                    "|sending-time-of-last-sent-cmd=" + lastCommandSendingTime;
         }
     }
 
     @Override
     public String toString() {
-        return "DefaultCommandTracker" +
-                ":sourceId=" + sourceId() +
-                "|hasInFlightCommand=" + hasInFlightCommand() +
-                "|transientCommandState=" + transientCommandState +
-                "|eventLastProcessed=" + eventLastProcessed;
+        return "DefaultCommandSource" +
+                ":source-id=" + sourceId +
+                "|has-in-flight-command=" + hasInFlightCommand() +
+                "|transient-cmd-state=" + transientCommandState +
+                "|evt-last-processed=" + eventLastProcessed;
     }
 }

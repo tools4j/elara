@@ -28,7 +28,7 @@ import org.tools4j.elara.input.InputPoller;
 import org.tools4j.elara.plugin.timer.Timer.Style;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.CommandSender.SendingContext;
-import org.tools4j.elara.source.SourceContext;
+import org.tools4j.elara.source.CommandContext;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
@@ -54,20 +54,19 @@ public final class TimerSignalPoller implements InputPoller {
     }
 
     @Override
-    public int poll(final SourceContext sourceContext) {
+    public int poll(final CommandContext commandContext, final CommandSender commandSender) {
         if ((counter & signalInputSkipMask) != 0) {
             counter++;
             return 0;
         }
-        if (sourceContext.commandTracker().hasInFlightCommand()) {
+        if (commandSender.source().hasInFlightCommand()) {
             return 0;
         }
         counter++;
 
         final int index = timerState.indexOfNextDeadline();
         if (index >= 0 && timerState.deadline(index) <= timeSource.currentTime()) {
-            final CommandSender sender = sourceContext.commandSender();
-            try (final SendingContext context = sender.sendingCommand(SIGNAL_TIMER)) {
+            try (final SendingContext context = commandSender.sendingCommand(SIGNAL_TIMER)) {
                 final Style style = timerState.style(index);
                 final int length;
                 switch (style) {

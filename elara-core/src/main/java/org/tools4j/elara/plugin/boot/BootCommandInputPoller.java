@@ -23,11 +23,11 @@
  */
 package org.tools4j.elara.plugin.boot;
 
-import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.app.state.BaseState;
+import org.tools4j.elara.app.state.TransientCommandState;
 import org.tools4j.elara.input.InputPoller;
 import org.tools4j.elara.send.CommandSender;
-import org.tools4j.elara.source.SourceContext;
+import org.tools4j.elara.source.CommandContext;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.boot.BootCommands.BOOT_NOTIFY_APP_START;
@@ -44,21 +44,21 @@ public final class BootCommandInputPoller implements InputPoller {
     }
 
     @Override
-    public int poll(final SourceContext sourceContext) {
+    public int poll(final CommandContext commandContext, final CommandSender commandSender) {
         if (commandSent) {
             return 0;
         }
-        final CommandSender sender = sourceContext.commandSender();
-        final CommandTracker tracker = sourceContext.commandTracker();
+
+        final TransientCommandState transientCommandState = commandSender.source().transientCommandState();
 
         //NOTE: make sure that command is not de-duplicated
-        final long nextSourceSeq = 1 + baseState.lastAppliedCommandSequence(sender.sourceId());
-        tracker.transientCommandState().sourceSequenceGenerator().nextSequence(nextSourceSeq);
+        final long nextSourceSeq = 1 + baseState.lastAppliedCommandSequence(commandSender.sourceId());
+        transientCommandState.sourceSequenceGenerator().nextSequence(nextSourceSeq);
 
         //send command now
-        if (SENT == sender.sendCommandWithoutPayload(BOOT_NOTIFY_APP_START)) {
+        if (SENT == commandSender.sendCommandWithoutPayload(BOOT_NOTIFY_APP_START)) {
             commandSent = true;
-            bootPlugin.notifyCommandSent(tracker.transientCommandState());
+            bootPlugin.notifyCommandSent(transientCommandState);
         }
         return 1;
     }

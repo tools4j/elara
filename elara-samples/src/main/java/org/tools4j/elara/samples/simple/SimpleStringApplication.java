@@ -33,7 +33,7 @@ import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.CommandSender.SendingContext;
-import org.tools4j.elara.source.SourceContext;
+import org.tools4j.elara.source.CommandContext;
 import org.tools4j.elara.store.InMemoryStore;
 
 import java.util.Queue;
@@ -85,11 +85,10 @@ public class SimpleStringApplication implements AllInOneApp, Output {
         }
 
         @Override
-        public int poll(final SourceContext sourceContext) {
+        public int poll(final CommandContext commandContext, final CommandSender commandSender) {
             final String msg = strings.poll();
             if (msg != null) {
-                final CommandSender sender = sourceContext.commandSender();
-                try (final SendingContext context = sender.sendingCommand(TYPE_STRING)) {
+                try (final SendingContext context = commandSender.sendingCommand(TYPE_STRING)) {
                     final int bytes = context.buffer().putStringAscii(0, msg);
                     context.send(bytes);
                 }

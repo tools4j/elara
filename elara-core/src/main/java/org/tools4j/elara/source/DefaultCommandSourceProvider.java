@@ -24,47 +24,70 @@
 package org.tools4j.elara.source;
 
 import org.agrona.collections.Hashing;
-import org.agrona.collections.Int2ObjectHashMap;
+import org.agrona.collections.Int2IntHashMap;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.sequence.SequenceGenerator;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.IntFunction;
 
 import static java.util.Objects.requireNonNull;
 
-public class DefaultSourceContextProvider implements SourceContextProvider {
+public class DefaultCommandSourceProvider implements CommandSourceProvider {
 
     private static final int DEFAULT_INITIAL_CAPACITY = 64;
+    private static final int INDEX_NOT_AVAILABLE = -1;
 
-    private final Int2ObjectHashMap<DefaultSourceContext> contextBySourceId;
-    private final IntFunction<DefaultSourceContext> sourceContextFactory;
+    private final List<CommandSource> sources;
+    private final Int2IntHashMap sourceIdToIndex;
+    private final BaseState baseState;
+    private final SenderSupplier senderSupplier;
+    private final IntFunction<? extends SequenceGenerator> sourceSequenceGeneratorFactory;
 
-    public DefaultSourceContextProvider(final BaseState baseState,
+    public DefaultCommandSourceProvider(final BaseState baseState,
                                         final SenderSupplier senderSupplier) {
         this(DEFAULT_INITIAL_CAPACITY, baseState, senderSupplier, sourceId -> SequenceGenerator.create());
     }
 
-    public DefaultSourceContextProvider(final int initialCapacity,
+    public DefaultCommandSourceProvider(final int initialCapacity,
                                         final BaseState baseState,
                                         final SenderSupplier senderSupplier,
                                         final IntFunction<? extends SequenceGenerator> sourceSequenceGeneratorFactory) {
-        requireNonNull(baseState);
-        requireNonNull(senderSupplier);
-        this.contextBySourceId = new Int2ObjectHashMap<>(initialCapacity, Hashing.DEFAULT_LOAD_FACTOR);
-        this.sourceContextFactory = sourceId -> new DefaultSourceContext(sourceId, baseState, senderSupplier,
-                sourceSequenceGeneratorFactory.apply(sourceId));
+        this.sources = new ArrayList<>(initialCapacity);
+        this.sourceIdToIndex = new Int2IntHashMap(initialCapacity, Hashing.DEFAULT_LOAD_FACTOR, INDEX_NOT_AVAILABLE);
+        this.baseState = requireNonNull(baseState);
+        this.senderSupplier = requireNonNull(senderSupplier);
+        this.sourceSequenceGeneratorFactory = requireNonNull(sourceSequenceGeneratorFactory);
     }
 
     @Override
-    public SourceContext sourceContext(final int sourceId) {
-        return contextBySourceId.computeIfAbsent(sourceId, sourceContextFactory);
+    public int sources() {
+        return sources.size();
     }
 
     @Override
-    public SourceContext sourceContext(final int sourceId, final long minSourceSeq) {
-        final SourceContext context = sourceContext(sourceId);
-        context.commandTracker().transientCommandState().sourceSequenceGenerator().nextSequence(minSourceSeq);
-        return context;
+    public CommandSource sourceByIndex(final int index) {
+        return sources.get(index);
+    }
+
+    @Override
+    public CommandSource sourceById(final int sourceId) {
+        final int index = sourceIdToIndex.getOrDefault(sourceId, INDEX_NOT_AVAILABLE);
+        if (index != INDEX_NOT_AVAILABLE) {
+            return sources.get(index);
+        }
+        final SequenceGenerator seqGenerator = sourceSequenceGeneratorFactory.apply(sourceId);
+        final CommandSource commandSource = new DefaultCommandSource(sourceId, baseState, senderSupplier, seqGenerator);
+        final int newIndex = sources.size();
+        sourceIdToIndex.put(sourceId, newIndex);
+        sources.add(commandSource);
+        return commandSource;
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultCommandSourceProvider:sources=" + sources;
     }
 }

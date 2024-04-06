@@ -23,21 +23,37 @@
  */
 package org.tools4j.elara.app.state;
 
-import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.sequence.SequenceGenerator;
+import org.tools4j.elara.source.CommandContext;
+import org.tools4j.elara.source.CommandSource;
 
 /**
- * Transient state associated with command sending that is not reflected by events, hence it is non-deterministic.
- * Transient command state is used by {@link CommandTracker} to determine if commands are currently
- * {@link CommandTracker#hasInFlightCommand() in-flight}, meaning that some events are still missing for commands that
- * have been sent.
+ * Transient state associated with command sending from a particular command source.  Transient state is not (yet)
+ * reflected by events and therefore non-deterministic.  Transient command state is used by a {@link CommandSource} and
+ * by the {@link CommandContext} to determine if commands are currently in-flight, meaning that some events are still
+ * missing for commands that have been sent.
  * <p>
  * Note however that transient state should not be used in the decision-making logic of the application, otherwise its
  * state will not be deterministic and cannot be reproduced through event replay.
+ *
+ * @see CommandSource#transientCommandState()
+ * @see CommandSource#hasInFlightCommand()
+ * @see CommandContext#hasInFlightCommand()
  */
 public interface TransientCommandState {
     long NIL_SEQUENCE = SequenceGenerator.NIL_SEQUENCE;
+
+    /**
+     * Returns the source ID for commands associated with this command state.
+     * @return the source ID for commands
+     */
     int sourceId();
+
+    /**
+     * Returns the command sequence generator for commands associated with this command state.
+     * @return the command sequence generator incremented for every command sent
+     * @see #sourceSequenceOfLastSentCommand()
+     */
     SequenceGenerator sourceSequenceGenerator();
 
     /**
@@ -57,6 +73,7 @@ public interface TransientCommandState {
      * Returns the sending time of the most recently sent command, or
      * {@link org.tools4j.elara.time.TimeSource#MIN_VALUE TimeSource.MIN_VALUE} if no command was ever sent yet.
      * @return the sending time of the command
+     * @see #sourceSequenceGenerator()
      */
     long sendingTimeOfLastSentCommand();
 }

@@ -53,8 +53,9 @@ import org.tools4j.elara.route.EventRouter.RoutingContext;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.CommandSender.SendingContext;
 import org.tools4j.elara.send.SenderSupplier;
-import org.tools4j.elara.sequence.SequenceGenerator;
-import org.tools4j.elara.source.SourceContextProvider;
+import org.tools4j.elara.source.CommandContext;
+import org.tools4j.elara.source.CommandSource;
+import org.tools4j.elara.source.CommandSourceProvider;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore.Handler;
 import org.tools4j.elara.store.MessageStore.Poller;
@@ -270,8 +271,13 @@ public class MetricsCapturingInterceptor implements Interceptor {
         ) {
             return new SequencerFactory() {
                 @Override
-                public SourceContextProvider sourceContextProvider() {
-                    return singletons.get().sourceContextProvider();
+                public CommandContext commandContext() {
+                    return singletons.get().commandContext();
+                }
+
+                @Override
+                public CommandSourceProvider commandSourceProvider() {
+                    return singletons.get().commandSourceProvider();
                 }
 
                 @Override
@@ -580,13 +586,18 @@ public class MetricsCapturingInterceptor implements Interceptor {
         CommandSender sender;
 
         @Override
-        public CommandSender senderFor(final int sourceId, final SequenceGenerator sourceSequenceGenerator, final SentListener sentListener) {
-            this.sender = senderSupplier.senderFor(sourceId, sourceSequenceGenerator, sentListener);
+        public CommandSender senderFor(final CommandSource commandSource, final SentListener sentListener) {
+            this.sender = senderSupplier.senderFor(commandSource, sentListener);
             return this;
         }
 
         SendingContext sendingContext(final int type, final SendingContext sendingContext) {
             return context != null ? context.init(type, sendingContext) : sendingContext;
+        }
+
+        @Override
+        public CommandSource source() {
+            return sender.source();
         }
 
         @Override

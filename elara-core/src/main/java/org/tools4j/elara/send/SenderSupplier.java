@@ -23,11 +23,11 @@
  */
 package org.tools4j.elara.send;
 
-import org.tools4j.elara.sequence.SequenceGenerator;
+import org.tools4j.elara.source.CommandSource;
 
 @FunctionalInterface
 public interface SenderSupplier {
-    CommandSender senderFor(int sourceId, SequenceGenerator sourceSequenceGenerator, SentListener sentListener);
+    CommandSender senderFor(CommandSource commandSource, SentListener sentListener);
 
     @FunctionalInterface
     interface SentListener {

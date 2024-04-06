@@ -27,17 +27,17 @@ import org.agrona.DirectBuffer;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.send.CommandSender;
-import org.tools4j.elara.source.SourceContextProvider;
+import org.tools4j.elara.source.CommandSourceProvider;
 import org.tools4j.elara.stream.SendingResult;
 
 import static java.util.Objects.requireNonNull;
 
 public class CommandSendingCommandHandler implements CommandHandler {
 
-    private final SourceContextProvider sourceContextProvider;
+    private final CommandSourceProvider sourceContextProvider;
     private final ExceptionHandler exceptionHandler;
 
-    public CommandSendingCommandHandler(final SourceContextProvider sourceContextProvider,
+    public CommandSendingCommandHandler(final CommandSourceProvider sourceContextProvider,
                                         final ExceptionHandler exceptionHandler) {
         this.sourceContextProvider = requireNonNull(sourceContextProvider);
         this.exceptionHandler = requireNonNull(exceptionHandler);
@@ -49,10 +49,10 @@ public class CommandSendingCommandHandler implements CommandHandler {
     }
 
     public static void handleCommand(final Command command,
-                                     final SourceContextProvider sourceContextProvider,
+                                     final CommandSourceProvider sourceContextProvider,
                                      final ExceptionHandler exceptionHandler) {
         final CommandSender commandSender = sourceContextProvider
-                .sourceContext(command.sourceId(), command.sourceSequence())
+                .sourceById(command.sourceId())
                 .commandSender();
         handleCommand(command, commandSender, exceptionHandler);
     }
@@ -63,10 +63,13 @@ public class CommandSendingCommandHandler implements CommandHandler {
         try {
             final int sourceId = command.sourceId();
             final long sourceSeq = command.sourceSequence();
+            final long nextSeq = commandSender.nextCommandSequence();
             final DirectBuffer payload = command.payload();
-            if (commandSender.nextCommandSequence() != sourceSeq) {
+            if (nextSeq < sourceSeq) {
+                commandSender.source().transientCommandState().sourceSequenceGenerator().nextSequence(sourceSeq);
+            } else if (nextSeq > sourceSeq) {
                 throw new IllegalArgumentException("Unexpected command sequence " + sourceId + ":" + sourceSeq +
-                        ", expected at least " + commandSender.nextCommandSequence());
+                        ", expected at least " + nextSeq);
             }
             final SendingResult result = commandSender.sendCommand(command.payloadType(), payload, 0, payload.capacity());
             if (result != SendingResult.SENT) {

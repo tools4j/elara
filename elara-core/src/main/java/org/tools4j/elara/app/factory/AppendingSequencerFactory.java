@@ -28,8 +28,10 @@ import org.tools4j.elara.app.config.CommandStoreConfig;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.send.CommandAppendingSender;
 import org.tools4j.elara.send.SenderSupplier;
-import org.tools4j.elara.source.DefaultSourceContextProvider;
-import org.tools4j.elara.source.SourceContextProvider;
+import org.tools4j.elara.source.CommandContext;
+import org.tools4j.elara.source.CommandSourceProvider;
+import org.tools4j.elara.source.DefaultCommandContext;
+import org.tools4j.elara.source.DefaultCommandSourceProvider;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore;
 
@@ -58,8 +60,13 @@ public class AppendingSequencerFactory implements SequencerFactory {
     }
 
     @Override
-    public SourceContextProvider sourceContextProvider() {
-        return new DefaultSourceContextProvider(baseState, sequencerSingletons.get().senderSupplier());
+    public CommandContext commandContext() {
+        return new DefaultCommandContext(sequencerSingletons.get().commandSourceProvider());
+    }
+
+    @Override
+    public CommandSourceProvider commandSourceProvider() {
+        return new DefaultCommandSourceProvider(baseState, sequencerSingletons.get().senderSupplier());
     }
 
     @Override
@@ -70,7 +77,7 @@ public class AppendingSequencerFactory implements SequencerFactory {
 
     @Override
     public AgentStep sequencerStep() {
-        return inOutSingletons.get().input().inputPollerStep(sequencerSingletons.get().sourceContextProvider());
+        return inOutSingletons.get().input().inputPollerStep(sequencerSingletons.get().commandContext());
     }
 
 }

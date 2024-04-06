@@ -23,11 +23,11 @@
  */
 package org.tools4j.elara.plugin.boot;
 
-import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.source.CommandContext;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.boot.BootEvents.BOOT_APP_STARTED;
@@ -50,7 +50,7 @@ final class BootEventApplier implements EventApplier, EventProcessor {
     }
 
     @Override
-    public void onEvent(final Event event, final CommandTracker commandTracker, final CommandSender sender) {
+    public void onEvent(final Event event, final CommandContext commandContext, final CommandSender sender) {
         onEvent(event);
     }
 }

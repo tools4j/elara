@@ -23,12 +23,12 @@
  */
 package org.tools4j.elara.app.type;
 
-import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.source.CommandContext;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.stream.MessageReceiver;
 
@@ -39,7 +39,7 @@ import static java.util.Objects.requireNonNull;
 public interface FeedbackApp extends EventProcessor {
 
     @Override
-    void onEvent(Event event, CommandTracker commandTracker, CommandSender sender);
+    void onEvent(Event event, CommandContext commandContext, CommandSender sender);
 
     default ElaraRunner launch(final MessageStore messageStore) {
         requireNonNull(messageStore);

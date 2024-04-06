@@ -23,14 +23,14 @@
  */
 package org.tools4j.elara.input;
 
-import org.tools4j.elara.source.SourceContextProvider;
+import org.tools4j.elara.source.CommandContext;
 import org.tools4j.elara.step.AgentStep;
 
 public interface SingleSourceInput extends Input, InputPoller {
     int sourceId();
 
     @Override
-    default AgentStep inputPollerStep(final SourceContextProvider sourceContextProvider) {
-        return Input.single(this).inputPollerStep(sourceContextProvider);
+    default AgentStep inputPollerStep(final CommandContext commandContext) {
+        return Input.single(this).inputPollerStep(commandContext);
     }
 }

@@ -23,14 +23,14 @@
  */
 package org.tools4j.elara.app.state;
 
-import org.tools4j.elara.app.handler.CommandTracker;
 import org.tools4j.elara.flyweight.EventType;
+import org.tools4j.elara.source.CommandSource;
 import org.tools4j.elara.time.TimeSource;
 
 /**
  * Information about the last processed event for a particular source ID as returned by {@link EventProcessingState}.
  * Note that if {@link BaseState} is used, some fields may not be populated when accessed through
- * {@link CommandTracker#eventLastProcessed()} as indicated by the method descriptions.
+ * {@link CommandSource#eventLastProcessed()} as indicated by the method descriptions.
  */
 public interface EventState {
     /**

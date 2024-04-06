@@ -154,10 +154,10 @@ public class HashApplication implements AllInOneApp /*, Output*/ {
 
     public static InputPoller inputPoller(final AtomicLong input) {
         requireNonNull(input);
-        return sourceContext -> {
+        return (commandContext, commandSender) -> {
             final long value = input.getAndSet(NULL_VALUE);
             if (value != NULL_VALUE) {
-                try (final SendingContext context = sourceContext.commandSender().sendingCommand()) {
+                try (final SendingContext context = commandSender.sendingCommand()) {
                     for (int pos = 0; pos < MESSAGE_LENGTH; pos += Long.BYTES) {
                         context.buffer().putLong(pos, value);
                     }

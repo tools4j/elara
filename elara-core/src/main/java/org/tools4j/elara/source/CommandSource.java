@@ -21,70 +21,77 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.app.handler;
+package org.tools4j.elara.source;
 
+import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.app.state.EventProcessingState;
 import org.tools4j.elara.app.state.EventState;
 import org.tools4j.elara.app.state.TransientCommandState;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.route.EventRouter;
+import org.tools4j.elara.send.CommandSender;
 
 /**
- * Tracks sent commands and processing of corresponding events and provides information about
- * {@link #hasInFlightCommand() in-flight} commands whose corresponding event (or events) have not been received back
- * yet.
+ * A command source bundles information about command sending from a particular source identified through a source ID.
+ * Commands are sent through the {@link #commandSender() command sender} and all commands from a source are sequenced
+ * with source sequence numbers.  Sent commands are tracked and marked as {@link #hasInFlightCommand() in-flight} until
+ * the event (or events) resulting from that command have been received back.
  *
- * @see #hasInFlightCommand()
+ * @see CommandContext
  */
-public interface CommandTracker {
+public interface CommandSource {
     /**
-     * Source ID of all commands and events tracked by this command tracker
-     * @return source ID of all tracked commands and events
+     * Returns the source ID for commands associated with this command source.
+     * @return the source ID for commands from this source
      */
     int sourceId();
 
     /**
-     * True if commands are currently in-flight, that is, if at least one command has been sent whose commit event was
-     * not yet processed.  This may be useful to defer event processing until all events have from sent commands have
-     * been received back and the application state updated.
+     * True if commands from this source are currently in-flight, that is, if at least one command has been sent whose
+     * commit event was not yet processed.  This may be useful to defer event processing until all events have from sent
+     * commands have been received back and the application state updated.
      * <p>
-     * Note that
-     * {@link org.tools4j.elara.app.handler.CommandProcessor#onCommand(Command, EventRouter) command processing}
-     * can yield more than one event. The commit event is the last event that corresponds to the same command.
+     * Note that {@link CommandProcessor#onCommand(Command, EventRouter) command processing} can yield more than one
+     * event. The commit event is the last event that corresponds to the same command.
      * <p>
-     * This method returns false if no commands are currently in-flight, or if the currently processed event is the
-     * commit event of the last in-flight command.
+     * This method returns false if no commands from this source are currently in-flight, or if the currently processed
+     * event is the commit event of the last in-flight command.
      *
      * @return true if at least one command is in-flight whose commit event was not yet processed
      */
     boolean hasInFlightCommand();
 
     /**
+     * Returns the sender for sending commands from this command source.
+     * @return the command sender for this source
+     */
+    CommandSender commandSender();
+
+    /**
      * Returns transient state associated with command sending that is not reflected by events, hence it is
-     * non-deterministic. State from this class can be used for instance to determine that commands are currently
-     * {@link #hasInFlightCommand() in-flight}.
+     * non-deterministic. Transient command state is used by {@link CommandContext} to determine if commands are
+     * currently {@link CommandContext#hasInFlightCommand() in-flight}, meaning that some events are still missing for
+     * commands that have been sent.
      * <p>
      * Note however that transient state should not be used in the decision-making logic of the application, otherwise
      * its state will not be deterministic and cannot be reproduced through event replay.
      *
      * @return transient information about command sending
-     * @see TransientCommandState
-     * @see #hasInFlightCommand()
+     * @see CommandContext#hasInFlightCommand()
      */
     TransientCommandState transientCommandState();
 
     /**
-     * Returns information about the most recently processed event corresponding to a command sent by this application.
-     * Note that this includes the event currently processed if originates from the {@link #sourceId() source} tracked
-     * by this command tracker.
+     * Returns information about the most recently processed event corresponding to a command sent by this source.
+     * Note that this includes the event currently processed if originates from this source.
      * <p>
      * Application types using {@link BaseState} instead of {@link EventProcessingState} to track events (typically
      * sequencer and command processor apps), not all elements in the returned event state will be populated (as
      * indicated in the description of the {@link EventState} methods).
      *
      * @return  information about the event last received and processed, considering only events from commands sent by
-     *          this application
+     *          this source
      */
     EventState eventLastProcessed();
 }

@@ -32,7 +32,8 @@ import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.handler.CommandSendingCommandHandler;
 import org.tools4j.elara.input.MultiSourceInput;
-import org.tools4j.elara.source.SourceContextProvider;
+import org.tools4j.elara.source.CommandContext;
+import org.tools4j.elara.source.CommandSourceProvider;
 import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageReceiver.Handler;
 
@@ -48,7 +49,7 @@ final class CachePollingInput implements MultiSourceInput {
     private final Handler handler = this::onMessage;
     private final FlyweightCommand command = new FlyweightCommand();
 
-    private SourceContextProvider sourceContextProvider;
+    private CommandSourceProvider commandSourceProvider;
 
     public CachePollingInput(final ActivationPlugin plugin, final BaseState baseState, final ExceptionHandler exceptionHandler) {
         this.plugin = requireNonNull(plugin);
@@ -59,10 +60,10 @@ final class CachePollingInput implements MultiSourceInput {
     }
 
     @Override
-    public int poll(final SourceContextProvider sourceContextProvider) {
-        requireNonNull(sourceContextProvider);
-        if (this.sourceContextProvider != sourceContextProvider) {
-            this.sourceContextProvider = sourceContextProvider;
+    public int poll(final CommandContext commandContext, final CommandSourceProvider commandSourceProvider) {
+        requireNonNull(this.commandSourceProvider);
+        if (this.commandSourceProvider != commandSourceProvider) {
+            this.commandSourceProvider = commandSourceProvider;
         }
         if (command.valid()) {
             return handleCachedCommand() ? 1 : 0;
@@ -95,7 +96,7 @@ final class CachePollingInput implements MultiSourceInput {
 
     private boolean handleCommand(final Command command) {
         if (plugin.isActive()) {
-            CommandSendingCommandHandler.handleCommand(command, sourceContextProvider, exceptionHandler);
+            CommandSendingCommandHandler.handleCommand(command, commandSourceProvider, exceptionHandler);
             return true;
         }
         return eventApplicationState.allEventsAppliedFor(command);

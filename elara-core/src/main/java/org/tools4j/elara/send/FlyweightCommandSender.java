@@ -23,38 +23,42 @@
  */
 package org.tools4j.elara.send;
 
-import org.tools4j.elara.sequence.SequenceGenerator;
+import org.tools4j.elara.sequence.SequenceSupplier;
+import org.tools4j.elara.source.CommandSource;
 
 import static java.util.Objects.requireNonNull;
 
 abstract class FlyweightCommandSender implements CommandSender.Default, SenderSupplier {
 
-    private int sourceId;
-    private SequenceGenerator sourceSequenceGenerator;
+    private CommandSource commandSource;
+    private SequenceSupplier sourceSequenceSupplier;
     private SentListener sentListener;
 
     @Override
-    public CommandSender senderFor(final int sourceId,
-                                   final SequenceGenerator sourceSequenceGenerator,
+    public CommandSender senderFor(final CommandSource commandSource,
                                    final SentListener sentListener) {
-        this.sourceId = sourceId;
-        this.sourceSequenceGenerator = requireNonNull(sourceSequenceGenerator);
+        this.commandSource = requireNonNull(commandSource);
+        this.sourceSequenceSupplier = commandSource.transientCommandState().sourceSequenceGenerator();
         this.sentListener = requireNonNull(sentListener);
         return this;
     }
 
     void notifySent(final long commandTime) {
-        sentListener.onSent(sourceSequenceGenerator.sequence(), commandTime);
-        sourceSequenceGenerator.nextSequence();
+        sentListener.onSent(sourceSequenceSupplier.sequence(), commandTime);
+    }
+
+    @Override
+    public CommandSource source() {
+        return commandSource;
     }
 
     @Override
     public int sourceId() {
-        return sourceId;
+        return commandSource.sourceId();
     }
 
     @Override
     public long nextCommandSequence() {
-        return sourceSequenceGenerator.sequence();
+        return sourceSequenceSupplier.sequence();
     }
 }

@@ -34,7 +34,8 @@ import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.route.CommandTransaction;
 import org.tools4j.elara.send.SenderSupplier;
-import org.tools4j.elara.source.SourceContextProvider;
+import org.tools4j.elara.source.CommandContext;
+import org.tools4j.elara.source.CommandSourceProvider;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore.Handler;
 import org.tools4j.elara.store.MessageStore.Poller;
@@ -64,8 +65,13 @@ final class ActivationPluginInterceptor implements Interceptor {
     public CommandStreamFactory commandStreamFactory(final Supplier<? extends CommandStreamFactory> singletons) {
         return new CommandStreamFactory() {
             @Override
-            public SourceContextProvider sourceContextProvider() {
-                return singletons.get().sourceContextProvider();
+            public CommandContext commandContext() {
+                return singletons.get().commandContext();
+            }
+
+            @Override
+            public CommandSourceProvider commandSourceProvider() {
+                return singletons.get().commandSourceProvider();
             }
 
             @Override
@@ -95,8 +101,13 @@ final class ActivationPluginInterceptor implements Interceptor {
         }
         return new SequencerFactory() {
             @Override
-            public SourceContextProvider sourceContextProvider() {
-                return singletons.get().sourceContextProvider();
+            public CommandContext commandContext() {
+                return singletons.get().commandContext();
+            }
+
+            @Override
+            public CommandSourceProvider commandSourceProvider() {
+                return singletons.get().commandSourceProvider();
             }
 
             @Override
