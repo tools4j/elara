@@ -25,12 +25,15 @@ package org.tools4j.elara.app.factory;
 
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.EventStoreConfig;
-import org.tools4j.elara.app.state.BaseState;
+import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.state.MutableBaseState;
+import org.tools4j.elara.app.state.NoOpInFlightState;
+import org.tools4j.elara.event.CompositeEventApplier;
+import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.send.CommandPassthroughSender;
+import org.tools4j.elara.send.DefaultCommandContext;
 import org.tools4j.elara.send.SenderSupplier;
-import org.tools4j.elara.source.CommandContext;
 import org.tools4j.elara.source.CommandSourceProvider;
-import org.tools4j.elara.source.DefaultCommandContext;
 import org.tools4j.elara.source.DefaultCommandSourceProvider;
 import org.tools4j.elara.step.AgentStep;
 
@@ -42,44 +45,48 @@ public class PassthroughSequencerFactory implements SequencerFactory {
 
     private final AppConfig appConfig;
     private final EventStoreConfig eventStoreConfig;
-    private final BaseState baseState;
+    private final MutableBaseState baseState;
     private final Supplier<? extends SequencerFactory> sequencerSingletons;
-    private final Supplier<? extends InputFactory> inOutSingletons;
+    private final Supplier<? extends InputFactory> inputSingletons;
     private final Supplier<? extends ApplierFactory> applierSingletons;
 
     public PassthroughSequencerFactory(final AppConfig appConfig,
                                        final EventStoreConfig eventStoreConfig,
-                                       final BaseState baseState,
+                                       final MutableBaseState baseState,
                                        final Supplier<? extends SequencerFactory> sequencerSingletons,
-                                       final Supplier<? extends InputFactory> inOutSingletons,
+                                       final Supplier<? extends InputFactory> inputSingletons,
                                        final Supplier<? extends ApplierFactory> applierSingletons) {
         this.appConfig = requireNonNull(appConfig);
         this.eventStoreConfig = requireNonNull(eventStoreConfig);
         this.baseState = requireNonNull(baseState);
         this.sequencerSingletons = requireNonNull(sequencerSingletons);
-        this.inOutSingletons = requireNonNull(inOutSingletons);
+        this.inputSingletons = requireNonNull(inputSingletons);
         this.applierSingletons = requireNonNull(applierSingletons);
+    }
+
+    private EventApplier eventApplier() {
+        return CompositeEventApplier.create(baseState, applierSingletons.get().eventApplier());
     }
 
     @Override
     public CommandContext commandContext() {
-        return new DefaultCommandContext(sequencerSingletons.get().commandSourceProvider());
+        return new DefaultCommandContext(NoOpInFlightState.INSTANCE, sequencerSingletons.get().commandSourceProvider());
     }
 
     @Override
     public CommandSourceProvider commandSourceProvider() {
-        return new DefaultCommandSourceProvider(baseState, sequencerSingletons.get().senderSupplier());
+        return new DefaultCommandSourceProvider(baseState, NoOpInFlightState.INSTANCE, sequencerSingletons.get().senderSupplier());
     }
 
     @Override
     public SenderSupplier senderSupplier() {
         return new CommandPassthroughSender(appConfig.timeSource(), baseState, eventStoreConfig.eventStore().appender(),
-                applierSingletons.get().eventApplier(), appConfig.exceptionHandler(),
+                eventApplier(), appConfig.exceptionHandler(),
                 eventStoreConfig.duplicateHandler());
     }
 
     @Override
     public AgentStep sequencerStep() {
-        return inOutSingletons.get().input().inputPollerStep(sequencerSingletons.get().commandContext());
+        return inputSingletons.get().input().inputPollerStep(sequencerSingletons.get().commandContext());
     }
 }

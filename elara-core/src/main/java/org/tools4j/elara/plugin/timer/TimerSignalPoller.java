@@ -26,9 +26,9 @@ package org.tools4j.elara.plugin.timer;
 import org.agrona.BitUtil;
 import org.tools4j.elara.input.InputPoller;
 import org.tools4j.elara.plugin.timer.Timer.Style;
+import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.CommandSender.SendingContext;
-import org.tools4j.elara.source.CommandContext;
 import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;

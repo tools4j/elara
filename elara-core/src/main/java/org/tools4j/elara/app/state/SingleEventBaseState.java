@@ -31,21 +31,17 @@ import static java.util.Objects.requireNonNull;
 /**
  * Single event base state allows only one event per command.
  */
-public class SingleEventBaseState implements PassthroughState {
+public class SingleEventBaseState implements ThinBaseState {
     public static final BaseStateProvider PROVIDER = appConfig -> new SingleEventBaseState();
 
-    private final PassthroughState delegate;
+    private final ThinBaseState delegate;
 
     public SingleEventBaseState() {
         this(new DefaultBaseState());
     }
 
-    public SingleEventBaseState(final PassthroughState delegate) {
+    public SingleEventBaseState(final ThinBaseState delegate) {
         this.delegate = requireNonNull(delegate);
-    }
-
-    public static SingleEventBaseState create() {
-        return new SingleEventBaseState();
     }
 
     @Override
@@ -69,18 +65,23 @@ public class SingleEventBaseState implements PassthroughState {
     }
 
     @Override
-    public void applyEvent(final Event event) {
+    public void onEvent(final Event event) {
         if (event.eventIndex() != 0) {
             throw new IllegalArgumentException("Only event with index 0 is allowed");
         }
-        delegate.applyEvent(event);
+        delegate.onEvent(event);
     }
 
     @Override
-    public void applyEvent(final int srcId, final long srcSeq, final long evtSeq, final int evtIndex, final EventType evtType, final long evtTime, final int payloadType) {
+    public void onEvent(final int srcId, final long srcSeq, final long evtSeq, final int evtIndex, final EventType evtType, final long evtTime, final int payloadType) {
         if (evtIndex != 0) {
             throw new IllegalArgumentException("Only event with index 0 is allowed");
         }
-        delegate.applyEvent(srcId, srcSeq, evtSeq, evtIndex, evtType, evtTime, payloadType);
+        delegate.onEvent(srcId, srcSeq, evtSeq, evtIndex, evtType, evtTime, payloadType);
+    }
+
+    @Override
+    public String toString() {
+        return "SingleEventBaseState:delegate=" + delegate;
     }
 }

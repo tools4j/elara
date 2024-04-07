@@ -36,9 +36,9 @@ import org.tools4j.elara.samples.bank.actor.Accountant;
 import org.tools4j.elara.samples.bank.actor.Teller;
 import org.tools4j.elara.samples.bank.command.BankCommand;
 import org.tools4j.elara.samples.bank.state.Bank;
+import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.CommandSender.SendingContext;
-import org.tools4j.elara.source.CommandContext;
 import org.tools4j.elara.store.InMemoryStore;
 import org.tools4j.elara.store.MessageStore;
 

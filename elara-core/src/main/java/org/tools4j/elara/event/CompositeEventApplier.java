@@ -24,6 +24,8 @@
 package org.tools4j.elara.event;
 
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.state.ThinEventApplier;
+import org.tools4j.elara.flyweight.EventType;
 
 import static java.util.Objects.requireNonNull;
 
@@ -31,14 +33,72 @@ public class CompositeEventApplier implements EventApplier {
 
     private final EventApplier[] appliers;
 
-    public CompositeEventApplier(final EventApplier... appliers) {
+    private CompositeEventApplier(final EventApplier... appliers) {
         this.appliers = requireNonNull(appliers);
+    }
+
+    public static EventApplier create(final EventApplier applier1, EventApplier applier2) {
+        if (applier1 == EventApplier.NOOP) {
+            return applier2;
+        }
+        if (applier2 == EventApplier.NOOP) {
+            return applier1;
+        }
+        if (applier1 instanceof ThinEventApplier && applier2 instanceof ThinEventApplier) {
+            return new CompositeThinEventApplier((ThinEventApplier)applier1, (ThinEventApplier)applier2);
+        }
+        return new CompositeEventApplier(applier1, applier2);
+    }
+
+    public static EventApplier create(final EventApplier... appliers) {
+        boolean allThin = true;
+        int count = 0;
+        for (int i = 0; i < appliers.length; i++) {
+            count += (appliers[i] == NOOP ? 0 : 1);
+            allThin = appliers[i] instanceof ThinEventApplier;
+        }
+        if (count == 0) {
+            return NOOP;
+        }
+        if (count == 1) {
+            for (int i = 0; i < appliers.length; i++) {
+                if (appliers[i] != NOOP) {
+                    return appliers[i];
+                }
+            }
+            throw new InternalError("Should have exactly 1 non-NOOP applier");
+        }
+        final EventApplier[] components = allThin ? new ThinEventApplier[count] : new EventApplier[count];
+        int index = 0;
+        for (int i = 0; i < appliers.length; i++) {
+            if (appliers[i] != NOOP) {
+                components[index] = appliers[i];
+                index++;
+            }
+        }
+        assert index == count;
+        return allThin ? new CompositeThinEventApplier((ThinEventApplier[])components)
+                : new CompositeEventApplier(components);
     }
 
     @Override
     public void onEvent(final Event event) {
         for (final EventApplier applier : appliers) {
             applier.onEvent(event);
+        }
+    }
+
+    private static final class CompositeThinEventApplier implements ThinEventApplier {
+        private final ThinEventApplier[] appliers;
+        public CompositeThinEventApplier(final ThinEventApplier... appliers) {
+            this.appliers = requireNonNull(appliers);
+        }
+
+        @Override
+        public void onEvent(final int srcId, final long srcSeq, final long evtSeq, final int index, final EventType evtType, final long evtTime, final int payloadType) {
+            for (final ThinEventApplier applier : appliers) {
+                applier.onEvent(srcId, srcSeq, evtSeq, index, evtType, evtTime, payloadType);
+            }
         }
     }
 

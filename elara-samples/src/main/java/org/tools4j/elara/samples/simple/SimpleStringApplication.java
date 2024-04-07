@@ -31,9 +31,9 @@ import org.tools4j.elara.input.InputPoller;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.run.ElaraRunner;
+import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.CommandSender.SendingContext;
-import org.tools4j.elara.source.CommandContext;
 import org.tools4j.elara.store.InMemoryStore;
 
 import java.util.Queue;

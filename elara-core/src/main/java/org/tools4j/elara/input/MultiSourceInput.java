@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.input;
 
-import org.tools4j.elara.source.CommandContext;
+import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.source.CommandSourceProvider;
 import org.tools4j.elara.step.AgentStep;
 

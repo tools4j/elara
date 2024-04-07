@@ -36,7 +36,6 @@ import org.tools4j.elara.plugin.api.PluginSpecification.Installer;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.step.EventReplayStep;
 
-import java.util.Arrays;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
@@ -70,20 +69,11 @@ public class DefaultApplierFactory implements ApplierFactory {
             return eventApplier;
         }
         final EventApplier[] appliers = new EventApplier[plugins.length + 1];
-        int count = 0;
-        for (final Installer plugin : plugins) {
-            appliers[count] = plugin.eventApplier(baseState);
-            if (appliers[count] != EventApplier.NOOP) {
-                count++;
-            }
+        for (int i = 0; i < plugins.length; i++) {
+            appliers[i] = plugins[i].eventApplier(baseState);
         }
-        if (count == 0) {
-            return eventApplier;
-        }
-        appliers[count++] = eventApplier;//application applier last
-        return new CompositeEventApplier(
-                count == appliers.length ? appliers : Arrays.copyOf(appliers, count)
-        );
+        appliers[plugins.length] = eventApplier;//application applier last
+        return CompositeEventApplier.create(appliers);
     }
 
     @Override

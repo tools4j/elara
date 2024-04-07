@@ -21,38 +21,39 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.samples.network;
+package org.tools4j.elara.send;
 
-import org.tools4j.elara.input.InputPoller;
-import org.tools4j.elara.send.CommandContext;
-import org.tools4j.elara.send.CommandSender;
-import org.tools4j.elara.send.CommandSender.SendingContext;
+import org.tools4j.elara.app.state.TransientInFlightState;
+import org.tools4j.elara.source.CommandSourceProvider;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.samples.network.Buffer.CONSUMED_NOTHING;
 
-public class BufferInputPoller implements InputPoller {
+public class DefaultCommandContext implements CommandContext {
 
-    private final Buffer buffer;
+    private final TransientInFlightState transientInFlightState;
+    private final CommandSourceProvider commandSourceProvider;
 
-    public BufferInputPoller(final Buffer buffer) {
-        this.buffer = requireNonNull(buffer);
-    }
-
-    public Buffer buffer() {
-        return buffer;
+    public DefaultCommandContext(final TransientInFlightState transientInFlightState,
+                                 final CommandSourceProvider commandSourceProvider) {
+        this.transientInFlightState = requireNonNull(transientInFlightState);
+        this.commandSourceProvider = requireNonNull(commandSourceProvider);
     }
 
     @Override
-    public int poll(final CommandContext commandContext, final CommandSender commandSender) {
-        try (final SendingContext context = commandSender.sendingCommand()) {
-            final int consumed = buffer.consume(context.buffer(), 0);
-            if (consumed == CONSUMED_NOTHING) {
-                context.abort();
-                return 0;
-            }
-            context.send(consumed);
-            return 1;
-        }
+    public TransientInFlightState transientInFlightState() {
+        return transientInFlightState;
+    }
+
+    @Override
+    public CommandSourceProvider commandSources() {
+        return commandSourceProvider;
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultCommandContext" +
+                ":has-in-flight-cmd=" + hasInFlightCommand() +
+                "|transient-in-flight-state=" + transientInFlightState +
+                "|cmd-sources=" + commandSourceProvider;
     }
 }

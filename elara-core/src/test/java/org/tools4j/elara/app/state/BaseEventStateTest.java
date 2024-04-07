@@ -53,11 +53,11 @@ class BaseEventStateTest {
     void lastEventValuesLimited() {
         //given
         final int sourceId = 456;
-        final PassthroughState baseState = new DefaultBaseState();
+        final ThinBaseState baseState = new DefaultBaseState();
         final EventState eventState = new BaseEventState(sourceId, baseState);
 
         //when
-        baseState.applyEvent(sourceId, 22L, 33L, 1, INTERMEDIARY, 44L, 55);
+        baseState.onEvent(sourceId, 22L, 33L, 1, INTERMEDIARY, 44L, 55);
 
         //then
         assertEquals(sourceId, eventState.sourceId(), "sourceId");
@@ -70,7 +70,7 @@ class BaseEventStateTest {
         assertEquals(0, eventState.payloadType(), "payloadType");
 
         //when
-        baseState.applyEvent(sourceId, 23L, 34L, 1, AUTO_COMMIT, 45L, 56);
+        baseState.onEvent(sourceId, 23L, 34L, 1, AUTO_COMMIT, 45L, 56);
 
         //then
         assertEquals(sourceId, eventState.sourceId(), "sourceId");

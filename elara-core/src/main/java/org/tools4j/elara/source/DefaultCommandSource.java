@@ -23,11 +23,9 @@
  */
 package org.tools4j.elara.source;
 
-import org.tools4j.elara.app.state.BaseEventState;
-import org.tools4j.elara.app.state.BaseState;
-import org.tools4j.elara.app.state.EventProcessingState.MutableEventProcessingState;
 import org.tools4j.elara.app.state.EventState;
-import org.tools4j.elara.app.state.TransientCommandState;
+import org.tools4j.elara.app.state.MutableInFlightState;
+import org.tools4j.elara.app.state.TransientCommandSourceState;
 import org.tools4j.elara.flyweight.EventType;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.SenderSupplier;
@@ -43,25 +41,27 @@ final class DefaultCommandSource implements CommandSource {
     private final SenderSupplier senderSupplier;
     private final SequenceGenerator sequenceGenerator;
     private final EventState eventLastProcessed;
-    private final TransientCommandState transientCommandState = new TransientCommandStateImpl();
+    private final MutableInFlightState inFlightState;
+    private final TransientCommandSourceState transientCommandState = new TransientCommandStateImpl();
     private final SentListener sentListener = (TransientCommandStateImpl)transientCommandState;
 
     public DefaultCommandSource(final int sourceId,
-                                final BaseState baseState,
-                                final SenderSupplier senderSupplier) {
-        this(sourceId, baseState, senderSupplier, SequenceGenerator.create());
+                                final SenderSupplier senderSupplier,
+                                final EventState eventState,
+                                final MutableInFlightState inFlightState) {
+        this(sourceId, senderSupplier, SequenceGenerator.create(), eventState, inFlightState);
     }
 
     public DefaultCommandSource(final int sourceId,
-                                final BaseState baseState,
                                 final SenderSupplier senderSupplier,
-                                final SequenceGenerator sourceSequenceGenerator) {
+                                final SequenceGenerator sourceSequenceGenerator,
+                                final EventState eventState,
+                                final MutableInFlightState inFlightState) {
         this.sourceId = sourceId;
         this.senderSupplier = requireNonNull(senderSupplier);
         this.sequenceGenerator = requireNonNull(sourceSequenceGenerator);
-        this.eventLastProcessed = baseState instanceof MutableEventProcessingState ?
-                ((MutableEventProcessingState)baseState).lastProcessedEventCreateIfAbsent(sourceId) :
-                new BaseEventState(sourceId, baseState);
+        this.eventLastProcessed = requireNonNull(eventState);
+        this.inFlightState = requireNonNull(inFlightState);
     }
 
     @Override
@@ -75,7 +75,7 @@ final class DefaultCommandSource implements CommandSource {
     }
 
     @Override
-    public TransientCommandState transientCommandState() {
+    public TransientCommandSourceState transientCommandSourceState() {
         return transientCommandState;
     }
 
@@ -95,7 +95,7 @@ final class DefaultCommandSource implements CommandSource {
         return eventType != null && !eventType.isLast();
     }
 
-    private class TransientCommandStateImpl implements TransientCommandState, SentListener {
+    private class TransientCommandStateImpl implements TransientCommandSourceState, SentListener {
         long commandsSent = 0;
         long lastCommandSequence = NIL_SEQUENCE;
         long lastCommandSendingTime = TimeSource.MIN_VALUE;
@@ -132,6 +132,7 @@ final class DefaultCommandSource implements CommandSource {
             lastCommandSequence = sourceSequence;
             lastCommandSendingTime = commandTime;
             sequenceGenerator.nextSequence();
+            inFlightState.onCommandSent(sourceId, sourceSequence, commandTime);
         }
 
         @Override

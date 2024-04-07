@@ -25,12 +25,13 @@ package org.tools4j.elara.app.factory;
 
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.state.BaseState;
+import org.tools4j.elara.app.state.NoOpInFlightState;
 import org.tools4j.elara.handler.CommandHandler;
+import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.send.CommandHandlingSender;
+import org.tools4j.elara.send.DefaultCommandContext;
 import org.tools4j.elara.send.SenderSupplier;
-import org.tools4j.elara.source.CommandContext;
 import org.tools4j.elara.source.CommandSourceProvider;
-import org.tools4j.elara.source.DefaultCommandContext;
 import org.tools4j.elara.source.DefaultCommandSourceProvider;
 import org.tools4j.elara.step.AgentStep;
 
@@ -44,29 +45,29 @@ public class ProcessingSequencerFactory implements SequencerFactory {
     private final BaseState baseState;
     private final Supplier<? extends SequencerFactory> sequencerSingletons;
     private final Supplier<? extends ProcessorFactory> processorSingletons;
-    private final Supplier<? extends InputFactory> inOutSingletons;
+    private final Supplier<? extends InputFactory> inputSingletons;
 
     public ProcessingSequencerFactory(final AppConfig appConfig,
                                       final BaseState baseState,
                                       final Supplier<? extends SequencerFactory> sequencerSingletons,
                                       final Supplier<? extends ProcessorFactory> processorSingletons,
-                                      final Supplier<? extends InputFactory> inOutSingletons) {
+                                      final Supplier<? extends InputFactory> inputSingletons) {
         this.appConfig = requireNonNull(appConfig);
         this.baseState = requireNonNull(baseState);
         this.sequencerSingletons = requireNonNull(sequencerSingletons);
         this.processorSingletons = requireNonNull(processorSingletons);
-        this.inOutSingletons = requireNonNull(inOutSingletons);
+        this.inputSingletons = requireNonNull(inputSingletons);
 
     }
 
     @Override
     public CommandContext commandContext() {
-        return new DefaultCommandContext(sequencerSingletons.get().commandSourceProvider());
+        return new DefaultCommandContext(NoOpInFlightState.INSTANCE, sequencerSingletons.get().commandSourceProvider());
     }
 
     @Override
     public CommandSourceProvider commandSourceProvider() {
-        return new DefaultCommandSourceProvider(baseState, sequencerSingletons.get().senderSupplier());
+        return new DefaultCommandSourceProvider(baseState, NoOpInFlightState.INSTANCE, sequencerSingletons.get().senderSupplier());
     }
 
     @Override
@@ -77,6 +78,6 @@ public class ProcessingSequencerFactory implements SequencerFactory {
 
     @Override
     public AgentStep sequencerStep() {
-        return inOutSingletons.get().input().inputPollerStep(sequencerSingletons.get().commandContext());
+        return inputSingletons.get().input().inputPollerStep(sequencerSingletons.get().commandContext());
     }
 }

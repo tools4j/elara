@@ -38,12 +38,12 @@ abstract class FlyweightCommandSender implements CommandSender.Default, SenderSu
     public CommandSender senderFor(final CommandSource commandSource,
                                    final SentListener sentListener) {
         this.commandSource = requireNonNull(commandSource);
-        this.sourceSequenceSupplier = commandSource.transientCommandState().sourceSequenceGenerator();
+        this.sourceSequenceSupplier = commandSource.transientCommandSourceState().sourceSequenceGenerator();
         this.sentListener = requireNonNull(sentListener);
         return this;
     }
 
-    void notifySent(final long commandTime) {
+    protected void notifySent(final long commandTime) {
         sentListener.onSent(sourceSequenceSupplier.sequence(), commandTime);
     }
 

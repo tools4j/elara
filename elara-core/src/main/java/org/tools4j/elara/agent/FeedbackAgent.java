@@ -24,64 +24,66 @@
 package org.tools4j.elara.agent;
 
 import org.agrona.concurrent.Agent;
+import org.tools4j.elara.app.state.EventProcessingState;
+import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.step.AgentStep;
-import org.tools4j.elara.step.PollerPublisherStep;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.app.state.BaseState.NIL_SEQUENCE;
 
 /**
- * Agent for running all elara tasks: the {@link CoreAgent core} steps plus the {@link PollerPublisherStep}.
+ * Agent for running the elara tasks required for a feedback app where events are received from the sequencer.
  */
-public class AllInOneAgent implements Agent {
+public class FeedbackAgent implements Agent {
 
-    private final AgentStep sequencerStep;
-    private final AgentStep commandStep;
-    private final AgentStep eventStep;
-    private final AgentStep publisherStep;
+    private final EventProcessingState eventProcessingState;
+    private final CommandContext commandContext;
+    private final AgentStep inputStep;
+    private final AgentStep eventStep;//poll + process + publish
     private final AgentStep extraStepAlways;
     private final AgentStep extraStepAlwaysWhenEventsApplied;
+    private final boolean noInputsAndExtraStepWhenEventsApplied;
 
-    public AllInOneAgent(final AgentStep sequencerStep,
-                         final AgentStep commandStep,
+    public FeedbackAgent(final EventProcessingState eventProcessingState,
+                         final CommandContext commandContext,
+                         final AgentStep inputStep,
                          final AgentStep eventStep,
-                         final AgentStep publisherStep,
                          final AgentStep extraStepAlwaysWhenEventsApplied,
                          final AgentStep extraStepAlways) {
-        this.sequencerStep = requireNonNull(sequencerStep);
-        this.commandStep = requireNonNull(commandStep);
+        this.commandContext = requireNonNull(commandContext);
+        this.eventProcessingState = requireNonNull(eventProcessingState);
+        this.inputStep = requireNonNull(inputStep);
         this.eventStep = requireNonNull(eventStep);
-        this.publisherStep = requireNonNull(publisherStep);
         this.extraStepAlways = requireNonNull(extraStepAlways);
         this.extraStepAlwaysWhenEventsApplied = requireNonNull(extraStepAlwaysWhenEventsApplied);
+        this.noInputsAndExtraStepWhenEventsApplied =
+                inputStep == AgentStep.NOOP && extraStepAlwaysWhenEventsApplied == AgentStep.NOOP;
     }
 
     @Override
     public String roleName() {
-        return "elara-aio";
+        return "elara-feed";
+    }
+
+    private boolean hasEventsAvailable() {
+        final long lastAppliedEvtSeq = eventProcessingState.lastAppliedEventSequence();
+        final long lastAvailEvtSeq = eventProcessingState.lastAvailableEventSequence();
+        return lastAppliedEvtSeq == NIL_SEQUENCE && lastAppliedEvtSeq < lastAvailEvtSeq;
     }
 
     @Override
     public int doWork() {
         int workDone;
-        if ((workDone = eventStep.doWork()) > 0) {
-            workDone += publisherStep.doWork();
-            workDone += extraStepAlways.doWork();
+        workDone = eventStep.doWork();
+        workDone += extraStepAlways.doWork();
+        if (noInputsAndExtraStepWhenEventsApplied || hasEventsAvailable()) {
             return workDone;
         }
-        if ((workDone = commandStep.doWork()) > 0) {
-            workDone += publisherStep.doWork();
-            workDone += extraStepAlwaysWhenEventsApplied.doWork();
-            workDone += extraStepAlways.doWork();
+        workDone += inputStep.doWork();
+        if (extraStepAlwaysWhenEventsApplied == AgentStep.NOOP || commandContext.hasInFlightCommand()) {
             return workDone;
         }
-        //NOTES:
-        //   1. we don't poll inputs during replay since
-        //       (i) the command time would be difficult to define
-        //      (ii) sources depending on state would operate on incomplete state
-        //   2. we don't poll inputs when there are commands to poll since
-        //       (i) commands should be processed as fast as possible
-        //      (ii) command time more accurately reflects real time, even if app latency is now reflected as 'transfer' time
-        //     (iii) we prefer input back pressure over falling behind as it makes the problem visible and signals it to senders
-        return publisherStep.doWork() + sequencerStep.doWork() + extraStepAlwaysWhenEventsApplied.doWork() + extraStepAlways.doWork();
+        workDone += extraStepAlwaysWhenEventsApplied.doWork();
+        return workDone;
     }
 }

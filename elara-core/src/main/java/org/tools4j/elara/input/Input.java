@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.input;
 
-import org.tools4j.elara.source.CommandContext;
+import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.source.CommandSource;
 import org.tools4j.elara.step.AgentStep;
 
@@ -54,7 +54,7 @@ public interface Input {
         requireNonNull(inputPoller);
         return commandContext -> {
             final CommandSource commandSource = commandContext.commandSources().sourceById(sourceId);
-            commandSource.transientCommandState().sourceSequenceGenerator().nextSequence(initialSourceSequence);
+            commandSource.transientCommandSourceState().sourceSequenceGenerator().nextSequence(initialSourceSequence);
             return () -> inputPoller.poll(commandContext, commandSource.commandSender());
         };
     }

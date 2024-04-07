@@ -31,10 +31,11 @@ import org.tools4j.elara.app.factory.ProcessorFactory;
 import org.tools4j.elara.app.factory.SequencerFactory;
 import org.tools4j.elara.app.factory.StateFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
+import org.tools4j.elara.app.state.MutableInFlightState;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.route.CommandTransaction;
+import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.send.SenderSupplier;
-import org.tools4j.elara.source.CommandContext;
 import org.tools4j.elara.source.CommandSourceProvider;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore.Handler;
@@ -64,6 +65,11 @@ final class ActivationPluginInterceptor implements Interceptor {
     @Override
     public CommandStreamFactory commandStreamFactory(final Supplier<? extends CommandStreamFactory> singletons) {
         return new CommandStreamFactory() {
+            @Override
+            public MutableInFlightState inFlightState() {
+                return singletons.get().inFlightState();
+            }
+
             @Override
             public CommandContext commandContext() {
                 return singletons.get().commandContext();

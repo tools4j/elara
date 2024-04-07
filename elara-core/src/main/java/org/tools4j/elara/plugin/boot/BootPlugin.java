@@ -24,7 +24,7 @@
 package org.tools4j.elara.plugin.boot;
 
 import org.tools4j.elara.app.state.BaseState;
-import org.tools4j.elara.app.state.TransientCommandState;
+import org.tools4j.elara.app.state.TransientCommandSourceState;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.plugin.api.PluginStateProvider.NullState;
 import org.tools4j.elara.plugin.api.SystemPlugin;
@@ -51,7 +51,7 @@ public class BootPlugin implements SystemPlugin<NullState> {
         this.sourceId = sourceId;
     }
 
-    void notifyCommandSent(final TransientCommandState transientCommandState) {
+    void notifyCommandSent(final TransientCommandSourceState transientCommandState) {
         this.bootCommandSourceSequence = transientCommandState.sourceSequenceOfLastSentCommand();
         this.bootCommandSendingTime = transientCommandState.sendingTimeOfLastSentCommand();
     }

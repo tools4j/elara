@@ -24,45 +24,37 @@
 package org.tools4j.elara.flyweight;
 
 /**
- * Descriptor of frame layout for frequency metrics.
+ * Descriptor of replay message layout in a byte buffer:
  * <pre>
+
+    Playback Header: Type=6
 
     0         1         2         3         4         5         6
     0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    |Version|Type=09| Metric Types  |          Frame Size           |
+    |Version|Type=06|   Reserved    |          Frame Size           |
     +-------+-------+-------+-------+-------+-------+-------+-------+
-    |                           Iteration                           |
+    |                          Engine Time                          |
     +-------+-------+-------+-------+-------+-------+-------+-------+
-    |                           Interval                            |
+    |                Max Available Event Sequence                   |
     +-------+-------+-------+-------+-------+-------+-------+-------+
-    |                          Metric Time                          |
-    +-------+-------+-------+-------+-------+-------+-------+-------+
-    |                            Count 0                            |
-    |                            Count 1                            |
+    |                            Payload                            |
     |                             ...                               |
 
  * </pre>
  *
- * @see TimeMetricsDescriptor
  * @see FrameDescriptor
  */
-public enum FrequencyMetricsDescriptor {
+public enum PlaybackDescriptor {
     ;
+    public static final int ENGINE_TIME_OFFSET = FrameDescriptor.HEADER_LENGTH;
+    public static final int ENGINE_TIME_LENGTH = Long.BYTES;
 
-    public static final int ITERATION_OFFSET = FrameDescriptor.HEADER_LENGTH;
-
-    public static final int METRIC_TYPES_OFFSET = FrameDescriptor.RESERVED_OFFSET;
-    public static final int METRIC_TYPES_LENGTH = FrameDescriptor.RESERVED_LENGTH;
-    public static final int ITERATION_LENGTH = Long.BYTES;
-    public static final int INTERVAL_OFFSET = ITERATION_OFFSET + ITERATION_LENGTH;
-    public static final int INTERVAL_LENGTH = Long.BYTES;
-    public static final int METRIC_TIME_OFFSET = INTERVAL_OFFSET + INTERVAL_LENGTH;
-    public static final int METRIC_TIME_LENGTH = Long.BYTES;
+    public static final int MAX_AVAILABLE_EVT_SEQ_OFFSET = ENGINE_TIME_OFFSET + ENGINE_TIME_LENGTH;
+    public static final int MAX_AVAILABLE_EVT_SEQ_LENGTH = Long.BYTES;
 
     public static final int HEADER_OFFSET = FrameDescriptor.HEADER_OFFSET;
-    public static final int HEADER_LENGTH = METRIC_TIME_OFFSET + METRIC_TIME_LENGTH;
+    public static final int HEADER_LENGTH = MAX_AVAILABLE_EVT_SEQ_OFFSET + MAX_AVAILABLE_EVT_SEQ_LENGTH;
 
-    public static final int PAYLOAD_OFFSET = HEADER_OFFSET + HEADER_LENGTH;
-
+    public static final int PAYLOAD_OFFSET = HEADER_LENGTH;
 }

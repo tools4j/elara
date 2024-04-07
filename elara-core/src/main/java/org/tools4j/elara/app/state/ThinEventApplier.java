@@ -32,10 +32,10 @@ import org.tools4j.elara.send.CommandPassthroughSender;
 /**
  * A minimalistic event applier using only basic event header information when applying an event. It is used by
  * {@link PassthroughApp} and {@link CommandPassthroughSender} as an optimisation if only the base
- * {@link PassthroughState} needs to be updated by events.
+ * {@link ThinBaseState} needs to be updated by events.
  */
 @FunctionalInterface
-public interface PassthroughEventApplier extends EventApplier {
+public interface ThinEventApplier extends EventApplier {
 
     //NOTE: this method may not be invoked at all, so do not override it!
     @Override
@@ -45,4 +45,17 @@ public interface PassthroughEventApplier extends EventApplier {
     }
 
     void onEvent(int srcId, long srcSeq, long evtSeq, int index, EventType evtType, long evtTime, int payloadType);
+
+    /** Performs a no-op meaning the event is silently ignored */
+    ThinEventApplier NOOP = new ThinEventApplier() {
+        @Override
+        public void onEvent(final Event evt) {
+            //no-op
+        }
+
+        @Override
+        public void onEvent(final int srcId, final long srcSeq, final long evtSeq, final int index, final EventType evtType, final long evtTime, final int payloadType) {
+            //no-op
+        }
+    };
 }

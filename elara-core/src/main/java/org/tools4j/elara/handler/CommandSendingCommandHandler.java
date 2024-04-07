@@ -66,7 +66,7 @@ public class CommandSendingCommandHandler implements CommandHandler {
             final long nextSeq = commandSender.nextCommandSequence();
             final DirectBuffer payload = command.payload();
             if (nextSeq < sourceSeq) {
-                commandSender.source().transientCommandState().sourceSequenceGenerator().nextSequence(sourceSeq);
+                commandSender.source().transientCommandSourceState().sourceSequenceGenerator().nextSequence(sourceSeq);
             } else if (nextSeq > sourceSeq) {
                 throw new IllegalArgumentException("Unexpected command sequence " + sourceId + ":" + sourceSeq +
                         ", expected at least " + nextSeq);

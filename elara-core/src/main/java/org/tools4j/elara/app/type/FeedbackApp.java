@@ -27,8 +27,8 @@ import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.event.Event;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;
+import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.send.CommandSender;
-import org.tools4j.elara.source.CommandContext;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.stream.MessageReceiver;
 

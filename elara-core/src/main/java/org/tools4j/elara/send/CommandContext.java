@@ -21,22 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.source;
+package org.tools4j.elara.send;
 
 import org.tools4j.elara.app.handler.CommandProcessor;
+import org.tools4j.elara.app.state.TransientInFlightState;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.route.EventRouter;
-import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.source.CommandSource;
+import org.tools4j.elara.source.CommandSourceProvider;
 
 /**
- * The command context provides access to all {@link #commandSources() command sources}.  It also provides an aggregated
- * view of {@link #hasInFlightCommand() in-flight} commands from all sources -- commands sent whose corresponding event
- * (or events) have not been received back yet.
+ * The command context provides access to all {@link #commandSources() command sources} and to
+ * {@link #transientInFlightState() in-flight commands} from those sources.  In-flight are commands sent whose corresponding
+ * event (or events) have not been received back yet -- information that can be used to defer event processing until all
+ * events from sent commands have been received back and the application state updated.
  */
 public interface CommandContext {
     /**
      * True if commands from any source are currently in-flight, that is, if at least one command has been sent whose
-     * commit event was not yet processed.  This may be useful to defer event processing until all events have from sent
+     * commit event was not yet processed.  This may be useful to defer event processing until all events from sent
      * commands have been received back and the application state updated.
      * <p>
      * Note that {@link CommandProcessor#onCommand(Command, EventRouter) command processing}
@@ -54,7 +57,17 @@ public interface CommandContext {
      * @see CommandSource#hasInFlightCommand()
      * @see CommandSender#source()
      */
-    boolean hasInFlightCommand();
+    default boolean hasInFlightCommand() {
+        return transientInFlightState().hasInFlightCommand();
+    }
+
+    /**
+     * Returns detailed information about in-flight commands which have been sent but whose corresponding event
+     * (or events) have not been received back yet.
+     *
+     * @return accessor for detailed information about in-flight commands
+     */
+    TransientInFlightState transientInFlightState();
 
     /**
      * Returns access to all command sources used by this application.

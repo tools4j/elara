@@ -23,8 +23,8 @@
  */
 package org.tools4j.elara.input;
 
+import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.send.CommandSender;
-import org.tools4j.elara.source.CommandContext;
 
 @FunctionalInterface
 public interface InputPoller {

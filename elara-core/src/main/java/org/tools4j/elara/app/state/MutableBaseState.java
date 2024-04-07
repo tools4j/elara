@@ -25,14 +25,17 @@ package org.tools4j.elara.app.state;
 
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.ApplierConfig;
+import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.type.FeedbackAppConfig;
 import org.tools4j.elara.app.type.PassthroughAppConfig;
-import org.tools4j.elara.event.Event;
 
-public interface MutableBaseState extends BaseState {
+public interface MutableBaseState extends BaseState, EventApplier {
     BaseStateProvider PROVIDER = MutableBaseState::createDefault;
-    void applyEvent(Event event);
 
     static MutableBaseState createDefault(final AppConfig config) {
+        if (config instanceof FeedbackAppConfig) {
+            return new DefaultEventProcessingState(new DefaultInFlightState());
+        }
         if (config instanceof PassthroughAppConfig && !(config instanceof ApplierConfig)) {
             return new SingleEventBaseState();
         }

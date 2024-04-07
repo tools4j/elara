@@ -29,14 +29,15 @@ import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.app.state.MutableBaseState;
+import org.tools4j.elara.app.state.MutableInFlightState;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.handler.OutputHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.route.CommandTransaction;
+import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.send.SenderSupplier;
-import org.tools4j.elara.source.CommandContext;
 import org.tools4j.elara.source.CommandSourceProvider;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore.Handler;
@@ -178,6 +179,11 @@ final class Singletons {
         final Singletons singletons = new Singletons();
         return new CommandStreamFactory() {
             @Override
+            public MutableInFlightState inFlightState() {
+                return singletons.getOrCreate("inFlightState", MutableInFlightState.class, factory, CommandStreamFactory::inFlightState);
+            }
+
+            @Override
             public CommandContext commandContext() {
                 return singletons.getOrCreate("commandContext", CommandContext.class, factory, CommandStreamFactory::commandContext);
             }
@@ -214,8 +220,8 @@ final class Singletons {
             }
 
             @Override
-            public Output output() {
-                return singletons.getOrCreate("output", Output.class, factory, EventStreamFactory::output);
+            public AgentStep eventStep() {
+                return singletons.getOrCreate("eventStep", AgentStep.class, factory, EventStreamFactory::eventStep);
             }
         };
     }

@@ -38,7 +38,7 @@ import org.tools4j.elara.app.factory.PublisherFactory;
 import org.tools4j.elara.app.factory.SequencerFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
-import org.tools4j.elara.app.state.PassthroughEventApplier;
+import org.tools4j.elara.app.state.ThinEventApplier;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.PayloadType;
 import org.tools4j.elara.handler.CommandHandler;
@@ -50,10 +50,10 @@ import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 import org.tools4j.elara.route.CommandTransaction;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.route.EventRouter.RoutingContext;
+import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.CommandSender.SendingContext;
 import org.tools4j.elara.send.SenderSupplier;
-import org.tools4j.elara.source.CommandContext;
 import org.tools4j.elara.source.CommandSource;
 import org.tools4j.elara.source.CommandSourceProvider;
 import org.tools4j.elara.step.AgentStep;
@@ -384,9 +384,9 @@ public class MetricsCapturingInterceptor implements Interceptor {
                 public EventApplier eventApplier() {
                     final EventApplier eventApplier = singletons.get().eventApplier();
                     if (shouldCapture(EVENT_APPLIED_FREQUENCY) || shouldCaptureAnyOf(EVENT)) {//includes APPLYING_START_TIME and APPLYING_END_TIME
-                        if (eventApplier instanceof PassthroughEventApplier) {
-                            final PassthroughEventApplier passthroughApplier = (PassthroughEventApplier)eventApplier;
-                            return (PassthroughEventApplier)(srcId, srcSeq, evtSeq, evtIndex, evtType, evtTime, plType) -> {
+                        if (eventApplier instanceof ThinEventApplier) {
+                            final ThinEventApplier passthroughApplier = (ThinEventApplier)eventApplier;
+                            return (ThinEventApplier)(srcId, srcSeq, evtSeq, evtIndex, evtType, evtTime, plType) -> {
                                 captureTime(APPLYING_START_TIME);
                                 passthroughApplier.onEvent(srcId, srcSeq, evtSeq, evtIndex, evtType, evtTime, plType);
                                 captureTime(APPLYING_END_TIME);

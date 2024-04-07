@@ -27,11 +27,27 @@ import org.agrona.collections.Int2ObjectHashMap;
 import org.tools4j.elara.app.state.EventProcessingState.MutableEventProcessingState;
 import org.tools4j.elara.flyweight.EventType;
 
-class DefaultEventProcessingState implements MutableEventProcessingState, PassthroughState {
+import static java.util.Objects.requireNonNull;
+
+class DefaultEventProcessingState implements MutableEventProcessingState, ThinBaseState {
     public static final BaseStateProvider PROVIDER = appConfig -> new DefaultEventProcessingState();
 
+    private final MutableInFlightState inFlightState;
     private final Int2ObjectHashMap<DefaultEventState> sourceIdToEventState = new Int2ObjectHashMap<>();
     private long lastAppliedEventSequence = NIL_SEQUENCE;
+    private long lastAvailableEventSequence = NIL_SEQUENCE;
+
+    DefaultEventProcessingState() {
+        this(new DefaultInFlightState());
+    }
+    DefaultEventProcessingState(final MutableInFlightState inFlightState) {
+        this.inFlightState = requireNonNull(inFlightState);
+    }
+
+    @Override
+    public MutableInFlightState transientInFlightState() {
+        return inFlightState;
+    }
 
     @Override
     public long lastAppliedCommandSequence(final int sourceId) {
@@ -45,6 +61,16 @@ class DefaultEventProcessingState implements MutableEventProcessingState, Passth
     }
 
     @Override
+    public long lastAvailableEventSequence() {
+        return lastAvailableEventSequence;
+    }
+
+    public void lastAvailableEventSequence(final long evtSeq) {
+        assert evtSeq >= lastAppliedEventSequence;
+        lastAppliedEventSequence = evtSeq;
+    }
+
+    @Override
     public EventState lastProcessedEvent(final int sourceId) {
         return sourceIdToEventState.get(sourceId);
     }
@@ -55,17 +81,23 @@ class DefaultEventProcessingState implements MutableEventProcessingState, Passth
     }
 
     @Override
-    public void applyEvent(final int srcId, final long srcSeq, final long evtSeq, final int evtIndex,
-                           final EventType evtType, final long evtTime, final int payloadType) {
+    public void onEvent(final int srcId, final long srcSeq, final long evtSeq, final int evtIndex,
+                        final EventType evtType, final long evtTime, final int payloadType) {
         assert evtSeq == lastAppliedEventSequence + 1;
         lastAppliedEventSequence = evtSeq;
         lastProcessedEventCreateIfAbsent(srcId).applyEvent(srcSeq, evtSeq, evtIndex, evtType, evtTime, payloadType);
+        inFlightState.onEvent(srcId, srcSeq, evtSeq, evtIndex, evtType, evtTime, payloadType);
+        if (evtSeq > lastAvailableEventSequence) {
+            lastAvailableEventSequence = evtSeq;
+        }
     }
 
     @Override
     public String toString() {
         return "DefaultEventProcessingState" +
                 ":source-id-evt-state=" + sourceIdToEventState +
-                "|last-applied-evt-seq=" + lastAppliedEventSequence;
+                "|last-applied-evt-seq=" + lastAppliedEventSequence +
+                "|last-avail-evt-seq=" + lastAvailableEventSequence +
+                "|in-flight=" + inFlightState;
     }
 }

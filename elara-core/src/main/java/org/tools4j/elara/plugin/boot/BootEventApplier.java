@@ -26,8 +26,8 @@ package org.tools4j.elara.plugin.boot;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.event.Event;
+import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.send.CommandSender;
-import org.tools4j.elara.source.CommandContext;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.boot.BootEvents.BOOT_APP_STARTED;

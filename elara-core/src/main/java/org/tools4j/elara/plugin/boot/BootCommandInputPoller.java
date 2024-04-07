@@ -24,10 +24,10 @@
 package org.tools4j.elara.plugin.boot;
 
 import org.tools4j.elara.app.state.BaseState;
-import org.tools4j.elara.app.state.TransientCommandState;
+import org.tools4j.elara.app.state.TransientCommandSourceState;
 import org.tools4j.elara.input.InputPoller;
+import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.send.CommandSender;
-import org.tools4j.elara.source.CommandContext;
 
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.plugin.boot.BootCommands.BOOT_NOTIFY_APP_START;
@@ -49,7 +49,7 @@ public final class BootCommandInputPoller implements InputPoller {
             return 0;
         }
 
-        final TransientCommandState transientCommandState = commandSender.source().transientCommandState();
+        final TransientCommandSourceState transientCommandState = commandSender.source().transientCommandSourceState();
 
         //NOTE: make sure that command is not de-duplicated
         final long nextSourceSeq = 1 + baseState.lastAppliedCommandSequence(commandSender.sourceId());

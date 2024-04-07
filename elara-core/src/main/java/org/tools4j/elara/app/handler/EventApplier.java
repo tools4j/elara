@@ -23,6 +23,7 @@
  */
 package org.tools4j.elara.app.handler;
 
+import org.tools4j.elara.app.state.ThinEventApplier;
 import org.tools4j.elara.event.Event;
 
 /**
@@ -37,5 +38,5 @@ public interface EventApplier {
     void onEvent(Event event);
 
     /** Performs a no-op meaning the event is silently ignored */
-    EventApplier NOOP = (event) -> {};
+    EventApplier NOOP = ThinEventApplier.NOOP;
 }

@@ -74,7 +74,7 @@ public class DefaultEventRouterTest {
             final MutableDirectBuffer buffer = new ExpandableArrayBuffer();
             event.writeTo(buffer, 0);
             routed.add(new FlyweightEvent().wrap(buffer, 0));
-            baseState.applyEvent(event);
+            baseState.onEvent(event);
         });
     }
 

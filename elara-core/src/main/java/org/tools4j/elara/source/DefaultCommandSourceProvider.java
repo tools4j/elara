@@ -25,7 +25,11 @@ package org.tools4j.elara.source;
 
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Int2IntHashMap;
+import org.tools4j.elara.app.state.BaseEventState;
 import org.tools4j.elara.app.state.BaseState;
+import org.tools4j.elara.app.state.EventProcessingState.MutableEventProcessingState;
+import org.tools4j.elara.app.state.EventState;
+import org.tools4j.elara.app.state.MutableInFlightState;
 import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.sequence.SequenceGenerator;
 
@@ -42,24 +46,30 @@ public class DefaultCommandSourceProvider implements CommandSourceProvider {
 
     private final List<CommandSource> sources;
     private final Int2IntHashMap sourceIdToIndex;
-    private final BaseState baseState;
+    private final MutableInFlightState inFlightState;
     private final SenderSupplier senderSupplier;
     private final IntFunction<? extends SequenceGenerator> sourceSequenceGeneratorFactory;
+    private final IntFunction<EventState> eventStateFactory;
 
     public DefaultCommandSourceProvider(final BaseState baseState,
+                                        final MutableInFlightState inFlightState,
                                         final SenderSupplier senderSupplier) {
-        this(DEFAULT_INITIAL_CAPACITY, baseState, senderSupplier, sourceId -> SequenceGenerator.create());
+        this(DEFAULT_INITIAL_CAPACITY, baseState, inFlightState, senderSupplier, sourceId -> SequenceGenerator.create());
     }
 
     public DefaultCommandSourceProvider(final int initialCapacity,
                                         final BaseState baseState,
+                                        final MutableInFlightState inFlightState,
                                         final SenderSupplier senderSupplier,
                                         final IntFunction<? extends SequenceGenerator> sourceSequenceGeneratorFactory) {
         this.sources = new ArrayList<>(initialCapacity);
         this.sourceIdToIndex = new Int2IntHashMap(initialCapacity, Hashing.DEFAULT_LOAD_FACTOR, INDEX_NOT_AVAILABLE);
-        this.baseState = requireNonNull(baseState);
         this.senderSupplier = requireNonNull(senderSupplier);
+        this.inFlightState = requireNonNull(inFlightState);
         this.sourceSequenceGeneratorFactory = requireNonNull(sourceSequenceGeneratorFactory);
+        this.eventStateFactory = baseState instanceof MutableEventProcessingState
+                ? ((MutableEventProcessingState)baseState)::lastProcessedEventCreateIfAbsent
+                : sourceId -> new BaseEventState(sourceId, baseState);
     }
 
     @Override
@@ -79,7 +89,8 @@ public class DefaultCommandSourceProvider implements CommandSourceProvider {
             return sources.get(index);
         }
         final SequenceGenerator seqGenerator = sourceSequenceGeneratorFactory.apply(sourceId);
-        final CommandSource commandSource = new DefaultCommandSource(sourceId, baseState, senderSupplier, seqGenerator);
+        final EventState eventState = eventStateFactory.apply(sourceId);
+        final CommandSource commandSource = new DefaultCommandSource(sourceId, senderSupplier, seqGenerator, eventState, inFlightState);
         final int newIndex = sources.size();
         sourceIdToIndex.put(sourceId, newIndex);
         sources.add(commandSource);

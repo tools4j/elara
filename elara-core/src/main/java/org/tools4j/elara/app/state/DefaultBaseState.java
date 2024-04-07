@@ -26,7 +26,7 @@ package org.tools4j.elara.app.state;
 import org.agrona.collections.Long2LongHashMap;
 import org.tools4j.elara.flyweight.EventType;
 
-public class DefaultBaseState implements PassthroughState {
+public class DefaultBaseState implements ThinBaseState {
     public static final BaseStateProvider PROVIDER = appConfig -> new DefaultBaseState();
 
     private final Long2LongHashMap sourceIdToSequence = new Long2LongHashMap(NIL_SEQUENCE);
@@ -43,8 +43,8 @@ public class DefaultBaseState implements PassthroughState {
     }
 
     @Override
-    public void applyEvent(final int srcId, final long srcSeq, final long evtSeq, final int evtIndex,
-                           final EventType evtType, final long evtTime, final int payloadType) {
+    public void onEvent(final int srcId, final long srcSeq, final long evtSeq, final int evtIndex,
+                        final EventType evtType, final long evtTime, final int payloadType) {
         this.sourceIdToSequence.put(srcId, srcSeq);
         this.lastAppliedEventSequence = evtSeq;
     }

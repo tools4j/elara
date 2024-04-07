@@ -29,9 +29,9 @@ import org.tools4j.elara.app.factory.ProcessorFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.handler.CommandHandler;
-import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.timer.TimerController.ControlContext;
 import org.tools4j.elara.route.CommandTransaction;
+import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.stream.MessageStream;
 
 import java.util.function.Supplier;
@@ -92,8 +92,8 @@ final class TimerPluginInterceptor implements Interceptor {
             }
 
             @Override
-            public Output output() {
-                return singletons.get().output();
+            public AgentStep eventStep() {
+                return singletons.get().eventStep();
             }
         };
     }

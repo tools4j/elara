@@ -27,7 +27,7 @@ import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.app.state.BaseState;
-import org.tools4j.elara.app.state.PassthroughEventApplier;
+import org.tools4j.elara.app.state.ThinEventApplier;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.flyweight.CommandDescriptor;
@@ -55,7 +55,7 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
     private final DuplicateHandler duplicateHandler;
     private final MessageStore.Appender eventStoreAppender;
     private final EventApplier eventApplier;
-    private final PassthroughEventApplier passthroughApplierOrNull;
+    private final ThinEventApplier thinEventApplierOrNull;
     private final SendingContext sendingContext = new SendingContext();
     private final FlyweightCommand skippedCommand = new FlyweightCommand();
     private final FlyweightEvent appliedEvent = new FlyweightEvent();
@@ -70,7 +70,7 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
         this.baseState = requireNonNull(baseState);
         this.eventStoreAppender = requireNonNull(eventStoreAppender);
         this.eventApplier = requireNonNull(eventApplier);
-        this.passthroughApplierOrNull = eventApplier instanceof PassthroughEventApplier ? (PassthroughEventApplier)eventApplier : null;
+        this.thinEventApplierOrNull = eventApplier instanceof ThinEventApplier ? (ThinEventApplier)eventApplier : null;
         this.exceptionHandler = requireNonNull(exceptionHandler);
         this.duplicateHandler = requireNonNull(duplicateHandler);
     }
@@ -183,8 +183,8 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
         }
 
         private void applyEvent(final DirectBuffer buffer, final int length) {
-            if (passthroughApplierOrNull != null) {
-                passthroughApplierOrNull.onEvent(sourceId(buffer), sourceSequence(buffer),
+            if (thinEventApplierOrNull != null) {
+                thinEventApplierOrNull.onEvent(sourceId(buffer), sourceSequence(buffer),
                         FlyweightEvent.eventSequence(buffer), INDEX_0, APP_COMMIT, FlyweightEvent.eventTime(buffer),
                         FlyweightEvent.payloadType(buffer));
                 return;

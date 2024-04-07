@@ -27,9 +27,10 @@ import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.app.state.EventProcessingState;
 import org.tools4j.elara.app.state.EventState;
-import org.tools4j.elara.app.state.TransientCommandState;
+import org.tools4j.elara.app.state.TransientCommandSourceState;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.route.EventRouter;
+import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.send.CommandSender;
 
 /**
@@ -80,7 +81,7 @@ public interface CommandSource {
      * @return transient information about command sending
      * @see CommandContext#hasInFlightCommand()
      */
-    TransientCommandState transientCommandState();
+    TransientCommandSourceState transientCommandSourceState();
 
     /**
      * Returns information about the most recently processed event corresponding to a command sent by this source.

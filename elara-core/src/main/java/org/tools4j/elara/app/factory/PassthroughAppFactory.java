@@ -27,9 +27,6 @@ import org.agrona.concurrent.Agent;
 import org.tools4j.elara.agent.PassthroughAgent;
 import org.tools4j.elara.app.config.ApplierConfig;
 import org.tools4j.elara.app.handler.EventApplier;
-import org.tools4j.elara.app.state.MutableBaseState;
-import org.tools4j.elara.app.state.PassthroughEventApplier;
-import org.tools4j.elara.app.state.PassthroughState;
 import org.tools4j.elara.app.type.PassthroughAppConfig;
 
 import java.util.function.Supplier;
@@ -55,7 +52,7 @@ public class PassthroughAppFactory implements AppFactory {
                 Singletons::create
         ));
         this.applierSingletons = interceptor.applierFactory(singletonsSupplier(
-                (ApplierFactory) new DefaultApplierFactory(config, applierConfig(config, bootstrap.baseState()), config, bootstrap.baseState(), bootstrap.plugins(), this::applierSingletons),
+                (ApplierFactory) new DefaultApplierFactory(config, applierConfig(config), config, bootstrap.baseState(), bootstrap.plugins(), this::applierSingletons),
                 Singletons::create
         ));
         this.inputSingletons = interceptor.inputFactory(singletonsSupplier(
@@ -79,21 +76,12 @@ public class PassthroughAppFactory implements AppFactory {
         ));
     }
 
-    private ApplierConfig applierConfig(final PassthroughAppConfig config, final MutableBaseState baseState) {
+    private ApplierConfig applierConfig(final PassthroughAppConfig config) {
         requireNonNull(config);
-        requireNonNull(baseState);
-        final EventApplier eventApplier;
         if (config instanceof ApplierConfig) {
-            eventApplier = ((ApplierConfig)config).eventApplier();
-        } else {
-            if (baseState instanceof PassthroughState) {
-                final PassthroughState passthroughState = (PassthroughState) baseState;
-                eventApplier = (PassthroughEventApplier) passthroughState::applyEvent;
-            } else {
-                eventApplier = baseState::applyEvent;
-            }
+            return (ApplierConfig)config;
         }
-        return () -> eventApplier;
+        return () -> EventApplier.NOOP;
     }
 
     private <T> Supplier<T> singletonsSupplier(final T factory, final UnaryOperator<T> singletonOp) {

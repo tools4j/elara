@@ -23,8 +23,8 @@
  */
 package org.tools4j.elara.app.state;
 
+import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.sequence.SequenceGenerator;
-import org.tools4j.elara.source.CommandContext;
 import org.tools4j.elara.source.CommandSource;
 
 /**
@@ -36,11 +36,11 @@ import org.tools4j.elara.source.CommandSource;
  * Note however that transient state should not be used in the decision-making logic of the application, otherwise its
  * state will not be deterministic and cannot be reproduced through event replay.
  *
- * @see CommandSource#transientCommandState()
+ * @see CommandSource#transientCommandSourceState()
  * @see CommandSource#hasInFlightCommand()
  * @see CommandContext#hasInFlightCommand()
  */
-public interface TransientCommandState {
+public interface TransientCommandSourceState {
     long NIL_SEQUENCE = SequenceGenerator.NIL_SEQUENCE;
 
     /**

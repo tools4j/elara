@@ -42,10 +42,12 @@ public enum FrameType {
     public static final byte AUTO_COMMIT_EVENT_TYPE = 0x4;
     /** Type for a frame that contains a rollback event */
     public static final byte ROLLBACK_EVENT_TYPE = 0x5;
+    /** Type for a frame that contains playback data */
+    public static final byte PLAYBACK_TYPE = 0x6;
     /** Type for a frame that contains time metrics data */
-    public static final byte TIME_METRICS_TYPE = 0x6;
+    public static final byte TIME_METRICS_TYPE = 0x7;
     /** Type for a frame that contains frequency metrics data */
-    public static final byte FREQUENCY_METRICS_TYPE = 0x7;
+    public static final byte FREQUENCY_METRICS_TYPE = 0x8;
 
     public static boolean isCommandType(final byte frameType) {
         return frameType == COMMAND_TYPE;
@@ -57,6 +59,9 @@ public enum FrameType {
 
     public static boolean isEventType(final byte frameType) {
         return frameType >= INTERMEDIARY_EVENT_TYPE && frameType <= AUTO_COMMIT_EVENT_TYPE;
+    }
+    public static boolean isPlaybackType(final byte frameType) {
+        return frameType == PLAYBACK_TYPE;
     }
 
     public static boolean isTimeMetricsType(final byte frameType) {
@@ -82,6 +87,12 @@ public enum FrameType {
     public static void validateDataFrameType(final byte frameType) {
         if (!(isCommandType(frameType) || isEventType(frameType))) {
             throw new IllegalArgumentException("Frame type " + frameType + " is not valid for a command or an event frame");
+        }
+    }
+
+    public static void validatePlaybackFrameType(final byte frameType) {
+        if (!isPlaybackType(frameType)) {
+            throw new IllegalArgumentException("Frame type " + frameType + " is not valid for a playback data frame");
         }
     }
 

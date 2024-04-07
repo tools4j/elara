@@ -59,7 +59,7 @@ import static org.tools4j.elara.logging.OutputStreamLogger.SYSTEM_FACTORY;
 
 abstract class AbstractAppConfigurator<T extends AbstractAppConfigurator<T>> implements AppConfigurator, PluginConfigurator {
 
-    private BaseStateProvider baseStateFactory;
+    private BaseStateProvider baseStateProvider;
     private Input input = Input.NOOP;
     private Output output = Output.NOOP;
     private TimeSource timeSource;
@@ -75,12 +75,12 @@ abstract class AbstractAppConfigurator<T extends AbstractAppConfigurator<T>> imp
 
     @Override
     public MutableBaseState baseState() {
-        return (baseStateFactory != null ? baseStateFactory : BaseStateProvider.DEFAULT).createBaseState(this);
+        return (baseStateProvider != null ? baseStateProvider : BaseStateProvider.DEFAULT).createBaseState(this);
     }
 
     @Override
     public T baseStateProvider(final BaseStateProvider baseStateFactory) {
-        this.baseStateFactory = requireNonNull(baseStateFactory);
+        this.baseStateProvider = requireNonNull(baseStateFactory);
         return self();
     }
 

@@ -21,16 +21,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.input;
+package org.tools4j.elara.step;
 
-import org.tools4j.elara.send.CommandContext;
-import org.tools4j.elara.step.AgentStep;
+import org.agrona.DirectBuffer;
+import org.tools4j.elara.flyweight.FlyweightEvent;
+import org.tools4j.elara.handler.EventHandler;
+import org.tools4j.elara.stream.MessageReceiver;
 
-public interface SingleSourceInput extends Input, InputPoller {
-    int sourceId();
+import static java.util.Objects.requireNonNull;
+
+/**
+ * Polls events from a message receiver and invokes the event handler.
+ */
+public class EventReceiverStep implements AgentStep {
+
+    private final MessageReceiver eventReceiver;
+    private final EventHandler eventHandler;
+
+    private final MessageReceiver.Handler pollerHandler = this::onEvent;
+    private final FlyweightEvent flyweightEvent = new FlyweightEvent();
+
+    public EventReceiverStep(final MessageReceiver eventReceiver, final EventHandler eventHandler) {
+        this.eventReceiver = requireNonNull(eventReceiver);
+        this.eventHandler = requireNonNull(eventHandler);
+    }
 
     @Override
-    default AgentStep inputPollerStep(final CommandContext commandContext) {
-        return Input.single(this).inputPollerStep(commandContext);
+    public int doWork() {
+        return eventReceiver.poll(pollerHandler);
     }
+
+    private void onEvent(final DirectBuffer event) {
+        eventHandler.onEvent(flyweightEvent.wrap(event, 0));
+    }
+
 }

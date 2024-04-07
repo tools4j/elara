@@ -21,16 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.input;
+package org.tools4j.elara.flyweight;
 
-import org.tools4j.elara.send.CommandContext;
-import org.tools4j.elara.step.AgentStep;
+import org.agrona.DirectBuffer;
 
-public interface SingleSourceInput extends Input, InputPoller {
-    int sourceId();
-
+/**
+ * A {@link Frame} for playback data.
+ *
+ * @see PlaybackDescriptor
+ */
+public interface PlaybackFrame extends Frame {
     @Override
-    default AgentStep inputPollerStep(final CommandContext commandContext) {
-        return Input.single(this).inputPollerStep(commandContext);
+    default int headerLength() {
+        return PlaybackDescriptor.HEADER_LENGTH;
     }
+
+    long engineTime();
+    long maxAvailableEventSequence();
+    default int payloadSize() {
+        return payload().capacity();
+    }
+    DirectBuffer payload();
 }

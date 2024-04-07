@@ -24,11 +24,11 @@
 package org.tools4j.elara.app.factory;
 
 import org.tools4j.elara.app.handler.EventProcessor;
-import org.tools4j.elara.output.Output;
+import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.stream.MessageStream;
 
 public interface EventStreamFactory {
     MessageStream eventStream();
     EventProcessor eventProcessor();
-    Output output();
+    AgentStep eventStep();
 }

@@ -21,38 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.source;
+package org.tools4j.elara.app.state;
 
-import static java.util.Objects.requireNonNull;
-
-public class DefaultCommandContext implements CommandContext {
-
-    private final CommandSourceProvider commandSourceProvider;
-
-    public DefaultCommandContext(final CommandSourceProvider commandSourceProvider) {
-        this.commandSourceProvider = requireNonNull(commandSourceProvider);
-    }
-
-    @Override
-    public boolean hasInFlightCommand() {
-        final int sources = commandSourceProvider.sources();
-        for (int i = 0; i < sources; i++) {
-            if (commandSourceProvider.sourceByIndex(i).hasInFlightCommand()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public CommandSourceProvider commandSources() {
-        return commandSourceProvider;
-    }
-
-    @Override
-    public String toString() {
-        return "DefaultCommandContext" +
-                ":has-in-flight-cmd=" + hasInFlightCommand() +
-                "|cmd-sources=" + commandSourceProvider;
-    }
+/**
+ * Base state version that supports minimalistic updating as per {@link ThinEventApplier}.
+ */
+public interface ThinBaseState extends MutableBaseState, ThinEventApplier {
 }

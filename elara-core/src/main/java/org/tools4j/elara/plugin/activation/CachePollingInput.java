@@ -32,7 +32,7 @@ import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.handler.CommandSendingCommandHandler;
 import org.tools4j.elara.input.MultiSourceInput;
-import org.tools4j.elara.source.CommandContext;
+import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.source.CommandSourceProvider;
 import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageReceiver.Handler;

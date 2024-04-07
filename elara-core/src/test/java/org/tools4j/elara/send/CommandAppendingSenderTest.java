@@ -32,6 +32,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.app.state.DefaultBaseState;
+import org.tools4j.elara.app.state.NoOpInFlightState;
 import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.PayloadType;
@@ -65,7 +66,7 @@ public class CommandAppendingSenderTest {
     @BeforeEach
     public void init() {
         commandStore = new ArrayList<>();
-        sourceContextProvider = new DefaultCommandSourceProvider(new DefaultBaseState(),
+        sourceContextProvider = new DefaultCommandSourceProvider(new DefaultBaseState(), NoOpInFlightState.INSTANCE,
                 new CommandAppendingSender(timeSource, new DirectAppender() {
                     @Override
                     public AppendingContext appending() {
@@ -122,7 +123,7 @@ public class CommandAppendingSenderTest {
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
         sourceContextProvider.sourceById(sourceId)
-                .transientCommandState().sourceSequenceGenerator().nextSequence(sourceSeq);
+                .transientCommandSourceState().sourceSequenceGenerator().nextSequence(sourceSeq);
         sourceContextProvider.sourceById(sourceId)
                 .commandSender()
                 .sendCommand(message, offset, length);
@@ -147,7 +148,7 @@ public class CommandAppendingSenderTest {
         //when
         when(timeSource.currentTime()).thenReturn(commandTime);
         sourceContextProvider.sourceById(sourceId)
-                .transientCommandState().sourceSequenceGenerator().nextSequence(seq);
+                .transientCommandSourceState().sourceSequenceGenerator().nextSequence(seq);
         sourceContextProvider.sourceById(sourceId)
                 .commandSender()
                 .sendCommand(type, message, offset, length);
