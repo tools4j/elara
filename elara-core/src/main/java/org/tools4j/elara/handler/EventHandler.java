@@ -23,14 +23,9 @@
  */
 package org.tools4j.elara.handler;
 
-import org.tools4j.elara.app.handler.EventApplier;
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Event;
 
-/**
- * Event handler invoking an event applier.  It has the same API as an event applier but
- * performs housekeeping tasks around the event applier.
- */
-public interface EventHandler extends EventApplier {
-    @Override
+public interface EventHandler {
+    EventHandler NOOP = event -> {};
     void onEvent(Event event);
 }

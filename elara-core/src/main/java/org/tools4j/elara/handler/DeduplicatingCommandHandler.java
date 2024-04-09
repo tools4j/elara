@@ -23,8 +23,8 @@
  */
 package org.tools4j.elara.handler;
 
+import org.tools4j.elara.app.message.Command;
 import org.tools4j.elara.app.state.BaseState;
-import org.tools4j.elara.command.Command;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 

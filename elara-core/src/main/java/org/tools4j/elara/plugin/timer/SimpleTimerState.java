@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.plugin.timer;
 
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.plugin.timer.Timer.Style;
 import org.tools4j.elara.plugin.timer.TimerStore.MutableTimerStore;
 import org.tools4j.elara.time.TimeSource;

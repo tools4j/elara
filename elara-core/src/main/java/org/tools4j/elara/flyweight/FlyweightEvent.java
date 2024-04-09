@@ -26,7 +26,7 @@ package org.tools4j.elara.flyweight;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Event;
 
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static org.tools4j.elara.flyweight.EventDescriptor.EVENT_INDEX_OFFSET;

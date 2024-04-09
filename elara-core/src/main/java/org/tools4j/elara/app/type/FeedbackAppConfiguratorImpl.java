@@ -24,18 +24,33 @@
 package org.tools4j.elara.app.type;
 
 import org.agrona.concurrent.Agent;
+import org.tools4j.elara.app.config.EventProcessorConfigurator;
+import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.store.StoreAppendingMessageSender;
 import org.tools4j.elara.stream.MessageSender;
 
 import static java.util.Objects.requireNonNull;
 
-final class FeedbackAppConfiguratorImpl extends AbstractEventStreamConfigurator<FeedbackAppConfiguratorImpl> implements FeedbackAppConfigurator {
+final class FeedbackAppConfiguratorImpl extends AbstractEventReceiverConfigurator<FeedbackAppConfiguratorImpl> implements EventProcessorConfigurator, FeedbackAppConfigurator {
 
+    private int processorSourceId;
     private MessageSender commandSender;
+    private EventProcessor eventProcessor;
 
     @Override
     protected FeedbackAppConfiguratorImpl self() {
+        return this;
+    }
+
+    @Override
+    public int processorSourceId() {
+        return processorSourceId;
+    }
+
+    @Override
+    public EventProcessorConfigurator processorSourceId(final int sourceId) {
+        this.processorSourceId = sourceId;
         return this;
     }
 
@@ -56,6 +71,17 @@ final class FeedbackAppConfiguratorImpl extends AbstractEventStreamConfigurator<
     }
 
     @Override
+    public EventProcessor eventProcessor() {
+        return eventProcessor;
+    }
+
+    @Override
+    public FeedbackAppConfigurator eventProcessor(final EventProcessor eventProcessor) {
+        this.eventProcessor = requireNonNull(eventProcessor);
+        return this;
+    }
+
+    @Override
     public FeedbackAppConfiguratorImpl populateDefaults() {
         return super.populateDefaults();
     }
@@ -69,8 +95,14 @@ final class FeedbackAppConfiguratorImpl extends AbstractEventStreamConfigurator<
 
     @Override
     public void validate() {
+        if (processorSourceId <= 0) {
+            throw new IllegalStateException("Processor source ID must be set and positive");
+        }
         if (commandSender() == null) {
-            throw new IllegalArgumentException("Command sender or command store must be set");
+            throw new IllegalStateException("Command sender or command store must be set");
+        }
+        if (eventProcessor() == null) {
+            throw new IllegalStateException("Event processor must be set");
         }
         super.validate();
     }

@@ -26,7 +26,7 @@ package org.tools4j.elara.route;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.tools4j.elara.app.handler.CommandProcessor;
-import org.tools4j.elara.command.Command;
+import org.tools4j.elara.app.message.Command;
 import org.tools4j.elara.flyweight.PayloadType;
 
 /**

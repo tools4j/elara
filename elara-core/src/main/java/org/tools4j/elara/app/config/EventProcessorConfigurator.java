@@ -21,14 +21,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.app.factory;
+package org.tools4j.elara.app.config;
 
 import org.tools4j.elara.app.handler.EventProcessor;
-import org.tools4j.elara.step.AgentStep;
-import org.tools4j.elara.stream.MessageStream;
+import org.tools4j.elara.exception.DuplicateHandler;
 
-public interface EventStreamFactory {
-    MessageStream eventStream();
-    EventProcessor eventProcessor();
-    AgentStep eventStep();
+public interface EventProcessorConfigurator extends EventProcessorConfig {
+    EventProcessorConfigurator processorSourceId(int sourceId);
+    EventProcessorConfigurator eventProcessor(EventProcessor eventProcessor);
+    EventProcessorConfigurator duplicateHandler(DuplicateHandler duplicateHandler);
 }

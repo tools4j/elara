@@ -24,7 +24,7 @@
 package org.tools4j.elara.handler;
 
 import org.agrona.DirectBuffer;
-import org.tools4j.elara.command.Command;
+import org.tools4j.elara.app.message.Command;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.source.CommandSourceProvider;

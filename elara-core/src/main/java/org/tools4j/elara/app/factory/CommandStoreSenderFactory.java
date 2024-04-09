@@ -24,42 +24,38 @@
 package org.tools4j.elara.app.factory;
 
 import org.tools4j.elara.app.config.AppConfig;
-import org.tools4j.elara.app.config.CommandStreamConfig;
+import org.tools4j.elara.app.config.CommandStoreConfig;
 import org.tools4j.elara.app.state.BaseState;
-import org.tools4j.elara.app.state.EventProcessingState.MutableEventProcessingState;
+import org.tools4j.elara.app.state.MutableEventProcessingState;
 import org.tools4j.elara.app.state.MutableInFlightState;
 import org.tools4j.elara.app.state.NoOpInFlightState;
+import org.tools4j.elara.send.CommandAppendingSender;
 import org.tools4j.elara.send.CommandContext;
-import org.tools4j.elara.send.CommandMessageSender;
 import org.tools4j.elara.send.DefaultCommandContext;
 import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.source.CommandSourceProvider;
 import org.tools4j.elara.source.DefaultCommandSourceProvider;
-import org.tools4j.elara.step.AgentStep;
-import org.tools4j.elara.stream.MessageSender;
+import org.tools4j.elara.store.MessageStore;
 
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
-public class SendingCommandStreamFactory implements CommandStreamFactory {
+public class CommandStoreSenderFactory implements CommandSenderFactory {
 
     private final AppConfig appConfig;
-    private final CommandStreamConfig commandStreamConfig;
+    private final CommandStoreConfig commandStoreConfig;
     private final BaseState baseState;
-    private final Supplier<? extends CommandStreamFactory> commandStreamSingletons;
-    private final Supplier<? extends InputFactory> inputSingletons;
+    private final Supplier<? extends CommandSenderFactory> commandStreamSingletons;
 
-    public SendingCommandStreamFactory(final AppConfig appConfig,
-                                       final CommandStreamConfig commandStreamConfig,
-                                       final BaseState baseState,
-                                       final Supplier<? extends CommandStreamFactory> commandStreamSingletons,
-                                       final Supplier<? extends InputFactory> inputSingletons) {
+    public CommandStoreSenderFactory(final AppConfig appConfig,
+                                     final CommandStoreConfig commandStoreConfig,
+                                     final BaseState baseState,
+                                     final Supplier<? extends CommandSenderFactory> commandStreamSingletons) {
         this.appConfig = requireNonNull(appConfig);
-        this.commandStreamConfig = requireNonNull(commandStreamConfig);
+        this.commandStoreConfig = requireNonNull(commandStoreConfig);
         this.baseState = requireNonNull(baseState);
         this.commandStreamSingletons = requireNonNull(commandStreamSingletons);
-        this.inputSingletons = requireNonNull(inputSingletons);
     }
 
     @Override
@@ -68,7 +64,6 @@ public class SendingCommandStreamFactory implements CommandStreamFactory {
                 ? ((MutableEventProcessingState)baseState).transientInFlightState()
                 : NoOpInFlightState.INSTANCE;
     }
-
     @Override
     public CommandContext commandContext() {
         return new DefaultCommandContext(commandStreamSingletons.get().inFlightState(), commandStreamSingletons.get().commandSourceProvider());
@@ -81,13 +76,8 @@ public class SendingCommandStreamFactory implements CommandStreamFactory {
 
     @Override
     public SenderSupplier senderSupplier() {
-        final MessageSender messageSender = commandStreamConfig.commandSender();
-        return new CommandMessageSender(appConfig.timeSource(), messageSender);
-    }
-
-    @Override
-    public AgentStep inputPollerStep() {
-        return inputSingletons.get().input().inputPollerStep(commandStreamSingletons.get().commandContext());
+        final MessageStore.Appender commandAppender = commandStoreConfig.commandStore().appender();
+        return new CommandAppendingSender(appConfig.timeSource(), commandAppender);
     }
 
 }

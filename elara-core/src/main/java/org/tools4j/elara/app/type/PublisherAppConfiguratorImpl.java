@@ -25,9 +25,8 @@ package org.tools4j.elara.app.type;
 
 import org.agrona.concurrent.Agent;
 import org.tools4j.elara.app.factory.PublisherAppFactory;
-import org.tools4j.elara.app.handler.EventProcessor;
 
-final class PublisherAppConfiguratorImpl extends AbstractEventStreamConfigurator<PublisherAppConfiguratorImpl> implements PublisherAppConfigurator {
+final class PublisherAppConfiguratorImpl extends AbstractEventReceiverConfigurator<PublisherAppConfiguratorImpl> implements PublisherAppConfigurator {
 
     @Override
     protected PublisherAppConfiguratorImpl self() {
@@ -36,9 +35,6 @@ final class PublisherAppConfiguratorImpl extends AbstractEventStreamConfigurator
 
     @Override
     public PublisherAppConfiguratorImpl populateDefaults() {
-        if (eventProcessor() == null) {
-            eventProcessor(EventProcessor.NOOP);
-        }
         return super.populateDefaults();
     }
 

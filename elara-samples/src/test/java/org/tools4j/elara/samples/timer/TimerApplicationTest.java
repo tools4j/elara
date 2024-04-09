@@ -24,7 +24,7 @@
 package org.tools4j.elara.samples.timer;
 
 import org.junit.jupiter.api.Test;
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.input.InputPoller;
 import org.tools4j.elara.plugin.timer.DeadlineHeapTimerState;
 import org.tools4j.elara.plugin.timer.FlyweightTimerPayload;

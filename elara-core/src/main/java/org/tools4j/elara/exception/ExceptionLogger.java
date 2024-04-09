@@ -23,8 +23,8 @@
  */
 package org.tools4j.elara.exception;
 
-import org.tools4j.elara.command.Command;
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Command;
+import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.logging.DefaultElaraLogger;
 import org.tools4j.elara.logging.ElaraLogger;
 import org.tools4j.elara.logging.Logger;

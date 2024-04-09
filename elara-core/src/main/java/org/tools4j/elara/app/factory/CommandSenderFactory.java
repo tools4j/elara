@@ -21,12 +21,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.app.config;
+package org.tools4j.elara.app.factory;
 
-import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.stream.MessageSender;
+import org.tools4j.elara.app.state.MutableInFlightState;
+import org.tools4j.elara.send.CommandContext;
+import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.source.CommandSourceProvider;
 
-public interface CommandStreamConfigurator extends CommandStreamConfig {
-    CommandStreamConfigurator commandStore(MessageStore commandStore);
-    CommandStreamConfigurator commandSender(MessageSender commandStream);
+public interface CommandSenderFactory {
+    MutableInFlightState inFlightState();
+    CommandContext commandContext();
+    CommandSourceProvider commandSourceProvider();
+    SenderSupplier senderSupplier();
 }

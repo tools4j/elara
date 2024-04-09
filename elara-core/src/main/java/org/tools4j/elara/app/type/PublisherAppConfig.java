@@ -24,11 +24,11 @@
 package org.tools4j.elara.app.type;
 
 import org.tools4j.elara.app.config.AppConfig;
-import org.tools4j.elara.app.config.EventStreamConfig;
+import org.tools4j.elara.app.config.EventReceiverConfig;
 import org.tools4j.elara.app.config.OutputConfig;
 import org.tools4j.elara.app.config.PluginConfig;
 
-public interface PublisherAppConfig extends AppConfig, EventStreamConfig, OutputConfig, PluginConfig {
+public interface PublisherAppConfig extends AppConfig, EventReceiverConfig, OutputConfig, PluginConfig {
     @Override
     default AppType appType() {
         return ElaraAppType.PublisherApp;

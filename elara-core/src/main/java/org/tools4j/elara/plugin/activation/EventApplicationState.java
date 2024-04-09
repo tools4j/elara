@@ -23,9 +23,9 @@
  */
 package org.tools4j.elara.plugin.activation;
 
+import org.tools4j.elara.app.message.Command;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.app.state.EventProcessingState;
-import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.EventType;
 
 import static java.util.Objects.requireNonNull;

@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.app.handler;
 
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.send.CommandSender;
 

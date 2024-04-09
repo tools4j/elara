@@ -23,16 +23,16 @@
  */
 package org.tools4j.elara.plugin.timer;
 
-import org.tools4j.elara.app.factory.EventStreamFactory;
+import org.tools4j.elara.app.factory.CommandProcessorFactory;
+import org.tools4j.elara.app.factory.EventProcessorFactory;
 import org.tools4j.elara.app.factory.Interceptor;
-import org.tools4j.elara.app.factory.ProcessorFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.handler.CommandHandler;
+import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.plugin.timer.TimerController.ControlContext;
 import org.tools4j.elara.route.CommandTransaction;
-import org.tools4j.elara.step.AgentStep;
-import org.tools4j.elara.stream.MessageStream;
+import org.tools4j.elara.source.CommandSource;
 
 import java.util.function.Supplier;
 
@@ -47,9 +47,9 @@ final class TimerPluginInterceptor implements Interceptor {
     }
 
     @Override
-    public ProcessorFactory processorFactory(final Supplier<? extends ProcessorFactory> singletons) {
+    public CommandProcessorFactory commandProcessorFactory(final Supplier<? extends CommandProcessorFactory> singletons) {
         requireNonNull(singletons);
-        return new ProcessorFactory() {
+        return new CommandProcessorFactory() {
             @Override
             public CommandProcessor commandProcessor() {
                 final CommandProcessor commandProcessor = singletons.get().commandProcessor();
@@ -73,12 +73,12 @@ final class TimerPluginInterceptor implements Interceptor {
     }
 
     @Override
-    public EventStreamFactory eventStreamFactory(final Supplier<? extends EventStreamFactory> singletons) {
+    public EventProcessorFactory eventProcessorFactory(final Supplier<? extends EventProcessorFactory> singletons) {
         requireNonNull(singletons);
-        return new EventStreamFactory() {
+        return new EventProcessorFactory() {
             @Override
-            public MessageStream eventStream() {
-                return singletons.get().eventStream();
+            public CommandSource processorSource() {
+                return singletons.get().processorSource();
             }
 
             @Override
@@ -92,8 +92,8 @@ final class TimerPluginInterceptor implements Interceptor {
             }
 
             @Override
-            public AgentStep eventStep() {
-                return singletons.get().eventStep();
+            public EventHandler eventHandler() {
+                return singletons.get().eventHandler();
             }
         };
     }

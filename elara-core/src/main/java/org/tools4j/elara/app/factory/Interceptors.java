@@ -76,8 +76,8 @@ enum Interceptors {
             }
 
             @Override
-            public ProcessorFactory processorFactory(final Supplier<? extends ProcessorFactory> singletons) {
-                return next.processorFactory(singletonOrIntercepted(singletons, first.processorFactory(singletons), Singletons::create));
+            public CommandProcessorFactory commandProcessorFactory(final Supplier<? extends CommandProcessorFactory> singletons) {
+                return next.commandProcessorFactory(singletonOrIntercepted(singletons, first.commandProcessorFactory(singletons), Singletons::create));
             }
 
             @Override
@@ -101,13 +101,18 @@ enum Interceptors {
             }
 
             @Override
-            public CommandStreamFactory commandStreamFactory(final Supplier<? extends CommandStreamFactory> singletons) {
-                return next.commandStreamFactory(singletonOrIntercepted(singletons, first.commandStreamFactory(singletons), Singletons::create));
+            public CommandSenderFactory commandSenderFactory(final Supplier<? extends CommandSenderFactory> singletons) {
+                return next.commandSenderFactory(singletonOrIntercepted(singletons, first.commandSenderFactory(singletons), Singletons::create));
             }
 
             @Override
-            public EventStreamFactory eventStreamFactory(final Supplier<? extends EventStreamFactory> singletons) {
-                return next.eventStreamFactory(singletonOrIntercepted(singletons, first.eventStreamFactory(singletons), Singletons::create));
+            public EventSubscriberFactory eventSubscriberFactory(final Supplier<? extends EventSubscriberFactory> singletons) {
+                return next.eventSubscriberFactory(singletonOrIntercepted(singletons, first.eventSubscriberFactory(singletons), Singletons::create));
+            }
+
+            @Override
+            public EventProcessorFactory eventProcessorFactory(final Supplier<? extends EventProcessorFactory> singletons) {
+                return next.eventProcessorFactory(singletonOrIntercepted(singletons, first.eventProcessorFactory(singletons), Singletons::create));
             }
         };
     }
@@ -145,7 +150,7 @@ enum Interceptors {
         }
 
         @Override
-        public ProcessorFactory processorFactory(final Supplier<? extends ProcessorFactory> singletons) {
+        public CommandProcessorFactory commandProcessorFactory(final Supplier<? extends CommandProcessorFactory> singletons) {
             return singletons.get();
         }
 
@@ -170,12 +175,17 @@ enum Interceptors {
         }
 
         @Override
-        public CommandStreamFactory commandStreamFactory(final Supplier<? extends CommandStreamFactory> singletons) {
+        public CommandSenderFactory commandSenderFactory(final Supplier<? extends CommandSenderFactory> singletons) {
             return singletons.get();
         }
 
         @Override
-        public EventStreamFactory eventStreamFactory(final Supplier<? extends EventStreamFactory> singletons) {
+        public EventSubscriberFactory eventSubscriberFactory(final Supplier<? extends EventSubscriberFactory> singletons) {
+            return singletons.get();
+        }
+
+        @Override
+        public EventProcessorFactory eventProcessorFactory(final Supplier<? extends EventProcessorFactory> singletons) {
             return singletons.get();
         }
     }

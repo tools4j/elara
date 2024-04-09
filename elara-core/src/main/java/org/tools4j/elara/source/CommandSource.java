@@ -24,11 +24,11 @@
 package org.tools4j.elara.source;
 
 import org.tools4j.elara.app.handler.CommandProcessor;
+import org.tools4j.elara.app.message.Command;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.app.state.EventProcessingState;
 import org.tools4j.elara.app.state.EventState;
 import org.tools4j.elara.app.state.TransientCommandSourceState;
-import org.tools4j.elara.command.Command;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.send.CommandSender;

@@ -21,26 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.command;
+package org.tools4j.elara.app.config;
 
 import org.tools4j.elara.app.handler.CommandProcessor;
-import org.tools4j.elara.route.EventRouter;
 
-import static java.util.Objects.requireNonNull;
-
-public class CompositeCommandProcessor implements CommandProcessor {
-
-    private final CommandProcessor[] processors;
-
-    public CompositeCommandProcessor(final CommandProcessor... processors) {
-        this.processors = requireNonNull(processors);
-    }
-
-    @Override
-    public void onCommand(final Command command, final EventRouter router) {
-        for (final CommandProcessor processor : processors) {
-            processor.onCommand(command, router);
-        }
-    }
-
+public interface CommandProcessorConfig {
+    CommandProcessor commandProcessor();
 }

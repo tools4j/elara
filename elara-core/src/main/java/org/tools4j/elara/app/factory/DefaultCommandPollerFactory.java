@@ -39,11 +39,11 @@ public class DefaultCommandPollerFactory implements CommandPollerFactory {
 
     private final CommandStoreConfig commandStoreConfig;
     private final Supplier<? extends CommandPollerFactory> commandPollerSingletons;
-    private final Supplier<? extends ProcessorFactory> processorSingletons;
+    private final Supplier<? extends CommandProcessorFactory> processorSingletons;
 
     public DefaultCommandPollerFactory(final CommandStoreConfig commandStoreConfig,
                                        final Supplier<? extends CommandPollerFactory> commandPollerSingletons,
-                                       final Supplier<? extends ProcessorFactory> processorSingletons) {
+                                       final Supplier<? extends CommandProcessorFactory> processorSingletons) {
         this.commandStoreConfig = requireNonNull(commandStoreConfig);
         this.commandPollerSingletons = requireNonNull(commandPollerSingletons);
         this.processorSingletons = requireNonNull(processorSingletons);

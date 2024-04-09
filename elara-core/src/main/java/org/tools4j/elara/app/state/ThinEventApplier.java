@@ -24,15 +24,15 @@
 package org.tools4j.elara.app.state;
 
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.app.type.PassthroughApp;
-import org.tools4j.elara.event.Event;
 import org.tools4j.elara.flyweight.EventType;
 import org.tools4j.elara.send.CommandPassthroughSender;
 
 /**
- * A minimalistic event applier using only basic event header information when applying an event. It is used by
- * {@link PassthroughApp} and {@link CommandPassthroughSender} as an optimisation if only the base
- * {@link ThinBaseState} needs to be updated by events.
+ * A minimalistic event applier using only basic event header information when applying an event. If possible
+ * {@link PassthroughApp} and {@link CommandPassthroughSender} use it as an optimisation when updating
+ * {@link ThinBaseState} information.
  */
 @FunctionalInterface
 public interface ThinEventApplier extends EventApplier {

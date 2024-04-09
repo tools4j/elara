@@ -31,7 +31,6 @@ import org.tools4j.elara.app.config.InputConfigurator;
 import org.tools4j.elara.app.config.OutputConfigurator;
 import org.tools4j.elara.app.config.PluginConfigurator;
 import org.tools4j.elara.app.state.BaseStateProvider;
-import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.input.InputPoller;
@@ -68,8 +67,6 @@ public interface PassthroughAppConfigurator extends PassthroughAppConfig, AppCon
 
     @Override
     PassthroughAppConfigurator exceptionHandler(ExceptionHandler exceptionHandler);
-    @Override
-    PassthroughAppConfigurator duplicateHandler(DuplicateHandler duplicateHandler);
     @Override
     PassthroughAppConfigurator loggerFactory(Logger.Factory loggerFactory);
     @Override

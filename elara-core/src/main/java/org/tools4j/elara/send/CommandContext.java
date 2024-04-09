@@ -24,8 +24,8 @@
 package org.tools4j.elara.send;
 
 import org.tools4j.elara.app.handler.CommandProcessor;
+import org.tools4j.elara.app.message.Command;
 import org.tools4j.elara.app.state.TransientInFlightState;
-import org.tools4j.elara.command.Command;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.source.CommandSource;
 import org.tools4j.elara.source.CommandSourceProvider;

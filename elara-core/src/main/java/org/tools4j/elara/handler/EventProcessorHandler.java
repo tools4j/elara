@@ -23,54 +23,68 @@
  */
 package org.tools4j.elara.handler;
 
-import org.tools4j.elara.app.handler.EventApplier;
-import org.tools4j.elara.app.state.MutableBaseState;
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.handler.EventProcessor;
+import org.tools4j.elara.app.message.Event;
+import org.tools4j.elara.app.state.MutableEventProcessingState;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
+import org.tools4j.elara.send.CommandContext;
+import org.tools4j.elara.send.CommandSender;
+import org.tools4j.elara.source.CommandSource;
 
 import static java.util.Objects.requireNonNull;
 
-public class DefaultEventHandler implements EventHandler {
+/**
+ * An {@link EventHandler} that invokes an {@link EventProcessor} after first checking for duplicate events.
+ * If processor or {@link DuplicateHandler} throws an exception, the {@link ExceptionHandler} is notified.
+ */
+public class EventProcessorHandler implements EventHandler {
 
-    private final MutableBaseState baseState;
-    private final EventApplier eventApplier;
+    private final MutableEventProcessingState eventProcessingState;
+    private final CommandContext commandContext;
+    private final CommandSource processorSource;
+    private final EventProcessor eventProcessor;
     private final ExceptionHandler exceptionHandler;
     private final DuplicateHandler duplicateHandler;
 
-    public DefaultEventHandler(final MutableBaseState baseState,
-                               final EventApplier eventApplier,
-                               final ExceptionHandler exceptionHandler,
-                               final DuplicateHandler duplicateHandler) {
-        this.baseState = requireNonNull(baseState);
-        this.eventApplier = requireNonNull(eventApplier);
+    public EventProcessorHandler(final MutableEventProcessingState eventProcessingState,
+                                 final CommandContext commandContext,
+                                 final CommandSource processorSource,
+                                 final EventProcessor eventProcessor,
+                                 final ExceptionHandler exceptionHandler,
+                                 final DuplicateHandler duplicateHandler) {
+        this.eventProcessingState = requireNonNull(eventProcessingState);
+        this.commandContext = requireNonNull(commandContext);
+        this.processorSource = requireNonNull(processorSource);
+        this.eventProcessor = requireNonNull(eventProcessor);
         this.exceptionHandler = requireNonNull(exceptionHandler);
         this.duplicateHandler = requireNonNull(duplicateHandler);
     }
 
     @Override
     public void onEvent(final Event event) {
-        if (baseState.eventApplied(event.eventSequence())) {
+        if (eventProcessingState.eventApplied(event.eventSequence())) {
             skipEvent(event);
         } else {
-            baseState.onEvent(event);
+            eventProcessingState.onEvent(event);
             applyEvent(event);
         }
     }
 
     private void applyEvent(final Event event) {
         try {
-            eventApplier.onEvent(event);
+            final CommandSender commandSender = processorSource.commandSender();
+            eventProcessor.onEvent(event, commandContext, commandSender);
         } catch (final Throwable t) {
-            exceptionHandler.handleEventApplierException(event, t);
+            exceptionHandler.handleEventProcessorException(event, t);
         }
     }
 
     private void skipEvent(final Event event) {
         try {
-            duplicateHandler.skipEventApplying(event);
+            duplicateHandler.skipEventProcessing(event);
         } catch (final Throwable t) {
-            exceptionHandler.handleEventApplierException(event, t);
+            exceptionHandler.handleEventProcessorException(event, t);
         }
     }
 

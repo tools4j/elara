@@ -23,8 +23,15 @@
  */
 package org.tools4j.elara.app.config;
 
-import org.tools4j.elara.app.handler.CommandProcessor;
+import org.tools4j.elara.app.handler.EventProcessor;
+import org.tools4j.elara.app.message.Event;
+import org.tools4j.elara.exception.DuplicateHandler;
+import org.tools4j.elara.send.CommandContext;
+import org.tools4j.elara.send.CommandSender;
 
-public interface ProcessorConfigurator extends ProcessorConfig {
-    ProcessorConfigurator commandProcessor(CommandProcessor commandProcessor);
+public interface EventProcessorConfig {
+    /** @return the source ID used for the command sender in {@link EventProcessor#onEvent(Event, CommandContext, CommandSender) EventProcessor.onEvent(..)} ()} */
+    int processorSourceId();
+    EventProcessor eventProcessor();
+    DuplicateHandler duplicateHandler();
 }

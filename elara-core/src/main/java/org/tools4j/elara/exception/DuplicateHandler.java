@@ -23,8 +23,8 @@
  */
 package org.tools4j.elara.exception;
 
-import org.tools4j.elara.command.Command;
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Command;
+import org.tools4j.elara.app.message.Event;
 
 /**
  * Duplicate commands and events are detected and skipped by the engine.  This handler allows applications to react to
@@ -56,6 +56,15 @@ public interface DuplicateHandler {
      * @param event the skipped event
      */
     default void skipEventApplying(final Event event) {
+        //default is no-op;  apps may want to log something
+    }
+
+    /**
+     * Event processing is skipped because it has already been applied.
+     *
+     * @param event the skipped event
+     */
+    default void skipEventProcessing(final Event event) {
         //default is no-op;  apps may want to log something
     }
 

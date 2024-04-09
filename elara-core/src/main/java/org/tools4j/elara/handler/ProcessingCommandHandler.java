@@ -24,7 +24,7 @@
 package org.tools4j.elara.handler;
 
 import org.tools4j.elara.app.handler.CommandProcessor;
-import org.tools4j.elara.command.Command;
+import org.tools4j.elara.app.message.Command;
 import org.tools4j.elara.route.CommandTransaction;
 import org.tools4j.elara.route.EventRouter;
 

@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.output;
 
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Event;
 
 @FunctionalInterface
 public interface Output {

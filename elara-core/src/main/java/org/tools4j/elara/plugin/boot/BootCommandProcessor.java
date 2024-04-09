@@ -24,7 +24,7 @@
 package org.tools4j.elara.plugin.boot;
 
 import org.tools4j.elara.app.handler.CommandProcessor;
-import org.tools4j.elara.command.Command;
+import org.tools4j.elara.app.message.Command;
 import org.tools4j.elara.route.EventRouter;
 
 import static org.tools4j.elara.plugin.boot.BootCommands.BOOT_NOTIFY_APP_START;

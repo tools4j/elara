@@ -25,8 +25,9 @@ package org.tools4j.elara.app.type;
 
 import org.agrona.concurrent.IdleStrategy;
 import org.tools4j.elara.app.config.AppConfigurator;
-import org.tools4j.elara.app.config.CommandStreamConfigurator;
-import org.tools4j.elara.app.config.EventStreamConfigurator;
+import org.tools4j.elara.app.config.CommandSenderConfigurator;
+import org.tools4j.elara.app.config.EventProcessorConfigurator;
+import org.tools4j.elara.app.config.EventReceiverConfigurator;
 import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.config.InputConfigurator;
 import org.tools4j.elara.app.config.OutputConfigurator;
@@ -51,8 +52,8 @@ import org.tools4j.elara.time.TimeSource;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public interface FeedbackAppConfigurator extends FeedbackAppConfig, AppConfigurator, EventStreamConfigurator,
-        CommandStreamConfigurator, InputConfigurator, OutputConfigurator, PluginConfigurator {
+public interface FeedbackAppConfigurator extends FeedbackAppConfig, AppConfigurator, EventReceiverConfigurator,
+        EventProcessorConfigurator, CommandSenderConfigurator, InputConfigurator, OutputConfigurator, PluginConfigurator {
 
     @Override
     FeedbackAppConfigurator baseStateProvider(BaseStateProvider baseStateFactory);

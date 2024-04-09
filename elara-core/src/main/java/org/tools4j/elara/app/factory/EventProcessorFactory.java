@@ -21,10 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.app.config;
+package org.tools4j.elara.app.factory;
 
-import org.tools4j.elara.stream.MessageSender;
+import org.tools4j.elara.app.handler.EventProcessor;
+import org.tools4j.elara.handler.EventHandler;
+import org.tools4j.elara.source.CommandSource;
 
-public interface CommandStreamConfig {
-    MessageSender commandSender();
+public interface EventProcessorFactory {
+    CommandSource processorSource();
+    EventProcessor eventProcessor();
+    EventHandler eventHandler();
 }

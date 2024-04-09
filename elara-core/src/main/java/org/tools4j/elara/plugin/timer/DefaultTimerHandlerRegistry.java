@@ -27,7 +27,7 @@ import org.agrona.collections.Hashing;
 import org.agrona.collections.Int2ObjectHashMap;
 import org.agrona.collections.Long2ObjectHashMap;
 import org.agrona.collections.LongObjConsumer;
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Event;
 
 import java.util.ArrayList;
 import java.util.List;

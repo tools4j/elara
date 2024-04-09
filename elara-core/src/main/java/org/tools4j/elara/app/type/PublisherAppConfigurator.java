@@ -25,11 +25,10 @@ package org.tools4j.elara.app.type;
 
 import org.agrona.concurrent.IdleStrategy;
 import org.tools4j.elara.app.config.AppConfigurator;
-import org.tools4j.elara.app.config.EventStreamConfigurator;
+import org.tools4j.elara.app.config.EventReceiverConfigurator;
 import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.config.OutputConfigurator;
 import org.tools4j.elara.app.config.PluginConfigurator;
-import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.app.state.BaseStateProvider;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.logging.Logger;
@@ -44,7 +43,7 @@ import org.tools4j.elara.time.TimeSource;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public interface PublisherAppConfigurator extends PublisherAppConfig, AppConfigurator, EventStreamConfigurator, OutputConfigurator,
+public interface PublisherAppConfigurator extends PublisherAppConfig, AppConfigurator, EventReceiverConfigurator, OutputConfigurator,
         PluginConfigurator {
 
     @Override
@@ -55,8 +54,6 @@ public interface PublisherAppConfigurator extends PublisherAppConfig, AppConfigu
     PublisherAppConfigurator eventStore(Poller eventStorePoller);
     @Override
     PublisherAppConfigurator eventReceiver(MessageReceiver eventReceiver);
-    @Override
-    PublisherAppConfigurator eventProcessor(EventProcessor eventProcessor);
 
     @Override
     PublisherAppConfigurator output(Output output);

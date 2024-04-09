@@ -33,16 +33,17 @@ import org.tools4j.elara.app.state.MutableInFlightState;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.handler.OutputHandler;
+import org.tools4j.elara.handler.PlaybackHandler;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.route.CommandTransaction;
 import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.send.SenderSupplier;
+import org.tools4j.elara.source.CommandSource;
 import org.tools4j.elara.source.CommandSourceProvider;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore.Handler;
 import org.tools4j.elara.store.MessageStore.Poller;
-import org.tools4j.elara.stream.MessageStream;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -115,21 +116,21 @@ final class Singletons {
         };
     }
 
-    static ProcessorFactory create(final ProcessorFactory factory) {
+    static CommandProcessorFactory create(final CommandProcessorFactory factory) {
         requireNonNull(factory);
         final Singletons singletons = new Singletons();
-        return new ProcessorFactory() {
+        return new CommandProcessorFactory() {
             @Override
             public CommandProcessor commandProcessor() {
-                return singletons.getOrCreate("commandProcessor", CommandProcessor.class, factory, ProcessorFactory::commandProcessor);
+                return singletons.getOrCreate("commandProcessor", CommandProcessor.class, factory, CommandProcessorFactory::commandProcessor);
             }
             @Override
             public CommandTransaction commandTransaction() {
-                return singletons.getOrCreate("commandTransaction", CommandTransaction.class, factory, ProcessorFactory::commandTransaction);
+                return singletons.getOrCreate("commandTransaction", CommandTransaction.class, factory, CommandProcessorFactory::commandTransaction);
             }
             @Override
             public CommandHandler commandHandler() {
-                return singletons.getOrCreate("commandHandler", CommandHandler.class, factory, ProcessorFactory::commandHandler);
+                return singletons.getOrCreate("commandHandler", CommandHandler.class, factory, CommandProcessorFactory::commandHandler);
             }
         };
     }
@@ -174,54 +175,65 @@ final class Singletons {
         };
     }
 
-    static CommandStreamFactory create(final CommandStreamFactory factory) {
+    static CommandSenderFactory create(final CommandSenderFactory factory) {
         requireNonNull(factory);
         final Singletons singletons = new Singletons();
-        return new CommandStreamFactory() {
+        return new CommandSenderFactory() {
             @Override
             public MutableInFlightState inFlightState() {
-                return singletons.getOrCreate("inFlightState", MutableInFlightState.class, factory, CommandStreamFactory::inFlightState);
+                return singletons.getOrCreate("inFlightState", MutableInFlightState.class, factory, CommandSenderFactory::inFlightState);
             }
 
             @Override
             public CommandContext commandContext() {
-                return singletons.getOrCreate("commandContext", CommandContext.class, factory, CommandStreamFactory::commandContext);
+                return singletons.getOrCreate("commandContext", CommandContext.class, factory, CommandSenderFactory::commandContext);
             }
 
             @Override
             public CommandSourceProvider commandSourceProvider() {
-                return singletons.getOrCreate("commandSourceProvider", CommandSourceProvider.class, factory, CommandStreamFactory::commandSourceProvider);
+                return singletons.getOrCreate("commandSourceProvider", CommandSourceProvider.class, factory, CommandSenderFactory::commandSourceProvider);
             }
 
             @Override
             public SenderSupplier senderSupplier() {
-                return singletons.getOrCreate("senderSupplier", SenderSupplier.class, factory, CommandStreamFactory::senderSupplier);
-            }
-
-            @Override
-            public AgentStep inputPollerStep() {
-                return singletons.getOrCreate("inputPollerStep", AgentStep.class, factory, CommandStreamFactory::inputPollerStep);
+                return singletons.getOrCreate("senderSupplier", SenderSupplier.class, factory, CommandSenderFactory::senderSupplier);
             }
         };
     }
 
-    static EventStreamFactory create(final EventStreamFactory factory) {
+    static EventSubscriberFactory create(final EventSubscriberFactory factory) {
         requireNonNull(factory);
         final Singletons singletons = new Singletons();
-        return new EventStreamFactory() {
+        return new EventSubscriberFactory() {
             @Override
-            public MessageStream eventStream() {
-                return singletons.getOrCreate("eventStream", MessageStream.class, factory, EventStreamFactory::eventStream);
+            public PlaybackHandler playbackHandler() {
+                return singletons.getOrCreate("playbackHandler", PlaybackHandler.class, factory, EventSubscriberFactory::playbackHandler);
+            }
+
+            @Override
+            public AgentStep playbackPollerStep() {
+                return singletons.getOrCreate("playbackPollerStep", AgentStep.class, factory, EventSubscriberFactory::playbackPollerStep);
+            }
+        };
+    }
+
+    static EventProcessorFactory create(final EventProcessorFactory factory) {
+        requireNonNull(factory);
+        final Singletons singletons = new Singletons();
+        return new EventProcessorFactory() {
+            @Override
+            public CommandSource processorSource() {
+                return singletons.getOrCreate("processorSource", CommandSource.class, factory, EventProcessorFactory::processorSource);
             }
 
             @Override
             public EventProcessor eventProcessor() {
-                return singletons.getOrCreate("eventProcessor", EventProcessor.class, factory, EventStreamFactory::eventProcessor);
+                return singletons.getOrCreate("eventProcessor", EventProcessor.class, factory, EventProcessorFactory::eventProcessor);
             }
 
             @Override
-            public AgentStep eventStep() {
-                return singletons.getOrCreate("eventStep", AgentStep.class, factory, EventStreamFactory::eventStep);
+            public EventHandler eventHandler() {
+                return singletons.getOrCreate("eventHandler", EventHandler.class, factory, EventProcessorFactory::eventHandler);
             }
         };
     }

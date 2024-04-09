@@ -21,38 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.event;
+package org.tools4j.elara.app.config;
 
-import org.agrona.DirectBuffer;
-import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.flyweight.EventType;
-import org.tools4j.elara.flyweight.PayloadType;
-import org.tools4j.elara.flyweight.Writable;
-import org.tools4j.elara.logging.Printable;
+import org.tools4j.elara.app.handler.CommandProcessor;
 
-public interface Event extends Writable, Printable {
-    int sourceId();
-    long sourceSequence();
-    long eventSequence();
-    int eventIndex();
-
-    long eventTime();
-
-    EventType eventType();
-
-    int payloadType();
-
-    default boolean isSystem() {
-        return PayloadType.isSystem(payloadType());
-    }
-
-    default boolean isApplication() {
-        return PayloadType.isApplication(payloadType());
-    }
-
-    DirectBuffer payload();
-
-    @Override
-    int writeTo(MutableDirectBuffer dst, int offset);
-
+public interface CommandProcessorConfigurator extends CommandProcessorConfig {
+    CommandProcessorConfigurator commandProcessor(CommandProcessor commandProcessor);
 }

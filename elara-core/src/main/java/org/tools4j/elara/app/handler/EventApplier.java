@@ -23,8 +23,8 @@
  */
 package org.tools4j.elara.app.handler;
 
+import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.app.state.ThinEventApplier;
-import org.tools4j.elara.event.Event;
 
 /**
  * Applies an event to the application modifying its state if necessary as per event instructions.

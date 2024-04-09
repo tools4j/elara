@@ -24,13 +24,11 @@
 package org.tools4j.elara.app.factory;
 
 import org.tools4j.elara.app.config.AppConfig;
-import org.tools4j.elara.app.config.EventStreamConfig;
-import org.tools4j.elara.handler.DefaultOutputHandler;
+import org.tools4j.elara.app.config.EventReceiverConfig;
 import org.tools4j.elara.handler.OutputHandler;
-import org.tools4j.elara.output.Output;
+import org.tools4j.elara.handler.RetryOutputHandler;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.step.ReceiverPublisherStep;
-import org.tools4j.elara.stream.MessageReceiver;
 
 import java.util.function.Supplier;
 
@@ -38,33 +36,35 @@ import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.step.AgentStep.NOOP;
 
 public class StreamPublisherFactory implements PublisherFactory {
+    private static final int MAX_OUTPUT_RETRIES = 3;
     private final AppConfig appConfig;
-    private final EventStreamConfig eventStreamConfig;
+    private final EventReceiverConfig eventReceiverConfig;
     private final Supplier<? extends PublisherFactory> publisherSingletons;
     private final Supplier<? extends OutputFactory> outputSingletons;
 
     public StreamPublisherFactory(final AppConfig appConfig,
-                                  final EventStreamConfig eventStreamConfig,
+                                  final EventReceiverConfig eventReceiverConfig,
                                   final Supplier<? extends PublisherFactory> publisherSingletons,
                                   final Supplier<? extends OutputFactory> outputSingletons) {
         this.appConfig = requireNonNull(appConfig);
-        this.eventStreamConfig = requireNonNull(eventStreamConfig);
+        this.eventReceiverConfig = requireNonNull(eventReceiverConfig);
         this.publisherSingletons = requireNonNull(publisherSingletons);
         this.outputSingletons = requireNonNull(outputSingletons);
     }
 
     @Override
     public OutputHandler outputHandler() {
-        return new DefaultOutputHandler(outputSingletons.get().output(), appConfig.exceptionHandler());
+        return RetryOutputHandler.create(
+                MAX_OUTPUT_RETRIES, outputSingletons.get().output(), appConfig.exceptionHandler()
+        );
     }
 
     @Override
     public AgentStep publisherStep() {
-        if (outputSingletons.get().output() == Output.NOOP) {
+        final OutputHandler outputHandler = publisherSingletons.get().outputHandler();
+        if (outputHandler == OutputHandler.NOOP) {
             return NOOP;
         }
-        final MessageReceiver eventReceiver = eventStreamConfig.eventReceiver();
-        final OutputHandler outputHandler = publisherSingletons.get().outputHandler();
-        return new ReceiverPublisherStep(outputHandler, eventReceiver, appConfig.exceptionHandler());
+        return new ReceiverPublisherStep(outputHandler, eventReceiverConfig.eventReceiver());
     }
 }

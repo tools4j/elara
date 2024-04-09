@@ -39,7 +39,7 @@ public class FeedbackAgent implements Agent {
     private final EventProcessingState eventProcessingState;
     private final CommandContext commandContext;
     private final AgentStep inputStep;
-    private final AgentStep eventStep;//poll + process + publish
+    private final AgentStep eventPollerStep;//poll + process + publish
     private final AgentStep extraStepAlways;
     private final AgentStep extraStepAlwaysWhenEventsApplied;
     private final boolean noInputsAndExtraStepWhenEventsApplied;
@@ -47,13 +47,13 @@ public class FeedbackAgent implements Agent {
     public FeedbackAgent(final EventProcessingState eventProcessingState,
                          final CommandContext commandContext,
                          final AgentStep inputStep,
-                         final AgentStep eventStep,
+                         final AgentStep eventPollerStep,
                          final AgentStep extraStepAlwaysWhenEventsApplied,
                          final AgentStep extraStepAlways) {
         this.commandContext = requireNonNull(commandContext);
         this.eventProcessingState = requireNonNull(eventProcessingState);
         this.inputStep = requireNonNull(inputStep);
-        this.eventStep = requireNonNull(eventStep);
+        this.eventPollerStep = requireNonNull(eventPollerStep);
         this.extraStepAlways = requireNonNull(extraStepAlways);
         this.extraStepAlwaysWhenEventsApplied = requireNonNull(extraStepAlwaysWhenEventsApplied);
         this.noInputsAndExtraStepWhenEventsApplied =
@@ -67,14 +67,14 @@ public class FeedbackAgent implements Agent {
 
     private boolean hasEventsAvailable() {
         final long lastAppliedEvtSeq = eventProcessingState.lastAppliedEventSequence();
-        final long lastAvailEvtSeq = eventProcessingState.lastAvailableEventSequence();
+        final long lastAvailEvtSeq = eventProcessingState.maxAvailableEventSequence();
         return lastAppliedEvtSeq == NIL_SEQUENCE && lastAppliedEvtSeq < lastAvailEvtSeq;
     }
 
     @Override
     public int doWork() {
         int workDone;
-        workDone = eventStep.doWork();
+        workDone = eventPollerStep.doWork();
         workDone += extraStepAlways.doWork();
         if (noInputsAndExtraStepWhenEventsApplied || hasEventsAvailable()) {
             return workDone;

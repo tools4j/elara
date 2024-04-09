@@ -24,7 +24,7 @@
 package org.tools4j.elara.flyweight;
 
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Event;
 
 import static org.tools4j.elara.flyweight.FrameType.AUTO_COMMIT_EVENT_TYPE;
 import static org.tools4j.elara.flyweight.FrameType.ROLLBACK_EVENT_TYPE;

@@ -57,7 +57,7 @@ public class AllInOneAgent implements Agent {
 
     @Override
     public String roleName() {
-        return "elara-aio";
+        return "elara-all";
     }
 
     @Override

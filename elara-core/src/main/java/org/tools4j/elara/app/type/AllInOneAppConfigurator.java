@@ -27,13 +27,13 @@ import org.agrona.concurrent.IdleStrategy;
 import org.tools4j.elara.app.config.AppConfigurator;
 import org.tools4j.elara.app.config.ApplierConfigurator;
 import org.tools4j.elara.app.config.CommandPollingMode;
+import org.tools4j.elara.app.config.CommandProcessorConfigurator;
 import org.tools4j.elara.app.config.CommandStoreConfigurator;
 import org.tools4j.elara.app.config.EventStoreConfigurator;
 import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.config.InputConfigurator;
 import org.tools4j.elara.app.config.OutputConfigurator;
 import org.tools4j.elara.app.config.PluginConfigurator;
-import org.tools4j.elara.app.config.ProcessorConfigurator;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.app.state.BaseStateProvider;
@@ -54,7 +54,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public interface AllInOneAppConfigurator extends AllInOneAppConfig, AppConfigurator, CommandStoreConfigurator,
-        EventStoreConfigurator, ProcessorConfigurator, ApplierConfigurator, InputConfigurator, OutputConfigurator,
+        EventStoreConfigurator, CommandProcessorConfigurator, ApplierConfigurator, InputConfigurator, OutputConfigurator,
         PluginConfigurator {
     @Override
     AllInOneAppConfigurator baseStateProvider(BaseStateProvider baseStateFactory);

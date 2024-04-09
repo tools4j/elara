@@ -24,10 +24,10 @@
 package org.tools4j.elara.step;
 
 import org.agrona.DirectBuffer;
-import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.flyweight.FlyweightEvent;
+import org.tools4j.elara.handler.EventHandler;
+import org.tools4j.elara.handler.Handlers;
 import org.tools4j.elara.handler.OutputHandler;
-import org.tools4j.elara.output.Output.Ack;
 import org.tools4j.elara.stream.MessageReceiver;
 
 import static java.util.Objects.requireNonNull;
@@ -37,22 +37,14 @@ import static java.util.Objects.requireNonNull;
  */
 public class ReceiverPublisherStep implements AgentStep {
 
-    private static final int MAX_RETRIES = 3;
-
-    private final OutputHandler handler;
+    private final EventHandler eventHandler;
     private final MessageReceiver receiver;
-    private final ExceptionHandler exceptionHandler;
     private final MessageReceiver.Handler receiverHandler = this::onMessage;
     private final FlyweightEvent flyweightEvent = new FlyweightEvent();
 
-    private Exception outputFailed;
-
-    public ReceiverPublisherStep(final OutputHandler handler,
-                                 final MessageReceiver receiver,
-                                 final ExceptionHandler exceptionHandler) {
-        this.handler = requireNonNull(handler);
+    public ReceiverPublisherStep(final OutputHandler outputHandler, final MessageReceiver receiver) {
+        this.eventHandler = Handlers.asEventHandler(outputHandler);
         this.receiver = requireNonNull(receiver);
-        this.exceptionHandler = requireNonNull(exceptionHandler);
     }
 
     @Override
@@ -61,18 +53,8 @@ public class ReceiverPublisherStep implements AgentStep {
     }
 
     private void onMessage(final DirectBuffer message) {
-        flyweightEvent.wrap(message, 0);
         try {
-            for (int retry = 0; retry < MAX_RETRIES; retry++) {
-                final Ack ack = handler.publish(flyweightEvent, false, retry);
-                if (Ack.RETRY != ack) {
-                    return;
-                }
-            }
-            if (outputFailed == null) {
-                outputFailed = new IllegalStateException("Event output failed after " + MAX_RETRIES + " attempts");
-            }
-            exceptionHandler.handleEventOutputException(flyweightEvent, outputFailed);
+            eventHandler.onEvent(flyweightEvent.wrap(message, 0));
         } finally {
             flyweightEvent.reset();
         }

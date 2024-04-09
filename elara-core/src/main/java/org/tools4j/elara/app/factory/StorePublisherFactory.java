@@ -39,18 +39,18 @@ import java.util.function.Supplier;
 import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.step.AgentStep.NOOP;
 
-public class DefaultPublisherFactory implements PublisherFactory {
+public class StorePublisherFactory implements PublisherFactory {
     private final AppConfig appConfig;
     private final EventStoreConfig eventStoreConfig;
     private final BaseState baseState;
     private final Supplier<? extends PublisherFactory> publisherSingletons;
     private final Supplier<? extends OutputFactory> outputSingletons;
 
-    public DefaultPublisherFactory(final AppConfig appConfig,
-                                   final EventStoreConfig eventStoreConfig,
-                                   final BaseState baseState,
-                                   final Supplier<? extends PublisherFactory> publisherSingletons,
-                                   final Supplier<? extends OutputFactory> outputSingletons) {
+    public StorePublisherFactory(final AppConfig appConfig,
+                                 final EventStoreConfig eventStoreConfig,
+                                 final BaseState baseState,
+                                 final Supplier<? extends PublisherFactory> publisherSingletons,
+                                 final Supplier<? extends OutputFactory> outputSingletons) {
         this.appConfig = requireNonNull(appConfig);
         this.eventStoreConfig = requireNonNull(eventStoreConfig);
         this.baseState = requireNonNull(baseState);
@@ -60,16 +60,17 @@ public class DefaultPublisherFactory implements PublisherFactory {
 
     @Override
     public OutputHandler outputHandler() {
-        return new DefaultOutputHandler(outputSingletons.get().output(), appConfig.exceptionHandler());
+        final Output output = outputSingletons.get().output();
+        return output == Output.NOOP ? OutputHandler.NOOP : new DefaultOutputHandler(output, appConfig.exceptionHandler());
     }
 
     @Override
     public AgentStep publisherStep() {
-        if (outputSingletons.get().output() == Output.NOOP) {
+        final OutputHandler outputHandler = publisherSingletons.get().outputHandler();
+        if (outputHandler == OutputHandler.NOOP) {
             return NOOP;
         }
         final MessageStore eventStore = eventStoreConfig.eventStore();
-        final OutputHandler outputHandler = publisherSingletons.get().outputHandler();
         if (baseState instanceof SingleEventBaseState) {
             return PollerPublisherStep.allEventsPoller(outputHandler, eventStore);
         }

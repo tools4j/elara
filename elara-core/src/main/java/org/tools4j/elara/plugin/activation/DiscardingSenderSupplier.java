@@ -24,7 +24,7 @@
 package org.tools4j.elara.plugin.activation;
 
 import org.tools4j.elara.app.config.AppConfig;
-import org.tools4j.elara.command.Command;
+import org.tools4j.elara.app.message.Command;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.handler.CommandSendingCommandHandler;
 import org.tools4j.elara.send.CommandHandlingSender;

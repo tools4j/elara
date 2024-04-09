@@ -24,7 +24,7 @@
 package org.tools4j.elara.plugin.replication;
 
 import org.tools4j.elara.app.handler.EventApplier;
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.logging.ElaraLogger;
 import org.tools4j.elara.logging.Logger;
 

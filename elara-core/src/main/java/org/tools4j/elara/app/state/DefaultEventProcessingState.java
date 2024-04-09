@@ -24,7 +24,6 @@
 package org.tools4j.elara.app.state;
 
 import org.agrona.collections.Int2ObjectHashMap;
-import org.tools4j.elara.app.state.EventProcessingState.MutableEventProcessingState;
 import org.tools4j.elara.flyweight.EventType;
 
 import static java.util.Objects.requireNonNull;
@@ -61,11 +60,11 @@ class DefaultEventProcessingState implements MutableEventProcessingState, ThinBa
     }
 
     @Override
-    public long lastAvailableEventSequence() {
+    public long maxAvailableEventSequence() {
         return lastAvailableEventSequence;
     }
 
-    public void lastAvailableEventSequence(final long evtSeq) {
+    public void maxAvailableEventSequence(final long evtSeq) {
         assert evtSeq >= lastAppliedEventSequence;
         lastAppliedEventSequence = evtSeq;
     }

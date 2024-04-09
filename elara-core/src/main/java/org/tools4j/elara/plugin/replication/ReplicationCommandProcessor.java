@@ -25,7 +25,7 @@ package org.tools4j.elara.plugin.replication;
 
 import org.agrona.collections.IntHashSet;
 import org.tools4j.elara.app.handler.CommandProcessor;
-import org.tools4j.elara.command.Command;
+import org.tools4j.elara.app.message.Command;
 import org.tools4j.elara.logging.ElaraLogger;
 import org.tools4j.elara.logging.Logger;
 import org.tools4j.elara.route.EventRouter;

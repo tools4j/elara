@@ -24,8 +24,8 @@
 package org.tools4j.elara.exception;
 
 import org.agrona.ErrorHandler;
-import org.tools4j.elara.command.Command;
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Command;
+import org.tools4j.elara.app.message.Event;
 
 @FunctionalInterface
 public interface ExceptionHandler extends ErrorHandler {
@@ -42,6 +42,10 @@ public interface ExceptionHandler extends ErrorHandler {
 
     default void handleEventApplierException(final Event event, final Throwable t) {
         handleException("Unhandled exception when applying event", event, t);
+    }
+
+    default void handleEventProcessorException(final Event event, final Throwable t) {
+        handleException("Unhandled exception when processing event", event, t);
     }
 
     default void handleEventOutputException(final Event event, final Throwable t) {

@@ -29,8 +29,8 @@ import org.tools4j.elara.app.config.EventStoreConfig;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.app.state.MutableBaseState;
 import org.tools4j.elara.app.state.SingleEventBaseState;
-import org.tools4j.elara.event.CompositeEventApplier;
-import org.tools4j.elara.handler.DefaultEventHandler;
+import org.tools4j.elara.composite.CompositeEventApplier;
+import org.tools4j.elara.handler.EventApplierHandler;
 import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.plugin.api.PluginSpecification.Installer;
 import org.tools4j.elara.step.AgentStep;
@@ -78,11 +78,11 @@ public class DefaultApplierFactory implements ApplierFactory {
 
     @Override
     public EventHandler eventHandler() {
-        return new DefaultEventHandler(
+        return new EventApplierHandler(
                 baseState,
                 applierSingletons.get().eventApplier(),
                 appConfig.exceptionHandler(),
-                eventStoreConfig.duplicateHandler()
+                applierConfig.duplicateHandler()
         );
     }
 

@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.samples.bank.flyweight;
 
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.samples.bank.event.BankEvent;
 
 public interface FlyweightBankEvent extends BankEvent, BankFlyweight {

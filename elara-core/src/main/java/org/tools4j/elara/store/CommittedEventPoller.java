@@ -24,7 +24,7 @@
 package org.tools4j.elara.store;
 
 import org.agrona.DirectBuffer;
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.flyweight.EventType;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.store.MessageStore.Poller;

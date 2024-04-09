@@ -39,9 +39,11 @@ public class EventReceiverStep implements AgentStep {
     private final EventHandler eventHandler;
 
     private final MessageReceiver.Handler pollerHandler = this::onEvent;
+
     private final FlyweightEvent flyweightEvent = new FlyweightEvent();
 
-    public EventReceiverStep(final MessageReceiver eventReceiver, final EventHandler eventHandler) {
+    public EventReceiverStep(final MessageReceiver eventReceiver,
+                             final EventHandler eventHandler) {
         this.eventReceiver = requireNonNull(eventReceiver);
         this.eventHandler = requireNonNull(eventHandler);
     }

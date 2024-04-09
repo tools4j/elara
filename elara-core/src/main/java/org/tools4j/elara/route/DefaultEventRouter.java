@@ -24,14 +24,14 @@
 package org.tools4j.elara.route;
 
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.message.Command;
 import org.tools4j.elara.app.state.BaseState;
-import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.BaseEvents;
 import org.tools4j.elara.flyweight.EventFrame;
 import org.tools4j.elara.flyweight.EventType;
 import org.tools4j.elara.flyweight.FlyweightEvent;
 import org.tools4j.elara.flyweight.FlyweightHeader;
+import org.tools4j.elara.handler.EventHandler;
 import org.tools4j.elara.store.ExpandableDirectBuffer;
 import org.tools4j.elara.store.MessageStore.Appender;
 import org.tools4j.elara.store.MessageStore.AppendingContext;
@@ -46,7 +46,7 @@ public class DefaultEventRouter implements EventRouter.Default, CommandTransacti
     private final TimeSource timeSource;
     private final BaseState baseState;
     private final Appender appender;
-    private final EventApplier eventApplier;
+    private final EventHandler evendHandler;
     private final RoutingContext routingContext = new RoutingContext();
 
     private Command command;
@@ -56,11 +56,11 @@ public class DefaultEventRouter implements EventRouter.Default, CommandTransacti
     public DefaultEventRouter(final TimeSource timeSource,
                               final BaseState baseState,
                               final Appender appender,
-                              final EventApplier eventApplier) {
+                              final EventHandler evendHandler) {
         this.timeSource = requireNonNull(timeSource);
         this.baseState = requireNonNull(baseState);
         this.appender = requireNonNull(appender);
-        this.eventApplier = requireNonNull(eventApplier);
+        this.evendHandler = requireNonNull(evendHandler);
     }
 
     @Override
@@ -225,7 +225,7 @@ public class DefaultEventRouter implements EventRouter.Default, CommandTransacti
                 FlyweightEvent.writePayloadSize(length, ac.buffer());
             }
             flyweightEvent.wrapSilently(ac.buffer(), HEADER_OFFSET);
-            eventApplier.onEvent(flyweightEvent);
+            evendHandler.onEvent(flyweightEvent);
             flyweightEvent.reset();
             ++nextIndex;
         }

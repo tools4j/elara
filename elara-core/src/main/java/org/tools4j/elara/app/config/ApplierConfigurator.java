@@ -24,7 +24,9 @@
 package org.tools4j.elara.app.config;
 
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.exception.DuplicateHandler;
 
 public interface ApplierConfigurator extends ApplierConfig {
     ApplierConfigurator eventApplier(EventApplier eventApplier);
+    ApplierConfigurator duplicateHandler(DuplicateHandler duplicateHandler);
 }

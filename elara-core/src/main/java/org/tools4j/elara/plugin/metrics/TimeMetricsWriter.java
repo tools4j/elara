@@ -24,8 +24,8 @@
 package org.tools4j.elara.plugin.metrics;
 
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.command.Command;
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Command;
+import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.flyweight.FlyweightTimeMetrics;
 import org.tools4j.elara.plugin.metrics.TimeMetric.Target;
 import org.tools4j.elara.store.MessageStore.Appender;

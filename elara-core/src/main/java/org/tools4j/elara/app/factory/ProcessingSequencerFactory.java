@@ -44,13 +44,13 @@ public class ProcessingSequencerFactory implements SequencerFactory {
     private final AppConfig appConfig;
     private final BaseState baseState;
     private final Supplier<? extends SequencerFactory> sequencerSingletons;
-    private final Supplier<? extends ProcessorFactory> processorSingletons;
+    private final Supplier<? extends CommandProcessorFactory> processorSingletons;
     private final Supplier<? extends InputFactory> inputSingletons;
 
     public ProcessingSequencerFactory(final AppConfig appConfig,
                                       final BaseState baseState,
                                       final Supplier<? extends SequencerFactory> sequencerSingletons,
-                                      final Supplier<? extends ProcessorFactory> processorSingletons,
+                                      final Supplier<? extends CommandProcessorFactory> processorSingletons,
                                       final Supplier<? extends InputFactory> inputSingletons) {
         this.appConfig = requireNonNull(appConfig);
         this.baseState = requireNonNull(baseState);

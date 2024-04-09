@@ -123,16 +123,16 @@ final class AllInOneAppConfiguratorImpl extends AbstractAppConfigurator<AllInOne
     @Override
     public void validate() {
         if (commandProcessor() == null) {
-            throw new IllegalArgumentException("Command processor must be set");
+            throw new IllegalStateException("Command processor must be set");
         }
         if (eventApplier() == null) {
-            throw new IllegalArgumentException("Event applier must be set");
+            throw new IllegalStateException("Event applier must be set");
         }
         if (commandStore() == null && commandPollingMode() != CommandPollingMode.NO_STORE) {
-            throw new IllegalArgumentException("Command store must be set unless command polling mode is NO_STORE");
+            throw new IllegalStateException("Command store must be set unless command polling mode is NO_STORE");
         }
         if (eventStore() == null) {
-            throw new IllegalArgumentException("Event store must be set");
+            throw new IllegalStateException("Event store must be set");
         }
         super.validate();
     }

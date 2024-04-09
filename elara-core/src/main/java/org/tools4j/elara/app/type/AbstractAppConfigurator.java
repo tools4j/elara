@@ -26,7 +26,9 @@ package org.tools4j.elara.app.type;
 import org.agrona.concurrent.BackoffIdleStrategy;
 import org.agrona.concurrent.IdleStrategy;
 import org.tools4j.elara.app.config.AppConfigurator;
+import org.tools4j.elara.app.config.CommandProcessorConfig;
 import org.tools4j.elara.app.config.DefaultPluginConfigurator;
+import org.tools4j.elara.app.config.EventReceiverConfig;
 import org.tools4j.elara.app.config.ExecutionType;
 import org.tools4j.elara.app.config.PluginConfigurator;
 import org.tools4j.elara.app.state.BaseStateProvider;
@@ -44,6 +46,8 @@ import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.plugin.api.PluginSpecification.Installer;
 import org.tools4j.elara.plugin.boot.BootCommandInputPoller;
 import org.tools4j.elara.step.AgentStep;
+import org.tools4j.elara.time.DefaultMutableTimeSource;
+import org.tools4j.elara.time.MutableTimeSource;
 import org.tools4j.elara.time.TimeSource;
 
 import java.util.ArrayList;
@@ -225,7 +229,11 @@ abstract class AbstractAppConfigurator<T extends AbstractAppConfigurator<T>> imp
 
     protected T populateDefaults() {
         if (timeSource == null) {
-            timeSource = System::currentTimeMillis;
+            if (this instanceof CommandProcessorConfig || this instanceof PassthroughAppConfig) {
+                timeSource = System::currentTimeMillis;
+            } else if (this instanceof EventReceiverConfig) {
+                timeSource = new DefaultMutableTimeSource();
+            }
         }
         return self();
     }
@@ -233,7 +241,13 @@ abstract class AbstractAppConfigurator<T extends AbstractAppConfigurator<T>> imp
     @Override
     public void validate() {
         if (timeSource() == null) {
-            throw new IllegalArgumentException("Time source must be set");
+            throw new IllegalStateException("Time source must be set");
+        }
+//        if (this instanceof EventReceiverConfig && !(timeSource() instanceof MutableTimeSource)) {
+//            throw new IllegalStateException("Time source for event receiver apps must be a mutable time source");
+//        }
+        if (this instanceof FeedbackAppConfig && !(timeSource() instanceof MutableTimeSource)) {
+            throw new IllegalStateException("Time source for feedback apps must be a mutable time source");
         }
     }
 }

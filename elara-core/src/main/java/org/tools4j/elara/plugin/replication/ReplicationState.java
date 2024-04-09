@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.plugin.replication;
 
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Event;
 
 public interface ReplicationState {
     int NULL_SERVER = -1;

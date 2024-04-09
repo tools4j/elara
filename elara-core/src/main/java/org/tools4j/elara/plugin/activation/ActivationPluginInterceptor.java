@@ -25,9 +25,9 @@ package org.tools4j.elara.plugin.activation;
 
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.factory.CommandPollerFactory;
-import org.tools4j.elara.app.factory.CommandStreamFactory;
+import org.tools4j.elara.app.factory.CommandProcessorFactory;
+import org.tools4j.elara.app.factory.CommandSenderFactory;
 import org.tools4j.elara.app.factory.Interceptor;
-import org.tools4j.elara.app.factory.ProcessorFactory;
 import org.tools4j.elara.app.factory.SequencerFactory;
 import org.tools4j.elara.app.factory.StateFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
@@ -52,7 +52,7 @@ final class ActivationPluginInterceptor implements Interceptor {
     private final ActivationPlugin plugin;
     private final StateFactory stateFactory;
 
-    private Supplier<? extends ProcessorFactory> processorSingletons;
+    private Supplier<? extends CommandProcessorFactory> processorSingletons;
 
     public ActivationPluginInterceptor(final AppConfig appConfig,
                                        final ActivationPlugin plugin,
@@ -63,8 +63,8 @@ final class ActivationPluginInterceptor implements Interceptor {
     }
 
     @Override
-    public CommandStreamFactory commandStreamFactory(final Supplier<? extends CommandStreamFactory> singletons) {
-        return new CommandStreamFactory() {
+    public CommandSenderFactory commandSenderFactory(final Supplier<? extends CommandSenderFactory> singletons) {
+        return new CommandSenderFactory() {
             @Override
             public MutableInFlightState inFlightState() {
                 return singletons.get().inFlightState();
@@ -91,11 +91,6 @@ final class ActivationPluginInterceptor implements Interceptor {
                     default:
                         throw new IllegalStateException("Invalid command replay mode in activation plugin config: " + mode);
                 }
-            }
-
-            @Override
-            public AgentStep inputPollerStep() {
-                return singletons.get().inputPollerStep();
             }
         };
     }
@@ -130,12 +125,12 @@ final class ActivationPluginInterceptor implements Interceptor {
     }
 
     @Override
-    public ProcessorFactory processorFactory(final Supplier<? extends ProcessorFactory> singletons) {
+    public CommandProcessorFactory commandProcessorFactory(final Supplier<? extends CommandProcessorFactory> singletons) {
         if (hasCommandStore(appConfig)) {
             this.processorSingletons = requireNonNull(singletons);
             return null;//no interception required in this case
         }
-        return new ProcessorFactory() {
+        return new CommandProcessorFactory() {
             @Override
             public CommandProcessor commandProcessor() {
                 return singletons.get().commandProcessor();

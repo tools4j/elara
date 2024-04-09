@@ -49,7 +49,7 @@ public interface Interceptor {
         return null;
     }
 
-    default ProcessorFactory processorFactory(final Supplier<? extends ProcessorFactory> singletons) {
+    default CommandProcessorFactory commandProcessorFactory(final Supplier<? extends CommandProcessorFactory> singletons) {
         return null;
     }
 
@@ -69,11 +69,15 @@ public interface Interceptor {
         return null;
     }
 
-    default CommandStreamFactory commandStreamFactory(final Supplier<? extends CommandStreamFactory> singletons) {
+    default CommandSenderFactory commandSenderFactory(final Supplier<? extends CommandSenderFactory> singletons) {
         return null;
     }
 
-    default EventStreamFactory eventStreamFactory(final Supplier<? extends EventStreamFactory> singletons) {
+    default EventSubscriberFactory eventSubscriberFactory(final Supplier<? extends EventSubscriberFactory> singletons) {
+        return null;
+    }
+
+    default EventProcessorFactory eventProcessorFactory(final Supplier<? extends EventProcessorFactory> singletons) {
         return null;
     }
 }

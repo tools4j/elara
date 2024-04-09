@@ -21,10 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.output;
+package org.tools4j.elara.composite;
 
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.exception.ExceptionHandler;
+import org.tools4j.elara.output.Output;
 
 import static java.util.Objects.requireNonNull;
 
@@ -33,7 +34,7 @@ public class CompositeOutput implements Output {
     private final Output[] outputs;
     private final ExceptionHandler exceptionHandler;
 
-    public CompositeOutput(final Output[] outputs, final ExceptionHandler exceptionHandler) {
+    private CompositeOutput(final Output[] outputs, final ExceptionHandler exceptionHandler) {
         this.outputs = requireNonNull(outputs);
         this.exceptionHandler = requireNonNull(exceptionHandler);
     }
@@ -57,4 +58,9 @@ public class CompositeOutput implements Output {
         return ack;
     }
 
+    public static Output create(final Output[] outputs, final ExceptionHandler exceptionHandler) {
+        requireNonNull(outputs);
+        requireNonNull(exceptionHandler);
+        return Composites.composite(outputs, NOOP, Output[]::new, outs -> new CompositeOutput(outs, exceptionHandler));
+    }
 }

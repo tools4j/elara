@@ -23,10 +23,11 @@
  */
 package org.tools4j.elara.handler;
 
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.output.Output.Ack;
 
 public interface OutputHandler {
+    OutputHandler NOOP = (event, replay, retry) -> Ack.IGNORED;
     Ack publish(Event event, boolean replay, int retry);
 
 }

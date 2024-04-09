@@ -32,8 +32,8 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.app.state.MutableBaseState;
-import org.tools4j.elara.event.Event;
 import org.tools4j.elara.exception.DuplicateHandler;
 import org.tools4j.elara.exception.ExceptionHandler;
 import org.tools4j.elara.flyweight.EventType;
@@ -48,7 +48,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit test for {@link DefaultEventHandler}
+ * Unit test for {@link EventApplierHandler}
  */
 @ExtendWith(MockitoExtension.class)
 public class DefaultEventHandlerTest {
@@ -67,7 +67,7 @@ public class DefaultEventHandlerTest {
 
     @BeforeEach
     public void init() {
-        eventHandler = new DefaultEventHandler(baseState, eventApplier, exceptionHandler, duplicateHandler);
+        eventHandler = new EventApplierHandler(baseState, eventApplier, exceptionHandler, duplicateHandler);
     }
 
     @Test

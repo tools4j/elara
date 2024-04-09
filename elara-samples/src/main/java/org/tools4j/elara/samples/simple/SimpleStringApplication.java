@@ -24,9 +24,9 @@
 package org.tools4j.elara.samples.simple;
 
 import org.agrona.DirectBuffer;
+import org.tools4j.elara.app.message.Command;
+import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.app.type.AllInOneApp;
-import org.tools4j.elara.command.Command;
-import org.tools4j.elara.event.Event;
 import org.tools4j.elara.input.InputPoller;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.route.EventRouter;

@@ -25,7 +25,7 @@ package org.tools4j.elara.samples.bank.flyweight;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.command.Command;
+import org.tools4j.elara.app.message.Command;
 import org.tools4j.elara.logging.Printable;
 import org.tools4j.elara.samples.bank.command.WithdrawCommand.MutableWithdrawCommand;
 

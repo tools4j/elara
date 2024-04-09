@@ -31,15 +31,15 @@ import org.tools4j.elara.app.factory.AgentStepFactory;
 import org.tools4j.elara.app.factory.AppFactory;
 import org.tools4j.elara.app.factory.ApplierFactory;
 import org.tools4j.elara.app.factory.CommandPollerFactory;
+import org.tools4j.elara.app.factory.CommandProcessorFactory;
 import org.tools4j.elara.app.factory.Interceptor;
 import org.tools4j.elara.app.factory.OutputFactory;
-import org.tools4j.elara.app.factory.ProcessorFactory;
 import org.tools4j.elara.app.factory.PublisherFactory;
 import org.tools4j.elara.app.factory.SequencerFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.message.Command;
 import org.tools4j.elara.app.state.ThinEventApplier;
-import org.tools4j.elara.command.Command;
 import org.tools4j.elara.flyweight.PayloadType;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.EventHandler;
@@ -190,7 +190,7 @@ public class MetricsCapturingInterceptor implements Interceptor {
         requireNonNull(invokedMetric);
         //nullable: performedMetric
         requireNonNull(step);
-        if (shouldCapture(STEP_ERROR_FREQUENCY)) {
+        if (shouldCapture(STEP_ERROR_FREQUENCY) && step != AgentStep.NOOP) {
             if (shouldCapture(invokedMetric) || shouldCapture(performedMetric)) {
                 return () -> {
                     try {
@@ -322,13 +322,13 @@ public class MetricsCapturingInterceptor implements Interceptor {
     }
 
     @Override
-    public ProcessorFactory processorFactory(final Supplier<? extends ProcessorFactory> singletons) {
+    public CommandProcessorFactory commandProcessorFactory(final Supplier<? extends CommandProcessorFactory> singletons) {
         requireNonNull(singletons);
         if (shouldCapture(COMMAND_PROCESSED_FREQUENCY) ||
                 shouldCaptureAnyOf(COMMAND) || //includes COMMAND_POLLING_TIME and PROCESSING_END_TIME shouldCapture(PROCESSING_START_TIME) || shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME)) {
                 shouldCapture(PROCESSING_START_TIME) || shouldCapture(ROUTING_START_TIME) || shouldCapture(ROUTING_END_TIME)
         ) {
-            return new ProcessorFactory() {
+            return new CommandProcessorFactory() {
                 @Override
                 public CommandProcessor commandProcessor() {
                     final CommandProcessor commandProcessor = singletons.get().commandProcessor();

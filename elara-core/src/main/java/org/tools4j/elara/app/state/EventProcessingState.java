@@ -28,12 +28,12 @@ package org.tools4j.elara.app.state;
  */
 public interface EventProcessingState extends BaseState {
     /**
-     * Returns the last event sequence that is available from the sequencer, but has not necessarily been
+     * Returns the highest event sequence that is available from the sequencer, but has not necessarily been
      * {@link #lastAppliedEventSequence() applied} yet
      *
      * @return the event sequence of the last available event, or {@link #NIL_SEQUENCE} if no events are available
      */
-    long lastAvailableEventSequence();
+    long maxAvailableEventSequence();
 
     /**
      * Returns the event state for the given source ID, or null if no events from this source have been processed yet.
@@ -49,10 +49,4 @@ public interface EventProcessingState extends BaseState {
      */
     TransientInFlightState transientInFlightState();
 
-    interface MutableEventProcessingState extends EventProcessingState, MutableBaseState {
-        void lastAvailableEventSequence(long evtSeq);
-        EventState lastProcessedEventCreateIfAbsent(int sourceId);
-        @Override
-        MutableInFlightState transientInFlightState();
-    }
 }

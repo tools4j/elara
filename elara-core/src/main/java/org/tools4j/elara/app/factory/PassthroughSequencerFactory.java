@@ -24,11 +24,12 @@
 package org.tools4j.elara.app.factory;
 
 import org.tools4j.elara.app.config.AppConfig;
+import org.tools4j.elara.app.config.ApplierConfig;
 import org.tools4j.elara.app.config.EventStoreConfig;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.app.state.MutableBaseState;
 import org.tools4j.elara.app.state.NoOpInFlightState;
-import org.tools4j.elara.event.CompositeEventApplier;
+import org.tools4j.elara.composite.CompositeEventApplier;
 import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.send.CommandPassthroughSender;
 import org.tools4j.elara.send.DefaultCommandContext;
@@ -45,6 +46,7 @@ public class PassthroughSequencerFactory implements SequencerFactory {
 
     private final AppConfig appConfig;
     private final EventStoreConfig eventStoreConfig;
+    private final ApplierConfig applierConfig;
     private final MutableBaseState baseState;
     private final Supplier<? extends SequencerFactory> sequencerSingletons;
     private final Supplier<? extends InputFactory> inputSingletons;
@@ -52,12 +54,14 @@ public class PassthroughSequencerFactory implements SequencerFactory {
 
     public PassthroughSequencerFactory(final AppConfig appConfig,
                                        final EventStoreConfig eventStoreConfig,
+                                       final ApplierConfig applierConfig,
                                        final MutableBaseState baseState,
                                        final Supplier<? extends SequencerFactory> sequencerSingletons,
                                        final Supplier<? extends InputFactory> inputSingletons,
                                        final Supplier<? extends ApplierFactory> applierSingletons) {
         this.appConfig = requireNonNull(appConfig);
         this.eventStoreConfig = requireNonNull(eventStoreConfig);
+        this.applierConfig = requireNonNull(applierConfig);
         this.baseState = requireNonNull(baseState);
         this.sequencerSingletons = requireNonNull(sequencerSingletons);
         this.inputSingletons = requireNonNull(inputSingletons);
@@ -82,7 +86,7 @@ public class PassthroughSequencerFactory implements SequencerFactory {
     public SenderSupplier senderSupplier() {
         return new CommandPassthroughSender(appConfig.timeSource(), baseState, eventStoreConfig.eventStore().appender(),
                 eventApplier(), appConfig.exceptionHandler(),
-                eventStoreConfig.duplicateHandler());
+                applierConfig.duplicateHandler());
     }
 
     @Override

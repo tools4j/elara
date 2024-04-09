@@ -26,7 +26,7 @@ package org.tools4j.elara.flyweight;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
-import org.tools4j.elara.command.Command;
+import org.tools4j.elara.app.message.Command;
 
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static org.tools4j.elara.flyweight.CommandDescriptor.COMMAND_TIME_OFFSET;

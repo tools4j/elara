@@ -25,14 +25,14 @@ package org.tools4j.elara.app.type;
 
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.ApplierConfig;
+import org.tools4j.elara.app.config.CommandProcessorConfig;
 import org.tools4j.elara.app.config.CommandStoreConfig;
 import org.tools4j.elara.app.config.EventStoreConfig;
 import org.tools4j.elara.app.config.InputConfig;
 import org.tools4j.elara.app.config.OutputConfig;
 import org.tools4j.elara.app.config.PluginConfig;
-import org.tools4j.elara.app.config.ProcessorConfig;
 
-public interface AllInOneAppConfig extends AppConfig, CommandStoreConfig, EventStoreConfig, ProcessorConfig,
+public interface AllInOneAppConfig extends AppConfig, CommandStoreConfig, EventStoreConfig, CommandProcessorConfig,
         ApplierConfig, InputConfig, OutputConfig, PluginConfig {
 
     @Override

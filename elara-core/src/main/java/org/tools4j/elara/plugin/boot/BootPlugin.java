@@ -23,9 +23,9 @@
  */
 package org.tools4j.elara.plugin.boot;
 
+import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.app.state.TransientCommandSourceState;
-import org.tools4j.elara.event.Event;
 import org.tools4j.elara.plugin.api.PluginStateProvider.NullState;
 import org.tools4j.elara.plugin.api.SystemPlugin;
 import org.tools4j.elara.time.TimeSource;

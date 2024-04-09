@@ -65,7 +65,7 @@ final class PassthroughAppConfiguratorImpl extends AbstractAppConfigurator<Passt
     @Override
     public void validate() {
         if (eventStore() == null) {
-            throw new IllegalArgumentException("Event store must be set");
+            throw new IllegalStateException("Event store must be set");
         }
         super.validate();
     }

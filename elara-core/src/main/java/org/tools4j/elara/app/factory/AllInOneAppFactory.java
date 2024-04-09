@@ -35,7 +35,7 @@ import static org.tools4j.elara.app.factory.Bootstrap.bootstrap;
 
 public class AllInOneAppFactory implements AppFactory {
     private final SequencerFactory sequencerSingletons;
-    private final ProcessorFactory processorSingletons;
+    private final CommandProcessorFactory commandProcessorSingletons;
     private final ApplierFactory applierSingletons;
     private final InputFactory inputSingletons;
     private final OutputFactory outputSingletons;
@@ -49,12 +49,12 @@ public class AllInOneAppFactory implements AppFactory {
         final Interceptor interceptor = bootstrap.interceptor();
         this.sequencerSingletons = interceptor.sequencerFactory(singletonsSupplier(
                 config.commandPollingMode() == CommandPollingMode.NO_STORE ?
-                        new ProcessingSequencerFactory(config, bootstrap.baseState(), this::sequencerSingletons, this::processorSingletons, this::inputSingletons) :
+                        new ProcessingSequencerFactory(config, bootstrap.baseState(), this::sequencerSingletons, this::commandProcessorSingletons, this::inputSingletons) :
                         new AppendingSequencerFactory(config, config, bootstrap.baseState(), this::sequencerSingletons, this::inputSingletons),
                 Singletons::create
         ));
-        this.processorSingletons = interceptor.processorFactory(singletonsSupplier(
-                (ProcessorFactory) new DefaultProcessorFactory(config, config, config, bootstrap.baseState(), bootstrap.plugins(), this::processorSingletons, this::applierSingletons),
+        this.commandProcessorSingletons = interceptor.commandProcessorFactory(singletonsSupplier(
+                (CommandProcessorFactory) new DefaultCommandProcessorFactory(config, config, config, config, bootstrap.baseState(), bootstrap.plugins(), this::commandProcessorSingletons, this::applierSingletons),
                 Singletons::create
         ));
         this.applierSingletons = interceptor.applierFactory(singletonsSupplier(
@@ -70,11 +70,11 @@ public class AllInOneAppFactory implements AppFactory {
                 Singletons::create
         ));
         this.commandPollerSingletons = interceptor.commandPollerFactory(singletonsSupplier(
-                (CommandPollerFactory)new DefaultCommandPollerFactory(config, this::commandPollerSingletons, this::processorSingletons),
+                (CommandPollerFactory)new DefaultCommandPollerFactory(config, this::commandPollerSingletons, this::commandProcessorSingletons),
                 Singletons::create
         ));
         this.publisherSingletons = interceptor.publisherFactory(singletonsSupplier(
-                (PublisherFactory)new DefaultPublisherFactory(config, config, bootstrap.baseState(), this::publisherSingletons, this::outputSingletons),
+                (PublisherFactory)new StorePublisherFactory(config, config, bootstrap.baseState(), this::publisherSingletons, this::outputSingletons),
                 Singletons::create
         ));
         this.agentStepSingletons = interceptor.agentStepFactory(singletonsSupplier(
@@ -95,8 +95,8 @@ public class AllInOneAppFactory implements AppFactory {
         return commandPollerSingletons;
     }
 
-    private ProcessorFactory processorSingletons() {
-        return processorSingletons;
+    private CommandProcessorFactory commandProcessorSingletons() {
+        return commandProcessorSingletons;
     }
 
     private ApplierFactory applierSingletons() {

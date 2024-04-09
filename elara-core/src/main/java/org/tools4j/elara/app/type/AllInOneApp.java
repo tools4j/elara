@@ -25,8 +25,8 @@ package org.tools4j.elara.app.type;
 
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
-import org.tools4j.elara.command.Command;
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Command;
+import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.run.Elara;
 import org.tools4j.elara.run.ElaraRunner;

@@ -24,7 +24,7 @@
 package org.tools4j.elara.plugin.activation;
 
 import org.tools4j.elara.app.config.AppConfig;
-import org.tools4j.elara.app.config.CommandStreamConfig;
+import org.tools4j.elara.app.config.CommandSenderConfig;
 import org.tools4j.elara.app.factory.Interceptor;
 import org.tools4j.elara.app.factory.StateFactory;
 import org.tools4j.elara.app.state.BaseState;
@@ -59,7 +59,7 @@ final class ActivationPluginSpecification implements SystemPluginSpecification<A
         return new Installer.Default() {
             @Override
             public Input input(final BaseState baseState) {
-                if (appConfig instanceof CommandStreamConfig) {
+                if (appConfig instanceof CommandSenderConfig) {
                     if (plugin.config().commandReplayMode() == CommandReplayMode.REPLAY) {
                         return new CachePollingInput(plugin, baseState, appConfig.exceptionHandler());
                     }

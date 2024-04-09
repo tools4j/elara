@@ -21,14 +21,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.app.factory;
+package org.tools4j.elara.app.config;
 
-import org.tools4j.elara.app.handler.CommandProcessor;
-import org.tools4j.elara.handler.CommandHandler;
-import org.tools4j.elara.route.CommandTransaction;
+import org.tools4j.elara.store.MessageStore;
+import org.tools4j.elara.stream.MessageReceiver;
 
-public interface ProcessorFactory {
-    CommandProcessor commandProcessor();
-    CommandTransaction commandTransaction();
-    CommandHandler commandHandler();
+public interface EventReceiverConfigurator extends EventReceiverConfig {
+    EventReceiverConfigurator eventStore(MessageStore eventStore);
+    EventReceiverConfigurator eventStore(MessageStore.Poller eventStorePoller);
+    EventReceiverConfigurator eventReceiver(MessageReceiver eventReceiver);
 }

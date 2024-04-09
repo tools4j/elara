@@ -23,8 +23,7 @@
  */
 package org.tools4j.elara.app.type;
 
-import org.tools4j.elara.app.config.EventStreamConfigurator;
-import org.tools4j.elara.app.handler.EventProcessor;
+import org.tools4j.elara.app.config.EventReceiverConfigurator;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.store.MessageStore.Poller;
 import org.tools4j.elara.store.StorePollingMessageReceiver;
@@ -32,10 +31,9 @@ import org.tools4j.elara.stream.MessageReceiver;
 
 import static java.util.Objects.requireNonNull;
 
-abstract class AbstractEventStreamConfigurator<T extends AbstractEventStreamConfigurator<T>> extends AbstractAppConfigurator<T> implements EventStreamConfigurator {
+abstract class AbstractEventReceiverConfigurator<T extends AbstractEventReceiverConfigurator<T>> extends AbstractAppConfigurator<T> implements EventReceiverConfigurator {
 
     private MessageReceiver eventReceiver;
-    private EventProcessor eventProcessor;
 
     @Override
     public MessageReceiver eventReceiver() {
@@ -59,23 +57,9 @@ abstract class AbstractEventStreamConfigurator<T extends AbstractEventStreamConf
     }
 
     @Override
-    public EventProcessor eventProcessor() {
-        return eventProcessor;
-    }
-
-    @Override
-    public T eventProcessor(final EventProcessor eventProcessor) {
-        this.eventProcessor = requireNonNull(eventProcessor);
-        return self();
-    }
-
-    @Override
     public void validate() {
         if (eventReceiver() == null) {
-            throw new IllegalArgumentException("Event receiver or event store must be set");
-        }
-        if (eventProcessor() == null) {
-            throw new IllegalArgumentException("Event processor must be set");
+            throw new IllegalStateException("Event receiver or event store must be set");
         }
         super.validate();
     }

@@ -26,11 +26,9 @@ package org.tools4j.elara.app.factory;
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.OutputConfig;
 import org.tools4j.elara.app.state.BaseState;
-import org.tools4j.elara.output.CompositeOutput;
+import org.tools4j.elara.composite.CompositeOutput;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.PluginSpecification.Installer;
-
-import java.util.Arrays;
 
 import static java.util.Objects.requireNonNull;
 
@@ -57,20 +55,10 @@ public class DefaultOutputFactory implements OutputFactory {
             return outputConfig.output();
         }
         final Output[] outputs = new Output[plugins.length + 1];
-        int count = 0;
-        for (final Installer plugin : plugins) {
-            outputs[count] = plugin.output(baseState);
-            if (outputs[count] != Output.NOOP) {
-                count++;
-            }
+        for (int i = 0; i < plugins.length; i++) {
+            outputs[i] = plugins[i].output(baseState);
         }
-        if (count == 0) {
-            return outputConfig.output();
-        }
-        outputs[count++] = outputConfig.output();//application output last
-        return new CompositeOutput(
-                count == outputs.length ? outputs : Arrays.copyOf(outputs, count),
-                appConfig.exceptionHandler()
-        );
+        outputs[plugins.length] = outputConfig.output();//application output last
+        return CompositeOutput.create(outputs, appConfig.exceptionHandler());
     }
 }

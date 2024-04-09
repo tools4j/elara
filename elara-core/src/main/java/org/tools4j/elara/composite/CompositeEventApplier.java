@@ -21,9 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.event;
+package org.tools4j.elara.composite;
 
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.app.state.ThinEventApplier;
 import org.tools4j.elara.flyweight.EventType;
 
@@ -52,33 +53,15 @@ public class CompositeEventApplier implements EventApplier {
 
     public static EventApplier create(final EventApplier... appliers) {
         boolean allThin = true;
-        int count = 0;
-        for (int i = 0; i < appliers.length; i++) {
-            count += (appliers[i] == NOOP ? 0 : 1);
-            allThin = appliers[i] instanceof ThinEventApplier;
-        }
-        if (count == 0) {
-            return NOOP;
-        }
-        if (count == 1) {
-            for (int i = 0; i < appliers.length; i++) {
-                if (appliers[i] != NOOP) {
-                    return appliers[i];
-                }
-            }
-            throw new InternalError("Should have exactly 1 non-NOOP applier");
-        }
-        final EventApplier[] components = allThin ? new ThinEventApplier[count] : new EventApplier[count];
-        int index = 0;
-        for (int i = 0; i < appliers.length; i++) {
-            if (appliers[i] != NOOP) {
-                components[index] = appliers[i];
-                index++;
+        for (final EventApplier applier : appliers) {
+            allThin = applier instanceof ThinEventApplier;
+            if (!allThin) {
+                break;
             }
         }
-        assert index == count;
-        return allThin ? new CompositeThinEventApplier((ThinEventApplier[])components)
-                : new CompositeEventApplier(components);
+        return allThin
+                ? Composites.compositeExt(appliers, ThinEventApplier.NOOP, ThinEventApplier.class::cast, ThinEventApplier[]::new, CompositeThinEventApplier::new)
+                : Composites.composite(appliers, NOOP, EventApplier[]::new, CompositeEventApplier::new);
     }
 
     @Override

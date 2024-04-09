@@ -21,15 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.app.config;
+package org.tools4j.elara.app.factory;
 
-import org.tools4j.elara.app.handler.EventProcessor;
-import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.stream.MessageReceiver;
+import org.tools4j.elara.handler.PlaybackHandler;
+import org.tools4j.elara.step.AgentStep;
 
-public interface EventStreamConfigurator extends EventStreamConfig {
-    EventStreamConfigurator eventStore(MessageStore eventStore);
-    EventStreamConfigurator eventStore(MessageStore.Poller eventStorePoller);
-    EventStreamConfigurator eventReceiver(MessageReceiver eventReceiver);
-    EventStreamConfigurator eventProcessor(EventProcessor eventProcessor);
+public interface EventSubscriberFactory {
+    PlaybackHandler playbackHandler();
+    AgentStep playbackPollerStep();
 }

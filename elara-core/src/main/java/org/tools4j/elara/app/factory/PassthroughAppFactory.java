@@ -28,6 +28,7 @@ import org.tools4j.elara.agent.PassthroughAgent;
 import org.tools4j.elara.app.config.ApplierConfig;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.app.type.PassthroughAppConfig;
+import org.tools4j.elara.exception.DuplicateHandler;
 
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -36,6 +37,7 @@ import static java.util.Objects.requireNonNull;
 import static org.tools4j.elara.app.factory.Bootstrap.bootstrap;
 
 public class PassthroughAppFactory implements AppFactory {
+    private static final ApplierConfig NOOP_APPLIER_CONFIG = new NoOpApplierConfig();
     private final SequencerFactory sequencerSingletons;
     private final ApplierFactory applierSingletons;
     private final InputFactory inputSingletons;
@@ -48,7 +50,7 @@ public class PassthroughAppFactory implements AppFactory {
         final Bootstrap bootstrap = bootstrap(config, config);
         final Interceptor interceptor = bootstrap.interceptor();
         this.sequencerSingletons = interceptor.sequencerFactory(singletonsSupplier(
-                (SequencerFactory) new PassthroughSequencerFactory(config, config, bootstrap.baseState(), this::sequencerSingletons, this::inputSingletons, this::applierSingletons),
+                (SequencerFactory) new PassthroughSequencerFactory(config, config, applierConfig(config), bootstrap.baseState(), this::sequencerSingletons, this::inputSingletons, this::applierSingletons),
                 Singletons::create
         ));
         this.applierSingletons = interceptor.applierFactory(singletonsSupplier(
@@ -64,7 +66,7 @@ public class PassthroughAppFactory implements AppFactory {
                 Singletons::create
         ));
         this.publisherSingletons = interceptor.publisherFactory(singletonsSupplier(
-                (PublisherFactory)new DefaultPublisherFactory(config, config, bootstrap.baseState(), this::publisherSingletons, this::outputSingletons),
+                (PublisherFactory)new StorePublisherFactory(config, config, bootstrap.baseState(), this::publisherSingletons, this::outputSingletons),
                 Singletons::create
         ));
         this.agentStepSingletons = interceptor.agentStepFactory(singletonsSupplier(
@@ -76,12 +78,24 @@ public class PassthroughAppFactory implements AppFactory {
         ));
     }
 
+    private static class NoOpApplierConfig implements ApplierConfig {
+        @Override
+        public EventApplier eventApplier() {
+            return EventApplier.NOOP;
+        }
+
+        @Override
+        public DuplicateHandler duplicateHandler() {
+            return DuplicateHandler.NOOP;
+        }
+    }
+
     private ApplierConfig applierConfig(final PassthroughAppConfig config) {
         requireNonNull(config);
         if (config instanceof ApplierConfig) {
             return (ApplierConfig)config;
         }
-        return () -> EventApplier.NOOP;
+        return NOOP_APPLIER_CONFIG;
     }
 
     private <T> Supplier<T> singletonsSupplier(final T factory, final UnaryOperator<T> singletonOp) {

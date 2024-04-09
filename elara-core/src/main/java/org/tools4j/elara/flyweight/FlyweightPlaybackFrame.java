@@ -34,7 +34,7 @@ import static org.tools4j.elara.flyweight.PlaybackDescriptor.PAYLOAD_OFFSET;
 
 /**
  * A flyweight playback frame for reading and writing playback event or heartbeat data laid out as per
- * {@link EventDescriptor} definition.
+ * {@link PlaybackDescriptor} definition.
  */
 public class FlyweightPlaybackFrame implements Flyweight<FlyweightPlaybackFrame>, PlaybackFrame {
     public static final int HEADER_LENGTH = PlaybackDescriptor.HEADER_LENGTH;

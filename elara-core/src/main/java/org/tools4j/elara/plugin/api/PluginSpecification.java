@@ -30,8 +30,10 @@ import org.tools4j.elara.app.factory.Interceptor;
 import org.tools4j.elara.app.factory.StateFactory;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.handler.EventApplier;
+import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.app.state.MutableBaseState;
+import org.tools4j.elara.app.state.MutableEventProcessingState;
 import org.tools4j.elara.input.Input;
 import org.tools4j.elara.output.Output;
 import org.tools4j.elara.step.AgentStep;
@@ -77,6 +79,7 @@ public interface PluginSpecification<P> {
         Output output(BaseState baseState);
         CommandProcessor commandProcessor(BaseState baseState);
         EventApplier eventApplier(MutableBaseState baseState);
+        EventProcessor eventProcessor(MutableEventProcessingState eventProcessingState);
         Interceptor interceptor(StateFactory stateFactory);
         interface Default extends Installer {
             @Override
@@ -89,6 +92,12 @@ public interface PluginSpecification<P> {
             default CommandProcessor commandProcessor(final BaseState baseState) {return CommandProcessor.NOOP;}
             @Override
             default EventApplier eventApplier(final MutableBaseState baseState) {return EventApplier.NOOP;}
+
+            @Override
+            default EventProcessor eventProcessor(final MutableEventProcessingState eventProcessingState) {
+                return EventProcessor.NOOP;
+            }
+
             @Override
             default Interceptor interceptor(final StateFactory stateFactory) {return Interceptor.NOOP;}
         }

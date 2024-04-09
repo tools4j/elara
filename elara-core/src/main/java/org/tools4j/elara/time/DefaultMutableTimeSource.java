@@ -21,31 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.command;
+package org.tools4j.elara.time;
 
-import org.agrona.DirectBuffer;
-import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.flyweight.PayloadType;
-import org.tools4j.elara.flyweight.Writable;
-import org.tools4j.elara.logging.Printable;
+public class DefaultMutableTimeSource implements MutableTimeSource {
+    private long time = MIN_VALUE;
 
-public interface Command extends Writable, Printable {
-    int sourceId();
-    long sourceSequence();
-
-    long commandTime();
-
-    int payloadType();
-
-    default boolean isSystem() {
-        return PayloadType.isSystem(payloadType());
+    @Override
+    public long currentTime() {
+        return time;
     }
 
-    default boolean isApplication() {
-        return PayloadType.isApplication(payloadType());
+    @Override
+    public MutableTimeSource currentTime(final long time) {
+        this.time = time;
+        return this;
     }
-
-    DirectBuffer payload();
-
-    int writeTo(MutableDirectBuffer buffer, int offset);
 }

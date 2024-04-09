@@ -25,7 +25,7 @@ package org.tools4j.elara.store;
 
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.flyweight.BaseEvents;
 import org.tools4j.elara.flyweight.EventFrame;
 import org.tools4j.elara.flyweight.EventType;

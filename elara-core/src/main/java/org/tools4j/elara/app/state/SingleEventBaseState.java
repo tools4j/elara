@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.app.state;
 
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.flyweight.EventType;
 
 import static java.util.Objects.requireNonNull;

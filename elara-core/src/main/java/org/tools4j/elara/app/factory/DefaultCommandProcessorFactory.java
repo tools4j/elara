@@ -24,11 +24,12 @@
 package org.tools4j.elara.app.factory;
 
 import org.tools4j.elara.app.config.AppConfig;
+import org.tools4j.elara.app.config.ApplierConfig;
+import org.tools4j.elara.app.config.CommandProcessorConfig;
 import org.tools4j.elara.app.config.EventStoreConfig;
-import org.tools4j.elara.app.config.ProcessorConfig;
 import org.tools4j.elara.app.handler.CommandProcessor;
 import org.tools4j.elara.app.state.BaseState;
-import org.tools4j.elara.command.CompositeCommandProcessor;
+import org.tools4j.elara.composite.CompositeCommandProcessor;
 import org.tools4j.elara.handler.CommandHandler;
 import org.tools4j.elara.handler.DeduplicatingCommandHandler;
 import org.tools4j.elara.handler.ProcessingCommandHandler;
@@ -36,58 +37,51 @@ import org.tools4j.elara.plugin.api.PluginSpecification.Installer;
 import org.tools4j.elara.route.CommandTransaction;
 import org.tools4j.elara.route.DefaultEventRouter;
 
-import java.util.Arrays;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
-public class DefaultProcessorFactory implements ProcessorFactory {
+public class DefaultCommandProcessorFactory implements CommandProcessorFactory {
 
     private final AppConfig appConfig;
-    private final ProcessorConfig processorConfig;
+    private final CommandProcessorConfig commandProcessorConfig;
     private final EventStoreConfig eventStoreConfig;
+    private final ApplierConfig applierConfig;
     private final BaseState baseState;
     private final Installer[] plugins;
-    private final Supplier<? extends ProcessorFactory> processorSingletons;
+    private final Supplier<? extends CommandProcessorFactory> commandProcessorSingletons;
     private final Supplier<? extends ApplierFactory> applierSingletons;
 
-    public DefaultProcessorFactory(final AppConfig appConfig,
-                                   final ProcessorConfig processorConfig,
-                                   final EventStoreConfig eventStoreConfig,
-                                   final BaseState baseState,
-                                   final Installer[] plugins,
-                                   final Supplier<? extends ProcessorFactory> processorSingletons,
-                                   final Supplier<? extends ApplierFactory> applierSingletons) {
+    public DefaultCommandProcessorFactory(final AppConfig appConfig,
+                                          final CommandProcessorConfig commandProcessorConfig,
+                                          final EventStoreConfig eventStoreConfig,
+                                          final ApplierConfig applierConfig,
+                                          final BaseState baseState,
+                                          final Installer[] plugins,
+                                          final Supplier<? extends CommandProcessorFactory> commandProcessorSingletons,
+                                          final Supplier<? extends ApplierFactory> applierSingletons) {
         this.appConfig = requireNonNull(appConfig);
-        this.processorConfig = requireNonNull(processorConfig);
+        this.applierConfig = requireNonNull(applierConfig);
+        this.commandProcessorConfig = requireNonNull(commandProcessorConfig);
         this.eventStoreConfig = requireNonNull(eventStoreConfig);
         this.baseState = requireNonNull(baseState);
         this.plugins = requireNonNull(plugins);
-        this.processorSingletons = requireNonNull(processorSingletons);
+        this.commandProcessorSingletons = requireNonNull(commandProcessorSingletons);
         this.applierSingletons = requireNonNull(applierSingletons);
     }
 
     @Override
     public CommandProcessor commandProcessor() {
-        final CommandProcessor commandProcessor = processorConfig.commandProcessor();
+        final CommandProcessor commandProcessor = commandProcessorConfig.commandProcessor();
         if (plugins.length == 0) {
             return commandProcessor;
         }
         final CommandProcessor[] processors = new CommandProcessor[plugins.length + 1];
-        int count = 1;
-        for (final Installer plugin : plugins) {
-            processors[count] = plugin.commandProcessor(baseState);
-            if (processors[count] != CommandProcessor.NOOP) {
-                count++;
-            }
-        }
-        if (count == 1) {
-            return commandProcessor;
+        for (int i = 0; i < plugins.length; i++) {
+            processors[i + 1] = plugins[i].commandProcessor(baseState);
         }
         processors[0] = commandProcessor;//application processor first
-        return new CompositeCommandProcessor(
-                count == processors.length ? processors : Arrays.copyOf(processors, count)
-        );
+        return CompositeCommandProcessor.create(processors);
     }
 
     @Override
@@ -105,9 +99,9 @@ public class DefaultProcessorFactory implements ProcessorFactory {
         return new DeduplicatingCommandHandler(
                 baseState,
                 new ProcessingCommandHandler(
-                        processorSingletons.get().commandTransaction(),
-                        processorSingletons.get().commandProcessor()),
+                        commandProcessorSingletons.get().commandTransaction(),
+                        commandProcessorSingletons.get().commandProcessor()),
                 appConfig.exceptionHandler(),
-                eventStoreConfig.duplicateHandler());
+                applierConfig.duplicateHandler());
     }
 }

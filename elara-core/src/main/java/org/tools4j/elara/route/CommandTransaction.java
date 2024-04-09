@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.route;
 
-import org.tools4j.elara.command.Command;
+import org.tools4j.elara.app.message.Command;
 
 public interface CommandTransaction {
     EventRouter start(Command command);

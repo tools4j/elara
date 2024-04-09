@@ -21,12 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.app.config;
+package org.tools4j.elara.handler;
 
-import org.tools4j.elara.app.handler.EventProcessor;
-import org.tools4j.elara.stream.MessageReceiver;
+import org.tools4j.elara.flyweight.PlaybackFrame;
 
-public interface EventStreamConfig {
-    MessageReceiver eventReceiver();
-    EventProcessor eventProcessor();
+public interface PlaybackHandler {
+    void onPlaybackFrame(PlaybackFrame playbackFrame);
 }

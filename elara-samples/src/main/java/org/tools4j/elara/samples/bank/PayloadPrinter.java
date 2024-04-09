@@ -23,8 +23,8 @@
  */
 package org.tools4j.elara.samples.bank;
 
-import org.tools4j.elara.command.Command;
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Command;
+import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.logging.Printable;
 import org.tools4j.elara.samples.bank.command.CommandType;
 import org.tools4j.elara.samples.bank.event.EventType;

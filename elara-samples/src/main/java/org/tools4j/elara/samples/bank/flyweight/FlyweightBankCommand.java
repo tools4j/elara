@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.samples.bank.flyweight;
 
-import org.tools4j.elara.command.Command;
+import org.tools4j.elara.app.message.Command;
 import org.tools4j.elara.samples.bank.command.BankCommand;
 
 public interface FlyweightBankCommand extends BankCommand, BankFlyweight {

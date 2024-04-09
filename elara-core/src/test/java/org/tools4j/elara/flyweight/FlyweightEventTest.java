@@ -26,7 +26,7 @@ package org.tools4j.elara.flyweight;
 import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.junit.jupiter.api.Test;
-import org.tools4j.elara.event.Event;
+import org.tools4j.elara.app.message.Event;
 
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
