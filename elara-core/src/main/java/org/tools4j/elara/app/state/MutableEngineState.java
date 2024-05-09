@@ -21,9 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.plugin.activation;
+package org.tools4j.elara.app.state;
 
-public enum CommandReplayMode {
-    REPLAY,
-    DISCARD
+public interface MutableEngineState extends TransientEngineState {
+    void maxAvailableEventSequence(long eventSeq);
+    void newestEventTime(long eventTime);
+    void maxAvailableSourceSequence(int sourceId, long sourceSeq);
 }

@@ -36,18 +36,18 @@ import static java.util.Objects.requireNonNull;
 
 public class ActivationConfiguratorImpl implements ActivationConfigurator {
 
-    private CommandReplayMode commandReplayMode = CommandReplayMode.DISCARD;
+    private CommandCachingMode commandCachingMode = CommandCachingMode.DISCARD;
     private MessageSender commandCacheSender;
     private MessageReceiver commandCacheReceiver;
 
     @Override
-    public CommandReplayMode commandReplayMode() {
-        return commandReplayMode;
+    public CommandCachingMode commandCachingMode() {
+        return commandCachingMode;
     }
 
     @Override
-    public ActivationConfigurator commandReplayMode(final CommandReplayMode mode) {
-        this.commandReplayMode = requireNonNull(mode);
+    public ActivationConfigurator commandCachingMode(final CommandCachingMode mode) {
+        this.commandCachingMode = requireNonNull(mode);
         return this;
     }
 
@@ -90,23 +90,24 @@ public class ActivationConfiguratorImpl implements ActivationConfigurator {
     @Override
     public void validate(final AppConfig appConfig) {
         final AppType appType = appConfig.appType();
-        final CommandReplayMode replayMode = commandReplayMode();
-        if (replayMode == CommandReplayMode.REPLAY) {
+        final CommandCachingMode mode = commandCachingMode();
+        if (mode == CommandCachingMode.REPLAY) {
             if (appType.isSequencerApp() || appType.isProcessorApp()) {
-                if (!hasCommandStore(appConfig)) {
+                if (!appType.hasCommandStore(appConfig)) {
                     throw new IllegalArgumentException("Sequencer or processor app must have command store if command " +
-                            CommandReplayMode.REPLAY + " mode is set");
+                            mode + " mode is set");
                 }
             } else {
                 if (commandCacheSender == null || commandCacheReceiver == null) {
                     throw new IllegalArgumentException("Command cache sender and receiver must be defined if command " +
-                            CommandReplayMode.REPLAY + " mode is set");
+                            mode + " mode is set");
                 }
             }
+        } else if (mode == CommandCachingMode.REJECT) {
+            if (appType.hasCommandStore(appConfig)) {
+                throw new IllegalArgumentException("App cannot have a command store if command " +
+                        mode + " mode is set");
+            }
         }
-    }
-
-    static boolean hasCommandStore(final AppConfig appConfig) {
-        return appConfig.appType().hasCommandStore(appConfig);
     }
 }

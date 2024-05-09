@@ -28,7 +28,7 @@ import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageSender;
 
 public interface ActivationConfig {
-    CommandReplayMode commandReplayMode();
+    CommandCachingMode commandCachingMode();
     MessageSender commandCacheSender();
     MessageReceiver commandCacheReceiver();
     void validate(AppConfig appConfig);

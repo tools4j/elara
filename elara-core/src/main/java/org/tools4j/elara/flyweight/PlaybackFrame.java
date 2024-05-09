@@ -23,7 +23,7 @@
  */
 package org.tools4j.elara.flyweight;
 
-import org.agrona.DirectBuffer;
+import org.tools4j.elara.app.message.Event;
 
 /**
  * A {@link Frame} for playback data.
@@ -36,10 +36,9 @@ public interface PlaybackFrame extends Frame {
         return PlaybackDescriptor.HEADER_LENGTH;
     }
 
-    long engineTime();
+    Event event();
+
+    long maxAvailableSourceSequence();
     long maxAvailableEventSequence();
-    default int payloadSize() {
-        return payload().capacity();
-    }
-    DirectBuffer payload();
+    long newestEventTime();
 }

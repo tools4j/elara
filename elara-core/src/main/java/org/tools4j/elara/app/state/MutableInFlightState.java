@@ -24,5 +24,7 @@
 package org.tools4j.elara.app.state;
 
 public interface MutableInFlightState extends TransientInFlightState, ThinEventApplier {
+    MutableInFlightState NO_IN_FLIGHT_STATE = new NoInFlightState();
+
     void onCommandSent(int sourceId, long sourceSequence, long sendingTime);
 }

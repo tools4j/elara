@@ -34,11 +34,12 @@ public interface BaseState {
     long MIN_SEQUENCE = SequenceGenerator.MIN_SEQUENCE;
 
     /**
-     * Returns the last event sequence already applied for the specified source ID.
+     * Returns the last command sequence already applied for the specified source ID.
      * @param sourceId the source ID
-     * @return the last event sequence for the specified source ID, or {@link #NIL_SEQUENCE} if unavailable
+     * @return the source sequence of the last command for specified source ID, or {@link #NIL_SEQUENCE} if unavailable
      */
     long lastAppliedCommandSequence(int sourceId);
+
     /**
      * Returns the last event sequence already applied.
      * @return the event sequence of the last applied event, or {@link #NIL_SEQUENCE} if no events have been applied yet

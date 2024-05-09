@@ -68,7 +68,7 @@ public class DefaultEventSubscriberFactory implements EventSubscriberFactory {
     @Override
     public PlaybackHandler playbackHandler() {
         return new DefaultPlaybackHandler(
-                timeSource(), eventProcessingState, eventProcessorSingletons.get().eventHandler()
+                eventProcessingState.transientEngineState(), eventProcessorSingletons.get().eventHandler()
         );
     }
 

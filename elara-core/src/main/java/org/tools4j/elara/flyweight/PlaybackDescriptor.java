@@ -27,18 +27,20 @@ package org.tools4j.elara.flyweight;
  * Descriptor of replay message layout in a byte buffer:
  * <pre>
 
-    Playback Header: Type=6
+    Playback Event Header: Type=6
 
     0         1         2         3         4         5         6
     0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     |Version|Type=06|   Reserved    |          Frame Size           |
     +-------+-------+-------+-------+-------+-------+-------+-------+
-    |                          Engine Time                          |
+    |                 Max Available Source Sequence                 |
     +-------+-------+-------+-------+-------+-------+-------+-------+
-    |                Max Available Event Sequence                   |
+    |                 Max Available Event Sequence                  |
     +-------+-------+-------+-------+-------+-------+-------+-------+
-    |                            Payload                            |
+    |                       Newest Event Time                       |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                      Event Frame Payload                      |
     |                             ...                               |
 
  * </pre>
@@ -47,14 +49,16 @@ package org.tools4j.elara.flyweight;
  */
 public enum PlaybackDescriptor {
     ;
-    public static final int ENGINE_TIME_OFFSET = FrameDescriptor.HEADER_LENGTH;
-    public static final int ENGINE_TIME_LENGTH = Long.BYTES;
-
-    public static final int MAX_AVAILABLE_EVT_SEQ_OFFSET = ENGINE_TIME_OFFSET + ENGINE_TIME_LENGTH;
+    public static final int MAX_AVAILABLE_SOURCE_SEQ_OFFSET = FrameDescriptor.HEADER_LENGTH;
+    public static final int MAX_AVAILABLE_SOURCE_SEQ_LENGTH = Long.BYTES;
+    public static final int MAX_AVAILABLE_EVT_SEQ_OFFSET = MAX_AVAILABLE_SOURCE_SEQ_OFFSET + MAX_AVAILABLE_SOURCE_SEQ_LENGTH;
     public static final int MAX_AVAILABLE_EVT_SEQ_LENGTH = Long.BYTES;
 
+    public static final int NEWEST_EVENT_TIME_OFFSET = MAX_AVAILABLE_EVT_SEQ_OFFSET + MAX_AVAILABLE_EVT_SEQ_LENGTH;
+    public static final int NEWEST_EVENT_TIME_LENGTH = Long.BYTES;
+
     public static final int HEADER_OFFSET = FrameDescriptor.HEADER_OFFSET;
-    public static final int HEADER_LENGTH = MAX_AVAILABLE_EVT_SEQ_OFFSET + MAX_AVAILABLE_EVT_SEQ_LENGTH;
+    public static final int HEADER_LENGTH = NEWEST_EVENT_TIME_OFFSET + NEWEST_EVENT_TIME_LENGTH;
 
     public static final int PAYLOAD_OFFSET = HEADER_LENGTH;
 }

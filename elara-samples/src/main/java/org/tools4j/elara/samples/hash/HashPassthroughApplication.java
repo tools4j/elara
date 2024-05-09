@@ -30,6 +30,7 @@ import org.agrona.concurrent.BusySpinIdleStrategy;
 import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.app.state.SingleEventBaseState;
 import org.tools4j.elara.app.type.PassthroughApp;
+import org.tools4j.elara.app.type.PassthroughAppConfigurator;
 import org.tools4j.elara.app.type.PublisherApp;
 import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.plugin.api.Plugins;
@@ -89,6 +90,15 @@ public class HashPassthroughApplication implements PassthroughApp {
     private static ElaraRunner chronicleQueueWithMetrics(final String folder,
                                                          final AtomicLong input,
                                                          final boolean timeMetrics) {
+        return new HashPassthroughApplication().launch(
+                config -> configureChronicleQueueWithMetrics(config, folder, timeMetrics)
+                        .input(SOURCE_ID, HashApplication.inputPoller(input))
+        );
+    }
+
+    protected static PassthroughAppConfigurator configureChronicleQueueWithMetrics(final PassthroughAppConfigurator config,
+                                                                                   final String folder,
+                                                                                   final boolean timeMetrics) {
         final String path = "build/chronicle/" + folder;
         IoUtil.delete(new File(path), true);
         final TimeSource pseudoNanoClock = new PseudoMicroClock();
@@ -113,13 +123,11 @@ public class HashPassthroughApplication implements PassthroughApp {
                 .timeMetrics(INPUT_SENDING_TIME, INPUT_POLLING_TIME, PROCESSING_START_TIME, PROCESSING_END_TIME, ROUTING_START_TIME, APPLYING_START_TIME, APPLYING_END_TIME, ROUTING_END_TIME, OUTPUT_START_TIME, OUTPUT_END_TIME)
                 .inputSendingTimeExtractor((sourceId, sequence, type, buffer, offset, length) -> pseudoNanoClock.currentTime() - 100_000)//for testing only
                 .timeMetricsStore(new ChronicleMessageStore(tq));
-        return new HashPassthroughApplication().launch(config -> config
-                .input(SOURCE_ID, HashApplication.inputPoller(input))
+        return config
                 .eventStore(new ChronicleMessageStore(eq))
                 .timeSource(pseudoNanoClock)
                 .idleStrategy(BusySpinIdleStrategy.INSTANCE)
-                .plugin(Plugins.metricsPlugin(metricsConfig))
-        );
+                .plugin(Plugins.metricsPlugin(metricsConfig));
     }
 
     public static ElaraRunner publisherWithState(final String folder, final ModifiableState state) {

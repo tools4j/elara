@@ -21,29 +21,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.handler;
+package org.tools4j.elara.plugin.activation;
 
-import org.tools4j.elara.app.message.Event;
-import org.tools4j.elara.app.state.MutableEngineState;
-import org.tools4j.elara.flyweight.PlaybackFrame;
-
-import static java.util.Objects.requireNonNull;
-
-public class DefaultPlaybackHandler implements PlaybackHandler {
-    private final MutableEngineState engineState;
-    private final EventHandler eventHandler;
-
-    public DefaultPlaybackHandler(final MutableEngineState engineState, final EventHandler eventHandler) {
-        this.engineState = requireNonNull(engineState);
-        this.eventHandler = requireNonNull(eventHandler);
-    }
-
-    @Override
-    public void onPlaybackFrame(final PlaybackFrame playbackFrame) {
-        final Event event = playbackFrame.event();
-        engineState.maxAvailableSourceSequence(event.sourceId(), playbackFrame.maxAvailableSourceSequence());
-        engineState.maxAvailableEventSequence(playbackFrame.maxAvailableEventSequence());
-        engineState.newestEventTime(playbackFrame.newestEventTime());
-        eventHandler.onEvent(event);
-    }
+public enum CommandCachingMode {
+    /** In inactive state, sent commands are cached and later replayed on activation */
+    REPLAY,
+    /** In inactive state, command sending attempts lead to an exception */
+    REJECT,
+    /** In inactive state, sent commands are silently discarded */
+    DISCARD
 }

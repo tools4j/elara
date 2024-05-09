@@ -34,7 +34,7 @@ public interface MutableBaseState extends BaseState, EventApplier {
 
     static MutableBaseState createDefault(final AppConfig config) {
         if (config instanceof FeedbackAppConfig) {
-            return new DefaultEventProcessingState(new DefaultInFlightState());
+            return new DefaultEventProcessingState();
         }
         if (config instanceof PassthroughAppConfig && !(config instanceof ApplierConfig)) {
             return new SingleEventBaseState();

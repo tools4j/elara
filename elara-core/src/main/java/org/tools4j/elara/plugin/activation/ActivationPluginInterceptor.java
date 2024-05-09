@@ -44,7 +44,6 @@ import org.tools4j.elara.store.MessageStore.Poller;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.plugin.activation.ActivationConfiguratorImpl.hasCommandStore;
 
 final class ActivationPluginInterceptor implements Interceptor {
 
@@ -82,10 +81,11 @@ final class ActivationPluginInterceptor implements Interceptor {
 
             @Override
             public SenderSupplier senderSupplier() {
-                final CommandReplayMode mode = plugin.config().commandReplayMode();
+                final CommandCachingMode mode = plugin.config().commandCachingMode();
                 switch (mode) {
                     case REPLAY:
                         return new CachingSenderSupplier(appConfig, plugin);
+                    case REJECT://fallthrough
                     case DISCARD:
                         return new DiscardingSenderSupplier(appConfig, plugin, singletons.get().senderSupplier());
                     default:
@@ -176,5 +176,9 @@ final class ActivationPluginInterceptor implements Interceptor {
                 return singletons.get().commandPollerStep();
             }
         };
+    }
+
+    private static boolean hasCommandStore(final AppConfig appConfig) {
+        return appConfig.appType().hasCommandStore(appConfig);
     }
 }

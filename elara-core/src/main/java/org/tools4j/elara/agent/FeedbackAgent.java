@@ -29,7 +29,6 @@ import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.step.AgentStep;
 
 import static java.util.Objects.requireNonNull;
-import static org.tools4j.elara.app.state.BaseState.NIL_SEQUENCE;
 
 /**
  * Agent for running the elara tasks required for a feedback app where events are received from the sequencer.
@@ -65,25 +64,18 @@ public class FeedbackAgent implements Agent {
         return "elara-feed";
     }
 
-    private boolean hasEventsAvailable() {
-        final long lastAppliedEvtSeq = eventProcessingState.lastAppliedEventSequence();
-        final long lastAvailEvtSeq = eventProcessingState.maxAvailableEventSequence();
-        return lastAppliedEvtSeq == NIL_SEQUENCE && lastAppliedEvtSeq < lastAvailEvtSeq;
-    }
-
     @Override
     public int doWork() {
         int workDone;
         workDone = eventPollerStep.doWork();
         workDone += extraStepAlways.doWork();
-        if (noInputsAndExtraStepWhenEventsApplied || hasEventsAvailable()) {
+        if (noInputsAndExtraStepWhenEventsApplied) {
             return workDone;
+        }
+        if (extraStepAlwaysWhenEventsApplied != AgentStep.NOOP && !commandContext.hasInFlightCommand()) {
+            workDone += extraStepAlwaysWhenEventsApplied.doWork();
         }
         workDone += inputStep.doWork();
-        if (extraStepAlwaysWhenEventsApplied == AgentStep.NOOP || commandContext.hasInFlightCommand()) {
-            return workDone;
-        }
-        workDone += extraStepAlwaysWhenEventsApplied.doWork();
         return workDone;
     }
 }

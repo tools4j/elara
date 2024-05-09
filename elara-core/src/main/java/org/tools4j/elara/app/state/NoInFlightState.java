@@ -27,11 +27,10 @@ import org.tools4j.elara.app.message.Event;
 import org.tools4j.elara.flyweight.EventType;
 
 /**
- * A no-OP implementation of {@link MutableInFlightState} for cases where in-flight state is not to be tracked to
- * optimize performance.
+ * Empty implementation of {@link MutableInFlightState} for cases where in-flight state does not need to be tracked or
+ * where tracking is not done for performance reasons.
  */
-public final class NoOpInFlightState implements MutableInFlightState {
-    public static final NoOpInFlightState INSTANCE = new NoOpInFlightState();
+final class NoInFlightState implements MutableInFlightState {
 
     @Override
     public int inFlightCommands() {
@@ -82,4 +81,5 @@ public final class NoOpInFlightState implements MutableInFlightState {
     public void onEvent(final int srcId, final long srcSeq, final long evtSeq, final int index, final EventType evtType, final long evtTime, final int payloadType) {
         //no-op
     }
+
 }

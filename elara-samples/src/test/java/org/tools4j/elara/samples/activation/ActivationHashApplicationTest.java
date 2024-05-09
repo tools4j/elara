@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.tools4j.elara.app.config.CommandPollingMode;
 import org.tools4j.elara.chronicle.ChronicleMessageStore;
 import org.tools4j.elara.plugin.activation.ActivationPlugin;
-import org.tools4j.elara.plugin.activation.CommandReplayMode;
+import org.tools4j.elara.plugin.activation.CommandCachingMode;
 import org.tools4j.elara.plugin.api.Plugins;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.samples.hash.HashApplication;
@@ -94,7 +94,7 @@ public class ActivationHashApplicationTest {
         final InlineAsserts inlineAsserts = (nextIndex, replay) -> {};
 
         //when
-        runWithCommandReplayMode(n, false, CommandReplayMode.DISCARD, state, active, inlineAsserts, PASSTHROUGH);
+        runWithCommandReplayMode(n, false, CommandCachingMode.DISCARD, state, active, inlineAsserts, PASSTHROUGH);
         try (final ElaraRunner runner = HashPassthroughApplication.publisherWithState("activation-passthrough", state)) {
             while (state.count() < expectedCount) {
                 if (System.currentTimeMillis() > timeout) {
@@ -146,7 +146,7 @@ public class ActivationHashApplicationTest {
         };
 
         //when
-        runWithCommandReplayMode(n, isReplay, CommandReplayMode.DISCARD, state, active, inlineAsserts, queueMode);
+        runWithCommandReplayMode(n, isReplay, CommandCachingMode.DISCARD, state, active, inlineAsserts, queueMode);
 
         //then
         assertEquals(expectedCount, state.count(), "state.count(" + n + ")");
@@ -168,7 +168,7 @@ public class ActivationHashApplicationTest {
         };
 
         //when
-        runWithCommandReplayMode(n, isReplay, CommandReplayMode.REPLAY, state, active, inlineAsserts, queueMode);
+        runWithCommandReplayMode(n, isReplay, CommandCachingMode.REPLAY, state, active, inlineAsserts, queueMode);
 
         //then
         assertEquals(n, state.count(), "state.count(" + n + ")");
@@ -177,7 +177,7 @@ public class ActivationHashApplicationTest {
 
     private void runWithCommandReplayMode(final int n,
                                           final boolean isReplay,
-                                          final CommandReplayMode replayMode,
+                                          final CommandCachingMode replayMode,
                                           final HashApplication.ModifiableState state,
                                           final IntPredicate active,
                                           final InlineAsserts inlineAsserts,
@@ -188,7 +188,7 @@ public class ActivationHashApplicationTest {
         final long shortSleepNanos = MILLISECONDS.toNanos(1);
         final long activationSleepNanos = MILLISECONDS.toNanos(500);
         final ActivationPlugin plugin = Plugins.activationPlugin(ActivationPlugin.configure()
-                .commandReplayMode(replayMode)
+                .commandCachingMode(replayMode)
         );
 
         //when
@@ -199,7 +199,7 @@ public class ActivationHashApplicationTest {
     }
 
     public static ElaraRunner elaraRunner(final CommandStoreOption queueMode,
-                                          final CommandReplayMode replayMode,
+                                          final CommandCachingMode replayMode,
                                           final HashApplication.ModifiableState state,
                                           final AtomicLong input,
                                           final ActivationPlugin plugin) {
@@ -241,12 +241,12 @@ public class ActivationHashApplicationTest {
         );
     }
 
-    public static ElaraRunner chronicleQueue(final CommandReplayMode replayMode,
+    public static ElaraRunner chronicleQueue(final CommandCachingMode replayMode,
                                              final HashApplication.ModifiableState state,
                                              final AtomicLong input,
                                              final ActivationPlugin plugin) {
         requireNonNull(plugin);
-        final String path = replayMode == CommandReplayMode.DISCARD ?
+        final String path = replayMode == CommandCachingMode.DISCARD ?
                 "build/chronicle/activation/discard/" :
                 "build/chronicle/activation/replay/";
         final ChronicleQueue cq = ChronicleQueue.singleBuilder()

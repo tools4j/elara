@@ -21,29 +21,52 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.handler;
+package org.tools4j.elara.app.state;
 
-import org.tools4j.elara.app.message.Event;
-import org.tools4j.elara.app.state.MutableEngineState;
-import org.tools4j.elara.flyweight.PlaybackFrame;
+import org.tools4j.elara.time.TimeSource;
 
 import static java.util.Objects.requireNonNull;
 
-public class DefaultPlaybackHandler implements PlaybackHandler {
-    private final MutableEngineState engineState;
-    private final EventHandler eventHandler;
+/**
+ * Basic implementation of {@link MutableEngineState} for cases where engine state does not need to be tracked (because
+ * we are the engine), or where engine tracking is not done for performance reasons. All available information is based
+ * solely on the {@link BaseState}.
+ */
+public final class BaseEngineState implements MutableEngineState {
 
-    public DefaultPlaybackHandler(final MutableEngineState engineState, final EventHandler eventHandler) {
-        this.engineState = requireNonNull(engineState);
-        this.eventHandler = requireNonNull(eventHandler);
+    private final BaseState baseState;
+
+    public BaseEngineState(final BaseState baseState) {
+        this.baseState = requireNonNull(baseState);
     }
 
     @Override
-    public void onPlaybackFrame(final PlaybackFrame playbackFrame) {
-        final Event event = playbackFrame.event();
-        engineState.maxAvailableSourceSequence(event.sourceId(), playbackFrame.maxAvailableSourceSequence());
-        engineState.maxAvailableEventSequence(playbackFrame.maxAvailableEventSequence());
-        engineState.newestEventTime(playbackFrame.newestEventTime());
-        eventHandler.onEvent(event);
+    public long maxAvailableEventSequence() {
+        return baseState.lastAppliedEventSequence();
+    }
+
+    @Override
+    public void maxAvailableEventSequence(final long eventSeq) {
+        //no-op
+    }
+
+    @Override
+    public long maxAvailableSourceSequence(final int sourceId) {
+        return baseState.lastAppliedCommandSequence(sourceId);
+    }
+
+    @Override
+    public void maxAvailableSourceSequence(final int sourceId, final long sourceSeq) {
+        //no-op
+    }
+
+    @Override
+    public long newestEventTime() {
+        return TimeSource.MIN_VALUE;
+    }
+
+    @Override
+    public void newestEventTime(final long eventTime) {
+        //no-op
     }
 }

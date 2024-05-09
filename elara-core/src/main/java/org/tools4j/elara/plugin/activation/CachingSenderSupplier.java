@@ -29,6 +29,7 @@ import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.source.CommandSource;
 
+/** Supplies sender for {@link CommandCachingMode#REPLAY} */
 final class CachingSenderSupplier implements SenderSupplier {
     private final CommandMessageSender commandMessageSender;
 

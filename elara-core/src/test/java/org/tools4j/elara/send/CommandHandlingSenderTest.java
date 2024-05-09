@@ -32,7 +32,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.tools4j.elara.app.message.Command;
 import org.tools4j.elara.app.state.DefaultBaseState;
-import org.tools4j.elara.app.state.NoOpInFlightState;
 import org.tools4j.elara.flyweight.FlyweightCommand;
 import org.tools4j.elara.flyweight.PayloadType;
 import org.tools4j.elara.source.CommandSourceProvider;
@@ -46,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
+import static org.tools4j.elara.app.state.MutableInFlightState.NO_IN_FLIGHT_STATE;
 
 /**
  * Unit test for {@link CommandHandlingSender}
@@ -66,7 +66,7 @@ public class CommandHandlingSenderTest {
     @BeforeEach
     public void init() {
         commandStore = new ArrayList<>();
-        sourceContextProvider = new DefaultCommandSourceProvider(new DefaultBaseState(), NoOpInFlightState.INSTANCE,
+        sourceContextProvider = new DefaultCommandSourceProvider(new DefaultBaseState(), NO_IN_FLIGHT_STATE,
                 new CommandHandlingSender(INITIAL_BUFFER_CAPACITY, timeSource, command -> {
                     final ExpandableArrayBuffer buffer = new ExpandableArrayBuffer();
                     command.writeTo(buffer, 0);

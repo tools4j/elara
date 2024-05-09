@@ -45,10 +45,7 @@ interface EventApplicationState {
         }
         return (sourceId, sourceSeq) -> {
             final long lastAppliedSourceSeq = baseState.lastAppliedCommandSequence(sourceId);
-            if (lastAppliedSourceSeq > sourceSeq) {
-                return true;
-            }
-            return false;
+            return lastAppliedSourceSeq > sourceSeq;
         };
     }
 

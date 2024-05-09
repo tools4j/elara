@@ -42,9 +42,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.tools4j.elara.app.config.CommandPollingMode.FROM_END;
 import static org.tools4j.elara.app.config.CommandPollingMode.NO_STORE;
 import static org.tools4j.elara.samples.hash.HashApplication.NULL_VALUE;
+import static org.tools4j.elara.samples.hash.HashFeedbackApplication.feedbackApp;
+import static org.tools4j.elara.samples.hash.HashFeedbackApplication.passthroughAppWithChronicleQueueAndMetrics;
 
 /**
- * Unit test running the {@link HashApplication}.
+ * Unit test running the {@link HashApplication} and variations of it.
  */
 public class HashApplicationTest {
 
@@ -194,6 +196,45 @@ public class HashApplicationTest {
                 Thread.sleep(50);
             }
             runner.join(200);
+        }
+
+        //then
+        return state.hash();
+    }
+
+    @Test
+    @Tag("perf")
+    public void feedbackWithMetricsPerf() throws Exception {
+        printRuntimeArgs();
+        //given
+//        final int n = 5_000_000;
+        final int n = 50_000_000;
+//        final int n = 100_000_000;
+//        final long expected = -4253299023651259134L;//5_000_000
+        final long expected = 8536806003277137281L;//50_000_000
+//        final long expected = -2816473282704185408L;//100_000_000
+
+        //when
+        final long result = feedbackWithMetrics("hash-metrics", n, false);
+
+        //then
+        assertEquals(expected, result, "state.hash(" + n + ")");
+    }
+
+    private long feedbackWithMetrics(final String folder,
+                                     final int n,
+                                     final boolean timeMetrics) throws Exception {
+        //given
+        final AtomicLong input = new AtomicLong(NULL_VALUE);
+        final ModifiableState state = new DefaultState();
+        final Random random = new Random(123);
+        final long sleepNanos = MICROSECONDS.toNanos(0);
+
+        //when
+        try (final ElaraRunner ignored = passthroughAppWithChronicleQueueAndMetrics(folder, timeMetrics)) {
+            try (final ElaraRunner fbRunner = feedbackApp(folder, input, state)) {
+                runHashApp(n, random, sleepNanos, input, fbRunner);
+            }
         }
 
         //then

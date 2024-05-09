@@ -21,29 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.tools4j.elara.handler;
+package org.tools4j.elara.input;
 
-import org.tools4j.elara.app.message.Event;
-import org.tools4j.elara.app.state.MutableEngineState;
-import org.tools4j.elara.flyweight.PlaybackFrame;
+import org.tools4j.elara.send.CommandContext;
+import org.tools4j.elara.source.CommandSourceProvider;
 
-import static java.util.Objects.requireNonNull;
-
-public class DefaultPlaybackHandler implements PlaybackHandler {
-    private final MutableEngineState engineState;
-    private final EventHandler eventHandler;
-
-    public DefaultPlaybackHandler(final MutableEngineState engineState, final EventHandler eventHandler) {
-        this.engineState = requireNonNull(engineState);
-        this.eventHandler = requireNonNull(eventHandler);
-    }
-
-    @Override
-    public void onPlaybackFrame(final PlaybackFrame playbackFrame) {
-        final Event event = playbackFrame.event();
-        engineState.maxAvailableSourceSequence(event.sourceId(), playbackFrame.maxAvailableSourceSequence());
-        engineState.maxAvailableEventSequence(playbackFrame.maxAvailableEventSequence());
-        engineState.newestEventTime(playbackFrame.newestEventTime());
-        eventHandler.onEvent(event);
-    }
+@FunctionalInterface
+public interface MultiSourcePoller {
+    int poll(CommandContext commandContext, CommandSourceProvider commandSourceProvider);
 }

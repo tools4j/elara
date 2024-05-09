@@ -40,7 +40,7 @@ import org.tools4j.elara.source.CommandSource;
  * @see CommandSource#hasInFlightCommand()
  * @see CommandContext#hasInFlightCommand()
  */
-public interface TransientCommandSourceState {
+public interface TransientCommandSourceState extends TransientState {
     long NIL_SEQUENCE = SequenceGenerator.NIL_SEQUENCE;
 
     /**
@@ -68,6 +68,17 @@ public interface TransientCommandSourceState {
      * @return the source sequence of the command, or {@link #NIL_SEQUENCE} if unavailable
      */
     long sourceSequenceOfLastSentCommand();
+
+    /**
+     * Returns the maximum source sequence number known to exist in the engine for this source ID, possibly not yet
+     * received by this application. Returns {@link BaseState#NIL_SEQUENCE} if nothing is known about the max available
+     * source sequence, or no events exist yet for this source ID.
+     *
+     * @return  the maximum source sequence know to exist for this source ID, or {@link BaseState#NIL_SEQUENCE} if
+     *          unavailable or unknown
+     * @see TransientEngineState#maxAvailableSourceSequence(int)
+     */
+    long maxAvailableSourceSequence();
 
     /**
      * Returns the sending time of the most recently sent command, or

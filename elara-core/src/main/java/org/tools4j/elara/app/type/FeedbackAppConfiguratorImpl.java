@@ -25,6 +25,7 @@ package org.tools4j.elara.app.type;
 
 import org.agrona.concurrent.Agent;
 import org.tools4j.elara.app.config.EventProcessorConfigurator;
+import org.tools4j.elara.app.factory.FeedbackAppFactory;
 import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.store.MessageStore;
 import org.tools4j.elara.store.StoreAppendingMessageSender;
@@ -49,7 +50,7 @@ final class FeedbackAppConfiguratorImpl extends AbstractEventReceiverConfigurato
     }
 
     @Override
-    public EventProcessorConfigurator processorSourceId(final int sourceId) {
+    public FeedbackAppConfiguratorImpl processorSourceId(final int sourceId) {
         this.processorSourceId = sourceId;
         return this;
     }
@@ -110,6 +111,6 @@ final class FeedbackAppConfiguratorImpl extends AbstractEventReceiverConfigurato
     @Override
     public Agent createAgent() {
         populateDefaults().validate();
-        throw new IllegalArgumentException("Implement feedback agent");//FIXME implement feedback agent
+        return new FeedbackAppFactory(this).agent();
     }
 }

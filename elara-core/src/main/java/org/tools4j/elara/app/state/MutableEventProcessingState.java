@@ -30,4 +30,7 @@ public interface MutableEventProcessingState extends EventProcessingState, Mutab
 
     @Override
     MutableInFlightState transientInFlightState();
+
+    @Override
+    MutableEngineState transientEngineState();
 }

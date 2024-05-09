@@ -28,14 +28,6 @@ package org.tools4j.elara.app.state;
  */
 public interface EventProcessingState extends BaseState {
     /**
-     * Returns the highest event sequence that is available from the sequencer, but has not necessarily been
-     * {@link #lastAppliedEventSequence() applied} yet
-     *
-     * @return the event sequence of the last available event, or {@link #NIL_SEQUENCE} if no events are available
-     */
-    long maxAvailableEventSequence();
-
-    /**
      * Returns the event state for the given source ID, or null if no events from this source have been processed yet.
      *
      * @param sourceId the source ID for events from a particular command source
@@ -44,9 +36,17 @@ public interface EventProcessingState extends BaseState {
     EventState lastProcessedEvent(int sourceId);
 
     /**
-     * Returns the transient part of the base state with information about in-flight commands.
-     * @return transient state with information about in-flight commands
+     * Returns transient state with non-deterministic information about in-flight commands which have been sent but
+     * whose event(s) have not been received back yet.
+     * @return transient state with information about commands and command sending
      */
     TransientInFlightState transientInFlightState();
 
+    /**
+     * Returns transient non-deterministic state related to the sequencer engine that is not necessarily reflected in
+     * the application state yet.
+     *
+     * @return transient information from the engine
+     */
+    TransientEngineState transientEngineState();
 }

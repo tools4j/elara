@@ -75,7 +75,7 @@ public class DefaultEventProcessorFactory implements EventProcessorFactory {
     private EventProcessor outputEventProcessor(final Output output) {
         return Handlers.asEventProcessor(
                 RetryOutputHandler.create(MAX_OUTPUT_RETRIES, output, appConfig.exceptionHandler()),
-                eventProcessingState
+                eventProcessingState.transientEngineState()
         );
     }
 

@@ -29,7 +29,7 @@ import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.ipc.SharedBuffer;
 
 public interface ActivationConfigurator extends ActivationConfig {
-    ActivationConfigurator commandReplayMode(CommandReplayMode mode);
+    ActivationConfigurator commandCachingMode(CommandCachingMode mode);
     ActivationConfigurator commandCache(MessageStore commandStore);
     ActivationConfigurator commandCache(SharedBuffer commandBuffer);
     ActivationConfigurator commandCacheSender(MessageSender sender);

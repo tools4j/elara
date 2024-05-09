@@ -32,10 +32,15 @@ import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.source.CommandSource;
 
+import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
+
 import static java.util.Objects.requireNonNull;
 
+/** Supplies sender for {@link CommandCachingMode#REJECT} and {@link CommandCachingMode#DISCARD} */
 final class DiscardingSenderSupplier implements SenderSupplier {
     private static final int INITIAL_BUFFER_CAPACITY = 4096;//FIXME make configurable
+    private final CommandCachingMode mode;
     private final ExceptionHandler exceptionHandler;
     private final ActivationPlugin plugin;
     private final CommandHandlingSender commandHandlingSender;
@@ -45,14 +50,19 @@ final class DiscardingSenderSupplier implements SenderSupplier {
     public DiscardingSenderSupplier(final AppConfig appConfig,
                                     final ActivationPlugin plugin,
                                     final SenderSupplier activeSenderSupplier) {
+        this.mode = plugin.config().commandCachingMode();
         this.exceptionHandler = appConfig.exceptionHandler();
         this.plugin = requireNonNull(plugin);
         this.activeSenderSupplier = requireNonNull(activeSenderSupplier);
         this.commandHandlingSender = new CommandHandlingSender(INITIAL_BUFFER_CAPACITY, appConfig.timeSource(), this::onCommand);
+        if (mode == CommandCachingMode.REPLAY) {
+            throw new IllegalArgumentException("mode cannot be " + mode);
+        }
     }
 
     @Override
     public CommandSender senderFor(final CommandSource commandSource, final SentListener sentListener) {
+        handleInactiveReject(ActivationPlugin::isActive);//fail early in reject mode
         activeSender = activeSenderSupplier.senderFor(commandSource, (sourceSequence, commandTime) -> {});
         return commandHandlingSender.senderFor(commandSource, sentListener);
     }
@@ -63,7 +73,15 @@ final class DiscardingSenderSupplier implements SenderSupplier {
         }
         if (plugin.isActive()) {
             CommandSendingCommandHandler.handleCommand(command, activeSender, exceptionHandler);
+        } else {
+            handleInactiveReject(ignore -> false);
         }
         activeSender = null;
+    }
+
+    private void handleInactiveReject(final Predicate<ActivationPlugin> activePredicate) {
+        if (mode == CommandCachingMode.REJECT && activePredicate.test(plugin)) {
+            throw new IllegalStateException("Command sending is not enabled in inactive state with mode=REJECT");
+        }
     }
 }

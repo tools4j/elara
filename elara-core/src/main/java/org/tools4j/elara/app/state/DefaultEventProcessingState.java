@@ -32,20 +32,26 @@ class DefaultEventProcessingState implements MutableEventProcessingState, ThinBa
     public static final BaseStateProvider PROVIDER = appConfig -> new DefaultEventProcessingState();
 
     private final MutableInFlightState inFlightState;
+    private final MutableEngineState engineState;
     private final Int2ObjectHashMap<DefaultEventState> sourceIdToEventState = new Int2ObjectHashMap<>();
     private long lastAppliedEventSequence = NIL_SEQUENCE;
-    private long lastAvailableEventSequence = NIL_SEQUENCE;
 
     DefaultEventProcessingState() {
-        this(new DefaultInFlightState());
+        this(new DefaultInFlightState(), new DefaultEngineState());
     }
-    DefaultEventProcessingState(final MutableInFlightState inFlightState) {
+    DefaultEventProcessingState(final MutableInFlightState inFlightState, final MutableEngineState engineState) {
         this.inFlightState = requireNonNull(inFlightState);
+        this.engineState = requireNonNull(engineState);
     }
 
     @Override
     public MutableInFlightState transientInFlightState() {
         return inFlightState;
+    }
+
+    @Override
+    public MutableEngineState transientEngineState() {
+        return engineState;
     }
 
     @Override
@@ -57,11 +63,6 @@ class DefaultEventProcessingState implements MutableEventProcessingState, ThinBa
     @Override
     public long lastAppliedEventSequence() {
         return lastAppliedEventSequence;
-    }
-
-    @Override
-    public long maxAvailableEventSequence() {
-        return lastAvailableEventSequence;
     }
 
     public void maxAvailableEventSequence(final long evtSeq) {
@@ -86,8 +87,11 @@ class DefaultEventProcessingState implements MutableEventProcessingState, ThinBa
         lastAppliedEventSequence = evtSeq;
         lastProcessedEventCreateIfAbsent(srcId).applyEvent(srcSeq, evtSeq, evtIndex, evtType, evtTime, payloadType);
         inFlightState.onEvent(srcId, srcSeq, evtSeq, evtIndex, evtType, evtTime, payloadType);
-        if (evtSeq > lastAvailableEventSequence) {
-            lastAvailableEventSequence = evtSeq;
+        if (evtSeq > engineState.maxAvailableEventSequence()) {
+            engineState.maxAvailableEventSequence(evtSeq);
+        }
+        if (srcSeq > engineState.maxAvailableSourceSequence(srcId)) {
+            engineState.maxAvailableSourceSequence(srcId, srcSeq);
         }
     }
 
@@ -96,7 +100,7 @@ class DefaultEventProcessingState implements MutableEventProcessingState, ThinBa
         return "DefaultEventProcessingState" +
                 ":source-id-evt-state=" + sourceIdToEventState +
                 "|last-applied-evt-seq=" + lastAppliedEventSequence +
-                "|last-avail-evt-seq=" + lastAvailableEventSequence +
-                "|in-flight=" + inFlightState;
+                "|in-flight=" + inFlightState +
+                "|engine=" + engineState;
     }
 }

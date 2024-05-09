@@ -60,7 +60,7 @@ final class ActivationPluginSpecification implements SystemPluginSpecification<A
             @Override
             public Input input(final BaseState baseState) {
                 if (appConfig instanceof CommandSenderConfig) {
-                    if (plugin.config().commandReplayMode() == CommandReplayMode.REPLAY) {
+                    if (plugin.config().commandCachingMode() == CommandCachingMode.REPLAY) {
                         return new CachePollingInput(plugin, baseState, appConfig.exceptionHandler());
                     }
                 }

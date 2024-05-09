@@ -95,10 +95,13 @@ final class CachePollingInput implements MultiSourceInput {
     }
 
     private boolean handleCommand(final Command command) {
+        if (eventApplicationState.allEventsAppliedFor(command)) {
+            return true;
+        }
         if (plugin.isActive()) {
             CommandSendingCommandHandler.handleCommand(command, commandSourceProvider, exceptionHandler);
             return true;
         }
-        return eventApplicationState.allEventsAppliedFor(command);
+        return false;
     }
 }

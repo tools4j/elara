@@ -134,18 +134,20 @@ package org.tools4j.elara.flyweight;
     +-------+-------+-------+-------+-------+-------+-------+-------+
 
 
-    Playback Header: Type=6
+    Playback Event Header: Type=6
 
     0         1         2         3         4         5         6
     0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4 6 8 0 2 4
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     |Version|Type=06|   Reserved    |          Frame Size           |
     +-------+-------+-------+-------+-------+-------+-------+-------+
-    |                          Engine Time                          |
+    |                 Max Available Source Sequence                 |
     +-------+-------+-------+-------+-------+-------+-------+-------+
-    |                Max Available Event Sequence                   |
+    |                 Max Available Event Sequence                  |
     +-------+-------+-------+-------+-------+-------+-------+-------+
-    |                            Payload                            |
+    |                       Newest Event Time                       |
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |                      Event Frame Payload                      |
     |                             ...                               |
 
 

@@ -24,26 +24,25 @@
 package org.tools4j.elara.handler;
 
 import org.tools4j.elara.app.handler.EventProcessor;
-import org.tools4j.elara.app.state.EventProcessingState;
+import org.tools4j.elara.app.state.TransientEngineState;
 
 import static java.util.Objects.requireNonNull;
 
-public class Handlers {
+public enum Handlers {
     ;
-
     public static EventHandler asEventHandler(final OutputHandler outputHandler) {
         return outputHandler == OutputHandler.NOOP ? EventHandler.NOOP : event -> outputHandler.publish(event, false, 0);
     }
 
     public static EventProcessor asEventProcessor(final OutputHandler outputHandler,
-                                                  final EventProcessingState eventProcessingState) {
+                                                  final TransientEngineState transientEngineState) {
         if (outputHandler == OutputHandler.NOOP) {
             return EventProcessor.NOOP;
         }
-        requireNonNull(eventProcessingState);
+        requireNonNull(transientEngineState);
         return (event, commandContext, sender) -> {
-            final boolean retry = event.eventSequence() < eventProcessingState.maxAvailableEventSequence();
-            outputHandler.publish(event, retry, 0);
+            final boolean replay = event.eventSequence() < transientEngineState.maxAvailableEventSequence();
+            outputHandler.publish(event, replay, 0);
         };
     }
 

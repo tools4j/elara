@@ -28,7 +28,6 @@ import org.tools4j.elara.app.config.CommandStoreConfig;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.app.state.MutableEventProcessingState;
 import org.tools4j.elara.app.state.MutableInFlightState;
-import org.tools4j.elara.app.state.NoOpInFlightState;
 import org.tools4j.elara.send.CommandAppendingSender;
 import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.send.DefaultCommandContext;
@@ -62,7 +61,7 @@ public class CommandStoreSenderFactory implements CommandSenderFactory {
     public MutableInFlightState inFlightState() {
         return baseState instanceof MutableEventProcessingState
                 ? ((MutableEventProcessingState)baseState).transientInFlightState()
-                : NoOpInFlightState.INSTANCE;
+                : MutableInFlightState.NO_IN_FLIGHT_STATE;
     }
     @Override
     public CommandContext commandContext() {

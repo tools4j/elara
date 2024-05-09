@@ -29,13 +29,13 @@ import org.tools4j.elara.route.EventRouter;
 import org.tools4j.elara.send.CommandSender;
 
 /**
- * Transient state with information about in-flight commands which have been sent but whose corresponding event
- * (or events) have not been received back yet.
+ * Transient state with information related to command sending, for instance about in-flight commands which have been
+ * sent but whose corresponding event (or events) have not been received back yet.
  * <p>
  * Note that transient state should not be used in the decision-making logic of the application, otherwise its state
  * will not be deterministic and cannot be reproduced through event replay.
  */
-public interface TransientInFlightState {
+public interface TransientInFlightState extends TransientState {
     /**
      * Returns the number of in-flight commands.
      * @return the number of commands currently in-flight
@@ -105,5 +105,4 @@ public interface TransientInFlightState {
     default boolean hasInFlightCommand(final int sourceId) {
         return inFlightCommands(sourceId) > 0;
     }
-
 }

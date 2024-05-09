@@ -26,7 +26,6 @@ package org.tools4j.elara.app.factory;
 import org.tools4j.elara.app.config.AppConfig;
 import org.tools4j.elara.app.config.CommandStoreConfig;
 import org.tools4j.elara.app.state.BaseState;
-import org.tools4j.elara.app.state.NoOpInFlightState;
 import org.tools4j.elara.send.CommandAppendingSender;
 import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.send.DefaultCommandContext;
@@ -39,6 +38,7 @@ import org.tools4j.elara.store.MessageStore;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.app.state.MutableInFlightState.NO_IN_FLIGHT_STATE;
 
 public class AppendingSequencerFactory implements SequencerFactory {
 
@@ -62,12 +62,12 @@ public class AppendingSequencerFactory implements SequencerFactory {
 
     @Override
     public CommandContext commandContext() {
-        return new DefaultCommandContext(NoOpInFlightState.INSTANCE, sequencerSingletons.get().commandSourceProvider());
+        return new DefaultCommandContext(NO_IN_FLIGHT_STATE, sequencerSingletons.get().commandSourceProvider());
     }
 
     @Override
     public CommandSourceProvider commandSourceProvider() {
-        return new DefaultCommandSourceProvider(baseState, NoOpInFlightState.INSTANCE, sequencerSingletons.get().senderSupplier());
+        return new DefaultCommandSourceProvider(baseState, NO_IN_FLIGHT_STATE, sequencerSingletons.get().senderSupplier());
     }
 
     @Override

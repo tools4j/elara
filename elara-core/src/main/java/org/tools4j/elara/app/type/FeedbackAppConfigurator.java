@@ -63,6 +63,10 @@ public interface FeedbackAppConfigurator extends FeedbackAppConfig, AppConfigura
     FeedbackAppConfigurator eventStore(Poller eventStorePoller);
     @Override
     FeedbackAppConfigurator eventReceiver(MessageReceiver eventReceiver);
+
+    @Override
+    FeedbackAppConfigurator processorSourceId(int sourceId);
+
     @Override
     FeedbackAppConfigurator eventProcessor(EventProcessor eventProcessor);
     @Override

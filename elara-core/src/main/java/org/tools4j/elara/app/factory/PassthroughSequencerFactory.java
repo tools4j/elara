@@ -28,7 +28,6 @@ import org.tools4j.elara.app.config.ApplierConfig;
 import org.tools4j.elara.app.config.EventStoreConfig;
 import org.tools4j.elara.app.handler.EventApplier;
 import org.tools4j.elara.app.state.MutableBaseState;
-import org.tools4j.elara.app.state.NoOpInFlightState;
 import org.tools4j.elara.composite.CompositeEventApplier;
 import org.tools4j.elara.send.CommandContext;
 import org.tools4j.elara.send.CommandPassthroughSender;
@@ -41,6 +40,7 @@ import org.tools4j.elara.step.AgentStep;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
+import static org.tools4j.elara.app.state.MutableInFlightState.NO_IN_FLIGHT_STATE;
 
 public class PassthroughSequencerFactory implements SequencerFactory {
 
@@ -74,12 +74,12 @@ public class PassthroughSequencerFactory implements SequencerFactory {
 
     @Override
     public CommandContext commandContext() {
-        return new DefaultCommandContext(NoOpInFlightState.INSTANCE, sequencerSingletons.get().commandSourceProvider());
+        return new DefaultCommandContext(NO_IN_FLIGHT_STATE, sequencerSingletons.get().commandSourceProvider());
     }
 
     @Override
     public CommandSourceProvider commandSourceProvider() {
-        return new DefaultCommandSourceProvider(baseState, NoOpInFlightState.INSTANCE, sequencerSingletons.get().senderSupplier());
+        return new DefaultCommandSourceProvider(baseState, NO_IN_FLIGHT_STATE, sequencerSingletons.get().senderSupplier());
     }
 
     @Override

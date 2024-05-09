@@ -25,21 +25,21 @@ package org.tools4j.elara.flyweight;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
-import org.agrona.concurrent.UnsafeBuffer;
+import org.tools4j.elara.app.message.Event;
 
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
-import static org.tools4j.elara.flyweight.PlaybackDescriptor.ENGINE_TIME_OFFSET;
 import static org.tools4j.elara.flyweight.PlaybackDescriptor.MAX_AVAILABLE_EVT_SEQ_OFFSET;
+import static org.tools4j.elara.flyweight.PlaybackDescriptor.MAX_AVAILABLE_SOURCE_SEQ_OFFSET;
+import static org.tools4j.elara.flyweight.PlaybackDescriptor.NEWEST_EVENT_TIME_OFFSET;
 import static org.tools4j.elara.flyweight.PlaybackDescriptor.PAYLOAD_OFFSET;
 
 /**
- * A flyweight playback frame for reading and writing playback event or heartbeat data laid out as per
- * {@link PlaybackDescriptor} definition.
+ * A flyweight playback frame for reading and writing playback event data laid out as per {@link PlaybackDescriptor}.
  */
 public class FlyweightPlaybackFrame implements Flyweight<FlyweightPlaybackFrame>, PlaybackFrame {
     public static final int HEADER_LENGTH = PlaybackDescriptor.HEADER_LENGTH;
     private final FlyweightHeader header = new FlyweightHeader(HEADER_LENGTH);
-    private final DirectBuffer payload = new UnsafeBuffer(0, 0);
+    private final FlyweightEvent event = new FlyweightEvent();
 
     @Override
     public FlyweightPlaybackFrame wrap(final DirectBuffer buffer, final int offset) {
@@ -54,20 +54,19 @@ public class FlyweightPlaybackFrame implements Flyweight<FlyweightPlaybackFrame>
     }
 
     private FlyweightPlaybackFrame wrapPayload(final DirectBuffer buffer, final int offset) {
-        final int frameSize = header.frameSize();
-        payload.wrap(buffer, offset + HEADER_LENGTH, frameSize - HEADER_LENGTH);
+        event.wrap(buffer, offset + HEADER_LENGTH);
         return this;
     }
 
     @Override
     public boolean valid() {
-        return header.valid() && FrameType.isPlaybackType(header.type());
+        return header.valid() && FrameType.isPlaybackType(header.type()) && event.valid();
     }
 
     @Override
     public FlyweightPlaybackFrame reset() {
         header.reset();
-        payload.wrap(0, 0);
+        event.reset();
         return this;
     }
 
@@ -77,12 +76,21 @@ public class FlyweightPlaybackFrame implements Flyweight<FlyweightPlaybackFrame>
     }
 
     @Override
-    public long engineTime() {
-        return engineTime(header.buffer());
+    public long maxAvailableSourceSequence() {
+        return maxAvailableSourceSequence(header.buffer());
     }
 
-    public static long engineTime(final DirectBuffer buffer) {
-        return buffer.getLong(ENGINE_TIME_OFFSET, LITTLE_ENDIAN);
+    public static long maxAvailableSourceSequence(final DirectBuffer buffer) {
+        return buffer.getLong(MAX_AVAILABLE_SOURCE_SEQ_OFFSET, LITTLE_ENDIAN);
+    }
+
+    @Override
+    public long newestEventTime() {
+        return newestEventTime(header.buffer());
+    }
+
+    public static long newestEventTime(final DirectBuffer buffer) {
+        return buffer.getLong(NEWEST_EVENT_TIME_OFFSET, LITTLE_ENDIAN);
     }
 
     @Override
@@ -95,49 +103,46 @@ public class FlyweightPlaybackFrame implements Flyweight<FlyweightPlaybackFrame>
     }
 
     @Override
-    public DirectBuffer payload() {
-        return payload;
+    public Event event() {
+        return event;
     }
 
     @Override
     public int writeTo(final MutableDirectBuffer dst, final int dstOffset) {
-        return writeHeaderAndPayload(header.reserved(), engineTime(), maxAvailableEventSequence(),
-                payload, 0, payload.capacity(), dst, dstOffset);
+        writeHeader(header.reserved(), maxAvailableSourceSequence(), maxAvailableEventSequence(), newestEventTime(),
+                event.frameSize(), dst, dstOffset);
+        return HEADER_LENGTH + event.writeTo(dst, dstOffset + HEADER_LENGTH);
     }
 
     public static int writeHeader(final short reserved,
-                                  final long engineTime,
+                                  final long maxAvailableSourceSequence,
                                   final long maxAvailableEventSequence,
+                                  final long newestEventTime,
                                   final int payloadSize,
                                   final MutableDirectBuffer dst,
                                   final int dstOffset) {
         assert payloadSize >= 0;
         final int frameSize = HEADER_LENGTH + payloadSize;
         FlyweightHeader.write(FrameType.PLAYBACK_TYPE, reserved, frameSize, dst, dstOffset);
-        dst.putLong(dstOffset + ENGINE_TIME_OFFSET, engineTime, LITTLE_ENDIAN);
+        dst.putLong(dstOffset + MAX_AVAILABLE_SOURCE_SEQ_OFFSET, maxAvailableSourceSequence, LITTLE_ENDIAN);
         dst.putLong(dstOffset + MAX_AVAILABLE_EVT_SEQ_OFFSET, maxAvailableEventSequence, LITTLE_ENDIAN);
+        dst.putLong(dstOffset + NEWEST_EVENT_TIME_OFFSET, newestEventTime, LITTLE_ENDIAN);
         return HEADER_LENGTH;
     }
 
     public static int writeHeaderAndPayload(final short reserved,
-                                            final long engineTime,
+                                            final long maxAvailableSourceSequence,
                                             final long maxAvailableEventSequence,
+                                            final long newestEventTime,
                                             final DirectBuffer payload,
                                             final int payloadOffset,
                                             final int payloadSize,
                                             final MutableDirectBuffer dst,
                                             final int dstOffset) {
-        final int frameSize = HEADER_LENGTH + payloadSize;
-        FlyweightHeader.write(FrameType.PLAYBACK_TYPE, reserved, frameSize, dst, dstOffset);
-        dst.putLong(dstOffset + ENGINE_TIME_OFFSET, engineTime, LITTLE_ENDIAN);
-        dst.putLong(dstOffset + MAX_AVAILABLE_EVT_SEQ_OFFSET, maxAvailableEventSequence, LITTLE_ENDIAN);
+        writeHeader(reserved, maxAvailableSourceSequence, maxAvailableEventSequence, newestEventTime, payloadSize,
+                dst, dstOffset);
         dst.putBytes(dstOffset + PAYLOAD_OFFSET, payload, payloadOffset, payloadSize);
-        return frameSize;
-    }
-
-    public static void writePayloadSize(final int payloadSize, final MutableDirectBuffer dst) {
-        assert payloadSize >= 0;
-        FlyweightHeader.writeFrameSize(HEADER_LENGTH + payloadSize, dst);
+        return HEADER_LENGTH + payloadSize;
     }
 
     @Override
@@ -153,9 +158,11 @@ public class FlyweightPlaybackFrame implements Flyweight<FlyweightPlaybackFrame>
             dst.append(":version=").append(header.version());
             dst.append("|type=").append(type());
             dst.append("|frame-size=").append(frameSize());
-            dst.append("|engine-time=").append(engineTime());
+            dst.append("|max-avail-src-seq=").append(maxAvailableSourceSequence());
             dst.append("|max-avail-evt-seq=").append(maxAvailableEventSequence());
-            dst.append("|payload-size=").append(payloadSize());
+            dst.append("|newest-evt-time=").append(newestEventTime());
+            dst.append("|event=");
+            event.printTo(dst);
         } else {
             dst.append(":???");
         }

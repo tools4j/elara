@@ -33,6 +33,7 @@ import static java.util.Objects.requireNonNull;
 
 final class ActivationCommandPollerHandler implements Handler {
 
+    private final CommandCachingMode mode;
     private final ActivationPlugin plugin;
     private final EventApplicationState eventApplicationState;
     private final CommandHandler commandHandler;
@@ -41,9 +42,13 @@ final class ActivationCommandPollerHandler implements Handler {
     public ActivationCommandPollerHandler(final ActivationPlugin plugin,
                                           final BaseState baseState,
                                           final CommandHandler commandHandler) {
+        this.mode = plugin.config().commandCachingMode();
         this.plugin = requireNonNull(plugin);
         this.eventApplicationState = EventApplicationState.create(baseState);
         this.commandHandler = requireNonNull(commandHandler);
+        if (mode == CommandCachingMode.REJECT) {
+            throw new IllegalArgumentException("Command caching mode cannot be " + mode);
+        }
     }
 
     @Override
@@ -54,7 +59,7 @@ final class ActivationCommandPollerHandler implements Handler {
                 commandHandler.onCommand(flyweightCommand);
                 return Result.POLL;
             }
-            if (plugin.config().commandReplayMode() == CommandReplayMode.DISCARD ||
+            if (mode == CommandCachingMode.DISCARD || //NOTE: REJECT mode not supported
                     eventApplicationState.allEventsAppliedFor(flyweightCommand)) {
                 return Result.POLL;
             }

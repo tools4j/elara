@@ -25,11 +25,13 @@ package org.tools4j.elara.source;
 
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Int2IntHashMap;
+import org.tools4j.elara.app.state.BaseEngineState;
 import org.tools4j.elara.app.state.BaseEventState;
 import org.tools4j.elara.app.state.BaseState;
 import org.tools4j.elara.app.state.EventState;
 import org.tools4j.elara.app.state.MutableEventProcessingState;
 import org.tools4j.elara.app.state.MutableInFlightState;
+import org.tools4j.elara.app.state.TransientEngineState;
 import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.sequence.SequenceGenerator;
 
@@ -47,6 +49,7 @@ public class DefaultCommandSourceProvider implements CommandSourceProvider {
     private final List<CommandSource> sources;
     private final Int2IntHashMap sourceIdToIndex;
     private final MutableInFlightState inFlightState;
+    private final TransientEngineState transientEngineState;
     private final SenderSupplier senderSupplier;
     private final IntFunction<? extends SequenceGenerator> sourceSequenceGeneratorFactory;
     private final IntFunction<EventState> eventStateFactory;
@@ -67,9 +70,14 @@ public class DefaultCommandSourceProvider implements CommandSourceProvider {
         this.senderSupplier = requireNonNull(senderSupplier);
         this.inFlightState = requireNonNull(inFlightState);
         this.sourceSequenceGeneratorFactory = requireNonNull(sourceSequenceGeneratorFactory);
-        this.eventStateFactory = baseState instanceof MutableEventProcessingState
-                ? ((MutableEventProcessingState)baseState)::lastProcessedEventCreateIfAbsent
-                : sourceId -> new BaseEventState(sourceId, baseState);
+        if (baseState instanceof MutableEventProcessingState) {
+            final MutableEventProcessingState eventProcessingState = (MutableEventProcessingState)baseState;
+            this.transientEngineState = eventProcessingState.transientEngineState();
+            this.eventStateFactory = eventProcessingState::lastProcessedEventCreateIfAbsent;
+        } else {
+            this.transientEngineState = new BaseEngineState(baseState);
+            this.eventStateFactory = sourceId -> new BaseEventState(sourceId, baseState);
+        }
     }
 
     @Override
@@ -90,7 +98,9 @@ public class DefaultCommandSourceProvider implements CommandSourceProvider {
         }
         final SequenceGenerator seqGenerator = sourceSequenceGeneratorFactory.apply(sourceId);
         final EventState eventState = eventStateFactory.apply(sourceId);
-        final CommandSource commandSource = new DefaultCommandSource(sourceId, senderSupplier, seqGenerator, eventState, inFlightState);
+        final CommandSource commandSource = new DefaultCommandSource(
+                sourceId, senderSupplier, seqGenerator, eventState, inFlightState, transientEngineState
+        );
         final int newIndex = sources.size();
         sourceIdToIndex.put(sourceId, newIndex);
         sources.add(commandSource);

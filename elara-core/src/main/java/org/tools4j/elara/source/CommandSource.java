@@ -50,8 +50,8 @@ public interface CommandSource {
 
     /**
      * True if commands from this source are currently in-flight, that is, if at least one command has been sent whose
-     * commit event was not yet processed.  This may be useful to defer event processing until all events have from sent
-     * commands have been received back and the application state updated.
+     * commit event was not yet processed.  This may be useful to defer event processing until all events from sent
+     * commands have been received back and the application state been updated.
      * <p>
      * Note that {@link CommandProcessor#onCommand(Command, EventRouter) command processing} can yield more than one
      * event. The commit event is the last event that corresponds to the same command.
@@ -62,6 +62,17 @@ public interface CommandSource {
      * @return true if at least one command is in-flight whose commit event was not yet processed
      */
     boolean hasInFlightCommand();
+
+    /**
+     * True if events from this source are currently in-flight, that is, they are known to exist in the engine but have
+     * not yet been received and processed.  This may be useful to defer event processing until all known events for
+     * this source have been received and the application state been updated.
+     * <p>
+     * This method returns true if the engine state for this source is not known yet.
+     *
+     * @return true if at least one event from this source is known to exist but has not been received yet
+     */
+    boolean hasInFlightEvent();
 
     /**
      * Returns the sender for sending commands from this command source.

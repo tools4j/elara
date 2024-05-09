@@ -51,7 +51,7 @@ public class CommandMessageInput implements MultiSourceInput {
 
     @Override
     public int poll(final CommandContext commandContext, final CommandSourceProvider commandSourceProvider) {
-        requireNonNull(this.commandSourceProvider);
+        requireNonNull(commandSourceProvider);
         if (this.commandSourceProvider != commandSourceProvider) {
             this.commandSourceProvider = commandSourceProvider;
         }
