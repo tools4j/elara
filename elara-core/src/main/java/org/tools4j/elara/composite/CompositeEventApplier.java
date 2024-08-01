@@ -78,9 +78,9 @@ public class CompositeEventApplier implements EventApplier {
         }
 
         @Override
-        public void onEvent(final int srcId, final long srcSeq, final long evtSeq, final int index, final EventType evtType, final long evtTime, final int payloadType) {
+        public void onEvent(final int srcId, final long srcSeq, final long evtSeq, final int index, final EventType evtType, final long evtTime, final int payloadType, final int payloadSize) {
             for (final ThinEventApplier applier : appliers) {
-                applier.onEvent(srcId, srcSeq, evtSeq, index, evtType, evtTime, payloadType);
+                applier.onEvent(srcId, srcSeq, evtSeq, index, evtType, evtTime, payloadType, payloadSize);
             }
         }
     }

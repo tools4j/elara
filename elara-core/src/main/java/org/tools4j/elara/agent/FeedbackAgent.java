@@ -69,7 +69,7 @@ public class FeedbackAgent implements Agent {
         int workDone;
         workDone = eventPollerStep.doWork();
         workDone += extraStepAlways.doWork();
-        if (noInputsAndExtraStepWhenEventsApplied) {
+        if (workDone > 0 || noInputsAndExtraStepWhenEventsApplied) {
             return workDone;
         }
         if (extraStepAlwaysWhenEventsApplied != AgentStep.NOOP && !commandContext.hasInFlightCommand()) {

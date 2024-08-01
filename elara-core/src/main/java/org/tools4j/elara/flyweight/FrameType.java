@@ -60,6 +60,15 @@ public enum FrameType {
     public static boolean isEventType(final byte frameType) {
         return frameType >= INTERMEDIARY_EVENT_TYPE && frameType <= AUTO_COMMIT_EVENT_TYPE;
     }
+
+    public static boolean isCommitEventType(final byte frameType) {
+        return frameType == COMMIT_EVENT_TYPE || frameType == AUTO_COMMIT_EVENT_TYPE;
+    }
+
+    public static boolean isRollbackEventType(final byte frameType) {
+        return frameType == ROLLBACK_EVENT_TYPE;
+    }
+
     public static boolean isPlaybackType(final byte frameType) {
         return frameType == PLAYBACK_TYPE;
     }

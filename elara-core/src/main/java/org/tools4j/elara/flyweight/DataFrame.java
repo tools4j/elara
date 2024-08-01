@@ -38,7 +38,7 @@ public interface DataFrame extends Frame {
     long sourceSequence();
     int payloadType();
     default int payloadSize() {
-        return payload().capacity();
+        return frameSize() - headerLength();
     }
     DirectBuffer payload();
 }

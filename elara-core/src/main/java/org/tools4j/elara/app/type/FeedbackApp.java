@@ -46,11 +46,6 @@ public interface FeedbackApp extends EventProcessor {
         return launch(config -> config.eventStore(messageStore));
     }
 
-    default ElaraRunner launch(final MessageStore.Poller eventStorePoller) {
-        requireNonNull(eventStorePoller);
-        return launch(config -> config.eventStore(eventStorePoller));
-    }
-
     default ElaraRunner launch(final MessageReceiver eventReceiver) {
         requireNonNull(eventReceiver);
         return launch(config -> config.eventReceiver(eventReceiver));

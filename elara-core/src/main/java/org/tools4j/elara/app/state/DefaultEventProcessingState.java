@@ -82,11 +82,11 @@ class DefaultEventProcessingState implements MutableEventProcessingState, ThinBa
 
     @Override
     public void onEvent(final int srcId, final long srcSeq, final long evtSeq, final int evtIndex,
-                        final EventType evtType, final long evtTime, final int payloadType) {
+                        final EventType evtType, final long evtTime, final int payloadType, final int payloadSize) {
         assert evtSeq == lastAppliedEventSequence + 1;
         lastAppliedEventSequence = evtSeq;
         lastProcessedEventCreateIfAbsent(srcId).applyEvent(srcSeq, evtSeq, evtIndex, evtType, evtTime, payloadType);
-        inFlightState.onEvent(srcId, srcSeq, evtSeq, evtIndex, evtType, evtTime, payloadType);
+        inFlightState.onEvent(srcId, srcSeq, evtSeq, evtIndex, evtType, evtTime, payloadType, payloadSize);
         if (evtSeq > engineState.maxAvailableEventSequence()) {
             engineState.maxAvailableEventSequence(evtSeq);
         }

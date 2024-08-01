@@ -31,9 +31,10 @@ import org.tools4j.elara.app.message.Event;
  * @see PlaybackDescriptor
  */
 public interface PlaybackFrame extends Frame {
+    int HEADER_LENGTH = PlaybackDescriptor.HEADER_LENGTH;
     @Override
     default int headerLength() {
-        return PlaybackDescriptor.HEADER_LENGTH;
+        return HEADER_LENGTH;
     }
 
     Event event();

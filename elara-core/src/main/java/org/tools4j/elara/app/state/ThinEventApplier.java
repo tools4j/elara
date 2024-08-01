@@ -41,10 +41,10 @@ public interface ThinEventApplier extends EventApplier {
     @Override
     default void onEvent(final Event evt) {
         onEvent(evt.sourceId(), evt.sourceSequence(), evt.eventSequence(), evt.eventIndex(), evt.eventType(),
-                evt.eventTime(), evt.payloadType());
+                evt.eventTime(), evt.payloadType(), evt.payloadSize());
     }
 
-    void onEvent(int srcId, long srcSeq, long evtSeq, int index, EventType evtType, long evtTime, int payloadType);
+    void onEvent(int srcId, long srcSeq, long evtSeq, int index, EventType evtType, long evtTime, int payloadType, int payloadSize);
 
     /** Performs a no-op meaning the event is silently ignored */
     ThinEventApplier NOOP = new ThinEventApplier() {
@@ -54,7 +54,7 @@ public interface ThinEventApplier extends EventApplier {
         }
 
         @Override
-        public void onEvent(final int srcId, final long srcSeq, final long evtSeq, final int index, final EventType evtType, final long evtTime, final int payloadType) {
+        public void onEvent(final int srcId, final long srcSeq, final long evtSeq, final int index, final EventType evtType, final long evtTime, final int payloadType, final int payloadSize) {
             //no-op
         }
     };

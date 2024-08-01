@@ -30,16 +30,13 @@ package org.tools4j.elara.flyweight;
  * @see CommandFrame
  */
 public interface EventFrame extends DataFrame {
+    int HEADER_LENGTH = EventDescriptor.HEADER_LENGTH;
     int MAX_INDEX = Short.MAX_VALUE;
     @Override
     default int headerLength() {
-        return EventDescriptor.HEADER_LENGTH;
+        return HEADER_LENGTH;
     }
     int eventIndex();
     long eventSequence();
     long eventTime();
-    @Override
-    default int payloadSize() {
-        return frameSize() - EventDescriptor.HEADER_LENGTH;
-    }
 }

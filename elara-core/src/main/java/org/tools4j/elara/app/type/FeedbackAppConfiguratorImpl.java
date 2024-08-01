@@ -28,6 +28,7 @@ import org.tools4j.elara.app.config.EventProcessorConfigurator;
 import org.tools4j.elara.app.factory.FeedbackAppFactory;
 import org.tools4j.elara.app.handler.EventProcessor;
 import org.tools4j.elara.store.MessageStore;
+import org.tools4j.elara.store.PlaybackEventPoller;
 import org.tools4j.elara.store.StoreAppendingMessageSender;
 import org.tools4j.elara.stream.MessageSender;
 
@@ -42,6 +43,11 @@ final class FeedbackAppConfiguratorImpl extends AbstractEventReceiverConfigurato
     @Override
     protected FeedbackAppConfiguratorImpl self() {
         return this;
+    }
+
+    @Override
+    public FeedbackAppConfiguratorImpl eventStore(final MessageStore eventStore) {
+        return eventReceiver(new PlaybackEventPoller(eventStore));
     }
 
     @Override

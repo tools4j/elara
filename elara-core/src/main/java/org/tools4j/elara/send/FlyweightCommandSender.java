@@ -43,8 +43,13 @@ abstract class FlyweightCommandSender implements CommandSender.Default, SenderSu
         return this;
     }
 
-    protected void notifySent(final long commandTime) {
-        sentListener.onSent(sourceSequenceSupplier.sequence(), commandTime);
+    /**
+     * Nnotifies sending of a command
+     * @param commandTime the comamnd time
+     * @param payloadSize the payload size in bytes
+     */
+    protected void notifySent(final long commandTime, final int payloadSize) {
+        sentListener.onSent(sourceSequenceSupplier.sequence(), commandTime, payloadSize);
     }
 
     @Override

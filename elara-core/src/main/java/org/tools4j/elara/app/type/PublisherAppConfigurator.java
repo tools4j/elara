@@ -50,7 +50,6 @@ public interface PublisherAppConfigurator extends PublisherAppConfig, AppConfigu
     PublisherAppConfigurator baseStateProvider(BaseStateProvider baseStateFactory);
     @Override
     PublisherAppConfigurator eventStore(MessageStore eventStore);
-    @Override
     PublisherAppConfigurator eventStore(Poller eventStorePoller);
     @Override
     PublisherAppConfigurator eventReceiver(MessageReceiver eventReceiver);

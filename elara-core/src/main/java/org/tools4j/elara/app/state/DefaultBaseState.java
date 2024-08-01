@@ -44,7 +44,7 @@ public class DefaultBaseState implements ThinBaseState {
 
     @Override
     public void onEvent(final int srcId, final long srcSeq, final long evtSeq, final int evtIndex,
-                        final EventType evtType, final long evtTime, final int payloadType) {
+                        final EventType evtType, final long evtTime, final int payloadType, final int payloadSize) {
         this.sourceIdToSequence.put(srcId, srcSeq);
         this.lastAppliedEventSequence = evtSeq;
     }

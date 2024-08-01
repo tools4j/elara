@@ -72,7 +72,7 @@ public final class CommandHandlingSender extends FlyweightCommandSender {
         final long time = timeSource.currentTime();
         initHeader(sourceId(), nextCommandSequence(), time, payloadType, length);
         invokeCommandHandler(buffer, offset, length);//TODO handle result value here
-        notifySent(time);
+        notifySent(time, length);
         return SendingResult.SENT;
     }
 
@@ -148,7 +148,7 @@ public final class CommandHandlingSender extends FlyweightCommandSender {
                 final long time = timeSource.currentTime();
                 FlyweightCommand.writeCommandTime(time, header);
                 invokeCommandHandler(payload, 0, length);//TODO handler result value here
-                notifySent(time);
+                notifySent(time, length);
                 return SendingResult.SENT;
             } finally {
                 command.reset();

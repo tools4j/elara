@@ -28,6 +28,7 @@ import org.agrona.ExpandableDirectByteBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.collections.Hashing;
 import org.agrona.collections.Int2IntCounterMap;
+import org.tools4j.elara.flyweight.CommandFrame;
 import org.tools4j.elara.flyweight.EventType;
 
 import java.nio.ByteOrder;
@@ -41,7 +42,7 @@ public class DefaultInFlightState implements MutableInFlightState {
 
     public static final int DEFAULT_INITIAL_SOURCE_ID_CAPACITY = 32;
     public static final int DEFAULT_INITIAL_IN_FLIGHT_CAPACITY = 256;
-    private static final int FIRST_INDEX = 0;
+    private static final int INDEX_0 = 0;
 
     private static final int SOURCE_ID_OFFSET = 0;
     private static final int SOURCE_ID_LENGTH = Integer.BYTES;
@@ -51,24 +52,25 @@ public class DefaultInFlightState implements MutableInFlightState {
     private static final int SENDING_TIME_LENGTH = Long.BYTES;
     private static final int ENTRY_LENGTH = SENDING_TIME_OFFSET + SENDING_TIME_LENGTH;
 
-    private final Int2IntCounterMap sourceIdToInFlightCount;
+    private final Int2IntCounterMap countBySourceId;
     private final MutableDirectBuffer buffer;
     private int offset;
     private int capacity;
     private int count;
+    private long bytes;
 
     public DefaultInFlightState() {
         this(DEFAULT_INITIAL_SOURCE_ID_CAPACITY, DEFAULT_INITIAL_IN_FLIGHT_CAPACITY);
     }
 
     public DefaultInFlightState(final int sourceIdInitialCapacity, final int inFlightInitialCapacity) {
-        this.sourceIdToInFlightCount = new Int2IntCounterMap(sourceIdInitialCapacity, Hashing.DEFAULT_LOAD_FACTOR, 0);
+        this.countBySourceId = new Int2IntCounterMap(sourceIdInitialCapacity, Hashing.DEFAULT_LOAD_FACTOR, 0);
         this.buffer = new ExpandableDirectByteBuffer(inFlightInitialCapacity * ENTRY_LENGTH);
         this.capacity = inFlightInitialCapacity;
     }
 
     public void reset() {
-        sourceIdToInFlightCount.clear();
+        countBySourceId.clear();
         if (count > 0) {
             final int overlap = Math.max(0, offset + count - capacity);
             buffer.setMemory(offset * ENTRY_LENGTH, (count - overlap) * ENTRY_LENGTH, (byte)0);
@@ -76,6 +78,7 @@ public class DefaultInFlightState implements MutableInFlightState {
         }
         offset = 0;
         count = 0;
+        bytes = 0L;
     }
 
     @Override
@@ -85,7 +88,12 @@ public class DefaultInFlightState implements MutableInFlightState {
 
     @Override
     public int inFlightCommands(final int sourceId) {
-        return sourceIdToInFlightCount.get(sourceId);
+        return countBySourceId.get(sourceId);
+    }
+
+    @Override
+    public long inFlightBytes() {
+        return bytes;
     }
 
     private int byteOffset(final int index) {
@@ -123,7 +131,7 @@ public class DefaultInFlightState implements MutableInFlightState {
     }
 
     @Override
-    public void onCommandSent(final int sourceId, final long sourceSequence, final long sendingTime) {
+    public void onCommandSent(final int sourceId, final long sourceSequence, final long sendingTime, final int payloadSize) {
         if (count == capacity) {
             expandBuffer(1);
         }
@@ -133,7 +141,8 @@ public class DefaultInFlightState implements MutableInFlightState {
         buffer.putLong(byteOffset + SOURCE_SEQ_OFFSET, sourceSequence, ByteOrder.LITTLE_ENDIAN);
         buffer.putLong(byteOffset + SENDING_TIME_OFFSET, sendingTime, ByteOrder.LITTLE_ENDIAN);
         count++;
-        final int newCount = sourceIdToInFlightCount.incrementAndGet(sourceId);
+        bytes += (CommandFrame.HEADER_LENGTH + payloadSize);
+        final int newCount = countBySourceId.incrementAndGet(sourceId);
         assert newCount > 0;
     }
 
@@ -152,40 +161,49 @@ public class DefaultInFlightState implements MutableInFlightState {
     }
 
     @Override
-    public void onEvent(final int srcId, final long srcSeq, final long evtSeq, final int index, final EventType evtType, final long evtTime, final int payloadType) {
+    public void onEvent(final int srcId, final long srcSeq, final long evtSeq, final int index, final EventType evtType, final long evtTime, final int payloadType, final int payloadSize) {
         if (count == 0 || !evtType.isLast()) {
             return;
         }
         final boolean invalidSequence;
-        final int firstSourceId = sourceId(FIRST_INDEX);
+        final int firstSourceId = sourceId(INDEX_0);
         if (srcId == firstSourceId) {
-            final long firstSourceSeq = sourceSequence(FIRST_INDEX);
+            final long firstSourceSeq = sourceSequence(INDEX_0);
             if (firstSourceSeq == srcSeq) {
-                removeFirst(srcId);
+                removeFirst(srcId, payloadSize);
                 return;
             }
             invalidSequence = true;
         } else {
-            invalidSequence = sourceIdToInFlightCount.get(srcId) > 0;
+            invalidSequence = countBySourceId.get(srcId) > 0;
         }
         if (invalidSequence) {
             //we have received an event out-of sequence
             throw new IllegalStateException("Received " +
                     "event:evt-seq=" + evtSeq + "|src-id=" + srcId + "|src-seq=" + srcSeq +
                     " but expected an event first for a prior in-flight " +
-                    "command:src-id=" + firstSourceId + "|src-seq=" + sourceSequence(FIRST_INDEX));
+                    "command:src-id=" + firstSourceId + "|src-seq=" + sourceSequence(INDEX_0));
         }
     }
 
-    private void removeFirst(final int srcId) {
-        final int newCount = sourceIdToInFlightCount.decrementAndGet(srcId);
+    private void removeFirst(final int srcId, final int payloadSize) {
+        final int newCount = countBySourceId.decrementAndGet(srcId);
         assert newCount >= 0;
-        buffer.setMemory(byteOffset(FIRST_INDEX), ENTRY_LENGTH, (byte)0);
+        buffer.setMemory(byteOffset(INDEX_0), ENTRY_LENGTH, (byte)0);
         offset++;
         count--;
+        bytes-=(CommandFrame.HEADER_LENGTH + payloadSize);
         if (count == 0) {
             offset = 0;
+            bytes = 0;
         }
     }
 
+    @Override
+    public String toString() {
+        return "DefaultInFlightState" +
+                ":count=" + count +
+                "|bytes=" + bytes +
+                "|count-by-source-id=" + countBySourceId;
+    }
 }

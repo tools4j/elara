@@ -156,7 +156,7 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
                     applyEvent(buf, length);
                     ac.commit(FlyweightEvent.HEADER_LENGTH + length);
                 }
-                notifySent(time);
+                notifySent(time, length);
                 return SendingResult.SENT;
             } finally {
                 context = null;
@@ -182,11 +182,11 @@ public final class CommandPassthroughSender extends FlyweightCommandSender {
             }
         }
 
-        private void applyEvent(final DirectBuffer buffer, final int length) {
+        private void applyEvent(final DirectBuffer buffer, final int payloadSize) {
             if (thinEventApplierOrNull != null) {
                 thinEventApplierOrNull.onEvent(sourceId(buffer), sourceSequence(buffer),
                         FlyweightEvent.eventSequence(buffer), INDEX_0, APP_COMMIT, FlyweightEvent.eventTime(buffer),
-                        FlyweightEvent.payloadType(buffer));
+                        FlyweightEvent.payloadType(buffer), payloadSize);
                 return;
             }
             appliedEvent.wrapSilently(buffer, EventDescriptor.HEADER_OFFSET);

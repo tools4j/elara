@@ -29,7 +29,10 @@ import org.tools4j.elara.app.state.MutableEventProcessingState;
 import org.tools4j.elara.handler.DefaultPlaybackHandler;
 import org.tools4j.elara.handler.PlaybackHandler;
 import org.tools4j.elara.step.AgentStep;
+import org.tools4j.elara.step.PlaybackEventPollerStep;
 import org.tools4j.elara.step.PlaybackFrameReceiverStep;
+import org.tools4j.elara.store.PlaybackEventPoller;
+import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.time.MutableTimeSource;
 import org.tools4j.elara.time.TimeSource;
 
@@ -74,6 +77,13 @@ public class DefaultEventSubscriberFactory implements EventSubscriberFactory {
 
     @Override
     public AgentStep playbackPollerStep() {
+        final MessageReceiver eventReceiver = eventReceiverConfig.eventReceiver();
+        if (eventReceiver instanceof PlaybackEventPoller) {
+            return new PlaybackEventPollerStep(
+                    (PlaybackEventPoller)eventReceiver,
+                    eventSubscriberSingletons.get().playbackHandler()
+            );
+        }
         return new PlaybackFrameReceiverStep(
                 eventReceiverConfig.eventReceiver(),
                 eventSubscriberSingletons.get().playbackHandler()

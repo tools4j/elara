@@ -50,6 +50,7 @@ public interface Event extends Writable, Printable {
         return PayloadType.isApplication(payloadType());
     }
 
+    int payloadSize();
     DirectBuffer payload();
 
     @Override

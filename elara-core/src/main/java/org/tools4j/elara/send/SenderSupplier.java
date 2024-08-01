@@ -31,7 +31,7 @@ public interface SenderSupplier {
 
     @FunctionalInterface
     interface SentListener {
-        void onSent(long sourceSequence, long commandTime);
+        void onSent(long sourceSequence, long commandTime, int payloadSize);
     }
 
 }

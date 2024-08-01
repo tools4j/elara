@@ -57,7 +57,7 @@ class BaseEventStateTest {
         final EventState eventState = new BaseEventState(sourceId, baseState);
 
         //when
-        baseState.onEvent(sourceId, 22L, 33L, 1, INTERMEDIARY, 44L, 55);
+        baseState.onEvent(sourceId, 22L, 33L, 1, INTERMEDIARY, 44L, 55, 100);
 
         //then
         assertEquals(sourceId, eventState.sourceId(), "sourceId");
@@ -70,7 +70,7 @@ class BaseEventStateTest {
         assertEquals(0, eventState.payloadType(), "payloadType");
 
         //when
-        baseState.onEvent(sourceId, 23L, 34L, 1, AUTO_COMMIT, 45L, 56);
+        baseState.onEvent(sourceId, 23L, 34L, 1, AUTO_COMMIT, 45L, 56, 200);
 
         //then
         assertEquals(sourceId, eventState.sourceId(), "sourceId");

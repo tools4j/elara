@@ -25,6 +25,7 @@ package org.tools4j.elara.stream.ipc.impl;
 
 import org.agrona.DirectBuffer;
 import org.agrona.IoUtil;
+import org.agrona.LangUtil;
 import org.agrona.concurrent.AtomicBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.concurrent.ringbuffer.ManyToOneRingBuffer;
@@ -33,6 +34,7 @@ import org.agrona.concurrent.ringbuffer.RingBuffer;
 import org.tools4j.elara.stream.ipc.IpcConfig;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import static org.agrona.concurrent.ringbuffer.RingBufferDescriptor.TRAILER_LENGTH;
@@ -70,13 +72,19 @@ enum RingBuffers {
 
     static RingBuffer newFileMapped(final File file, final int length, final IpcConfig config) {
         final File dir = file.getParentFile();
+        final File lock = lockFile(file);
         if (dir != null && config.newFileCreateParentDirs()) {
             IoUtil.ensureDirectoryExists(dir, dir.getAbsolutePath());
         }
         if (config.newFileDeleteIfPresent()) {
             IoUtil.deleteIfExists(file);
         }
-        return create(IoUtil.mapNewFile(file, length + TRAILER_LENGTH), config);
+        lockFileCreate(lock);
+        try {
+            return create(IoUtil.mapNewFile(file, length + TRAILER_LENGTH), config);
+        } finally {
+            lock.delete();
+        }
     }
 
     static RingBuffer create(final ByteBuffer buffer, final IpcConfig config) {
@@ -92,5 +100,21 @@ enum RingBuffers {
             default:
                 throw new IllegalArgumentException("Unsupported server cardinality: " + config.senderCardinality());
         }
+    }
+
+    static File lockFile(final File file) {
+        return new File(file.getPath() + ".lock");
+    }
+
+    static void lockFileCreate(final File lock) {
+        IoUtil.deleteIfExists(lock);
+        try {
+            if (!lock.createNewFile()) {
+                throw new IOException("Could not create lock file " + lock.getAbsolutePath());
+            }
+        } catch (final IOException e) {
+            LangUtil.rethrowUnchecked(e);
+        }
+
     }
 }

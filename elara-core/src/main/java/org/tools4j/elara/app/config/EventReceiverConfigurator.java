@@ -28,6 +28,5 @@ import org.tools4j.elara.stream.MessageReceiver;
 
 public interface EventReceiverConfigurator extends EventReceiverConfig {
     EventReceiverConfigurator eventStore(MessageStore eventStore);
-    EventReceiverConfigurator eventStore(MessageStore.Poller eventStorePoller);
     EventReceiverConfigurator eventReceiver(MessageReceiver eventReceiver);
 }

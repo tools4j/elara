@@ -112,7 +112,7 @@ public final class CommandAppendingSender extends FlyweightCommandSender {
                 final long time = timeSource.currentTime();
                 FlyweightCommand.writeCommandTime(time, buf);
                 ac.commit(HEADER_LENGTH + length);
-                notifySent(time);
+                notifySent(time, length);
                 return SendingResult.SENT;
             } finally {
                 context = null;

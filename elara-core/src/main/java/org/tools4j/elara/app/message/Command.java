@@ -45,6 +45,7 @@ public interface Command extends Writable, Printable {
         return PayloadType.isApplication(payloadType());
     }
 
+    int payloadSize();
     DirectBuffer payload();
 
     int writeTo(MutableDirectBuffer buffer, int offset);

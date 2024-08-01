@@ -25,7 +25,6 @@ package org.tools4j.elara.app.type;
 
 import org.tools4j.elara.app.config.EventReceiverConfigurator;
 import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.store.MessageStore.Poller;
 import org.tools4j.elara.store.StorePollingMessageReceiver;
 import org.tools4j.elara.stream.MessageReceiver;
 
@@ -43,11 +42,6 @@ abstract class AbstractEventReceiverConfigurator<T extends AbstractEventReceiver
     @Override
     public T eventStore(final MessageStore eventStore) {
         return eventReceiver(new StorePollingMessageReceiver(eventStore));
-    }
-
-    @Override
-    public T eventStore(final Poller eventStorePoller) {
-        return eventReceiver(new StorePollingMessageReceiver(eventStorePoller));
     }
 
     @Override

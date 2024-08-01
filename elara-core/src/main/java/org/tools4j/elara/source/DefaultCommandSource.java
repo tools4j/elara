@@ -156,13 +156,13 @@ final class DefaultCommandSource implements CommandSource {
         }
 
         @Override
-        public void onSent(final long sourceSequence, final long commandTime) {
+        public void onSent(final long sourceSequence, final long commandTime, final int payloadSize) {
             assert sourceSequence > lastCommandSequence;
             commandsSent++;
             lastCommandSequence = sourceSequence;
             lastCommandSendingTime = commandTime;
             sequenceGenerator.nextSequence();
-            inFlightState.onCommandSent(sourceId, sourceSequence, commandTime);
+            inFlightState.onCommandSent(sourceId, sourceSequence, commandTime, payloadSize);
         }
 
         @Override

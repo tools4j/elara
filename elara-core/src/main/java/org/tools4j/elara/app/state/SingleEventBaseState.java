@@ -73,11 +73,11 @@ public class SingleEventBaseState implements ThinBaseState {
     }
 
     @Override
-    public void onEvent(final int srcId, final long srcSeq, final long evtSeq, final int evtIndex, final EventType evtType, final long evtTime, final int payloadType) {
+    public void onEvent(final int srcId, final long srcSeq, final long evtSeq, final int evtIndex, final EventType evtType, final long evtTime, final int payloadType, final int payloadSize) {
         if (evtIndex != 0) {
             throw new IllegalArgumentException("Only event with index 0 is allowed");
         }
-        delegate.onEvent(srcId, srcSeq, evtSeq, evtIndex, evtType, evtTime, payloadType);
+        delegate.onEvent(srcId, srcSeq, evtSeq, evtIndex, evtType, evtTime, payloadType, payloadSize);
     }
 
     @Override

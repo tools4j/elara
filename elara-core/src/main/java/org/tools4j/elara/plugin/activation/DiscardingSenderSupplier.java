@@ -32,7 +32,6 @@ import org.tools4j.elara.send.CommandSender;
 import org.tools4j.elara.send.SenderSupplier;
 import org.tools4j.elara.source.CommandSource;
 
-import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 
 import static java.util.Objects.requireNonNull;
@@ -63,7 +62,7 @@ final class DiscardingSenderSupplier implements SenderSupplier {
     @Override
     public CommandSender senderFor(final CommandSource commandSource, final SentListener sentListener) {
         handleInactiveReject(ActivationPlugin::isActive);//fail early in reject mode
-        activeSender = activeSenderSupplier.senderFor(commandSource, (sourceSequence, commandTime) -> {});
+        activeSender = activeSenderSupplier.senderFor(commandSource, (sourceSequence, commandTime, payloadSize) -> {});
         return commandHandlingSender.senderFor(commandSource, sentListener);
     }
 

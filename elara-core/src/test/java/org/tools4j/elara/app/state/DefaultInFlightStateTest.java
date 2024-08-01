@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.tools4j.elara.flyweight.CommandFrame.HEADER_LENGTH;
 
 /**
  * Unit test for {@link DefaultInFlightState}.
@@ -43,40 +44,43 @@ class DefaultInFlightStateTest {
     @ParameterizedTest(name = "{0}")
     void commandsSentAndEventsReceived(final String name, final DefaultInFlightState state) {
         //when
-        state.onCommandSent(1, 1, 300);
-        state.onCommandSent(2, 1, 301);
+        state.onCommandSent(1, 1, 300, 100);
+        state.onCommandSent(2, 1, 301, 200);
 
         //then
         assertEquals(2, state.inFlightCommands());
         assertEquals(1, state.inFlightCommands(1));
         assertEquals(1, state.inFlightCommands(2));
         assertEquals(0, state.inFlightCommands(3));
+        assertEquals(300 + 2*HEADER_LENGTH, state.inFlightBytes());
         assertTrue(state.hasInFlightCommand());
         assertTrue(state.hasInFlightCommand(1));
         assertTrue(state.hasInFlightCommand(2));
         assertFalse(state.hasInFlightCommand(3));
 
         //when
-        state.onEvent(1, 1, 1001, 0, EventType.APP_COMMIT, 0, 0);
-        state.onCommandSent(1, 2, 302);
+        state.onEvent(1, 1, 1001, 0, EventType.APP_COMMIT, 0, 0, 100);
+        state.onCommandSent(1, 2, 302, 150);
 
         //then
         assertEquals(2, state.inFlightCommands());
         assertEquals(1, state.inFlightCommands(1));
         assertEquals(1, state.inFlightCommands(2));
+        assertEquals(350 + 2*HEADER_LENGTH, state.inFlightBytes());
         assertTrue(state.hasInFlightCommand());
         assertTrue(state.hasInFlightCommand(1));
         assertTrue(state.hasInFlightCommand(2));
 
         //when
-        state.onCommandSent(1, 3, 303);
-        state.onCommandSent(1, 4, 304);
-        state.onEvent(2, 1, 0, 1002, EventType.APP_COMMIT, 0, 0);
+        state.onCommandSent(1, 3, 303, 30);
+        state.onCommandSent(1, 4, 304, 0);
+        state.onEvent(2, 1, 0, 1002, EventType.APP_COMMIT, 0, 0, 200);
 
         //then
         assertEquals(3, state.inFlightCommands());
         assertEquals(3, state.inFlightCommands(1));
         assertEquals(0, state.inFlightCommands(2));
+        assertEquals(180 + 3*HEADER_LENGTH, state.inFlightBytes());
         assertTrue(state.hasInFlightCommand());
         assertTrue(state.hasInFlightCommand(1));
         assertFalse(state.hasInFlightCommand(2));
@@ -91,29 +95,31 @@ class DefaultInFlightStateTest {
         assertEquals(304, state.sendingTime(2));
 
         //when
-        state.onCommandSent(2, 2, 400);
-        state.onCommandSent(3, 1, 401);
-        state.onEvent(1, 2, 1003, 0, EventType.APP_COMMIT, 0, 0);
+        state.onCommandSent(2, 2, 400, 40);
+        state.onCommandSent(3, 1, 401, 5);
+        state.onEvent(1, 2, 1003, 0, EventType.APP_COMMIT, 0, 0, 150);
 
         //then
         assertEquals(4, state.inFlightCommands());
         assertEquals(2, state.inFlightCommands(1));
         assertEquals(1, state.inFlightCommands(2));
         assertEquals(1, state.inFlightCommands(3));
+        assertEquals(75 + 4*HEADER_LENGTH, state.inFlightBytes());
         assertTrue(state.hasInFlightCommand());
         assertTrue(state.hasInFlightCommand(1));
         assertTrue(state.hasInFlightCommand(2));
         assertTrue(state.hasInFlightCommand(3));
 
         //when
-        state.onEvent(1, 3, 1004, 0, EventType.APP_COMMIT, 0, 0);
-        state.onEvent(1, 4, 1005, 0, EventType.APP_COMMIT, 0, 0);
+        state.onEvent(1, 3, 1004, 0, EventType.APP_COMMIT, 0, 0, 30);
+        state.onEvent(1, 4, 1005, 0, EventType.APP_COMMIT, 0, 0, 0);
 
         //then
         assertEquals(2, state.inFlightCommands());
         assertEquals(0, state.inFlightCommands(1));
         assertEquals(1, state.inFlightCommands(2));
         assertEquals(1, state.inFlightCommands(3));
+        assertEquals(45 + 2*HEADER_LENGTH, state.inFlightBytes());
         assertTrue(state.hasInFlightCommand());
         assertFalse(state.hasInFlightCommand(1));
         assertTrue(state.hasInFlightCommand(2));
@@ -133,6 +139,7 @@ class DefaultInFlightStateTest {
         assertEquals(0, state.inFlightCommands(1));
         assertEquals(0, state.inFlightCommands(2));
         assertEquals(0, state.inFlightCommands(3));
+        assertEquals(0, state.inFlightBytes());
         assertFalse(state.hasInFlightCommand());
         assertFalse(state.hasInFlightCommand(1));
         assertFalse(state.hasInFlightCommand(2));

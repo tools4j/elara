@@ -23,6 +23,7 @@
  */
 package org.tools4j.elara.samples.hash;
 
+import org.agrona.IoUtil;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.tools4j.elara.run.ElaraRunner;
@@ -43,6 +44,7 @@ import static org.tools4j.elara.app.config.CommandPollingMode.FROM_END;
 import static org.tools4j.elara.app.config.CommandPollingMode.NO_STORE;
 import static org.tools4j.elara.samples.hash.HashApplication.NULL_VALUE;
 import static org.tools4j.elara.samples.hash.HashFeedbackApplication.feedbackApp;
+import static org.tools4j.elara.samples.hash.HashFeedbackApplication.feedbackIpcFile;
 import static org.tools4j.elara.samples.hash.HashFeedbackApplication.passthroughAppWithChronicleQueueAndMetrics;
 
 /**
@@ -203,13 +205,32 @@ public class HashApplicationTest {
     }
 
     @Test
+    public void feedbackWithMetrics() throws Exception {
+        //given
+        final int n = 500_000;
+//        final int n = 5_000_000;
+//        final int n = 50_000_000;
+        final long expected = 8951308420835593941L;//  500_000
+//        final long expected = -4253299023651259134L;//5_000_000
+//        final long expected = 8536806003277137281L;//50_000_000
+
+        //when
+        final long result = feedbackWithMetrics("hash-metrics", n, true);
+
+        //then
+        assertEquals(expected, result, "state.hash(" + n + ")");
+    }
+
+    @Test
     @Tag("perf")
     public void feedbackWithMetricsPerf() throws Exception {
         printRuntimeArgs();
         //given
+//        final int n = 100;
 //        final int n = 5_000_000;
         final int n = 50_000_000;
 //        final int n = 100_000_000;
+//        final long expected = -921590607533844227L;//100
 //        final long expected = -4253299023651259134L;//5_000_000
         final long expected = 8536806003277137281L;//50_000_000
 //        final long expected = -2816473282704185408L;//100_000_000
@@ -225,6 +246,7 @@ public class HashApplicationTest {
                                      final int n,
                                      final boolean timeMetrics) throws Exception {
         //given
+        IoUtil.deleteIfExists(feedbackIpcFile(folder));
         final AtomicLong input = new AtomicLong(NULL_VALUE);
         final ModifiableState state = new DefaultState();
         final Random random = new Random(123);
@@ -283,4 +305,5 @@ public class HashApplicationTest {
 //            System.out.println("\t" + entry);
 //        }
     }
+
 }

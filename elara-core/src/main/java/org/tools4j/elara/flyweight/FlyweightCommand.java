@@ -40,8 +40,6 @@ import static org.tools4j.elara.flyweight.FrameType.COMMAND_TYPE;
  * A flyweight command for reading and writing event data laid out as per {@link CommandDescriptor} definition.
  */
 public final class FlyweightCommand implements Flyweight<FlyweightCommand>, Command, CommandFrame {
-    public static final int HEADER_LENGTH = CommandDescriptor.HEADER_LENGTH;
-
     private final FlyweightHeader header = new FlyweightHeader(HEADER_LENGTH);
     private final DirectBuffer payload = new UnsafeBuffer(0, 0);
 
@@ -118,6 +116,11 @@ public final class FlyweightCommand implements Flyweight<FlyweightCommand>, Comm
 
     public static long commandTime(final DirectBuffer buffer) {
         return buffer.getLong(COMMAND_TIME_OFFSET, LITTLE_ENDIAN);
+    }
+
+    @Override
+    public int payloadSize() {
+        return frameSize() - HEADER_LENGTH;
     }
 
     @Override

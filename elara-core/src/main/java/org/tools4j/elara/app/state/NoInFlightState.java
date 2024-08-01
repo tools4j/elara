@@ -43,6 +43,11 @@ final class NoInFlightState implements MutableInFlightState {
     }
 
     @Override
+    public long inFlightBytes() {
+        return 0L;
+    }
+
+    @Override
     public int sourceId(final int index) {
         throw new IndexOutOfBoundsException("Invalid index " + index);
     }
@@ -68,7 +73,7 @@ final class NoInFlightState implements MutableInFlightState {
     }
 
     @Override
-    public void onCommandSent(final int sourceId, final long sourceSequence, final long sendingTime) {
+    public void onCommandSent(final int sourceId, final long sourceSequence, final long sendingTime, final int payloadSize) {
         //no-op
     }
 
@@ -78,7 +83,7 @@ final class NoInFlightState implements MutableInFlightState {
     }
 
     @Override
-    public void onEvent(final int srcId, final long srcSeq, final long evtSeq, final int index, final EventType evtType, final long evtTime, final int payloadType) {
+    public void onEvent(final int srcId, final long srcSeq, final long evtSeq, final int index, final EventType evtType, final long evtTime, final int payloadType, final int payloadSize) {
         //no-op
     }
 

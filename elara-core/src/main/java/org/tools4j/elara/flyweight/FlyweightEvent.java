@@ -41,8 +41,6 @@ import static org.tools4j.elara.flyweight.EventDescriptor.SOURCE_SEQUENCE_OFFSET
  * A flyweight event for reading and writing event data laid out as per {@link EventDescriptor} definition.
  */
 public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFrame {
-    public static final int HEADER_LENGTH = EventDescriptor.HEADER_LENGTH;
-
     private final FlyweightHeader header = new FlyweightHeader(HEADER_LENGTH);
     private final MutableDirectBuffer payload = new UnsafeBuffer(0, 0);
 
@@ -138,6 +136,11 @@ public class FlyweightEvent implements Flyweight<FlyweightEvent>, Event, EventFr
     @Override
     public EventType eventType() {
         return EventType.valueByFrameType(header.type());
+    }
+
+    @Override
+    public int payloadSize() {
+        return frameSize() - HEADER_LENGTH;
     }
 
     @Override

@@ -386,9 +386,9 @@ public class MetricsCapturingInterceptor implements Interceptor {
                     if (shouldCapture(EVENT_APPLIED_FREQUENCY) || shouldCaptureAnyOf(EVENT)) {//includes APPLYING_START_TIME and APPLYING_END_TIME
                         if (eventApplier instanceof ThinEventApplier) {
                             final ThinEventApplier passthroughApplier = (ThinEventApplier)eventApplier;
-                            return (ThinEventApplier)(srcId, srcSeq, evtSeq, evtIndex, evtType, evtTime, plType) -> {
+                            return (ThinEventApplier)(srcId, srcSeq, evtSeq, evtIndex, evtType, evtTime, plType, plSize) -> {
                                 captureTime(APPLYING_START_TIME);
-                                passthroughApplier.onEvent(srcId, srcSeq, evtSeq, evtIndex, evtType, evtTime, plType);
+                                passthroughApplier.onEvent(srcId, srcSeq, evtSeq, evtIndex, evtType, evtTime, plType, plSize);
                                 captureTime(APPLYING_END_TIME);
                                 captureCount(EVENT_APPLIED_FREQUENCY);
                                 if (timeMetricsWriter != null) {

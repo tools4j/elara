@@ -112,7 +112,7 @@ public final class CommandMessageSender extends FlyweightCommandSender {
                 FlyweightCommand.writeCommandTime(time, buf);
                 final SendingResult result = mc.send(HEADER_LENGTH + length);
                 if (result == SendingResult.SENT) {
-                    notifySent(time);
+                    notifySent(time, length);
                 }
                 return result;
             } finally {

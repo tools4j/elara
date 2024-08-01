@@ -25,12 +25,19 @@ package org.tools4j.elara.app.type;
 
 import org.agrona.concurrent.Agent;
 import org.tools4j.elara.app.factory.PublisherAppFactory;
+import org.tools4j.elara.store.MessageStore.Poller;
+import org.tools4j.elara.store.StorePollingMessageReceiver;
 
 final class PublisherAppConfiguratorImpl extends AbstractEventReceiverConfigurator<PublisherAppConfiguratorImpl> implements PublisherAppConfigurator {
 
     @Override
     protected PublisherAppConfiguratorImpl self() {
         return this;
+    }
+
+    @Override
+    public PublisherAppConfiguratorImpl eventStore(final Poller eventStorePoller) {
+        return eventReceiver(new StorePollingMessageReceiver(eventStorePoller));
     }
 
     @Override

@@ -41,6 +41,7 @@ import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.stream.ipc.AllocationStrategy;
 import org.tools4j.elara.stream.ipc.Ipc;
 import org.tools4j.elara.stream.ipc.IpcConfig;
+import org.tools4j.elara.stream.ipc.IpcConfigurator;
 import org.tools4j.elara.time.DefaultMutableTimeSource;
 import org.tools4j.elara.time.TimeSource;
 
@@ -87,24 +88,30 @@ public class HashFeedbackApplication implements FeedbackApp {
         };
     }
 
-    private static IpcConfig ipcConfig() {
+    private static IpcConfigurator ipcConfig() {
         return IpcConfig.configure()
                 .senderCardinality(ONE)
                 .senderInitialBufferSize(IPC_SENDER_BUFFER_SIZE)
                 .senderAllocationStrategy(AllocationStrategy.FIXED)
-                .maxMessagesReceivedPerPoll(2)
-                .newFileCreateParentDirs(true)
-                .newFileDeleteIfPresent(true);
+                .maxMessagesReceivedPerPoll(2);
+    }
+
+    public static File feedbackIpcFile(final String folder) {
+        return new File("build/ipc/" + folder + "/ipc.map");
     }
 
     private static MessageSender ipcSender(final String folder) {
-        final File file = new File("build/ipc/" + folder + "/ipc.map");
-        return Ipc.newSender(file, IPC_BUFFER_SIZE, ipcConfig());
+        final File file = feedbackIpcFile(folder);
+        return Ipc.newSender(file, IPC_BUFFER_SIZE, ipcConfig()
+                .newFileCreateParentDirs(true)
+                .newFileDeleteIfPresent(true));
     }
 
     private static MessageReceiver ipcReceiver(final String folder) {
-        final File file = new File("build/ipc/" + folder + "/ipc.map");
-        return Ipc.retryOpenReceiver(file, ipcConfig());
+        final File file = feedbackIpcFile(folder);
+        return Ipc.retryOpenReceiver(file, ipcConfig()
+                .newFileCreateParentDirs(false)
+                .newFileDeleteIfPresent(false));
     }
 
     public static ElaraRunner passthroughAppWithChronicleQueueAndMetrics(final String folder,
@@ -127,10 +134,11 @@ public class HashFeedbackApplication implements FeedbackApp {
                 .build();
         final MessageSender messageSender = ipcSender(folder);
         return new HashFeedbackApplication(state, input).launch(config -> config
+                .timeSource(pseudoNanoClock)
                 .processorSourceId(PROCESSOR_SOURCE_ID)
                 .commandSender(messageSender)
                 .eventStore(new ChronicleMessageStore(eq))
-                .input(INPUT_SOURCE_ID, HashApplication.inputPoller(input))
+                .input(INPUT_SOURCE_ID, inflightAwareInputPoller(input))
                 .timeSource(new DefaultMutableTimeSource())
                 .idleStrategy(BusySpinIdleStrategy.INSTANCE)
         );

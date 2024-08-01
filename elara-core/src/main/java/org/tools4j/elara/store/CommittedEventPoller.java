@@ -24,9 +24,10 @@
 package org.tools4j.elara.store;
 
 import org.agrona.DirectBuffer;
-import org.tools4j.elara.app.message.Event;
-import org.tools4j.elara.flyweight.EventType;
-import org.tools4j.elara.flyweight.FlyweightEvent;
+import org.tools4j.elara.flyweight.EventDescriptor;
+import org.tools4j.elara.flyweight.FlyweightHeader;
+import org.tools4j.elara.flyweight.FrameType;
+import org.tools4j.elara.flyweight.Header;
 import org.tools4j.elara.store.MessageStore.Poller;
 
 import static org.tools4j.elara.store.MessageStore.Handler.Result.POLL;
@@ -98,7 +99,7 @@ public class CommittedEventPoller implements Poller {
             aheadPoller.moveTo(curHeadId);
             return false;
         }
-        EventType lastEventType = aheadState.lastEventType;
+        final byte lastFrameType = aheadState.lastFrameType;
         aheadState.reset();
         while (aheadPoller.poll(aheadState) > 0) {
             if (aheadState.isCommit()) {
@@ -110,7 +111,7 @@ public class CommittedEventPoller implements Poller {
                 break;
             }
         }
-        aheadState.lastEventType = lastEventType;
+        aheadState.lastFrameType = lastFrameType;
         aheadPoller.moveTo(curHeadId);
         return false;
     }
@@ -143,26 +144,26 @@ public class CommittedEventPoller implements Poller {
     }
 
     private static class LookAheadState implements MessageStore.Handler {
-        EventType lastEventType;
-        final FlyweightEvent event = new FlyweightEvent();
+        byte lastFrameType;
+        final FlyweightHeader header = new FlyweightHeader(EventDescriptor.HEADER_LENGTH);
 
         @Override
         public Result onMessage(final DirectBuffer buffer) {
-            onEvent(event.wrap(buffer, 0));
+            onFrame(header.wrapSilently(buffer, 0));
             return POLL;
         }
 
-        void onEvent(final Event event) {
-            lastEventType = event.eventType();
+        void onFrame(final Header header) {
+            lastFrameType = header.type();
         }
         void reset() {
-            lastEventType = null;
+            lastFrameType = 0;
         }
         boolean isCommit() {
-            return lastEventType != null && lastEventType.isCommit();
+            return FrameType.isCommitEventType(lastFrameType);
         }
         boolean isRollback() {
-            return lastEventType != null && lastEventType.isRollback();
+            return FrameType.isRollbackEventType(lastFrameType);
         }
     }
 }

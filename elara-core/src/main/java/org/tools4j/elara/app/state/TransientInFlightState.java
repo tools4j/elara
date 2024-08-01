@@ -50,6 +50,12 @@ public interface TransientInFlightState extends TransientState {
     int inFlightCommands(int sourceId);
 
     /**
+     * Returns the total number of bytes of all in-flight commands.
+     * @return the byte size of all in-flight commands.
+     */
+    long inFlightBytes();
+
+    /**
      * Returns the source ID of the in-flight command specified by {@code index}.
      * @param index the index, a value in {@code [0..(n-1)]} where {@code n} is the number of in-flight commands
      * @return the source ID of the command

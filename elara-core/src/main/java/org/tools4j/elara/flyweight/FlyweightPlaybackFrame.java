@@ -37,24 +37,38 @@ import static org.tools4j.elara.flyweight.PlaybackDescriptor.PAYLOAD_OFFSET;
  * A flyweight playback frame for reading and writing playback event data laid out as per {@link PlaybackDescriptor}.
  */
 public class FlyweightPlaybackFrame implements Flyweight<FlyweightPlaybackFrame>, PlaybackFrame {
-    public static final int HEADER_LENGTH = PlaybackDescriptor.HEADER_LENGTH;
     private final FlyweightHeader header = new FlyweightHeader(HEADER_LENGTH);
     private final FlyweightEvent event = new FlyweightEvent();
 
     @Override
     public FlyweightPlaybackFrame wrap(final DirectBuffer buffer, final int offset) {
-        this.header.wrap(buffer, offset);
-        FrameType.validatePlaybackFrameType(header.type());
-        return wrapPayload(buffer, offset);
+        wrapHeader(buffer, offset);
+        return wrapPayload(buffer, offset + HEADER_LENGTH);
     }
 
     public FlyweightPlaybackFrame wrapSilently(final DirectBuffer buffer, final int offset) {
-        this.header.wrapSilently(buffer, offset);
-        return wrapPayload(buffer, offset);
+        wrapHeaderSilently(buffer, offset);
+        return wrapPayloadSilently(buffer, offset + HEADER_LENGTH);
     }
 
-    private FlyweightPlaybackFrame wrapPayload(final DirectBuffer buffer, final int offset) {
-        event.wrap(buffer, offset + HEADER_LENGTH);
+    public FlyweightPlaybackFrame wrapHeader(final DirectBuffer buffer, final int offset) {
+        wrapHeaderSilently(buffer, offset);
+        FrameType.validatePlaybackFrameType(header.type());
+        return this;
+    }
+
+    public FlyweightPlaybackFrame wrapHeaderSilently(final DirectBuffer buffer, final int offset) {
+        this.header.wrapSilently(buffer, offset);
+        return this;
+    }
+
+    public FlyweightPlaybackFrame wrapPayload(final DirectBuffer buffer, final int offset) {
+        event.wrap(buffer, offset);
+        return this;
+    }
+
+    public FlyweightPlaybackFrame wrapPayloadSilently(final DirectBuffer buffer, final int offset) {
+        event.wrapSilently(buffer, offset);
         return this;
     }
 
@@ -66,6 +80,16 @@ public class FlyweightPlaybackFrame implements Flyweight<FlyweightPlaybackFrame>
     @Override
     public FlyweightPlaybackFrame reset() {
         header.reset();
+        event.reset();
+        return this;
+    }
+
+    public FlyweightPlaybackFrame resetHeader() {
+        header.reset();
+        return this;
+    }
+
+    public FlyweightPlaybackFrame resetPayload() {
         event.reset();
         return this;
     }
@@ -104,6 +128,10 @@ public class FlyweightPlaybackFrame implements Flyweight<FlyweightPlaybackFrame>
 
     @Override
     public Event event() {
+        return event;
+    }
+
+    public EventFrame eventFrame() {
         return event;
     }
 

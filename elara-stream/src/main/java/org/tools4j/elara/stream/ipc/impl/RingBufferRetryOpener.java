@@ -36,6 +36,7 @@ import static java.util.Objects.requireNonNull;
 public class RingBufferRetryOpener implements Supplier<RingBuffer>, AutoCloseable {
 
     private final File file;
+    private final File lock;
     private final IpcConfig config;
     private final String description;
     private RingBuffer ringBuffer;
@@ -43,6 +44,7 @@ public class RingBufferRetryOpener implements Supplier<RingBuffer>, AutoCloseabl
 
     public RingBufferRetryOpener(final File file, final IpcConfig config) {
         this.file = requireNonNull(file);
+        this.lock = RingBuffers.lockFile(file);
         this.config = requireNonNull(config);
         this.description = file.getAbsolutePath();
     }
@@ -52,7 +54,7 @@ public class RingBufferRetryOpener implements Supplier<RingBuffer>, AutoCloseabl
         if (ringBuffer != null) {
             return ringBuffer;
         }
-        if (closed || !file.exists()) {
+        if (closed || !file.exists() || lock.exists()) {
             return null;
         }
         ringBuffer = RingBuffers.create(IoUtil.mapExistingFile(file, READ_WRITE, description), config);

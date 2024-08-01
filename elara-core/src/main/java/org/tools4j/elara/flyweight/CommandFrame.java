@@ -30,13 +30,11 @@ package org.tools4j.elara.flyweight;
  * @see EventFrame
  */
 public interface CommandFrame extends DataFrame {
+    int HEADER_LENGTH = CommandDescriptor.HEADER_LENGTH;
+
     @Override
     default int headerLength() {
-        return CommandDescriptor.HEADER_LENGTH;
+        return HEADER_LENGTH;
     }
     long commandTime();
-    @Override
-    default int payloadSize() {
-        return frameSize() - CommandDescriptor.HEADER_LENGTH;
-    }
 }

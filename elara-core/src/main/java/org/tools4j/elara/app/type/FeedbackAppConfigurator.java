@@ -44,7 +44,6 @@ import org.tools4j.elara.output.Output;
 import org.tools4j.elara.plugin.api.Plugin;
 import org.tools4j.elara.step.AgentStep;
 import org.tools4j.elara.store.MessageStore;
-import org.tools4j.elara.store.MessageStore.Poller;
 import org.tools4j.elara.stream.MessageReceiver;
 import org.tools4j.elara.stream.MessageSender;
 import org.tools4j.elara.time.TimeSource;
@@ -59,8 +58,6 @@ public interface FeedbackAppConfigurator extends FeedbackAppConfig, AppConfigura
     FeedbackAppConfigurator baseStateProvider(BaseStateProvider baseStateFactory);
     @Override
     FeedbackAppConfigurator eventStore(MessageStore eventStore);
-    @Override
-    FeedbackAppConfigurator eventStore(Poller eventStorePoller);
     @Override
     FeedbackAppConfigurator eventReceiver(MessageReceiver eventReceiver);
 
