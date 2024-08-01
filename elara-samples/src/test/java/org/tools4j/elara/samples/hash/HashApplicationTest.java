@@ -26,6 +26,7 @@ package org.tools4j.elara.samples.hash;
 import org.agrona.IoUtil;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.tools4j.elara.run.ElaraRunner;
 import org.tools4j.elara.samples.hash.HashApplication.DefaultState;
 import org.tools4j.elara.samples.hash.HashApplication.ModifiableState;
@@ -39,6 +40,7 @@ import java.util.concurrent.locks.LockSupport;
 
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.tools4j.elara.app.config.CommandPollingMode.FROM_END;
 import static org.tools4j.elara.app.config.CommandPollingMode.NO_STORE;
@@ -50,6 +52,7 @@ import static org.tools4j.elara.samples.hash.HashFeedbackApplication.passthrough
 /**
  * Unit test running the {@link HashApplication} and variations of it.
  */
+@Timeout(value = 60, unit=SECONDS)
 public class HashApplicationTest {
 
     @Test
